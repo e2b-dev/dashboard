@@ -14,12 +14,14 @@ import {
   type TableOptions,
   useReactTable,
 } from '@tanstack/react-table'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import {
   type KeyboardEvent,
   type MouseEvent,
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
@@ -57,6 +59,10 @@ import {
 } from './table-config'
 import type { TagGroup } from './types'
 
+const ESTIMATED_ROW_HEIGHT_PX = 44
+const VIRTUAL_OVERSCAN = 8
+const HEADER_SCROLL_MARGIN_PX = 21
+
 interface TagsTableProps {
   teamSlug: string
   templateId: string
@@ -66,6 +72,7 @@ export default function TagsTable({ teamSlug, templateId }: TagsTableProps) {
   'use no memo'
 
   const trpc = useTRPC()
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   const sorting = useTagTableStore((s) => s.sorting)
   const setSorting = useTagTableStore((s) => s.setSorting)
@@ -187,6 +194,21 @@ export default function TagsTable({ teamSlug, templateId }: TagsTableProps) {
   const showEmpty = !isPending && !isFetching && !hasData
   const showFilterRefetchingOverlay = isFilterRefetching && hasData
 
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => ESTIMATED_ROW_HEIGHT_PX,
+    overscan: VIRTUAL_OVERSCAN,
+    scrollMargin: HEADER_SCROLL_MARGIN_PX,
+    getItemKey: (index) => rows[index]?.id ?? index,
+  })
+  const virtualItems = virtualizer.getVirtualItems()
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: activeSearch / serverSort are intentional triggers, not values read inside the effect.
+  useEffect(() => {
+    virtualizer.scrollToOffset(0)
+  }, [activeSearch, serverSort, virtualizer])
+
   const handleLoadMore = useCallback(() => {
     fetchNextPage()
     trackTagTableInteraction('page_fetched', {
@@ -205,9 +227,12 @@ export default function TagsTable({ teamSlug, templateId }: TagsTableProps) {
         hasSearch={activeSearch !== undefined}
         searchInvalid={searchInvalid}
       />
-      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden -mx-8 px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div
+        ref={scrollRef}
+        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden -mx-8 px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
         <DataTable className="w-full">
-          <DataTableHeader className="sticky top-0 z-10 bg-bg border-b-0 mb-px">
+          <DataTableHeader className="sticky top-0 z-30 bg-bg border-b-0 mb-px">
             {table.getHeaderGroups().map((headerGroup) => (
               <DataTableRow
                 key={headerGroup.id}
@@ -255,19 +280,40 @@ export default function TagsTable({ teamSlug, templateId }: TagsTableProps) {
           {hasData && (
             <div
               className={cn(
-                'flex flex-col divide-y divide-stroke/80',
+                'relative',
                 showFilterRefetchingOverlay && 'opacity-70 transition-opacity'
               )}
+              style={{ height: `${virtualizer.getTotalSize()}px` }}
             >
-              {rows.map((row) => (
-                <GroupSection
-                  key={row.id}
-                  row={row}
-                  teamSlug={teamSlug}
-                  templateId={templateId}
-                  templateName={templateName}
-                />
-              ))}
+              {virtualItems.map((virtualRow) => {
+                const row = rows[virtualRow.index]
+                if (!row) return null
+                return (
+                  <div
+                    key={virtualRow.key}
+                    data-index={virtualRow.index}
+                    ref={(node) => virtualizer.measureElement(node)}
+                    className={cn(
+                      'absolute left-0 right-0',
+                      'hover:z-20 focus-within:z-10',
+                      'border-b border-stroke/80',
+                      'has-[button[aria-haspopup=menu][data-state=open]]:z-10'
+                    )}
+                    style={{
+                      transform: `translateY(${
+                        virtualRow.start - HEADER_SCROLL_MARGIN_PX
+                      }px)`,
+                    }}
+                  >
+                    <GroupSection
+                      row={row}
+                      teamSlug={teamSlug}
+                      templateId={templateId}
+                      templateName={templateName}
+                    />
+                  </div>
+                )
+              })}
             </div>
           )}
 
@@ -466,7 +512,7 @@ function ShowFullHistoryRow({
         trackTagTableInteraction('show_full_history_clicked', { tag })
       }
       className={cn(
-        'flex w-full items-center justify-center bg-bg py-2 cursor-pointer',
+        'flex w-full items-center justify-center bg-bg py-1.5 cursor-pointer',
         'prose-body-highlight text-fg-tertiary hover:text-fg transition-colors'
       )}
     >
