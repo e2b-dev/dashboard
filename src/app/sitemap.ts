@@ -17,7 +17,7 @@ import { DOCUMENTATION_DOMAIN } from '../../next.config.mjs'
 
 // Cache the sitemap for 15 minutes (in seconds)
 const SITEMAP_CACHE_TIME = 15 * 60
-export const revalidate = SITEMAP_CACHE_TIME
+export const revalidate = 900
 
 /**
  * Valid change frequency values for sitemap entries
