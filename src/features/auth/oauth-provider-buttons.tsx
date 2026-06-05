@@ -2,7 +2,10 @@
 
 import { useSearchParams } from 'next/navigation'
 import { useAction } from 'next-safe-action/hooks'
-import { AUTH_GITHUB_SIGN_IN_DISABLED } from '@/configs/flags'
+import {
+  AUTH_GITHUB_SIGN_IN_DISABLED,
+  AUTH_MIGRATION_IN_PROGRESS,
+} from '@/configs/flags'
 import { signInWithOAuthAction } from '@/core/server/actions/auth-actions'
 import { Button } from '@/ui/primitives/button'
 
@@ -11,6 +14,10 @@ export function OAuthProviders() {
   const returnTo = searchParams.get('returnTo')
 
   const { execute, isTransitioning } = useAction(signInWithOAuthAction)
+  const isOAuthDisabled =
+    isTransitioning ||
+    AUTH_MIGRATION_IN_PROGRESS ||
+    AUTH_GITHUB_SIGN_IN_DISABLED
 
   return (
     <div className="mt-4 flex flex-col gap-2">
@@ -20,7 +27,12 @@ export function OAuthProviders() {
           execute({ provider: 'google', returnTo: returnTo || undefined })
         }
         className="flex items-center gap-2"
-        disabled={isTransitioning}
+        disabled={isTransitioning || AUTH_MIGRATION_IN_PROGRESS}
+        title={
+          AUTH_MIGRATION_IN_PROGRESS
+            ? 'Sign-ins are temporarily paused'
+            : undefined
+        }
       >
         <svg
           viewBox="0 0 24 24"
@@ -54,11 +66,13 @@ export function OAuthProviders() {
           execute({ provider: 'github', returnTo: returnTo || undefined })
         }
         className="flex items-center gap-2"
-        disabled={isTransitioning || AUTH_GITHUB_SIGN_IN_DISABLED}
+        disabled={isOAuthDisabled}
         title={
-          AUTH_GITHUB_SIGN_IN_DISABLED
-            ? 'GitHub sign-in is temporarily paused'
-            : undefined
+          AUTH_MIGRATION_IN_PROGRESS
+            ? 'Sign-ins are temporarily paused'
+            : AUTH_GITHUB_SIGN_IN_DISABLED
+              ? 'GitHub sign-in is temporarily paused'
+              : undefined
         }
       >
         <svg

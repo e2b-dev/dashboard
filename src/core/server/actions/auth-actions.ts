@@ -5,8 +5,8 @@ import { redirect } from 'next/navigation'
 import { returnValidationErrors } from 'next-safe-action'
 import { z } from 'zod'
 import {
-  AUTH_MIGRATION_IN_PROGRESS,
   CAPTCHA_REQUIRED_SERVER,
+  isAuthMigrationInProgress,
   isGithubSignInDisabled,
 } from '@/configs/flags'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
@@ -103,6 +103,10 @@ async function checkAuthProviderHealth(): Promise<boolean> {
 
 const AUTH_PROVIDER_ERROR_MESSAGE =
   'Our authentication provider is experiencing issues. Please try again later.'
+const AUTH_MIGRATION_SIGN_IN_DISABLED_MESSAGE =
+  'Sign-ins are temporarily paused while we migrate our authentication system. Please try again later.'
+const AUTH_MIGRATION_SIGN_UP_DISABLED_MESSAGE =
+  'Sign-ups are temporarily paused while we migrate our authentication system. Please try again later.'
 const GITHUB_SIGN_IN_DISABLED_MESSAGE =
   'GitHub sign-in is temporarily paused while we migrate our authentication system. Please use another sign-in method.'
 
@@ -116,6 +120,16 @@ export const signInWithOAuthAction = actionClient
   .metadata({ actionName: 'signInWithOAuth' })
   .action(async ({ parsedInput }) => {
     const { provider, returnTo } = parsedInput
+
+    if (isAuthMigrationInProgress()) {
+      const queryParams = returnTo ? { returnTo } : undefined
+      throw encodedRedirect(
+        'error',
+        AUTH_URLS.SIGN_IN,
+        AUTH_MIGRATION_SIGN_IN_DISABLED_MESSAGE,
+        queryParams
+      )
+    }
 
     if (provider === 'github' && isGithubSignInDisabled()) {
       const queryParams = returnTo ? { returnTo } : undefined
@@ -194,10 +208,8 @@ export const signUpAction = actionClient
     async ({
       parsedInput: { email, password, returnTo = '', captchaToken },
     }) => {
-      if (AUTH_MIGRATION_IN_PROGRESS) {
-        return returnServerError(
-          'Sign-ups are temporarily paused while we migrate our authentication system. Please try again later.'
-        )
+      if (isAuthMigrationInProgress()) {
+        return returnServerError(AUTH_MIGRATION_SIGN_UP_DISABLED_MESSAGE)
       }
 
       const captchaError = await validateCaptcha(captchaToken)
@@ -299,6 +311,10 @@ export const signInAction = actionClient
   .schema(signInSchema)
   .metadata({ actionName: 'signInWithEmailAndPassword' })
   .action(async ({ parsedInput: { email, password, returnTo = '' } }) => {
+    if (isAuthMigrationInProgress()) {
+      return returnServerError(AUTH_MIGRATION_SIGN_IN_DISABLED_MESSAGE)
+    }
+
     const isHealthy = await checkAuthProviderHealth()
     if (!isHealthy) {
       const queryParams = returnTo ? { returnTo } : undefined

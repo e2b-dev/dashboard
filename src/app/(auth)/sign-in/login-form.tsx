@@ -5,6 +5,7 @@ import { useHookFormAction } from '@next-safe-action/adapter-react-hook-form/hoo
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
+import { AUTH_MIGRATION_IN_PROGRESS } from '@/configs/flags'
 import { AUTH_URLS } from '@/configs/urls'
 import { USER_MESSAGES } from '@/configs/user-messages'
 import { signInAction } from '@/core/server/actions/auth-actions'
@@ -152,6 +153,12 @@ export default function Login() {
           <Button
             type="submit"
             loading={isExecuting ? 'Signing in...' : undefined}
+            disabled={AUTH_MIGRATION_IN_PROGRESS}
+            title={
+              AUTH_MIGRATION_IN_PROGRESS
+                ? 'Sign-ins are temporarily paused'
+                : undefined
+            }
           >
             Sign in
           </Button>
