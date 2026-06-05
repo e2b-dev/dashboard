@@ -15,6 +15,7 @@ import {
   ATTR_SERVICE_VERSION,
 } from '@opentelemetry/semantic-conventions'
 import { FetchInstrumentation } from '@vercel/otel'
+import { VercelWaitUntilLogRecordProcessor } from './core/server/observability/vercel-wait-until-log-record-processor'
 
 function parseResourceAttributes(
   resourceAttrs?: string
@@ -76,10 +77,12 @@ const sdk = new NodeSDK({
     }),
   }),
   logRecordProcessors: [
-    new BatchLogRecordProcessor(
-      new OTLPLogExporter({
-        url: `${OTEL_EXPORTER_OTLP_ENDPOINT}/v1/logs`,
-      })
+    new VercelWaitUntilLogRecordProcessor(
+      new BatchLogRecordProcessor(
+        new OTLPLogExporter({
+          url: `${OTEL_EXPORTER_OTLP_ENDPOINT}/v1/logs`,
+        })
+      )
     ),
   ],
   instrumentations: [
