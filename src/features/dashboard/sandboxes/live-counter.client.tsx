@@ -1,15 +1,11 @@
 'use client'
 
-import type { InferSafeActionFnResult } from 'next-safe-action'
-import type { NonUndefined } from 'react-hook-form'
-import type { getTeamMetrics } from '@/core/server/functions/sandboxes/get-team-metrics'
+import type { TRPCRouterOutputs } from '@/trpc/client'
 import { LiveSandboxCounter } from './live-counter'
 import { useRecentMetrics } from './monitoring/hooks/use-recent-metrics'
 
 interface LiveSandboxCounterClientProps {
-  initialData: NonUndefined<
-    InferSafeActionFnResult<typeof getTeamMetrics>['data']
-  >
+  initialData: TRPCRouterOutputs['sandboxes']['getTeamMetrics']
   className?: string
 }
 

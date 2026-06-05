@@ -8,7 +8,6 @@ import { authActionClient } from '@/core/server/actions/client'
 import { auth } from '@/core/server/auth'
 import { supabaseAuthFlows } from '@/core/server/auth/supabase/flows'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
-import { generateE2BUserAccessToken } from '@/lib/utils/server'
 
 const UpdateUserSchema = z
   .object({
@@ -127,14 +126,4 @@ export const updateUserAction = authActionClient
       default:
         throw error
     }
-  })
-
-export const getUserAccessTokenAction = authActionClient
-  .metadata({ actionName: 'getUserAccessToken' })
-  .action(async ({ ctx }) => {
-    const { session } = ctx
-
-    const token = await generateE2BUserAccessToken(session.access_token)
-
-    return token
   })

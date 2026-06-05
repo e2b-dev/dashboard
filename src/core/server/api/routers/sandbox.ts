@@ -205,4 +205,14 @@ export const sandboxRouter = createTRPCRouter({
     }),
 
   // MUTATIONS
+  kill: sandboxRepositoryProcedure
+    .input(
+      z.object({
+        sandboxId: SandboxIdSchema,
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const result = await ctx.sandboxesRepository.killSandbox(input.sandboxId)
+      if (!result.ok) throwTRPCErrorFromRepoError(result.error)
+    }),
 })

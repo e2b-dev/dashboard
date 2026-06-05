@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import { TEAM_METRICS_INITIAL_RANGE_MS } from '@/configs/intervals'
-import { getTeamMetrics } from '@/core/server/functions/sandboxes/get-team-metrics'
+import { trpcCaller } from '@/trpc/server'
 import { TeamMetricsChartsProvider } from '../charts-context'
 import ConcurrentChartClient from './concurrent-chart'
 import ChartFallback from './fallback'
@@ -46,21 +46,22 @@ async function TeamMetricsChartsResolver({
     : now - TEAM_METRICS_INITIAL_RANGE_MS
   const end = endParam ? parseInt(endParam, 10) : now
 
-  const teamMetricsResult = await getTeamMetrics({
-    teamSlug,
-    startDate: start,
-    endDate: end,
-  })
+  try {
+    const teamMetrics = await trpcCaller.sandboxes.getTeamMetrics({
+      teamSlug,
+      startDate: start,
+      endDate: end,
+    })
 
-  if (
-    !teamMetricsResult?.data ||
-    teamMetricsResult.serverError ||
-    teamMetricsResult.validationErrors
-  ) {
+    return (
+      <TeamMetricsChartsProvider initialData={teamMetrics}>
+        <ConcurrentChartClient />
+        <StartRateChartClient />
+      </TeamMetricsChartsProvider>
+    )
+  } catch (error) {
     const errorMessage =
-      teamMetricsResult?.serverError ||
-      teamMetricsResult?.validationErrors?.formErrors[0] ||
-      'Failed to load metrics data.'
+      error instanceof Error ? error.message : 'Failed to load metrics data.'
 
     return (
       <>
@@ -77,11 +78,4 @@ async function TeamMetricsChartsResolver({
       </>
     )
   }
-
-  return (
-    <TeamMetricsChartsProvider initialData={teamMetricsResult.data}>
-      <ConcurrentChartClient />
-      <StartRateChartClient />
-    </TeamMetricsChartsProvider>
-  )
 }
