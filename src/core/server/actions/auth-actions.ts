@@ -7,7 +7,6 @@ import { z } from 'zod'
 import {
   CAPTCHA_REQUIRED_SERVER,
   isAuthMigrationInProgress,
-  isGithubSignInDisabled,
 } from '@/configs/flags'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { USER_MESSAGES } from '@/configs/user-messages'
@@ -107,8 +106,6 @@ const AUTH_MIGRATION_SIGN_IN_DISABLED_MESSAGE =
   'Sign-ins are temporarily paused while we migrate our authentication system. Please try again later.'
 const AUTH_MIGRATION_SIGN_UP_DISABLED_MESSAGE =
   'Sign-ups are temporarily paused while we migrate our authentication system. Please try again later.'
-const GITHUB_SIGN_IN_DISABLED_MESSAGE =
-  'GitHub sign-in is temporarily paused while we migrate our authentication system. Please use another sign-in method.'
 
 const SignInWithOAuthInputSchema = z.object({
   provider: z.union([z.literal('github'), z.literal('google')]),
@@ -127,16 +124,6 @@ export const signInWithOAuthAction = actionClient
         'error',
         AUTH_URLS.SIGN_IN,
         AUTH_MIGRATION_SIGN_IN_DISABLED_MESSAGE,
-        queryParams
-      )
-    }
-
-    if (provider === 'github' && isGithubSignInDisabled()) {
-      const queryParams = returnTo ? { returnTo } : undefined
-      throw encodedRedirect(
-        'error',
-        AUTH_URLS.SIGN_IN,
-        GITHUB_SIGN_IN_DISABLED_MESSAGE,
         queryParams
       )
     }

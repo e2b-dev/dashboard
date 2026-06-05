@@ -494,24 +494,6 @@ describe('Auth Actions - Integration Tests', () => {
       expect(fetchMock).not.toHaveBeenCalled()
       expect(mockSupabaseClient.auth.signInWithOAuth).not.toHaveBeenCalled()
     })
-
-    it('should block GitHub OAuth when the GitHub sign-in disabled flag is enabled', async () => {
-      vi.stubEnv('NEXT_PUBLIC_AUTH_GITHUB_SIGN_IN_DISABLED', '1')
-
-      await signInWithOAuthAction({
-        provider: 'github',
-        returnTo: '/dashboard/team-123',
-      })
-
-      expect(encodedRedirect).toHaveBeenCalledWith(
-        'error',
-        AUTH_URLS.SIGN_IN,
-        'GitHub sign-in is temporarily paused while we migrate our authentication system. Please use another sign-in method.',
-        { returnTo: '/dashboard/team-123' }
-      )
-      expect(fetchMock).not.toHaveBeenCalled()
-      expect(mockSupabaseClient.auth.signInWithOAuth).not.toHaveBeenCalled()
-    })
   })
 
   describe('Sign Out Flow', () => {
