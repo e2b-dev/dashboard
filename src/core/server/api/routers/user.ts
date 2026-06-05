@@ -1,5 +1,6 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
+import { isAuthMigrationInProgress } from '@/configs/flags'
 import type { AuthUser } from '@/core/server/auth'
 import { createAuthForHeaders } from '@/core/server/auth'
 import { createTRPCRouter } from '@/core/server/trpc/init'
@@ -92,14 +93,26 @@ export const userRouter = createTRPCRouter({
       const provider = createAuthForHeaders(ctx.headers)
 
       if (input.email !== undefined || input.password !== undefined) {
-        const profile = await provider.getUserProfile()
-        const credentialProfile = profile ?? ctx.user
+        if (isAuthMigrationInProgress()) {
+          return {
+            status: 'error' as const,
+            code: 'account_credentials_not_changeable' as const,
+          }
+        }
 
-        if (!profile) {
+        const profile = await withTimeout(
+          provider.getUserProfile().catch(() => null),
+          PROFILE_LOOKUP_TIMEOUT_MS
+        )
+        const credentialProfile =
+          profile && profile !== TIMEOUT ? profile : ctx.user
+
+        if (!profile || profile === TIMEOUT) {
           l.warn(
             {
               key: 'trpc_user_update:profile_fallback',
               user_id: ctx.user.id,
+              context: { timed_out: profile === TIMEOUT },
             },
             'user profile lookup failed during credential update; falling back to session user capabilities'
           )

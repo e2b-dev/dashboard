@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTRPCContext } from '@/core/server/trpc/init'
 
 const providerMock = vi.hoisted(() => ({
@@ -43,6 +43,10 @@ describe('userRouter.update', () => {
     providerMock.updateUser.mockReset()
   })
 
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
   it('denies email changes when the provider profile says they are not changeable', async () => {
     providerMock.getUserProfile.mockResolvedValue(authUser)
 
@@ -78,5 +82,21 @@ describe('userRouter.update', () => {
       password: 'new-password',
       name: undefined,
     })
+  })
+
+  it('blocks credential updates while auth migration is in progress', async () => {
+    vi.stubEnv('NEXT_PUBLIC_AUTH_MIGRATION_IN_PROGRESS', '1')
+
+    const ctx = await createTRPCContext({ headers: new Headers() })
+    const caller = createCaller(ctx)
+
+    const result = await caller.update({ password: 'new-password' })
+
+    expect(result).toEqual({
+      status: 'error',
+      code: 'account_credentials_not_changeable',
+    })
+    expect(providerMock.getUserProfile).not.toHaveBeenCalled()
+    expect(providerMock.updateUser).not.toHaveBeenCalled()
   })
 })

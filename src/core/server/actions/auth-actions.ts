@@ -355,6 +355,10 @@ export const forgotPasswordAction = actionClient
   .schema(forgotPasswordSchema)
   .metadata({ actionName: 'forgotPassword' })
   .action(async ({ parsedInput: { email } }) => {
+    if (isAuthMigrationInProgress()) {
+      return returnServerError(AUTH_MIGRATION_SIGN_IN_DISABLED_MESSAGE)
+    }
+
     const isHealthy = await checkAuthProviderHealth()
     if (!isHealthy) {
       throw encodedRedirect(
