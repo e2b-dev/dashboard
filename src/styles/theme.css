@@ -489,6 +489,7 @@
   --animate-loader-square: loader-square 0.4s linear infinite;
 
   /* Easings (kept in sync with src/lib/utils/ui.ts) */
+  --ease-out-quint: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out-quint: cubic-bezier(0.83, 0, 0.17, 1);
 }
 
