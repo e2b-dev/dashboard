@@ -31,13 +31,15 @@ export class SupabaseAuthProvider implements AuthProvider {
     const { data, error: userError } = await client.auth.getUser()
 
     if (userError) {
-      l.error(
-        {
-          key: 'auth_provider:get_user:error',
-          error: serializeErrorForLog(userError),
-        },
-        `supabase getUser failed: ${userError.message}`
-      )
+      if (!isAuthSessionMissingError(userError)) {
+        l.error(
+          {
+            key: 'auth_provider:get_user:error',
+            error: serializeErrorForLog(userError),
+          },
+          `supabase getUser failed: ${userError.message}`
+        )
+      }
       return null
     }
 
@@ -75,7 +77,7 @@ export class SupabaseAuthProvider implements AuthProvider {
     const { data, error } = await client.auth.getUser()
 
     if (error || !data.user) {
-      if (error) {
+      if (error && !isAuthSessionMissingError(error)) {
         l.error(
           {
             key: 'auth_provider:get_user_profile:error',
@@ -218,4 +220,14 @@ function buildSignInRedirect(returnTo?: string): string {
   if (!returnTo) return AUTH_URLS.SIGN_IN
   const params = new URLSearchParams({ returnTo })
   return `${AUTH_URLS.SIGN_IN}?${params.toString()}`
+}
+
+function isAuthSessionMissingError(error: {
+  message?: string
+  name?: string
+}): boolean {
+  return (
+    error.name === 'AuthSessionMissingError' ||
+    error.message === 'Auth session missing!'
+  )
 }

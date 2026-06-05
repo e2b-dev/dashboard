@@ -87,6 +87,26 @@ describe('SupabaseAuthProvider', () => {
       expect(loggerMocks.error).not.toHaveBeenCalled()
     })
 
+    it('returns null without logging when no auth session exists', async () => {
+      const client = buildClient({
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: null },
+          error: {
+            name: 'AuthSessionMissingError',
+            message: 'Auth session missing!',
+            status: 400,
+          },
+        }),
+      })
+      const provider = new SupabaseAuthProvider(client)
+
+      const result = await provider.getAuthContext()
+
+      expect(result).toBeNull()
+      expect(loggerMocks.error).not.toHaveBeenCalled()
+      expect(loggerMocks.warn).not.toHaveBeenCalled()
+    })
+
     it('logs and returns null when getSession returns an error', async () => {
       const sessionError = { message: 'session lookup failed', status: 500 }
       const client = buildClient({
