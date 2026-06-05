@@ -706,13 +706,7 @@ export interface paths {
       }
       requestBody?: {
         content: {
-          'application/json': {
-            /**
-             * Format: int32
-             * @description Timeout in seconds from the current time after which the sandbox should expire
-             */
-            timeout: number
-          }
+          'application/json': components['schemas']['SandboxTimeoutRequest']
         }
       }
       responses: {
@@ -754,18 +748,7 @@ export interface paths {
       }
       requestBody: {
         content: {
-          'application/json': {
-            /** @description List of allowed destinations for egress traffic. Each entry can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com", "*.example.com"). Allowed entries always take precedence over denied entries. */
-            allowOut?: string[]
-            /** @description List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules. */
-            denyOut?: string[]
-            /** @description Per-domain transform rules. Replaces all existing rules when provided. */
-            rules?: {
-              [key: string]: components['schemas']['SandboxNetworkRule'][]
-            }
-            /** @description Allow sandbox to access the internet. When set to false, it behaves the same as specifying denyOut to 0.0.0.0/0 in the network config. */
-            allow_internet_access?: boolean
-          }
+          'application/json': components['schemas']['SandboxNetworkUpdateConfig']
         }
       }
       responses: {
@@ -810,10 +793,7 @@ export interface paths {
       }
       requestBody?: {
         content: {
-          'application/json': {
-            /** @description Duration for which the sandbox should be kept alive in seconds */
-            duration?: number
-          }
+          'application/json': components['schemas']['SandboxRefreshRequest']
         }
       }
       responses: {
@@ -855,10 +835,7 @@ export interface paths {
       }
       requestBody: {
         content: {
-          'application/json': {
-            /** @description Optional name for the snapshot template. If a snapshot template with this name already exists, a new build will be assigned to the existing template instead of creating a new one. */
-            name?: string
-          }
+          'application/json': components['schemas']['SandboxSnapshotRequest']
         }
       }
       responses: {
@@ -961,6 +938,7 @@ export interface paths {
         }
         400: components['responses']['400']
         401: components['responses']['401']
+        403: components['responses']['403']
         500: components['responses']['500']
       }
     }
@@ -1650,7 +1628,10 @@ export interface paths {
     /** @description List all nodes */
     get: {
       parameters: {
-        query?: never
+        query?: {
+          /** @description Identifier of the cluster */
+          clusterID?: string
+        }
         header?: never
         path?: never
         cookie?: never
@@ -1834,6 +1815,102 @@ export interface paths {
       }
     }
     delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/admin/teams/{teamID}/api-keys': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Create team API key as admin
+     * @description Creates a team API key for internal service workflows.
+     */
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          /** @description Team ID */
+          teamID: string
+        }
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['NewTeamAPIKey']
+        }
+      }
+      responses: {
+        /** @description Team API key created successfully */
+        201: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['CreatedTeamAPIKey']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        403: components['responses']['403']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/admin/teams/{teamID}/api-keys/{apiKeyID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Delete team API key as admin
+     * @description Deletes a team API key for internal service workflows.
+     */
+    delete: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          /** @description Team ID */
+          teamID: string
+          apiKeyID: components['parameters']['apiKeyID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Team API key deleted successfully */
+        204: {
+          headers: {
+            [name: string]: unknown
+          }
+          content?: never
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
     options?: never
     head?: never
     patch?: never
@@ -2199,8 +2276,12 @@ export interface components {
        * @description Identifier of the user
        */
       id: string
-      /** @description Email of the user */
-      email: string
+      /**
+       * @deprecated
+       * @description Email of the user
+       * @default null
+       */
+      email: string | null
     }
     TemplateUpdateRequest: {
       /** @description Whether the template is public or only accessible by the team */
@@ -2264,6 +2345,19 @@ export interface components {
       rules?: {
         [key: string]: components['schemas']['SandboxNetworkRule'][]
       }
+    }
+    /** @description Network configuration update for a running sandbox. Replaces the current egress rules with the provided configuration. Omitting a field clears it. */
+    SandboxNetworkUpdateConfig: {
+      /** @description List of allowed destinations for egress traffic. Each entry can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com", "*.example.com"). Allowed entries always take precedence over denied entries. */
+      allowOut?: string[]
+      /** @description List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules. */
+      denyOut?: string[]
+      /** @description Per-domain transform rules. Replaces all existing rules when provided. */
+      rules?: {
+        [key: string]: components['schemas']['SandboxNetworkRule'][]
+      }
+      /** @description Allow sandbox to access the internet. When set to false, it behaves the same as specifying denyOut to 0.0.0.0/0 in the network config. */
+      allow_internet_access?: boolean
     }
     /** @description Transform rule applied to egress requests matching a domain pattern. */
     SandboxNetworkRule: {
@@ -2524,6 +2618,21 @@ export interface components {
        * @description Timeout in seconds from the current time after which the sandbox should expire
        */
       timeout: number
+    }
+    SandboxTimeoutRequest: {
+      /**
+       * Format: int32
+       * @description Timeout in seconds from the current time after which the sandbox should expire
+       */
+      timeout: number
+    }
+    SandboxRefreshRequest: {
+      /** @description Duration for which the sandbox should be kept alive in seconds */
+      duration?: number
+    }
+    SandboxSnapshotRequest: {
+      /** @description Optional name for the snapshot template. If a snapshot template with this name already exists, a new build will be assigned to the existing template instead of creating a new one. */
+      name?: string
     }
     /** @description Team metric with timestamp */
     TeamMetric: {
