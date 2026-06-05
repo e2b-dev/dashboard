@@ -15,6 +15,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { useVirtualizer } from '@tanstack/react-virtual'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import {
   type KeyboardEvent,
   type MouseEvent,
@@ -29,7 +30,7 @@ import type { TemplateTagAssignment } from '@/core/modules/templates/models'
 import { LoadMoreButton } from '@/features/dashboard/templates/builds/table-cells'
 import { getTemplateDisplayName } from '@/features/dashboard/templates/helpers'
 import { useFilterChangeTracking } from '@/lib/hooks/use-filter-change-tracking'
-import { cn } from '@/lib/utils/ui'
+import { cn, EASE_APPEAR } from '@/lib/utils/ui'
 import { useTRPC } from '@/trpc/client'
 import {
   DataTable,
@@ -349,6 +350,7 @@ function GroupSection({
   const canExpand = row.getCanExpand()
   const isExpanded = row.getIsExpanded()
   const dataState = isExpanded ? 'open' : 'closed'
+  const shouldReduceMotion = useReducedMotion()
 
   const [rollbackRequest, setRollbackRequest] = useState<{
     target: TemplateTagAssignment
@@ -419,7 +421,9 @@ function GroupSection({
           >
             <TriangleIcon
               className={cn(
-                'size-4 transition-[transform,color]',
+                'size-4 transition-[rotate,color]',
+                'duration-240 ease-out-quint',
+                'motion-reduce:duration-0',
                 isExpanded && 'rotate-90',
                 'text-fg-tertiary',
                 'group-hover/row:text-fg',
@@ -455,27 +459,43 @@ function GroupSection({
         />
       </DataTableRow>
 
-      {isExpanded && (
-        <div className="flex flex-col divide-y divide-stroke/80">
-          {row.original.assignments.slice(1).map((assignment) => (
-            <TagHistoryRow
-              key={assignment.assignmentId}
-              assignment={assignment}
-              primaryAssignment={row.original.primaryAssignment}
-              teamSlug={teamSlug}
-              templateId={templateId}
-              onRequestRollback={handleRequestRowRollback}
-            />
-          ))}
-          {row.original.hasMore && (
-            <ShowFullHistoryRow
-              tag={row.original.tag}
-              teamSlug={teamSlug}
-              templateId={templateId}
-            />
-          )}
-        </div>
-      )}
+      <AnimatePresence initial={false}>
+        {isExpanded && (
+          <motion.div
+            key="group-history"
+            className="flex flex-col divide-y divide-stroke/80 overflow-hidden"
+            initial={shouldReduceMotion ? false : { height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={shouldReduceMotion ? { opacity: 0 } : { height: 0 }}
+            transition={
+              shouldReduceMotion
+                ? { duration: 0 }
+                : {
+                    duration: 0.24,
+                    ease: EASE_APPEAR,
+                  }
+            }
+          >
+            {row.original.assignments.slice(1).map((assignment) => (
+              <TagHistoryRow
+                key={assignment.assignmentId}
+                assignment={assignment}
+                primaryAssignment={row.original.primaryAssignment}
+                teamSlug={teamSlug}
+                templateId={templateId}
+                onRequestRollback={handleRequestRowRollback}
+              />
+            ))}
+            {row.original.hasMore && (
+              <ShowFullHistoryRow
+                tag={row.original.tag}
+                teamSlug={teamSlug}
+                templateId={templateId}
+              />
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <RollbackTagDialog
         open={rollbackRequest !== null}
