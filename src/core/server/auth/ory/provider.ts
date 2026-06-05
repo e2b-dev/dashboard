@@ -68,7 +68,9 @@ export const oryAuthProvider: AuthProvider = {
       includeCredential: ACCOUNT_IDENTITY_CREDENTIALS,
     })
 
-    return identity ? fromOryIdentity(identity) : null
+    return identity
+      ? fromOryIdentity(identity, { userId: session.user.id })
+      : null
   },
 
   signOut() {
@@ -98,12 +100,22 @@ export const oryAuthProvider: AuthProvider = {
       )
     }
 
-    return oryAuthFlows.updateUser({
+    const result = await oryAuthFlows.updateUser({
       identityId,
       name: input.name,
       email: input.email,
       password: input.password,
     })
+
+    if (!result.ok) return result
+
+    return {
+      ...result,
+      user: {
+        ...result.user,
+        id: session.user.id,
+      },
+    }
   },
 
   async startReauthForAccountSettings(): Promise<ReauthDispatch> {

@@ -85,6 +85,12 @@ export function readOryProfileSubject(
   return typeof subject === 'string' && subject.length > 0 ? subject : undefined
 }
 
+export function readOryAccessTokenSubject(
+  account: OryAuthJsAccount
+): string | undefined {
+  return readStringClaim(decodeJwtClaims(account.access_token), 'sub')
+}
+
 export function readOryEmailClaim(
   account: OryAuthJsAccount
 ): string | undefined {

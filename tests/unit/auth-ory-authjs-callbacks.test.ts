@@ -129,14 +129,18 @@ describe('persistOryTokensInAuthJsJwt', () => {
 
   it('persists Ory tokens and the resolved Kratos id on fresh sign-in', async () => {
     resolveIdentityMock.mockResolvedValue({ id: 'kratos-uuid' })
+    const accessToken = makeJwt({ sub: 'e2b-user-id' })
 
     const result = await persistOryTokensInAuthJsJwt({
-      token: { sub: 'e2b-user-id', error: 'StalePoison' } as JWT,
+      token: {
+        sub: 'profile-sub-before-access-token',
+        error: 'StalePoison',
+      } as JWT,
       account: {
         provider: 'ory',
         type: 'oidc',
         providerAccountId: 'x',
-        access_token: 'at',
+        access_token: accessToken,
         refresh_token: 'rt',
         id_token: makeJwt({ email: 'ada@example.test' }),
         expires_at: 1234,
@@ -150,7 +154,7 @@ describe('persistOryTokensInAuthJsJwt', () => {
     })
     expect(result).toMatchObject({
       sub: 'e2b-user-id',
-      accessToken: 'at',
+      accessToken,
       refreshToken: 'rt',
       expiresAt: 1234,
       identityId: 'kratos-uuid',

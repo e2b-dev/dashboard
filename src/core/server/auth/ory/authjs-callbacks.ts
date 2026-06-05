@@ -8,6 +8,7 @@ import {
   type OryAuthJsJwtInput,
   type OryAuthJsSessionInput,
   type OryAuthJsSignInInput,
+  readOryAccessTokenSubject,
   readOryAuthJsAccount,
   readOryEmailClaim,
   readOryProfileSubject,
@@ -134,13 +135,19 @@ async function buildSignInToken(
   account: OryAuthJsAccount,
   profile: OryAuthJsJwtInput['profile']
 ): Promise<OryAuthJsJwt> {
-  return {
+  const userId = readOryAccessTokenSubject(account) ?? token.sub
+  const nextToken = {
     ...token,
+    sub: userId,
+  }
+
+  return {
+    ...nextToken,
     accessToken: account.access_token,
     refreshToken: account.refresh_token,
     idToken: account.id_token,
     expiresAt: account.expires_at ?? null,
-    identityId: await resolveKratosIdentityId(token, account, profile),
+    identityId: await resolveKratosIdentityId(nextToken, account, profile),
     error: undefined,
   }
 }

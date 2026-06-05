@@ -13,6 +13,14 @@ function identity(partial: Partial<Identity>): Identity {
 }
 
 describe('fromOryIdentity providers normalization', () => {
+  it('uses an explicit app user id when provided', () => {
+    const user = fromOryIdentity(identity({ id: 'kratos-uuid' }), {
+      userId: 'e2b-user-id',
+    })
+
+    expect(user.id).toBe('e2b-user-id')
+  })
+
   it('maps the Kratos `password` credential to `email`', () => {
     const user = fromOryIdentity(identity({ credentials: { password: {} } }))
     expect(user.providers).toEqual(['email'])

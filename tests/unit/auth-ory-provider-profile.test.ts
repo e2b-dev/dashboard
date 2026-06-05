@@ -40,9 +40,12 @@ describe('oryAuthProvider.getUserProfile', () => {
   })
 
   it('returns the normalized profile from the live identity lookup', async () => {
-    authjsMock.mockResolvedValue({ user: { id: 'identity-1' } })
+    authjsMock.mockResolvedValue({
+      user: { id: 'e2b-user-id' },
+      identityId: 'kratos-uuid',
+    })
     getIdentityMock.mockResolvedValue({
-      id: 'identity-1',
+      id: 'kratos-uuid',
       traits: { email: 'ada@example.test', name: 'Ada' },
       credentials: {
         password: {
@@ -54,11 +57,11 @@ describe('oryAuthProvider.getUserProfile', () => {
     const profile = await oryAuthProvider.getUserProfile()
 
     expect(getIdentityMock).toHaveBeenCalledWith({
-      id: 'identity-1',
+      id: 'kratos-uuid',
       includeCredential: ['password', 'oidc'],
     })
     expect(profile).toEqual({
-      id: 'identity-1',
+      id: 'e2b-user-id',
       email: 'ada@example.test',
       name: 'Ada',
       avatarUrl: null,
@@ -90,7 +93,7 @@ describe('oryAuthProvider.getUserProfile', () => {
       includeCredential: ['password', 'oidc'],
     })
     expect(getIdentityByExternalIDMock).not.toHaveBeenCalled()
-    expect(profile?.id).toBe('kratos-uuid')
+    expect(profile?.id).toBe('legacy-id')
   })
 
   it('returns null when there is no session', async () => {
@@ -123,7 +126,7 @@ describe('oryAuthProvider.getUserProfile', () => {
       externalID: 'legacy-id',
       includeCredential: ['password', 'oidc'],
     })
-    expect(profile?.id).toBe('kratos-uuid')
+    expect(profile?.id).toBe('legacy-id')
     expect(profile?.providers).toEqual(['email'])
   })
 

@@ -93,6 +93,29 @@ describe('oryAuthProvider account operations', () => {
       expect(result).toEqual({ ok: true, user: { id: 'identity-1' } })
     })
 
+    it('returns the app user id after patching a different Kratos identity id', async () => {
+      authjsMock.mockResolvedValue({
+        user: { id: 'e2b-user-id' },
+        identityId: 'kratos-uuid',
+        accessToken: 'a',
+        idToken: makeIdToken({ auth_time: nowSeconds - 10_000 }),
+      })
+      updateUserMock.mockResolvedValue({
+        ok: true,
+        user: { id: 'kratos-uuid', email: 'ada@example.test' },
+      })
+
+      const result = await oryAuthProvider.updateUser({ name: 'Ada' })
+
+      expect(updateUserMock).toHaveBeenCalledWith(
+        expect.objectContaining({ identityId: 'kratos-uuid' })
+      )
+      expect(result).toEqual({
+        ok: true,
+        user: { id: 'e2b-user-id', email: 'ada@example.test' },
+      })
+    })
+
     it('uses the identity id cached on the session without a lookup', async () => {
       authjsMock.mockResolvedValue({
         user: { id: 'legacy-id' },

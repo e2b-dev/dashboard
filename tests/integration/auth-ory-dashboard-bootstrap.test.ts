@@ -221,6 +221,53 @@ describe('dashboard bootstrap for Ory users', () => {
     expect(apiPostMock).not.toHaveBeenCalled()
   })
 
+  it('skips dashboard-api bootstrap when the user has a team without a slug', async () => {
+    listUserTeamsMock.mockResolvedValue({
+      ok: true,
+      data: [{ id: 'team-1', slug: null, isDefault: true }],
+    })
+
+    const result = await ensureOryUserBootstrapped({
+      accessToken: jwt({
+        iss: 'https://ory.example.test',
+        sub: 'access-token-sub',
+        email: 'user@example.com',
+      }),
+      provider: 'ory',
+    })
+
+    expect(result).toBe(true)
+    expect(listUserTeamsMock).toHaveBeenCalledTimes(1)
+    expect(apiPostMock).not.toHaveBeenCalled()
+  })
+
+  it('returns false without bootstrapping when checking user teams fails', async () => {
+    listUserTeamsMock.mockResolvedValue({
+      ok: false,
+      error: new Error('dashboard-api unavailable'),
+    })
+
+    const result = await ensureOryUserBootstrapped({
+      accessToken: jwt({
+        iss: 'https://ory.example.test',
+        sub: 'access-token-sub',
+        email: 'user@example.com',
+      }),
+      provider: 'ory',
+    })
+
+    expect(result).toBe(false)
+    expect(listUserTeamsMock).toHaveBeenCalledTimes(1)
+    expect(apiPostMock).not.toHaveBeenCalled()
+    expect(loggerMocks.error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        key: 'auth_events:bootstrap_user:team_check_error',
+        user_id: 'access-token-sub',
+      }),
+      expect.stringContaining('already has a dashboard team')
+    )
+  })
+
   it('bootstraps through dashboard-api when no user team resolves', async () => {
     listUserTeamsMock.mockResolvedValue({ ok: true, data: [] })
     apiPostMock.mockResolvedValue({

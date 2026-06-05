@@ -29,13 +29,24 @@ type OryTokenClaims = {
   preferred_username?: unknown
 }
 
+type BootstrapTeamCheck = 'has-team' | 'missing-team' | 'failed'
+
 export async function ensureOryUserBootstrapped(
   input: BootstrapOryUserInput
 ): Promise<boolean> {
   const claims = readBootstrapClaims(input)
   if (!claims) return false
 
-  if (await hasBootstrappedUserTeam(claims.oidcUserId, input.accessToken)) {
+  const teamCheck = await checkBootstrappedUserTeam(
+    claims.oidcUserId,
+    input.accessToken
+  )
+
+  if (teamCheck === 'failed') {
+    return false
+  }
+
+  if (teamCheck === 'has-team') {
     return true
   }
 
@@ -51,10 +62,10 @@ export async function bootstrapOryUser(
   return bootstrapOryUserWithClaims(claims, input.provider)
 }
 
-async function hasBootstrappedUserTeam(
+async function checkBootstrappedUserTeam(
   userId: string,
   accessToken: string
-): Promise<boolean> {
+): Promise<BootstrapTeamCheck> {
   const userTeamsRepository = createUserTeamsRepository({ accessToken })
   const teamsResult = await userTeamsRepository.listUserTeams()
 
@@ -66,10 +77,10 @@ async function hasBootstrappedUserTeam(
       },
       'Failed to check whether Ory user already has a dashboard team'
     )
-    return false
+    return 'failed'
   }
 
-  return teamsResult.data.some((team) => Boolean(team.slug))
+  return teamsResult.data.length > 0 ? 'has-team' : 'missing-team'
 }
 
 function readBootstrapClaims(
