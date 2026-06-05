@@ -128,9 +128,7 @@ describe('webhook chart utils', () => {
       },
     ] satisfies Parameters<typeof getDeliveryCountSeriesData>[0]
 
-    expect(
-      getDeliveryCountSeriesData(buckets, rangeBounds, 3600)
-    ).toEqual([
+    expect(getDeliveryCountSeriesData(buckets, rangeBounds, 3600)).toEqual([
       {
         synthetic: true,
         timestamp: new Date(Date.UTC(2026, 5, 3, 13)).toISOString(),
@@ -187,9 +185,7 @@ describe('webhook chart utils', () => {
       },
     ] satisfies Parameters<typeof getResponseTimeSeriesData>[0]
 
-    expect(
-      getResponseTimeSeriesData(buckets, rangeBounds, 'avg')
-    ).toEqual([
+    expect(getResponseTimeSeriesData(buckets, rangeBounds, 'avg')).toEqual([
       {
         synthetic: true,
         timestamp: new Date(rangeBounds.start).toISOString(),
@@ -204,9 +200,7 @@ describe('webhook chart utils', () => {
         value: 100,
       },
     ])
-    expect(
-      getResponseTimeSeriesData(buckets, rangeBounds, 'min')
-    ).toEqual([
+    expect(getResponseTimeSeriesData(buckets, rangeBounds, 'min')).toEqual([
       {
         synthetic: true,
         timestamp: new Date(rangeBounds.start).toISOString(),
@@ -221,9 +215,7 @@ describe('webhook chart utils', () => {
         value: 50,
       },
     ])
-    expect(
-      getResponseTimeSeriesData(buckets, rangeBounds, 'max')
-    ).toEqual([
+    expect(getResponseTimeSeriesData(buckets, rangeBounds, 'max')).toEqual([
       {
         synthetic: true,
         timestamp: new Date(rangeBounds.start).toISOString(),

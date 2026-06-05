@@ -46,7 +46,9 @@ export const UpdateWebhookSecretInputSchema = z.object({
 })
 
 const DeliveryStatusSchema = z.enum(['success', 'failed'])
-const WebhookStatsBucketIntervalSecondsSchema = z.literal([60, 300, 600, 1800, 3600, 14400, 86400] as const)
+const WebhookStatsBucketIntervalSecondsSchema = z.literal([
+  60, 300, 600, 1800, 3600, 14400, 86400,
+] as const)
 
 export const GetWebhookInputSchema = z.object({
   webhookId: z.uuid(),
