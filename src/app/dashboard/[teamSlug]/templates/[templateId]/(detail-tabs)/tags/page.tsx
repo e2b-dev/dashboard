@@ -22,7 +22,7 @@ export default async function TemplateTagsPage({
 
   return (
     <HydrateClient>
-      <div className="h-full min-h-0 flex-1 py-6 md:py-10 px-8 md:px-11 flex flex-col gap-3 max-w-[924px] mx-auto w-full">
+      <div className="h-full min-h-0 flex-1 pt-6 pb-2 md:pt-10 md:pb-4 px-8 md:px-11 flex flex-col gap-3 max-w-[924px] mx-auto w-full">
         <Suspense fallback={<LoadingLayout />}>
           <TagsTable teamSlug={teamSlug} templateId={templateId} />
         </Suspense>
