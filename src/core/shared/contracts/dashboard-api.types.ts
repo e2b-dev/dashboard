@@ -370,6 +370,53 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/admin/teams/bootstrap': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Bootstrap team
+     * @description Creates and provisions a team for an admin-authenticated bootstrap workflow.
+     */
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['AdminTeamBootstrapRequest']
+        }
+      }
+      responses: {
+        /** @description Successfully bootstrapped team. */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['TeamResolveResponse']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        500: components['responses']['500']
+        502: components['responses']['502']
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/admin/user-profiles/resolve': {
     parameters: {
       query?: never
@@ -706,6 +753,64 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/templates': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List team templates
+     * @description Returns a paginated list of the team's templates (and default templates inline, unless the team is on a dedicated cluster), with filtering, search, and column sorting via keyset cursor pagination.
+     */
+    get: {
+      parameters: {
+        query?: {
+          /** @description Filter templates by exact vCPU count. */
+          cpuCount?: components['parameters']['templates_cpu_count']
+          /** @description Filter templates by exact memory size in MB. */
+          memoryMB?: components['parameters']['templates_memory_mb']
+          /** @description Filter templates by visibility (true = public, false = internal). */
+          public?: components['parameters']['templates_public']
+          /** @description Case-insensitive substring match on template names, aliases, and template id. */
+          search?: components['parameters']['templates_search']
+          /** @description Sort column and direction. */
+          sort?: components['parameters']['templates_sort']
+          /** @description Maximum number of items to return per page. */
+          limit?: components['parameters']['templates_limit']
+          /** @description Cursor returned by the previous list response in `{sort}|{value}|{templateID}` format. Rejected if its sort does not match the request. */
+          cursor?: components['parameters']['templates_cursor']
+        }
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned paginated templates. */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['TeamTemplatesResponse']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        403: components['responses']['403']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/templates/defaults': {
     parameters: {
       query?: never
@@ -785,6 +890,15 @@ export interface components {
       /** Format: email */
       oidc_user_email: string
       oidc_user_name?: string | null
+    }
+    AdminTeamBootstrapRequest: {
+      /** @description Team name. */
+      name: string
+      /**
+       * Format: email
+       * @description Billing/contact email for the team.
+       */
+      email: string
     }
     /**
      * @description Build status mapped for dashboard clients.
@@ -992,6 +1106,43 @@ export interface components {
     DefaultTemplatesResponse: {
       templates: components['schemas']['DefaultTemplate'][]
     }
+    TeamTemplate: {
+      templateID: string
+      /** Format: uuid */
+      buildID: string
+      /** Format: int64 */
+      cpuCount: number
+      /** Format: int64 */
+      memoryMB: number
+      /** Format: int64 */
+      diskSizeMB: number | null
+      public: boolean
+      aliases: string[]
+      names: string[]
+      /** Format: date-time */
+      createdAt: string
+      /** Format: date-time */
+      updatedAt: string
+      createdBy: {
+        /** Format: uuid */
+        id: string
+        email?: string | null
+      } | null
+      /** Format: date-time */
+      lastSpawnedAt: string | null
+      /** Format: int64 */
+      spawnCount: number
+      /** Format: int32 */
+      buildCount: number
+      envdVersion: string | null
+      isDefault: boolean
+      defaultDescription?: string | null
+    }
+    TeamTemplatesResponse: {
+      data: components['schemas']['TeamTemplate'][]
+      /** @description Cursor to pass to the next list request, or `null` if there is no next page. */
+      nextCursor: string | null
+    }
     TeamResolveResponse: {
       /** Format: uuid */
       id: string
@@ -1044,6 +1195,15 @@ export interface components {
         'application/json': components['schemas']['Error']
       }
     }
+    /** @description Upstream error */
+    502: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['Error']
+      }
+    }
   }
   parameters: {
     /** @description Identifier of the build. */
@@ -1066,6 +1226,30 @@ export interface components {
     userId: string
     /** @description Team slug to resolve. */
     teamSlug: string
+    /** @description Maximum number of items to return per page. */
+    templates_limit: number
+    /** @description Cursor returned by the previous list response in `{sort}|{value}|{templateID}` format. Rejected if its sort does not match the request. */
+    templates_cursor: string
+    /** @description Filter templates by exact vCPU count. */
+    templates_cpu_count: number
+    /** @description Filter templates by exact memory size in MB. */
+    templates_memory_mb: number
+    /** @description Filter templates by visibility (true = public, false = internal). */
+    templates_public: boolean
+    /** @description Case-insensitive substring match on template names, aliases, and template id. */
+    templates_search: string
+    /** @description Sort column and direction. */
+    templates_sort:
+      | 'name_asc'
+      | 'name_desc'
+      | 'cpu_count_asc'
+      | 'cpu_count_desc'
+      | 'memory_mb_asc'
+      | 'memory_mb_desc'
+      | 'created_at_asc'
+      | 'created_at_desc'
+      | 'updated_at_asc'
+      | 'updated_at_desc'
   }
   requestBodies: never
   headers: never
