@@ -44,6 +44,14 @@ export default function TagHistoryView({
   const router = useRouter()
   const scrollRef = useRef<HTMLDivElement>(null)
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const url = new URL(window.location.href)
+    if (!url.searchParams.has('tags-table')) return
+    url.searchParams.delete('tags-table')
+    window.history.replaceState(window.history.state, '', url)
+  }, [])
+
   const { data: templateData } = useSuspenseQuery(
     trpc.templates.getTemplate.queryOptions(
       { teamSlug, templateId },

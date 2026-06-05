@@ -1,6 +1,7 @@
 'use client'
 
 import { useSuspenseQuery } from '@tanstack/react-query'
+import { useParams } from 'next/navigation'
 import { useMemo } from 'react'
 import type { TitleSegment } from '@/configs/layout'
 import { PROTECTED_URLS } from '@/configs/urls'
@@ -18,6 +19,9 @@ export default function TemplateTitleBinder({
   templateId,
 }: TemplateTitleBinderProps) {
   const trpc = useTRPC()
+  const params = useParams<{ tag?: string }>()
+  const rawTag = params?.tag
+  const tag = rawTag ? decodeURIComponent(rawTag) : undefined
 
   const { data } = useSuspenseQuery(
     trpc.templates.getTemplate.queryOptions({ teamSlug, templateId })
@@ -30,18 +34,19 @@ export default function TemplateTitleBinder({
     [template]
   )
 
-  const titleSegments = useMemo<TitleSegment[]>(
-    () => [
+  const titleSegments = useMemo<TitleSegment[]>(() => {
+    const segments: TitleSegment[] = [
       {
         label: 'Templates',
         href: PROTECTED_URLS.TEMPLATES_LIST(teamSlug),
       },
       { label: displayName },
-    ],
-    [teamSlug, displayName]
-  )
+    ]
+    if (tag) segments.push({ label: tag })
+    return segments
+  }, [teamSlug, displayName, tag])
 
-  usePageTitle(titleSegments, displayName)
+  usePageTitle(titleSegments, tag ? undefined : displayName)
 
   return null
 }

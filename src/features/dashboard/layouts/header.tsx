@@ -25,7 +25,9 @@ export default function DashboardLayoutHeader({
   const override = usePageTitleStore((state) => state.override)
 
   const title = override?.title ?? config.title
-  const copyableValue = override?.copyValue ?? config.copyValue ?? null
+  const copyableValue = override
+    ? (override.copyValue ?? null)
+    : (config.copyValue ?? null)
 
   return (
     <div
