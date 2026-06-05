@@ -4,7 +4,6 @@ import { transformMetrics } from '@/features/dashboard/sandboxes/monitoring/char
 import {
   getDeliveryCountSeriesData,
   getResponseTimeSeriesData,
-  getTimestampBucketInterval,
 } from '@/features/dashboard/settings/webhooks/detail/chart-utils'
 import { calculateAxisMax } from '@/lib/utils/chart'
 
@@ -101,14 +100,14 @@ describe('team-metrics-chart-utils', () => {
 })
 
 describe('webhook chart utils', () => {
-  it('groups short-range delivery counts by visible hourly buckets', () => {
+  it('fills missing delivery count buckets from API bucket data', () => {
     const rangeBounds = {
       start: Date.UTC(2026, 5, 3, 13, 30),
       end: Date.UTC(2026, 5, 3, 17, 30),
     }
     const buckets = [
       {
-        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 47)).toISOString(),
+        timestamp: new Date(Date.UTC(2026, 5, 3, 16)).toISOString(),
         total: 1,
         failed: 0,
         durationMs: {
@@ -118,7 +117,7 @@ describe('webhook chart utils', () => {
         },
       },
       {
-        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 49)).toISOString(),
+        timestamp: new Date(Date.UTC(2026, 5, 3, 17)).toISOString(),
         total: 1,
         failed: 0,
         durationMs: {
@@ -129,9 +128,8 @@ describe('webhook chart utils', () => {
       },
     ] satisfies Parameters<typeof getDeliveryCountSeriesData>[0]
 
-    expect(getTimestampBucketInterval(rangeBounds)).toBe(60 * 60 * 1000)
     expect(
-      getDeliveryCountSeriesData(buckets, rangeBounds, 'timestamp')
+      getDeliveryCountSeriesData(buckets, rangeBounds, 3600)
     ).toEqual([
       {
         synthetic: true,
@@ -151,24 +149,24 @@ describe('webhook chart utils', () => {
       {
         synthetic: false,
         timestamp: new Date(Date.UTC(2026, 5, 3, 16)).toISOString(),
-        value: 2,
+        value: 1,
       },
       {
-        synthetic: true,
+        synthetic: false,
         timestamp: new Date(Date.UTC(2026, 5, 3, 17)).toISOString(),
-        value: 0,
+        value: 1,
       },
     ])
   })
 
-  it('groups short-range response times by visible hourly buckets', () => {
+  it('maps response times from API bucket data', () => {
     const rangeBounds = {
       start: Date.UTC(2026, 5, 3, 13, 30),
       end: Date.UTC(2026, 5, 3, 17, 30),
     }
     const buckets = [
       {
-        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 47)).toISOString(),
+        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 40)).toISOString(),
         total: 1,
         failed: 0,
         durationMs: {
@@ -178,7 +176,7 @@ describe('webhook chart utils', () => {
         },
       },
       {
-        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 49)).toISOString(),
+        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 50)).toISOString(),
         total: 1,
         failed: 0,
         durationMs: {
@@ -190,7 +188,7 @@ describe('webhook chart utils', () => {
     ] satisfies Parameters<typeof getResponseTimeSeriesData>[0]
 
     expect(
-      getResponseTimeSeriesData(buckets, rangeBounds, 'timestamp', 'avg')
+      getResponseTimeSeriesData(buckets, rangeBounds, 'avg')
     ).toEqual([
       {
         synthetic: true,
@@ -198,12 +196,16 @@ describe('webhook chart utils', () => {
         value: 0,
       },
       {
-        timestamp: new Date(Date.UTC(2026, 5, 3, 16)).toISOString(),
-        value: 91,
+        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 40)).toISOString(),
+        value: 82,
+      },
+      {
+        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 50)).toISOString(),
+        value: 100,
       },
     ])
     expect(
-      getResponseTimeSeriesData(buckets, rangeBounds, 'timestamp', 'min')
+      getResponseTimeSeriesData(buckets, rangeBounds, 'min')
     ).toEqual([
       {
         synthetic: true,
@@ -211,12 +213,16 @@ describe('webhook chart utils', () => {
         value: 0,
       },
       {
-        timestamp: new Date(Date.UTC(2026, 5, 3, 16)).toISOString(),
+        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 40)).toISOString(),
+        value: 65,
+      },
+      {
+        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 50)).toISOString(),
         value: 50,
       },
     ])
     expect(
-      getResponseTimeSeriesData(buckets, rangeBounds, 'timestamp', 'max')
+      getResponseTimeSeriesData(buckets, rangeBounds, 'max')
     ).toEqual([
       {
         synthetic: true,
@@ -224,24 +230,13 @@ describe('webhook chart utils', () => {
         value: 0,
       },
       {
-        timestamp: new Date(Date.UTC(2026, 5, 3, 16)).toISOString(),
+        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 40)).toISOString(),
+        value: 99,
+      },
+      {
+        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 50)).toISOString(),
         value: 150,
       },
     ])
-  })
-
-  it('uses hourly buckets for 12-hour and today-sized ranges', () => {
-    expect(
-      getTimestampBucketInterval({
-        start: Date.UTC(2026, 5, 3, 5),
-        end: Date.UTC(2026, 5, 3, 17),
-      })
-    ).toBe(60 * 60 * 1000)
-    expect(
-      getTimestampBucketInterval({
-        start: Date.UTC(2026, 5, 3, 0),
-        end: Date.UTC(2026, 5, 3, 17),
-      })
-    ).toBe(60 * 60 * 1000)
   })
 })

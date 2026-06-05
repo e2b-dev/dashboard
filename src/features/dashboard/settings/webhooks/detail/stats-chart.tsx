@@ -52,6 +52,7 @@ type StatsChartSeries = {
 
 type StatsChartProps = {
   series: StatsChartSeries[]
+  bucketIntervalSeconds?: number
   chartType?: 'line' | 'scatter'
   className?: string
   valueFormatter?: (value: number) => string
@@ -115,29 +116,53 @@ const getXAxisInterval = ({
 
 const defaultValueFormatter = (value: number) => value.toLocaleString()
 
+const getTooltipDayLabel = (date: Date) => {
+  const now = new Date()
+  const yesterday = new Date()
+  yesterday.setDate(now.getDate() - 1)
+
+  if (date.toDateString() === now.toDateString()) return 'Today'
+  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday'
+
+  return date.toLocaleDateString('en-US', { weekday: 'long' })
+}
+
+const formatTooltipTime = (date: Date, showMinutes: boolean) =>
+  date
+    .toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: showMinutes ? '2-digit' : undefined,
+    })
+    .replace(/\s/g, '')
+    .toLowerCase()
+
 const formatTooltipTimestamp = (
   timestampMs: number,
   range: NonNullable<StatsChartProps['xAxisRange']>
 ) => {
   const date = new Date(timestampMs)
-  const now = new Date()
-  const yesterday = new Date()
-  yesterday.setDate(now.getDate() - 1)
-
-  const day =
-    date.toDateString() === now.toDateString()
-      ? 'Today'
-      : date.toDateString() === yesterday.toDateString()
-        ? 'Yesterday'
-        : date.toLocaleDateString('en-US', { weekday: 'long' })
+  const day = getTooltipDayLabel(date)
   if (range === 'this-week') return day
 
-  const time = date
-    .toLocaleTimeString('en-US', { hour: 'numeric' })
-    .replace(/\s/g, '')
-    .toLowerCase()
+  const time = formatTooltipTime(date, false)
 
   return `${day}, ${time}`
+}
+
+const formatTooltipInterval = (
+  startTimestampMs: number,
+  bucketIntervalSeconds: number,
+  range: NonNullable<StatsChartProps['xAxisRange']>
+) => {
+  const startDate = new Date(startTimestampMs)
+  if (range === 'this-week') return getTooltipDayLabel(startDate)
+
+  const endDate = new Date(startTimestampMs + bucketIntervalSeconds * 1000)
+  const showMinutes = bucketIntervalSeconds < HOUR_MS / 1000
+  const startTime = formatTooltipTime(startDate, showMinutes)
+  const endTime = formatTooltipTime(endDate, showMinutes)
+
+  return `${getTooltipDayLabel(startDate)}, ${startTime} — ${endTime}`
 }
 
 const getTooltipTimestampMs = (param: unknown) => {
@@ -160,6 +185,7 @@ const getTooltipSyntheticValue = (param: unknown) => {
 
 const StatsChart = memo(function StatsChart({
   series,
+  bucketIntervalSeconds,
   chartType = 'scatter',
   className,
   valueFormatter = defaultValueFormatter,
@@ -238,8 +264,12 @@ const StatsChart = memo(function StatsChart({
 
       if (rows.length === 0) return ''
 
+      const tooltipTimestamp = bucketIntervalSeconds
+        ? formatTooltipInterval(timestampMs, bucketIntervalSeconds, xAxisRange)
+        : formatTooltipTimestamp(timestampMs, xAxisRange)
+
       return `<div style="display:flex;flex-direction:column;gap:4px;">
-        <div>${formatTooltipTimestamp(timestampMs, xAxisRange)}</div>
+        <div>${tooltipTimestamp}</div>
         <div style="display:table;border-spacing:0 4px;">${rows.join('')}</div>
       </div>`
     }
@@ -368,6 +398,7 @@ const StatsChart = memo(function StatsChart({
     }
   }, [
     series,
+    bucketIntervalSeconds,
     chartType,
     cssVars,
     stroke,

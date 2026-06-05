@@ -46,6 +46,7 @@ export const UpdateWebhookSecretInputSchema = z.object({
 })
 
 const DeliveryStatusSchema = z.enum(['success', 'failed'])
+const WebhookStatsBucketIntervalSecondsSchema = z.literal([60, 300, 600, 1800, 3600, 14400, 86400] as const)
 
 export const GetWebhookInputSchema = z.object({
   webhookId: z.uuid(),
@@ -67,6 +68,7 @@ export const GetWebhookDeliveryStatsInputSchema = z
     webhookId: z.uuid(),
     start: z.iso.datetime().optional(),
     end: z.iso.datetime().optional(),
+    bucketIntervalSeconds: WebhookStatsBucketIntervalSecondsSchema.optional(),
   })
   .superRefine((data, ctx) => {
     if (!data.start || !data.end) return
@@ -94,4 +96,7 @@ export type ListWebhookDeliveriesInput = z.input<
 >
 export type GetWebhookDeliveryStatsInput = z.input<
   typeof GetWebhookDeliveryStatsInputSchema
+>
+export type WebhookStatsBucketIntervalSeconds = z.infer<
+  typeof WebhookStatsBucketIntervalSecondsSchema
 >

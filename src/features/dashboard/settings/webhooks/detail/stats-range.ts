@@ -1,4 +1,5 @@
 import { createLoader, parseAsInteger } from 'nuqs/server'
+import type { WebhookStatsBucketIntervalSeconds } from '@/core/server/functions/webhooks/schema'
 
 type WebhookStatsRangeBounds = {
   start: number
@@ -6,11 +7,14 @@ type WebhookStatsRangeBounds = {
 }
 
 type WebhookStatsApiBounds = {
+  bucketIntervalSeconds: WebhookStatsBucketIntervalSeconds
   start: string
   end: string
 }
 
 const MAX_WEBHOOK_STATS_RANGE_MS = 7 * 24 * 60 * 60 * 1000
+const HOUR_MS = 60 * 60 * 1000
+const DAY_MS = 24 * HOUR_MS
 
 const webhookStatsTimeframeParams = {
   start: parseAsInteger,
@@ -88,9 +92,23 @@ const getWebhookStatsApiBounds = ({
   start,
   end,
 }: WebhookStatsRangeBounds): WebhookStatsApiBounds => ({
+  bucketIntervalSeconds: getWebhookStatsBucketIntervalSeconds({ start, end }),
   start: new Date(start).toISOString(),
   end: new Date(end).toISOString(),
 })
+
+// Picks the API bucket size for a range, e.g. a 12h range -> 600 seconds.
+const getWebhookStatsBucketIntervalSeconds = ({
+  start,
+  end,
+}: WebhookStatsRangeBounds): WebhookStatsBucketIntervalSeconds => {
+  const rangeMs = end - start
+  if (rangeMs <= HOUR_MS) return 60
+  if (rangeMs <= 12 * HOUR_MS) return 600
+  if (rangeMs <= DAY_MS) return 1800
+
+  return 86400
+}
 
 const getWebhookStatsRangeFromBounds = ({
   start,
@@ -114,6 +132,7 @@ const getValidWebhookStatsBounds = ({
 export {
   DEFAULT_WEBHOOK_STATS_RANGE,
   getWebhookStatsApiBounds,
+  getWebhookStatsBucketIntervalSeconds,
   getWebhookStatsRange,
   getWebhookStatsRangeFromBounds,
   getValidWebhookStatsBounds,

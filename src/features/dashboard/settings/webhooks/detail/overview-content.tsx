@@ -7,10 +7,8 @@ import { useMemo } from 'react'
 import { useTRPC } from '@/trpc/client'
 import {
   getDeliveryCountSeriesData,
-  getEmptyDeliveryCountSeriesData,
   getResponseTimeSeriesData,
   hideInactiveZeroValuePoints,
-  type WebhookStatsGrouping,
 } from './chart-utils'
 import { StatsChart, type StatsChartSeries } from './stats-chart'
 import { StatsIntervalSelect } from './stats-interval-select'
@@ -101,14 +99,18 @@ export const WebhookOverviewContent = ({
     stats.total > 0
       ? `${((stats.failed / stats.total) * 100).toFixed(1)}%`
       : '0%'
+  const bucketIntervalSeconds = apiRangeBounds.bucketIntervalSeconds
   const rangeStartMs = rangeBounds.start
   const rangeEndMs = rangeBounds.end
-  const grouping: WebhookStatsGrouping =
-    range === 'this-week' ? 'day' : 'timestamp'
   const hasFailedDeliveries = buckets.some((bucket) => bucket.failed > 0)
   const failedDeliverySeriesData =
     buckets.length > 0
-      ? getDeliveryCountSeriesData(buckets, rangeBounds, grouping, 'failed')
+      ? getDeliveryCountSeriesData(
+          buckets,
+          rangeBounds,
+          bucketIntervalSeconds,
+          'failed'
+        )
       : []
   const deliverySeries = [
     {
@@ -116,10 +118,11 @@ export const WebhookOverviewContent = ({
       colorVar: '--accent-info-highlight',
       showSymbol: true,
       z: 2,
-      data:
-        buckets.length > 0
-          ? getDeliveryCountSeriesData(buckets, rangeBounds, grouping)
-          : getEmptyDeliveryCountSeriesData(rangeBounds, grouping),
+      data: getDeliveryCountSeriesData(
+        buckets,
+        rangeBounds,
+        bucketIntervalSeconds
+      ),
     },
     {
       name: 'Failed deliveries',
@@ -137,7 +140,7 @@ export const WebhookOverviewContent = ({
       lineWidth: 2,
       showSymbol: true,
       z: 1,
-      data: getResponseTimeSeriesData(buckets, rangeBounds, grouping, 'min'),
+      data: getResponseTimeSeriesData(buckets, rangeBounds, 'min'),
     },
     {
       name: 'Avg',
@@ -146,7 +149,7 @@ export const WebhookOverviewContent = ({
       lineWidth: 2,
       showSymbol: true,
       z: 3,
-      data: getResponseTimeSeriesData(buckets, rangeBounds, grouping, 'avg'),
+      data: getResponseTimeSeriesData(buckets, rangeBounds, 'avg'),
     },
     {
       name: 'Max',
@@ -155,7 +158,7 @@ export const WebhookOverviewContent = ({
       lineWidth: 2,
       showSymbol: true,
       z: 2,
-      data: getResponseTimeSeriesData(buckets, rangeBounds, grouping, 'max'),
+      data: getResponseTimeSeriesData(buckets, rangeBounds, 'max'),
     },
   ] satisfies StatsChartSeries[]
   const handleRangeChange = (nextRange: WebhookStatsRange) => {
@@ -195,6 +198,7 @@ export const WebhookOverviewContent = ({
         <ChartPanel title="Event deliveries">
           <StatsChart
             series={deliverySeries}
+            bucketIntervalSeconds={bucketIntervalSeconds}
             chartType="line"
             xAxisRange={range}
             xAxisMin={rangeStartMs}
@@ -205,6 +209,7 @@ export const WebhookOverviewContent = ({
         <ChartPanel title="Response time">
           <StatsChart
             series={latencySeries}
+            bucketIntervalSeconds={bucketIntervalSeconds}
             xAxisMin={rangeStartMs}
             xAxisMax={rangeEndMs}
             xAxisRange={range}

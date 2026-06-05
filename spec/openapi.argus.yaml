@@ -819,6 +819,14 @@ paths:
             type: string
             format: date-time
           description: Exclusive stats range end. Defaults to now.
+        - name: bucketIntervalSeconds
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            enum: [60, 300, 600, 1800, 3600, 14400, 86400]
+          description: Stats bucket interval in seconds. Defaults based on the selected range.
       responses:
         "200":
           description: Webhook delivery stats.

@@ -5,104 +5,32 @@ import type { WebhookStatsRangeBounds } from './stats-range'
 type WebhookDeliveryStats =
   TRPCRouterOutputs['webhooks']['getDeliveryStats']['stats']
 
-type ResponseTimeTimestampStats = {
-  count: number
-  maxDurationMs: number
-  minDurationMs: number
-  timestampMs: number
-  totalDurationMs: number
-}
-
-type WebhookStatsGrouping = 'day' | 'timestamp'
 type WebhookDeliveryStatsBucket = WebhookDeliveryStats['buckets'][number]
-type WebhookDeliveryStatus = 'failed'
+type DeliveryCountMetric = 'failed' | 'total'
+type ResponseTimeMetric = 'avg' | 'max' | 'min'
 
-const DAY_MS = 24 * 60 * 60 * 1000
-const HOUR_MS = 60 * 60 * 1000
-
-const getStartOfDay = (timestampMs: number) => {
-  const date = new Date(timestampMs)
-  date.setHours(0, 0, 0, 0)
-
-  return date.getTime()
-}
-
-const getSeriesTimestamp = (
-  timestamp: string,
-  grouping: WebhookStatsGrouping
-) => {
-  const timestampMs = new Date(timestamp).getTime()
-  if (grouping === 'day') return getStartOfDay(timestampMs)
-
-  return timestampMs
-}
-
-const getTimestampBucketInterval = ({
-  start,
-  end,
-}: WebhookStatsRangeBounds) => {
-  const rangeMs = end - start
-  if (rangeMs <= DAY_MS) return HOUR_MS
-
-  return 4 * HOUR_MS
-}
-
-// Groups delivery buckets by chart granularity, e.g. minute buckets from one day -> one daily count.
+// Builds delivery count points from API buckets, e.g. 10m buckets -> chart points with missing buckets filled as 0.
 const getDeliveryCountSeriesData = (
   buckets: WebhookDeliveryStatsBucket[],
   rangeBounds: WebhookStatsRangeBounds,
-  grouping: WebhookStatsGrouping,
-  status?: WebhookDeliveryStatus
+  bucketIntervalSeconds: number,
+  metric: DeliveryCountMetric = 'total'
 ) => {
-  const countByTimestamp = new Map<
-    number,
-    { count: number; timestampMs: number }
-  >()
-  const timestampBucketInterval = getTimestampBucketInterval(rangeBounds)
+  const countByTimestamp = new Map<number, number>()
+  const intervalMs = bucketIntervalSeconds * 1000
 
   for (const bucket of buckets) {
-    const count = status === 'failed' ? bucket.failed : bucket.total
-    if (count <= 0) continue
-
-    const timestampMs = getSeriesTimestamp(bucket.timestamp, grouping)
-    const bucketTimestampMs =
-      grouping === 'day'
-        ? timestampMs
-        : Math.floor(timestampMs / timestampBucketInterval) *
-          timestampBucketInterval
-    const current = countByTimestamp.get(bucketTimestampMs)
-
-    countByTimestamp.set(bucketTimestampMs, {
-      count: (current?.count ?? 0) + count,
-      timestampMs: Math.max(current?.timestampMs ?? timestampMs, timestampMs),
-    })
-  }
-
-  if (grouping === 'day') {
-    const points = []
-    const start = getStartOfDay(rangeBounds.start)
-    const end = getStartOfDay(rangeBounds.end)
-
-    for (let timestampMs = start; timestampMs <= end; timestampMs += DAY_MS) {
-      const value = countByTimestamp.get(timestampMs)?.count ?? 0
-
-      points.push({
-        synthetic: value === 0,
-        timestamp: new Date(timestampMs).toISOString(),
-        value,
-      })
-    }
-
-    return points
+    const count = metric === 'failed' ? bucket.failed : bucket.total
+    const timestampMs = new Date(bucket.timestamp).getTime()
+    countByTimestamp.set(timestampMs, count)
   }
 
   const points: StatsChartPoint[] = []
-  const interval = getTimestampBucketInterval(rangeBounds)
-  const start = Math.floor(rangeBounds.start / interval) * interval
-  const end = Math.floor(rangeBounds.end / interval) * interval
+  const start = Math.floor(rangeBounds.start / intervalMs) * intervalMs
+  const end = Math.floor(rangeBounds.end / intervalMs) * intervalMs
 
-  for (let timestampMs = start; timestampMs <= end; timestampMs += interval) {
-    const value = countByTimestamp.get(timestampMs)?.count ?? 0
+  for (let timestampMs = start; timestampMs <= end; timestampMs += intervalMs) {
+    const value = countByTimestamp.get(timestampMs) ?? 0
 
     points.push({
       synthetic: value === 0,
@@ -112,41 +40,6 @@ const getDeliveryCountSeriesData = (
   }
 
   return points
-}
-
-// Builds a zero-value baseline for an empty range, e.g. [May 19 10am, May 19 2pm] -> 0 deliveries line.
-const getEmptyDeliveryCountSeriesData = (
-  rangeBounds: WebhookStatsRangeBounds,
-  grouping: WebhookStatsGrouping
-) => {
-  if (grouping === 'day') {
-    const points = []
-    const start = getStartOfDay(rangeBounds.start)
-    const end = getStartOfDay(rangeBounds.end)
-
-    for (let timestampMs = start; timestampMs <= end; timestampMs += DAY_MS) {
-      points.push({
-        synthetic: true,
-        timestamp: new Date(timestampMs).toISOString(),
-        value: 0,
-      })
-    }
-
-    return points
-  }
-
-  return [
-    {
-      synthetic: true,
-      timestamp: new Date(rangeBounds.start).toISOString(),
-      value: 0,
-    },
-    {
-      synthetic: true,
-      timestamp: new Date(rangeBounds.end).toISOString(),
-      value: 0,
-    },
-  ]
 }
 
 const hideInactiveZeroValuePoints = (
@@ -164,88 +57,46 @@ const hideInactiveZeroValuePoints = (
     return { ...point, synthetic: true, value: null }
   })
 
-// Groups response-time buckets by chart granularity, e.g. minute buckets from one day -> one daily min/avg/max point.
+// Builds response-time points from API buckets, e.g. a bucket average -> one chart point.
 const getResponseTimeSeriesData = (
   buckets: WebhookDeliveryStatsBucket[],
   rangeBounds: WebhookStatsRangeBounds,
-  grouping: WebhookStatsGrouping,
-  metric: 'avg' | 'max' | 'min'
+  metric: ResponseTimeMetric
 ) => {
-  const statsByTimestamp = new Map<number, ResponseTimeTimestampStats>()
-  const timestampBucketInterval = getTimestampBucketInterval(rangeBounds)
-
-  for (const bucket of buckets) {
-    if (bucket.total <= 0) continue
-
-    const timestampMs = getSeriesTimestamp(bucket.timestamp, grouping)
-    const bucketTimestampMs =
-      grouping === 'day'
-        ? timestampMs
-        : Math.floor(timestampMs / timestampBucketInterval) *
-          timestampBucketInterval
-    const currentStats = statsByTimestamp.get(bucketTimestampMs)
-    const durationTotal = bucket.durationMs.average * bucket.total
-
-    statsByTimestamp.set(
-      bucketTimestampMs,
-      currentStats
-        ? {
-            count: currentStats.count + bucket.total,
-            maxDurationMs: Math.max(
-              currentStats.maxDurationMs,
-              bucket.durationMs.maximum
-            ),
-            minDurationMs: Math.min(
-              currentStats.minDurationMs,
-              bucket.durationMs.minimum
-            ),
-            timestampMs: Math.max(currentStats.timestampMs, timestampMs),
-            totalDurationMs: currentStats.totalDurationMs + durationTotal,
-          }
-        : {
-            count: bucket.total,
-            maxDurationMs: bucket.durationMs.maximum,
-            minDurationMs: bucket.durationMs.minimum,
-            timestampMs,
-            totalDurationMs: durationTotal,
-          }
-    )
+  const baseline: StatsChartPoint = {
+    synthetic: true,
+    timestamp: new Date(rangeBounds.start).toISOString(),
+    value: 0,
   }
+  const bucketPoints = buckets.flatMap((bucket) => {
+    if (bucket.total <= 0) return []
 
-  const points: StatsChartPoint[] = [
-    {
-      synthetic: true,
-      timestamp: new Date(rangeBounds.start).toISOString(),
-      value: 0,
-    },
+    const value =
+      metric === 'avg'
+        ? bucket.durationMs.average
+        : metric === 'max'
+          ? bucket.durationMs.maximum
+          : bucket.durationMs.minimum
+
+    return [
+      {
+        timestamp: bucket.timestamp,
+        value,
+      },
+    ]
+  })
+
+  return [
+    baseline,
+    ...bucketPoints.sort(
+      (left, right) =>
+        new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime()
+    ),
   ]
-
-  points.push(
-    ...Array.from(statsByTimestamp)
-      .sort(([left], [right]) => left - right)
-      .map(([bucketTimestampMs, stats]) => {
-        const value =
-          metric === 'avg'
-            ? stats.totalDurationMs / stats.count
-            : metric === 'max'
-              ? stats.maxDurationMs
-              : stats.minDurationMs
-
-        return {
-          timestamp: new Date(bucketTimestampMs).toISOString(),
-          value,
-        }
-      })
-  )
-
-  return points
 }
 
 export {
   getDeliveryCountSeriesData,
-  getEmptyDeliveryCountSeriesData,
   getResponseTimeSeriesData,
-  getTimestampBucketInterval,
   hideInactiveZeroValuePoints,
-  type WebhookStatsGrouping,
 }
