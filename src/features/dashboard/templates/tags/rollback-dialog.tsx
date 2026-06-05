@@ -6,7 +6,6 @@ import {
   DialogContent,
   DialogDescription,
   DialogHeader,
-  DialogTitle,
 } from '@/ui/primitives/dialog'
 import { ArrowDivider } from './arrow-divider'
 import {
@@ -14,6 +13,7 @@ import {
   TagDialogFooter,
   TagDialogStageTransition,
   TagDialogSuccess,
+  TagDialogTitle,
 } from './components'
 import { trackTagTableInteraction } from './table-config'
 import { useTagAssignmentMutation } from './use-tag-assignment-mutation'
@@ -115,11 +115,16 @@ function RollbackTagDialogBody({
   return (
     <TagDialogStageTransition phase={stage === 'success' ? 'success' : 'form'}>
       <DialogHeader>
-        <DialogTitle className={stage === 'success' ? 'sr-only' : undefined}>
-          {stage === 'success'
-            ? `Rollback ‘${tag}’ succeeded`
-            : `Rollback ‘${tag}’`}
-        </DialogTitle>
+        {stage === 'success' ? (
+          <TagDialogTitle
+            srOnly
+            prefix="Rollback "
+            tag={tag}
+            suffix=" succeeded"
+          />
+        ) : (
+          <TagDialogTitle prefix="Rollback " tag={tag} />
+        )}
         <DialogDescription className="sr-only">
           {stage === 'success'
             ? `Tag ${tag} rolled back to build ${targetBuildId}.`

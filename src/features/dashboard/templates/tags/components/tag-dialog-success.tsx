@@ -2,6 +2,7 @@
 
 import { cn } from '@/lib/utils/ui'
 import { CheckIcon } from '@/ui/primitives/icons'
+import { MiddleTruncate } from '@/ui/primitives/middle-truncate'
 
 interface TagDialogSuccessProps {
   tag: string
@@ -22,9 +23,15 @@ export function TagDialogSuccess({
       )}
     >
       <CheckIcon className="size-12 text-accent-positive-highlight" />
-      <p className="prose-headline-small uppercase text-fg">
-        <span className="font-mono">‘{tag}’</span>
-        <br />
+      <p className="prose-headline-small text-fg max-w-full uppercase">
+        <span
+          className="flex max-w-full items-baseline justify-center font-mono"
+          title={`‘${tag}’`}
+        >
+          <span className="shrink-0">‘</span>
+          <MiddleTruncate tail={10} text={tag} className="min-w-0" />
+          <span className="shrink-0">’</span>
+        </span>
         {message}
       </p>
     </div>
