@@ -132,11 +132,10 @@ export function EmailSettings({ className }: EmailSettingsProps) {
         return
       }
 
-      toast(
-        defaultErrorToast(
-          searchParams.get('error') ?? 'Failed to update e-mail.'
-        )
-      )
+      const error = searchParams.get('error')
+      if (error !== null) {
+        toast(defaultErrorToast(error))
+      }
     }
   }, [searchParams, toast])
 
