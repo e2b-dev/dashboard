@@ -20,13 +20,6 @@ type SignUpOptions = {
   data?: Record<string, unknown>
 }
 
-type UpdateUserOptions = {
-  email?: string
-  password?: string
-  name?: string
-  emailRedirectTo?: string
-}
-
 export const supabaseAuthFlows = {
   async signInWithOAuth({
     provider,
@@ -61,20 +54,6 @@ export const supabaseAuthFlows = {
     const client = await createClient()
 
     return client.auth.resetPasswordForEmail(email)
-  },
-
-  async updateUser({
-    email,
-    password,
-    name,
-    emailRedirectTo,
-  }: UpdateUserOptions) {
-    const client = await createClient()
-
-    return client.auth.updateUser(
-      { email, password, data: { name } },
-      emailRedirectTo ? { emailRedirectTo } : undefined
-    )
   },
 
   async verifyOtp(...args: Parameters<SupabaseAuthClient['verifyOtp']>) {

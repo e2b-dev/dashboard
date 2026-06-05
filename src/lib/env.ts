@@ -59,6 +59,7 @@ export const clientSchema = z.object({
   NEXT_PUBLIC_SCAN: z.string().optional(),
   NEXT_PUBLIC_MOCK_DATA: z.string().optional(),
   NEXT_PUBLIC_VERBOSE: z.string().optional(),
+  NEXT_PUBLIC_AUTH_MIGRATION_IN_PROGRESS: z.string().optional(),
 
   NEXT_PUBLIC_CAPTCHA_ENABLED: z.string().optional(),
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),
