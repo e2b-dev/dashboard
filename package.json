@@ -101,7 +101,7 @@
     "cmdk": "^1.0.4",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
-    "e2b": "^2.14.0",
+    "e2b": "^2.27.1",
     "echarts": "^6.0.0",
     "echarts-for-react": "^3.0.2",
     "fast-xml-parser": "^5.3.5",

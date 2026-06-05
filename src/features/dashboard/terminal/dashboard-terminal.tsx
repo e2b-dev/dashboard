@@ -4,6 +4,7 @@ import { Terminal as XTerm } from '@xterm/xterm'
 import type Sandbox from 'e2b'
 import type { CommandHandle } from 'e2b'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import type { SandboxManagementAuth } from '@/core/shared/sandbox-management-auth'
 import {
   DEFAULT_COLS,
   DEFAULT_CWD,
@@ -38,7 +39,7 @@ interface DashboardTerminalProps {
   initialCommand?: string
   initialSandboxId?: string
   initialTemplate?: string
-  teamId: string
+  sandboxManagementAuth: SandboxManagementAuth
 }
 
 export default function DashboardTerminal({
@@ -46,7 +47,7 @@ export default function DashboardTerminal({
   initialCommand = '',
   initialSandboxId,
   initialTemplate,
-  teamId,
+  sandboxManagementAuth,
 }: DashboardTerminalProps) {
   const [status, setStatus] = useState<TerminalStatus>('idle')
   const [activeSandboxId, setActiveSandboxId] = useState<string>()
@@ -200,8 +201,8 @@ export default function DashboardTerminal({
         const { sandbox } = await openTerminalSandbox({
           forceNewSandbox: options.forceNewSandbox,
           onStatus: appendOutput,
+          sandboxManagementAuth,
           sandboxId: options.sandboxId,
-          teamId,
           template: nextTemplate,
         })
 
@@ -270,7 +271,7 @@ export default function DashboardTerminal({
       disconnectTerminal,
       resizeTerminal,
       runCommand,
-      teamId,
+      sandboxManagementAuth,
       template,
       updateTerminalUrl,
     ]

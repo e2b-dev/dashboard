@@ -1,6 +1,16 @@
 import z from 'zod'
 import { httpUrlSchema } from '@/core/shared/schemas/url'
 
+export type AuthUser = {
+  id: string
+  email: string | null
+  name: string | null
+  avatarUrl: string | null
+  providers: string[]
+  canChangeEmail: boolean
+  canChangePassword: boolean
+}
+
 export const OtpTypeSchema = z.enum([
   'signup',
   'recovery',

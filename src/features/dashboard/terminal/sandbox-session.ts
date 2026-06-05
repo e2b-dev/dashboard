@@ -1,6 +1,5 @@
 import Sandbox from 'e2b'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { supabase } from '@/core/shared/clients/supabase/client'
+import type { SandboxManagementAuth } from '@/core/shared/sandbox-management-auth'
 import { TERMINAL_SANDBOX_TIMEOUT_MS } from './constants'
 import {
   clearStoredTerminalSession,
@@ -11,26 +10,19 @@ import {
 interface OpenTerminalSandboxOptions {
   forceNewSandbox?: boolean
   onStatus: (message: string) => void
+  sandboxManagementAuth: SandboxManagementAuth
   sandboxId?: string
-  teamId: string
   template: string
 }
 
 export async function openTerminalSandbox({
   forceNewSandbox = false,
   onStatus,
+  sandboxManagementAuth,
   sandboxId,
-  teamId,
   template,
 }: OpenTerminalSandboxOptions) {
-  const { data } = await supabase.auth.getSession()
-
-  if (!data.session) {
-    throw new Error('You need to sign in before opening a terminal.')
-  }
-
-  const userId = data.session.user.id
-  const headers = SUPABASE_AUTH_HEADERS(data.session.access_token, teamId)
+  const { headers, userId } = sandboxManagementAuth
 
   if (sandboxId) {
     onStatus(`Connecting to terminal sandbox ${sandboxId}...\r\n`)
@@ -100,8 +92,6 @@ function createTerminalSandbox({
   template: string
   userId: string
 }) {
-  // The browser SDK sends the signed-in user's Supabase token so E2B can
-  // authorize sandbox ownership without a dashboard proxy endpoint.
   return Sandbox.create(template, {
     domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
     timeoutMs: TERMINAL_SANDBOX_TIMEOUT_MS,

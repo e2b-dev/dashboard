@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { DASHBOARD_TEAMS_LIST_QUERY_OPTIONS } from '@/core/application/teams/queries'
 import { DASHBOARD_USER_PROFILE_QUERY_OPTIONS } from '@/core/application/user/queries'
-import type { AuthUser } from '@/core/server/auth'
+import type { AuthUser } from '@/core/modules/auth/models'
 import { DashboardContextProvider } from '@/features/dashboard/context'
 import LoadingLayout from '@/features/dashboard/loading-layout'
 import { useTRPC } from '@/trpc/client'
