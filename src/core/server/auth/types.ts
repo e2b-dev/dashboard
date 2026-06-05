@@ -1,12 +1,6 @@
-export type AuthUser = {
-  id: string
-  email: string | null
-  name: string | null
-  avatarUrl: string | null
-  providers: string[]
-  canChangeEmail: boolean
-  canChangePassword: boolean
-}
+import type { AuthUser } from '@/core/modules/auth/models'
+
+export type { AuthUser } from '@/core/modules/auth/models'
 
 export type AuthContext = {
   user: AuthUser

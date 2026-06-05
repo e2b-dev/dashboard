@@ -40,5 +40,5 @@ export function createAuthForHeaders(headers: Headers): AuthProvider {
     : createSupabaseAuthForHeaders(headers)
 }
 
+export type { AuthUser } from '@/core/modules/auth/models'
 export type { AuthAdmin } from './admin'
-export type { AuthUser } from './types'

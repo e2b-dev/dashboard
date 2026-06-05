@@ -2,8 +2,8 @@
 
 import { createContext, type ReactNode, useContext, useEffect } from 'react'
 import { useDebounceCallback } from 'usehooks-ts'
+import type { AuthUser } from '@/core/modules/auth/models'
 import type { TeamModel } from '@/core/modules/teams/models'
-import type { AuthUser } from '@/core/server/auth'
 
 interface DashboardContextValue {
   team: TeamModel

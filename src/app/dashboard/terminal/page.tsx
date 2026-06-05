@@ -11,6 +11,7 @@ import {
 import { auth } from '@/core/server/auth'
 import { resolveUserTeam } from '@/core/server/functions/team/resolve-user-team'
 import { infra } from '@/core/shared/clients/api'
+import { createSandboxManagementAuth } from '@/core/shared/sandbox-management-auth.server'
 import { SandboxIdSchema } from '@/core/shared/schemas/api'
 import DashboardTerminal from '@/features/dashboard/terminal/dashboard-terminal'
 import { normalizeTerminalTemplate } from '@/features/dashboard/terminal/template'
@@ -110,7 +111,10 @@ export default async function TerminalPage({
         initialCommand={command}
         initialSandboxId={terminalSandboxId}
         initialTemplate={terminalTemplate}
-        teamId={team.id}
+        sandboxManagementAuth={createSandboxManagementAuth(
+          authContext,
+          team.id
+        )}
       />
     </main>
   )

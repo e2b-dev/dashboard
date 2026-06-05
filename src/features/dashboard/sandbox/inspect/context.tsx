@@ -1,7 +1,6 @@
 'use client'
 
 import Sandbox from 'e2b'
-import { useRouter } from 'next/navigation'
 import type { ReactNode } from 'react'
 import {
   createContext,
@@ -11,9 +10,7 @@ import {
   useMemo,
   useRef,
 } from 'react'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { AUTH_URLS } from '@/configs/urls'
-import { supabase } from '@/core/shared/clients/supabase/client'
+import type { SandboxManagementAuth } from '@/core/shared/sandbox-management-auth'
 import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
 import { getParentPath, normalizePath } from '@/lib/utils/filesystem'
 import { useDashboard } from '../../context'
@@ -34,11 +31,13 @@ const SandboxInspectContext = createContext<SandboxInspectContextValue | null>(
 interface SandboxInspectProviderProps {
   children: ReactNode
   rootPath: string
+  sandboxManagementAuth: SandboxManagementAuth
 }
 
 export default function SandboxInspectProvider({
   children,
   rootPath,
+  sandboxManagementAuth,
 }: SandboxInspectProviderProps) {
   const { team } = useDashboard()
   const teamId = team.id
@@ -47,7 +46,6 @@ export default function SandboxInspectProvider({
   const storeRef = useRef<FilesystemStore | null>(null)
   const sandboxManagerRef = useRef<SandboxManager | null>(null)
 
-  const router = useRouter()
   const { trackInteraction } = useSandboxInspectAnalytics()
 
   // ---------- synchronous store initialisation ----------
@@ -181,19 +179,12 @@ export default function SandboxInspectProvider({
       sandboxManagerRef.current.stopWatching()
     }
 
-    const { data } = await supabase.auth.getSession()
-
-    if (!data || !data.session) {
-      router.replace(AUTH_URLS.SIGN_IN)
-      return
-    }
-
     const sandbox = await Sandbox.connect(sandboxInfo.sandboxID, {
       domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
       // Keep inspect connections from extending sandbox TTL via SDK default connect timeout.
       timeoutMs: 1_000,
       headers: {
-        ...SUPABASE_AUTH_HEADERS(data.session.access_token, teamId),
+        ...sandboxManagementAuth.headers,
       },
     })
 
@@ -209,7 +200,7 @@ export default function SandboxInspectProvider({
       team_id: teamId,
       root_path: rootPath,
     })
-  }, [sandboxInfo, teamId, rootPath, trackInteraction, router])
+  }, [sandboxInfo, teamId, rootPath, trackInteraction, sandboxManagementAuth])
 
   // handle sandbox connection / disconnection
   useEffect(() => {
