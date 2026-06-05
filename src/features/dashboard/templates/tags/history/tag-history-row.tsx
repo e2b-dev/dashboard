@@ -37,7 +37,7 @@ export function TagHistoryRow({
 
   if (isCurrentBuild) {
     return (
-      <div className="group/childRow flex w-full items-center justify-between gap-4 bg-bg py-2">
+      <div className="group/childRow flex w-full items-center justify-between gap-4 bg-bg py-1.5">
         {buildSummary}
         <span
           className={cn(
@@ -76,7 +76,7 @@ export function TagHistoryRow({
       onKeyDown={handleKeyDown}
       className={cn(
         'group/childRow flex w-full items-center justify-between gap-4',
-        'bg-bg py-2 cursor-pointer',
+        'bg-bg py-1.5 cursor-pointer',
         'focus-visible:outline-none'
       )}
     >
