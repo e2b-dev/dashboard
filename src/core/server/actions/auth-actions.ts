@@ -7,6 +7,7 @@ import { z } from 'zod'
 import {
   AUTH_MIGRATION_IN_PROGRESS,
   CAPTCHA_REQUIRED_SERVER,
+  isGithubSignInDisabled,
 } from '@/configs/flags'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { USER_MESSAGES } from '@/configs/user-messages'
@@ -102,6 +103,8 @@ async function checkAuthProviderHealth(): Promise<boolean> {
 
 const AUTH_PROVIDER_ERROR_MESSAGE =
   'Our authentication provider is experiencing issues. Please try again later.'
+const GITHUB_SIGN_IN_DISABLED_MESSAGE =
+  'GitHub sign-in is temporarily paused while we migrate our authentication system. Please use another sign-in method.'
 
 const SignInWithOAuthInputSchema = z.object({
   provider: z.union([z.literal('github'), z.literal('google')]),
@@ -113,6 +116,16 @@ export const signInWithOAuthAction = actionClient
   .metadata({ actionName: 'signInWithOAuth' })
   .action(async ({ parsedInput }) => {
     const { provider, returnTo } = parsedInput
+
+    if (provider === 'github' && isGithubSignInDisabled()) {
+      const queryParams = returnTo ? { returnTo } : undefined
+      throw encodedRedirect(
+        'error',
+        AUTH_URLS.SIGN_IN,
+        GITHUB_SIGN_IN_DISABLED_MESSAGE,
+        queryParams
+      )
+    }
 
     const isHealthy = await checkAuthProviderHealth()
     if (!isHealthy) {
