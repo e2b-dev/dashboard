@@ -17,8 +17,7 @@ import { MiddleTruncate } from '@/ui/primitives/middle-truncate'
 import { BuildLink } from './build-link'
 import { DEFAULT_TAG_NAME } from './constants'
 import TagDeleteDialog from './delete-dialog'
-import ReassignTagDialog from './reassign-dialog'
-import RollbackTagDialog from './rollback-dialog'
+import { useTagDialog } from './tag-dialog-provider'
 import type { TagGroup } from './types'
 
 export interface TagTableMeta {
@@ -59,10 +58,9 @@ export function BuildLinkCell(ctx: CellContext<TagGroup, unknown>) {
 export function ActionsCell(ctx: CellContext<TagGroup, unknown>) {
   const { row } = ctx
   const { teamSlug, templateId, templateName } = getMeta(ctx)
+  const { actions } = useTagDialog()
   const [menuOpen, setMenuOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
-  const [rollbackOpen, setRollbackOpen] = useState(false)
-  const [reassignOpen, setReassignOpen] = useState(false)
 
   const group = row.original
   const isDefaultTag = group.tag === DEFAULT_TAG_NAME
@@ -83,7 +81,7 @@ export function ActionsCell(ctx: CellContext<TagGroup, unknown>) {
           aria-label={`Reassign tag ${group.tag} to a different build`}
           onClick={(e) => {
             e.stopPropagation()
-            setReassignOpen(true)
+            actions.openReassign(group)
           }}
         >
           Reassign
@@ -99,7 +97,9 @@ export function ActionsCell(ctx: CellContext<TagGroup, unknown>) {
           }
           onClick={(e) => {
             e.stopPropagation()
-            setRollbackOpen(true)
+            if (previousAssignment) {
+              actions.openRollback(group, previousAssignment, 'tags-tab')
+            }
           }}
         >
           Rollback
@@ -142,31 +142,6 @@ export function ActionsCell(ctx: CellContext<TagGroup, unknown>) {
         teamSlug={teamSlug}
         templateId={templateId}
         templateName={templateName}
-      />
-
-      {previousAssignment && (
-        <RollbackTagDialog
-          open={rollbackOpen}
-          onOpenChange={setRollbackOpen}
-          tag={group.tag}
-          currentBuildId={group.primaryAssignment.buildId}
-          targetBuildId={previousAssignment.buildId}
-          teamSlug={teamSlug}
-          templateId={templateId}
-          templateName={templateName}
-          surface="tags-tab"
-        />
-      )}
-
-      <ReassignTagDialog
-        open={reassignOpen}
-        onOpenChange={setReassignOpen}
-        tag={group.tag}
-        currentBuildId={group.primaryAssignment.buildId}
-        teamSlug={teamSlug}
-        templateId={templateId}
-        templateName={templateName}
-        surface="tags-tab"
       />
     </div>
   )
