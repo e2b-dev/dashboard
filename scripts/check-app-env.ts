@@ -58,5 +58,25 @@ const schema = serverSchema
       path: ['PLAIN_API_KEY'],
     }
   )
+  .refine(
+    (data) => {
+      if (data.AUTH_PROVIDER !== 'ory') return true
+
+      return Boolean(
+        data.AUTH_SECRET &&
+          data.ORY_SDK_URL &&
+          data.ORY_OAUTH2_CLIENT_ID &&
+          data.ORY_OAUTH2_CLIENT_SECRET &&
+          data.ORY_OAUTH2_AUDIENCE &&
+          data.ORY_PROJECT_API_TOKEN &&
+          data.DASHBOARD_API_ADMIN_TOKEN
+      )
+    },
+    {
+      message:
+        'AUTH_PROVIDER=ory requires AUTH_SECRET, ORY_SDK_URL, ORY_OAUTH2_CLIENT_ID, ORY_OAUTH2_CLIENT_SECRET, ORY_OAUTH2_AUDIENCE, ORY_PROJECT_API_TOKEN, and DASHBOARD_API_ADMIN_TOKEN',
+      path: ['AUTH_PROVIDER'],
+    }
+  )
 
 validateEnv(schema)

@@ -3,7 +3,7 @@ import 'server-only'
 import { cookies } from 'next/headers'
 import { cache } from 'react'
 import { z } from 'zod'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { authHeaders } from '@/configs/api'
 import { COOKIE_KEYS } from '@/configs/cookies'
 import { returnServerError } from '@/core/server/actions/utils'
 import { infra } from '@/core/shared/clients/api'
@@ -12,7 +12,7 @@ import { l } from '@/core/shared/clients/logger/logger'
 /*
  *  This function generates an e2b user access token for a given user.
  */
-export async function generateE2BUserAccessToken(supabaseAccessToken: string) {
+export async function generateE2BUserAccessToken(accessToken: string) {
   const TOKEN_NAME = 'e2b_dashboard_generated_access_token'
 
   const res = await infra.POST('/access-tokens', {
@@ -20,7 +20,7 @@ export async function generateE2BUserAccessToken(supabaseAccessToken: string) {
       name: TOKEN_NAME,
     },
     headers: {
-      ...SUPABASE_AUTH_HEADERS(supabaseAccessToken),
+      ...authHeaders(accessToken),
     },
   })
 
