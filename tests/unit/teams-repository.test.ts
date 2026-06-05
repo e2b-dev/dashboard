@@ -1,16 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createTeamsRepository } from '@/core/modules/teams/teams-repository.server'
 
-vi.mock('@/core/shared/clients/supabase/admin', () => ({
-  supabaseAdmin: {
-    auth: {
-      admin: {
-        getUserById: vi.fn(),
-      },
-    },
-  },
-}))
-
 describe('createTeamsRepository', () => {
   it('returns a repo error instead of throwing when a team-scoped method has no teamId', async () => {
     const repository = createTeamsRepository(
@@ -23,9 +13,6 @@ describe('createTeamsRepository', () => {
           DELETE: vi.fn(),
         } as unknown as typeof import('@/core/shared/clients/api').api,
         authHeaders: vi.fn(() => ({ 'X-Supabase-Token': 'token' })),
-        authAdmin: {
-          getUserById: vi.fn(),
-        },
       }
     )
 

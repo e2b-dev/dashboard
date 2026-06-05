@@ -150,7 +150,7 @@ describe('SupabaseAuthProvider', () => {
 
       const result = await provider.signOut({ scope: 'others' })
 
-      expect(result).toEqual({ error: signOutError })
+      expect(result).toEqual({ redirectTo: '/sign-in', error: signOutError })
       expect(loggerMocks.error).toHaveBeenCalledWith(
         expect.objectContaining({
           key: 'auth_provider:sign_out:error',
@@ -165,7 +165,7 @@ describe('SupabaseAuthProvider', () => {
       )
     })
 
-    it('returns { error: null } on success without logging', async () => {
+    it('returns the sign-in redirect with null error on success without logging', async () => {
       const client = buildClient({
         signOut: vi.fn().mockResolvedValue({ error: null }),
       })
@@ -173,8 +173,24 @@ describe('SupabaseAuthProvider', () => {
 
       const result = await provider.signOut()
 
-      expect(result).toEqual({ error: null })
+      expect(result).toEqual({ redirectTo: '/sign-in', error: null })
       expect(loggerMocks.error).not.toHaveBeenCalled()
+    })
+
+    it('preserves returnTo as a sign-in query param for the reauth flow', async () => {
+      const client = buildClient({
+        signOut: vi.fn().mockResolvedValue({ error: null }),
+      })
+      const provider = new SupabaseAuthProvider(client)
+
+      const result = await provider.signOut({
+        returnTo: '/dashboard/account',
+      })
+
+      expect(result).toEqual({
+        redirectTo: '/sign-in?returnTo=%2Fdashboard%2Faccount',
+        error: null,
+      })
     })
   })
 })

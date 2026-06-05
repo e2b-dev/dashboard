@@ -106,6 +106,7 @@ describe('Auth Actions - Integration Tests', () => {
   })
 
   afterEach(() => {
+    vi.unstubAllEnvs()
     // Restore original console.error after each test
     console.error = originalConsoleError
     global.fetch = originalFetch
@@ -458,6 +459,24 @@ describe('Auth Actions - Integration Tests', () => {
           scopes: 'email',
         },
       })
+    })
+
+    it('should block GitHub OAuth when the migration flag is enabled', async () => {
+      vi.stubEnv('NEXT_PUBLIC_AUTH_GITHUB_SIGN_IN_DISABLED', '1')
+
+      await signInWithOAuthAction({
+        provider: 'github',
+        returnTo: '/dashboard/team-123',
+      })
+
+      expect(encodedRedirect).toHaveBeenCalledWith(
+        'error',
+        AUTH_URLS.SIGN_IN,
+        'GitHub sign-in is temporarily paused while we migrate our authentication system. Please use another sign-in method.',
+        { returnTo: '/dashboard/team-123' }
+      )
+      expect(fetchMock).not.toHaveBeenCalled()
+      expect(mockSupabaseClient.auth.signInWithOAuth).not.toHaveBeenCalled()
     })
   })
 

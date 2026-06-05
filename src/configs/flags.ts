@@ -29,3 +29,17 @@ export const CAPTCHA_REQUIRED_SERVER =
 export function isOryAuthEnabled() {
   return process.env.AUTH_PROVIDER === 'ory'
 }
+
+// Freezes new identity creation while we migrate identity stores.
+// When on: blocks new sign-ups (email/password + freshly-registered OIDC
+// identities). Existing users keep signing in normally.
+export const AUTH_MIGRATION_IN_PROGRESS =
+  process.env.NEXT_PUBLIC_AUTH_MIGRATION_IN_PROGRESS === '1'
+
+// Temporarily disables GitHub OAuth entry points during auth provider cutovers,
+// when GitHub's callback URL may need to move between providers.
+export function isGithubSignInDisabled() {
+  return process.env.NEXT_PUBLIC_AUTH_GITHUB_SIGN_IN_DISABLED === '1'
+}
+
+export const AUTH_GITHUB_SIGN_IN_DISABLED = isGithubSignInDisabled()

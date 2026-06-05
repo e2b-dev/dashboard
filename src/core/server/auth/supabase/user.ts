@@ -2,12 +2,17 @@ import type { User } from '@supabase/supabase-js'
 import type { AuthUser } from '../types'
 
 export function toAuthUser(user: User): AuthUser {
+  const providers = extractProviders(user)
+  const canChangeEmail = canChangeEmailPasswordSettings(providers)
+
   return {
     id: user.id,
     email: user.email ?? null,
     name: getStringFromMetadata(user.user_metadata, 'name'),
     avatarUrl: getStringFromMetadata(user.user_metadata, 'avatar_url'),
-    providers: extractProviders(user),
+    providers,
+    canChangeEmail,
+    canChangePassword: canChangeEmail,
   }
 }
 
@@ -33,4 +38,13 @@ function extractProviders(user: User): string[] {
     []
 
   return [...new Set([...fromAppMetadata, ...fromIdentities])]
+}
+
+function canChangeEmailPasswordSettings(providers: string[]): boolean {
+  return (
+    providers.includes('email') &&
+    providers.every((provider) => {
+      return provider === 'email'
+    })
+  )
 }

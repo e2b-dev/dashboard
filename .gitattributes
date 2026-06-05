@@ -1,0 +1,2 @@
+spec/openapi.dashboard-api.yaml linguist-generated=true
+src/core/shared/contracts/dashboard-api.types.ts linguist-generated=true

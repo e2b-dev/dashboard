@@ -4,7 +4,11 @@ import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { returnValidationErrors } from 'next-safe-action'
 import { z } from 'zod'
-import { CAPTCHA_REQUIRED_SERVER } from '@/configs/flags'
+import {
+  AUTH_MIGRATION_IN_PROGRESS,
+  CAPTCHA_REQUIRED_SERVER,
+  isGithubSignInDisabled,
+} from '@/configs/flags'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { USER_MESSAGES } from '@/configs/user-messages'
 import { actionClient } from '@/core/server/actions/client'
@@ -99,6 +103,8 @@ async function checkAuthProviderHealth(): Promise<boolean> {
 
 const AUTH_PROVIDER_ERROR_MESSAGE =
   'Our authentication provider is experiencing issues. Please try again later.'
+const GITHUB_SIGN_IN_DISABLED_MESSAGE =
+  'GitHub sign-in is temporarily paused while we migrate our authentication system. Please use another sign-in method.'
 
 const SignInWithOAuthInputSchema = z.object({
   provider: z.union([z.literal('github'), z.literal('google')]),
@@ -110,6 +116,16 @@ export const signInWithOAuthAction = actionClient
   .metadata({ actionName: 'signInWithOAuth' })
   .action(async ({ parsedInput }) => {
     const { provider, returnTo } = parsedInput
+
+    if (provider === 'github' && isGithubSignInDisabled()) {
+      const queryParams = returnTo ? { returnTo } : undefined
+      throw encodedRedirect(
+        'error',
+        AUTH_URLS.SIGN_IN,
+        GITHUB_SIGN_IN_DISABLED_MESSAGE,
+        queryParams
+      )
+    }
 
     const isHealthy = await checkAuthProviderHealth()
     if (!isHealthy) {
@@ -178,6 +194,12 @@ export const signUpAction = actionClient
     async ({
       parsedInput: { email, password, returnTo = '', captchaToken },
     }) => {
+      if (AUTH_MIGRATION_IN_PROGRESS) {
+        return returnServerError(
+          'Sign-ups are temporarily paused while we migrate our authentication system. Please try again later.'
+        )
+      }
+
       const captchaError = await validateCaptcha(captchaToken)
       if (captchaError) return captchaError
 
@@ -361,10 +383,32 @@ export const forgotPasswordAction = actionClient
   })
 
 export async function signOutAction(returnTo?: string) {
-  await auth.signOut()
+  const { redirectTo } = await auth.signOut({ returnTo })
 
-  throw redirect(
-    AUTH_URLS.SIGN_IN +
-      (returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : '')
-  )
+  throw redirect(redirectTo)
+}
+
+// Drives the account-settings re-authentication step and returns the URL the
+// client should HARD-navigate to. Supabase signs the user out and bounces
+// through /sign-in (which lands back on the account page with ?reauth=1); Ory
+// forces a fresh OAuth2 login via the oauth-start route.
+//
+// We deliberately return the URL instead of redirect()-ing: a server-action
+// redirect is a soft RSC navigation, which prefetches and re-invokes the
+// oauth-start GET (a side-effecting endpoint that mints OAuth state/pkce/
+// callback-url cookies). Those duplicate invocations corrupt the cookies so the
+// post-reauth callback loses its callbackUrl and falls back to "/". A single
+// window.location navigation on the client avoids that entirely.
+export async function reauthForAccountSettingsAction(): Promise<{
+  url: string
+}> {
+  const dispatch = await auth.startReauthForAccountSettings()
+
+  if (dispatch.kind === 'sign-out') {
+    // Supabase: clear the session server-side, then hand back the sign-in URL.
+    const { redirectTo } = await auth.signOut({ returnTo: dispatch.returnTo })
+    return { url: redirectTo }
+  }
+
+  return { url: dispatch.to }
 }
