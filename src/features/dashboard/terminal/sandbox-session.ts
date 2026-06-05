@@ -11,6 +11,8 @@ import {
 interface OpenTerminalSandboxOptions {
   forceNewSandbox?: boolean
   onStatus: (message: string) => void
+  requestTimeoutMs?: number
+  shouldStoreSession?: boolean
   sandboxId?: string
   teamId: string
   template: string
@@ -19,6 +21,8 @@ interface OpenTerminalSandboxOptions {
 export async function openTerminalSandbox({
   forceNewSandbox = false,
   onStatus,
+  requestTimeoutMs,
+  shouldStoreSession,
   sandboxId,
   teamId,
   template,
@@ -34,7 +38,9 @@ export async function openTerminalSandbox({
 
   if (sandboxId) {
     onStatus(`Connecting to terminal sandbox ${sandboxId}...\r\n`)
-    const sandbox = await connectTerminalSandbox(sandboxId, headers)
+    const sandbox = await connectTerminalSandbox(sandboxId, headers, {
+      requestTimeoutMs,
+    })
 
     return {
       sandbox,
@@ -55,7 +61,8 @@ export async function openTerminalSandbox({
     try {
       sandbox = await connectTerminalSandbox(
         storedTerminalSession.sandboxId,
-        headers
+        headers,
+        { requestTimeoutMs }
       )
     } catch {
       clearStoredTerminalSession(userId)
@@ -68,10 +75,12 @@ export async function openTerminalSandbox({
     sandbox = await createTerminalSandbox({ headers, template, userId })
   }
 
-  writeStoredTerminalSession(userId, {
-    sandboxId: sandbox.sandboxId,
-    template,
-  })
+  if (shouldStoreSession ?? true) {
+    writeStoredTerminalSession(userId, {
+      sandboxId: sandbox.sandboxId,
+      template,
+    })
+  }
 
   return {
     sandbox,
@@ -80,11 +89,13 @@ export async function openTerminalSandbox({
 
 function connectTerminalSandbox(
   sandboxId: string,
-  headers: Record<string, string>
+  headers: Record<string, string>,
+  options: { requestTimeoutMs?: number } = {}
 ) {
   return Sandbox.connect(sandboxId, {
     domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
     timeoutMs: TERMINAL_SANDBOX_TIMEOUT_MS,
+    requestTimeoutMs: options.requestTimeoutMs,
     headers: {
       ...headers,
     },

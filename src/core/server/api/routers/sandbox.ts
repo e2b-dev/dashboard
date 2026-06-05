@@ -1,5 +1,7 @@
 import { millisecondsInDay } from 'date-fns/constants'
+import { Sandbox } from 'e2b'
 import { z } from 'zod'
+import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
 import {
   deriveSandboxLifecycleFromEvents,
   mapApiSandboxRecordToModel,
@@ -205,4 +207,22 @@ export const sandboxRouter = createTRPCRouter({
     }),
 
   // MUTATIONS
+
+  killTerminalPty: protectedTeamProcedure
+    .input(
+      z.object({
+        sandboxId: SandboxIdSchema,
+        pid: z.number().int().positive(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const sandbox = await Sandbox.connect(input.sandboxId, {
+        domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
+        headers: {
+          ...SUPABASE_AUTH_HEADERS(ctx.session.access_token, ctx.teamId),
+        },
+      })
+
+      return sandbox.pty.kill(input.pid)
+    }),
 })

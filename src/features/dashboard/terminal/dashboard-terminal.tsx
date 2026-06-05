@@ -1,14 +1,15 @@
 'use client'
 
-import { Terminal as XTerm } from '@xterm/xterm'
-import type Sandbox from 'e2b'
-import type { CommandHandle } from 'e2b'
+import { type CommandHandle, type Sandbox, TimeoutError } from 'e2b'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { attachTerminalWithRetry } from './attach-terminal'
 import {
-  DEFAULT_COLS,
   DEFAULT_CWD,
-  DEFAULT_ROWS,
-  MAX_TERMINAL_TRANSCRIPT_CHARS,
+  TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS,
+  TERMINAL_ATTACH_MAX_RETRIES,
+  TERMINAL_ATTACH_RETRY_BASE_DELAY_MS,
+  TERMINAL_ATTACH_RETRY_MAX_DELAY_MS,
+  TERMINAL_AUTOSTART_DEBOUNCE_MS,
 } from './constants'
 import DashboardTerminalCommandDialog from './dashboard-terminal-command-dialog'
 import { openTerminalSandbox } from './sandbox-session'
@@ -17,41 +18,42 @@ import {
   resolveTerminalTemplateOverride,
 } from './template'
 import TerminalPanel from './terminal-panel'
-import { calculateTerminalSize } from './terminal-size'
 import type {
   PendingTerminalLaunch,
   StartTerminalOptions,
+  TerminalLaunchTarget,
+  TerminalSandboxResolver,
   TerminalStatus,
 } from './types'
+import { useTerminalInstance } from './use-terminal-instance'
 
-const INITIAL_TERMINAL_TEXT =
-  'Open a terminal to start a persistent E2B sandbox.\r\n'
-const TERMINAL_THEME = {
-  background: '#000000',
-  cursor: '#ffffff',
-  foreground: '#ffffff',
-  selectionBackground: '#ffffff40',
-}
+const FLUSH_INPUT_INTERVAL_MS = 10
 
 interface DashboardTerminalProps {
   autoStart?: boolean
-  initialCommand?: string
-  initialSandboxId?: string
-  initialTemplate?: string
+  getSandbox?: TerminalSandboxResolver
+  launchTarget?: TerminalLaunchTarget
+  onSandboxAttached?: (sandboxId: string) => void
+  onSandboxAttachFailed?: (target: TerminalLaunchTarget | undefined) => void
+  sandboxScoped?: boolean
   teamId: string
+  teamSlug: string
 }
 
 export default function DashboardTerminal({
   autoStart = false,
-  initialCommand = '',
-  initialSandboxId,
-  initialTemplate,
+  getSandbox,
+  launchTarget,
+  onSandboxAttached,
+  onSandboxAttachFailed,
+  sandboxScoped = false,
   teamId,
+  teamSlug,
 }: DashboardTerminalProps) {
   const [status, setStatus] = useState<TerminalStatus>('idle')
   const [activeSandboxId, setActiveSandboxId] = useState<string>()
   const [template, setTemplate] = useState(
-    normalizeTerminalTemplate(initialTemplate) ?? 'base'
+    normalizeTerminalTemplate(launchTarget?.template) ?? 'base'
   )
   const [pendingLaunch, setPendingLaunch] =
     useState<PendingTerminalLaunch | null>(null)
@@ -59,72 +61,167 @@ export default function DashboardTerminal({
   const sandboxRef = useRef<Sandbox | null>(null)
   const ptyRef = useRef<CommandHandle | null>(null)
   const pidRef = useRef<number | undefined>(undefined)
-  const xtermRef = useRef<XTerm | null>(null)
-  const terminalContainerRef = useRef<HTMLDivElement | null>(null)
-  const terminalTranscriptRef = useRef(INITIAL_TERMINAL_TEXT)
-  const terminalSizeRef = useRef({ cols: DEFAULT_COLS, rows: DEFAULT_ROWS })
-  const decoderRef = useRef(new TextDecoder())
+  const pendingInputRef = useRef<Uint8Array[]>([])
+  const inputFlushTimerRef = useRef<number | null>(null)
+  const inputFlushInFlightRef = useRef(false)
+  const inputGenerationRef = useRef(0)
   const pendingCommandsRef = useRef<string[]>([])
-  const inputQueueRef = useRef(Promise.resolve())
-  const didAutoStartRef = useRef(false)
   const isStartingRef = useRef(false)
+  const retryResolveRef = useRef<(() => void) | null>(null)
+  const retryTimerRef = useRef<number | null>(null)
   const startGenerationRef = useRef(0)
 
-  const resizeTerminal = useCallback(() => {
-    const nextSize = calculateTerminalSize(
-      terminalContainerRef.current,
-      xtermRef.current
+  const clearAttachRetryTimer = useCallback(() => {
+    if (!retryTimerRef.current) return
+
+    window.clearTimeout(retryTimerRef.current)
+    retryTimerRef.current = null
+    retryResolveRef.current?.()
+    retryResolveRef.current = null
+  }, [])
+
+  const waitForAttachRetry = useCallback(
+    (delayMs: number) =>
+      new Promise<void>((resolve) => {
+        retryResolveRef.current = resolve
+        retryTimerRef.current = window.setTimeout(() => {
+          retryTimerRef.current = null
+          retryResolveRef.current = null
+          resolve()
+        }, delayMs)
+      }),
+    []
+  )
+
+  const requestPtyKill = useCallback(
+    ({ pid, sandboxId }: { pid: number; sandboxId: string }) => {
+      void fetch('/api/trpc/sandbox.killTerminalPty?batch=1', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          0: {
+            json: {
+              pid,
+              sandboxId,
+              teamSlug,
+            },
+          },
+        }),
+        keepalive: true,
+      })
+    },
+    [teamSlug]
+  )
+
+  const clearPendingInput = useCallback(() => {
+    if (inputFlushTimerRef.current) {
+      window.clearTimeout(inputFlushTimerRef.current)
+      inputFlushTimerRef.current = null
+    }
+    inputGenerationRef.current += 1
+    inputFlushInFlightRef.current = false
+    pendingInputRef.current = []
+  }, [])
+
+  const flushInputToPty = useCallback((terminalPid = pidRef.current) => {
+    inputFlushTimerRef.current = null
+
+    if (inputFlushInFlightRef.current) return
+
+    if (!sandboxRef.current || !terminalPid) {
+      pendingInputRef.current = []
+      return
+    }
+
+    const pendingInput = pendingInputRef.current
+    pendingInputRef.current = []
+    if (!pendingInput.length) return
+
+    const byteLength = pendingInput.reduce(
+      (total, chunk) => total + chunk.byteLength,
+      0
     )
-    terminalSizeRef.current = nextSize
-    xtermRef.current?.resize(nextSize.cols, nextSize.rows)
-
-    if (sandboxRef.current && pidRef.current) {
-      void sandboxRef.current.pty.resize(pidRef.current, nextSize)
+    const data = new Uint8Array(byteLength)
+    let offset = 0
+    for (const chunk of pendingInput) {
+      data.set(chunk, offset)
+      offset += chunk.byteLength
     }
 
-    return nextSize
-  }, [])
+    const sandbox = sandboxRef.current
+    const inputGeneration = inputGenerationRef.current
+    inputFlushInFlightRef.current = true
 
-  const appendOutput = useCallback((chunk: string | Uint8Array) => {
-    const text =
-      typeof chunk === 'string'
-        ? chunk
-        : decoderRef.current.decode(chunk, { stream: true })
+    void sandbox.pty
+      .sendInput(terminalPid, data)
+      .catch(() => undefined)
+      .finally(() => {
+        if (inputGenerationRef.current !== inputGeneration) return
 
-    terminalTranscriptRef.current = (
-      terminalTranscriptRef.current + text
-    ).slice(-MAX_TERMINAL_TRANSCRIPT_CHARS)
-    xtermRef.current?.write(chunk, () => {
-      xtermRef.current?.scrollToBottom()
-    })
-  }, [])
+        inputFlushInFlightRef.current = false
 
-  const disconnectTerminal = useCallback(async () => {
-    const pty = ptyRef.current
-    ptyRef.current = null
-    if (!pty) return
-
-    try {
-      await pty.disconnect()
-    } catch {
-      // Best-effort cleanup. The sandbox is intentionally left alive to pause.
-    }
+        if (pidRef.current === terminalPid && pendingInputRef.current.length) {
+          flushInputToPty(terminalPid)
+        }
+      })
   }, [])
 
   const sendInputToPty = useCallback(
     (value: string | Uint8Array, terminalPid = pidRef.current) => {
       if (!value || !sandboxRef.current || !terminalPid) return
 
-      const sandbox = sandboxRef.current
       const data =
         typeof value === 'string' ? new TextEncoder().encode(value) : value
 
-      inputQueueRef.current = inputQueueRef.current
-        .catch(() => undefined)
-        .then(() => sandbox.pty.sendInput(terminalPid, data))
+      pendingInputRef.current.push(data)
+
+      if (inputFlushTimerRef.current) return
+
+      inputFlushTimerRef.current = window.setTimeout(() => {
+        flushInputToPty(terminalPid)
+      }, FLUSH_INPUT_INTERVAL_MS)
     },
-    []
+    [flushInputToPty]
   )
+
+  const resizePty = useCallback((size: { cols: number; rows: number }) => {
+    if (sandboxRef.current && pidRef.current) {
+      void sandboxRef.current.pty.resize(pidRef.current, size)
+    }
+  }, [])
+
+  const {
+    appendOutput,
+    copyTerminalText,
+    focusTerminal,
+    resetTerminal,
+    resizeTerminal,
+    terminalContainerRef,
+  } = useTerminalInstance({
+    onInput: sendInputToPty,
+    onResize: resizePty,
+  })
+
+  const closeTerminal = useCallback(async () => {
+    clearAttachRetryTimer()
+    clearPendingInput()
+
+    const pty = ptyRef.current
+    const sandboxId = sandboxRef.current?.sandboxId
+    ptyRef.current = null
+    pidRef.current = undefined
+    if (!pty) return
+
+    if (sandboxId) {
+      requestPtyKill({ pid: pty.pid, sandboxId })
+    }
+
+    try {
+      await pty.kill()
+    } catch {
+      // Best-effort cleanup. The sandbox is intentionally left alive.
+    }
+  }, [clearAttachRetryTimer, clearPendingInput, requestPtyKill])
 
   const runCommand = useCallback(
     (command: string, terminalPid?: number) => {
@@ -147,7 +244,7 @@ export default function DashboardTerminal({
       const url = new URL(window.location.href)
       let changed = false
 
-      if (url.searchParams.get('sandboxId') !== sandboxId) {
+      if (!sandboxScoped && url.searchParams.get('sandboxId') !== sandboxId) {
         url.searchParams.set('sandboxId', sandboxId)
         changed = true
       }
@@ -161,14 +258,15 @@ export default function DashboardTerminal({
         window.history.replaceState(window.history.state, '', url)
       }
     },
-    []
+    [sandboxScoped]
   )
 
   const startTerminal = useCallback(
     async (options: StartTerminalOptions = {}) => {
       if (isStartingRef.current) return
+      const target = options.target
       const nextTemplate = resolveTerminalTemplateOverride(
-        options.template,
+        target?.template,
         template
       )
 
@@ -178,34 +276,94 @@ export default function DashboardTerminal({
         return
       }
 
+      const requestedSandboxId = target?.sandboxId
       isStartingRef.current = true
       const startGeneration = startGenerationRef.current + 1
       startGenerationRef.current = startGeneration
       const isCurrentStart = () =>
         startGenerationRef.current === startGeneration
 
-      await disconnectTerminal()
+      await closeTerminal()
       sandboxRef.current = null
       pidRef.current = undefined
-      decoderRef.current = new TextDecoder()
-      inputQueueRef.current = Promise.resolve()
-      terminalTranscriptRef.current = ''
-      xtermRef.current?.reset()
+      resetTerminal()
       setStatus('starting')
-      setActiveSandboxId(options.sandboxId)
+      setActiveSandboxId(requestedSandboxId)
       setTemplate(nextTemplate)
       appendOutput('Opening terminal...\r\n')
 
-      try {
-        const { sandbox } = await openTerminalSandbox({
-          forceNewSandbox: options.forceNewSandbox,
-          onStatus: appendOutput,
-          sandboxId: options.sandboxId,
-          teamId,
-          template: nextTemplate,
+      const openSandboxAndPty = async () => {
+        let sandbox: Sandbox
+
+        if (getSandbox) {
+          appendOutput('Connecting to sandbox...\r\n')
+          sandbox = await getSandbox()
+        } else {
+          const terminalSandbox = await openTerminalSandbox({
+            forceNewSandbox: options.forceNewSandbox,
+            onStatus: appendOutput,
+            requestTimeoutMs: requestedSandboxId
+              ? TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS
+              : undefined,
+            shouldStoreSession: !sandboxScoped,
+            sandboxId: requestedSandboxId,
+            teamId,
+            template: nextTemplate,
+          })
+          sandbox = terminalSandbox.sandbox
+        }
+
+        if (!isCurrentStart()) return null
+
+        appendOutput(`Sandbox ${sandbox.sandboxId} is running.\r\n`)
+        appendOutput('Opening PTY...\r\n')
+        const terminalSize = resizeTerminal()
+        const pty = await sandbox.pty.create({
+          cols: terminalSize.cols,
+          rows: terminalSize.rows,
+          timeoutMs: 0,
+          requestTimeoutMs: TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS,
+          cwd: DEFAULT_CWD,
+          onData: (data) => {
+            appendOutput(data)
+          },
         })
 
-        if (!isCurrentStart()) return
+        return { pty, sandbox }
+      }
+
+      const canRetryAttach = Boolean(requestedSandboxId || getSandbox)
+
+      try {
+        const result = await attachTerminalWithRetry({
+          canRetry: canRetryAttach,
+          isCurrent: isCurrentStart,
+          isRetryableError: (error) => error instanceof TimeoutError,
+          maxRetries: TERMINAL_ATTACH_MAX_RETRIES,
+          onRetry: (retryDelay) => {
+            appendOutput(
+              `Terminal attach timed out. Retrying in ${Math.round(
+                retryDelay / 1000
+              )}s...\r\n`
+            )
+          },
+          open: openSandboxAndPty,
+          retryBaseDelayMs: TERMINAL_ATTACH_RETRY_BASE_DELAY_MS,
+          retryMaxDelayMs: TERMINAL_ATTACH_RETRY_MAX_DELAY_MS,
+          waitForRetry: waitForAttachRetry,
+        })
+
+        if (!result) return
+        const { sandbox, pty } = result
+
+        if (!isCurrentStart()) {
+          try {
+            await pty.kill()
+          } catch {
+            // The start was superseded or unmounted; best-effort PTY cleanup.
+          }
+          return
+        }
 
         sandboxRef.current = sandbox
         setActiveSandboxId(sandbox.sandboxId)
@@ -214,35 +372,13 @@ export default function DashboardTerminal({
           clearCommand: pendingCommandsRef.current.length > 0,
           sandboxId: sandbox.sandboxId,
         })
-        appendOutput(`Sandbox ${sandbox.sandboxId} is running.\r\n`)
-
-        appendOutput('Opening PTY...\r\n')
-        const terminalSize = resizeTerminal()
-        const pty = await sandbox.pty.create({
-          cols: terminalSize.cols,
-          rows: terminalSize.rows,
-          timeoutMs: 0,
-          cwd: DEFAULT_CWD,
-          onData: (data) => {
-            appendOutput(data)
-          },
-        })
-
-        if (!isCurrentStart()) {
-          try {
-            await pty.disconnect()
-          } catch {
-            // The start was superseded or unmounted; best-effort PTY cleanup.
-          }
-          return
-        }
-
         ptyRef.current = pty
         pidRef.current = pty.pid
         resizeTerminal()
         setStatus('ready')
         appendOutput(`PTY ${pty.pid} attached.\r\n`)
-        xtermRef.current?.focus()
+        focusTerminal()
+        onSandboxAttached?.(sandbox.sandboxId)
 
         const pendingCommands = pendingCommandsRef.current
         pendingCommandsRef.current = []
@@ -253,6 +389,7 @@ export default function DashboardTerminal({
         if (!isCurrentStart()) return
 
         setStatus('error')
+        onSandboxAttachFailed?.(target)
         appendOutput(
           `\r\nFailed to start terminal: ${
             error instanceof Error ? error.message : 'Unknown error'
@@ -260,26 +397,32 @@ export default function DashboardTerminal({
         )
       } finally {
         if (isCurrentStart()) {
-          // Only the latest start owns the shared starting flag.
           isStartingRef.current = false
         }
       }
     },
     [
       appendOutput,
-      disconnectTerminal,
+      closeTerminal,
       resizeTerminal,
+      resetTerminal,
+      focusTerminal,
+      getSandbox,
       runCommand,
+      sandboxScoped,
       teamId,
       template,
+      onSandboxAttached,
+      onSandboxAttachFailed,
       updateTerminalUrl,
+      waitForAttachRetry,
     ]
   )
 
   const queueTerminalCommand = useCallback(
     (command: string, options: StartTerminalOptions = {}) => {
       const nextTemplate = resolveTerminalTemplateOverride(
-        options.template,
+        options.target?.template,
         template
       )
 
@@ -294,8 +437,10 @@ export default function DashboardTerminal({
         // sending anything into the PTY.
         setPendingLaunch({
           command: command.trim(),
-          sandboxId: options.sandboxId,
-          template: nextTemplate,
+          target: {
+            ...options.target,
+            template: nextTemplate,
+          },
         })
         return
       }
@@ -303,7 +448,10 @@ export default function DashboardTerminal({
       if (status === 'idle' || status === 'error' || options.forceNewSandbox) {
         void startTerminal({
           ...options,
-          template: nextTemplate,
+          target: {
+            ...options.target,
+            template: nextTemplate,
+          },
         })
       }
     },
@@ -313,11 +461,9 @@ export default function DashboardTerminal({
   const confirmPendingLaunch = useCallback(() => {
     if (!pendingLaunch) return
 
-    const {
-      command,
-      sandboxId: launchSandboxId,
-      template: launchTemplate,
-    } = pendingLaunch
+    const { command, target: launchTarget } = pendingLaunch
+    const launchTemplate = launchTarget?.template ?? 'base'
+    const launchSandboxId = launchTarget?.sandboxId
 
     if (
       status === 'ready' &&
@@ -327,7 +473,10 @@ export default function DashboardTerminal({
       setPendingLaunch(null)
       runCommand(command)
       if (activeSandboxId) {
-        updateTerminalUrl({ clearCommand: true, sandboxId: activeSandboxId })
+        updateTerminalUrl({
+          clearCommand: true,
+          sandboxId: activeSandboxId,
+        })
       }
       return
     }
@@ -340,8 +489,7 @@ export default function DashboardTerminal({
     pendingCommandsRef.current = [command]
     void startTerminal({
       forceNewSandbox: !launchSandboxId && template !== launchTemplate,
-      sandboxId: launchSandboxId,
-      template: launchTemplate,
+      target: launchTarget,
     })
   }, [
     activeSandboxId,
@@ -353,120 +501,88 @@ export default function DashboardTerminal({
     updateTerminalUrl,
   ])
 
-  const copyTerminalText = async () => {
-    const value =
-      xtermRef.current?.getSelection() || terminalTranscriptRef.current
-    if (!value) return
+  const reconnectTarget = sandboxScoped
+    ? launchTarget
+    : activeSandboxId
+      ? { sandboxId: activeSandboxId, template }
+      : undefined
+  const reconnectSandboxId = sandboxScoped
+    ? launchTarget?.sandboxId
+    : activeSandboxId
+  const restartLabel = sandboxScoped
+    ? 'Reconnect terminal'
+    : 'Start new terminal sandbox'
+  const restartDisabled =
+    status === 'starting' ||
+    (sandboxScoped && !reconnectSandboxId && !getSandbox)
 
-    try {
-      await navigator.clipboard.writeText(value)
-    } catch {
-      appendOutput('\r\nCould not copy terminal output to clipboard.\r\n')
-    } finally {
-      xtermRef.current?.focus()
+  const restartTerminal = useCallback(() => {
+    if (sandboxScoped) {
+      if (!reconnectSandboxId && !getSandbox) return
+
+      void startTerminal({
+        target: reconnectTarget,
+      })
+      return
     }
-  }
 
-  useEffect(() => {
-    if (!autoStart || didAutoStartRef.current) return
-
-    didAutoStartRef.current = true
-    queueTerminalCommand(initialCommand, {
-      sandboxId: initialSandboxId,
-      template: initialTemplate,
-    })
+    void startTerminal({ forceNewSandbox: true })
   }, [
-    autoStart,
-    initialCommand,
-    initialSandboxId,
-    initialTemplate,
-    queueTerminalCommand,
+    getSandbox,
+    reconnectTarget,
+    reconnectSandboxId,
+    sandboxScoped,
+    startTerminal,
   ])
 
   useEffect(() => {
+    if (!autoStart || status !== 'idle' || isStartingRef.current) return
+
+    const autoStartTimer = window.setTimeout(() => {
+      if (isStartingRef.current || ptyRef.current) return
+
+      queueTerminalCommand(launchTarget?.command ?? '', {
+        target: launchTarget,
+      })
+    }, TERMINAL_AUTOSTART_DEBOUNCE_MS)
+
     return () => {
+      window.clearTimeout(autoStartTimer)
+    }
+  }, [autoStart, launchTarget, queueTerminalCommand, status])
+
+  useEffect(() => {
+    const handlePageHide = () => {
+      const pty = ptyRef.current
+      const sandboxId = sandboxRef.current?.sandboxId
+
+      if (!pty || !sandboxId) return
+
+      requestPtyKill({ pid: pty.pid, sandboxId })
+    }
+
+    window.addEventListener('pagehide', handlePageHide)
+
+    return () => {
+      window.removeEventListener('pagehide', handlePageHide)
       startGenerationRef.current += 1
-      void disconnectTerminal()
+      clearAttachRetryTimer()
+      clearPendingInput()
+      void closeTerminal()
     }
-  }, [disconnectTerminal])
-
-  useEffect(() => {
-    const container = terminalContainerRef.current
-    if (!container) return
-
-    const terminal = new XTerm({
-      cols: terminalSizeRef.current.cols,
-      rows: terminalSizeRef.current.rows,
-      cursorBlink: true,
-      cursorStyle: 'block',
-      fontFamily:
-        'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-      fontSize: 13,
-      lineHeight: 1.54,
-      scrollback: 10_000,
-      theme: TERMINAL_THEME,
-    })
-
-    xtermRef.current = terminal
-    terminal.open(container)
-    terminal.write(terminalTranscriptRef.current)
-    const dataSubscription = terminal.onData((data) => {
-      sendInputToPty(data)
-    })
-
-    requestAnimationFrame(() => {
-      resizeTerminal()
-      terminal.focus()
-    })
-    const resizeTimer = window.setTimeout(() => {
-      resizeTerminal()
-    }, 100)
-
-    return () => {
-      window.clearTimeout(resizeTimer)
-      dataSubscription.dispose()
-      terminal.dispose()
-      if (xtermRef.current === terminal) {
-        xtermRef.current = null
-      }
-    }
-  }, [resizeTerminal, sendInputToPty])
-
-  useEffect(() => {
-    const container = terminalContainerRef.current
-    const resizeObserver =
-      container && typeof ResizeObserver !== 'undefined'
-        ? new ResizeObserver(() => {
-            resizeTerminal()
-          })
-        : null
-
-    if (container) {
-      resizeObserver?.observe(container)
-    }
-
-    const handleWindowResize = () => {
-      resizeTerminal()
-    }
-
-    window.addEventListener('resize', handleWindowResize)
-
-    return () => {
-      resizeObserver?.disconnect()
-      window.removeEventListener('resize', handleWindowResize)
-    }
-  }, [resizeTerminal])
+  }, [clearAttachRetryTimer, clearPendingInput, closeTerminal, requestPtyKill])
 
   return (
     <>
       <TerminalPanel
         sandboxId={activeSandboxId}
-        template={template}
-        status={status}
+        restartDisabled={restartDisabled}
+        restartLabel={restartLabel}
+        template={sandboxScoped ? undefined : template}
         terminalContainerRef={terminalContainerRef}
-        onFocusTerminal={() => xtermRef.current?.focus()}
+        onFocusTerminal={focusTerminal}
         onCopyTerminalText={() => void copyTerminalText()}
-        onStartTerminal={(options) => void startTerminal(options)}
+        onRestartTerminal={restartTerminal}
       />
 
       <DashboardTerminalCommandDialog
