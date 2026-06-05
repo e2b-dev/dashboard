@@ -23,7 +23,6 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState,
 } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import type { TemplateTagAssignment } from '@/core/modules/templates/models'
@@ -47,7 +46,6 @@ import { TAGS_PAGE_LIMIT } from './constants'
 import TagsEmpty from './empty'
 import TagsHeader from './header'
 import { TagHistoryRow } from './history/tag-history-row'
-import RollbackTagDialog from './rollback-dialog'
 import { useTagTableStore } from './stores/table-store'
 import {
   fallbackData,
@@ -58,6 +56,7 @@ import {
   trackTagTableInteraction,
   useTagColumns,
 } from './table-config'
+import { TagDialogProvider, useTagDialog } from './tag-dialog-provider'
 import type { TagGroup } from './types'
 
 const ESTIMATED_ROW_HEIGHT_PX = 44
@@ -219,116 +218,121 @@ export default function TagsTable({ teamSlug, templateId }: TagsTableProps) {
   }, [fetchNextPage, activeSearch, serverSort])
 
   return (
-    <div className="flex flex-col gap-6 h-full min-h-0">
-      <TagsHeader
-        teamSlug={teamSlug}
-        templateId={templateId}
-        templateName={templateName}
-        total={countData?.total}
-        hasSearch={activeSearch !== undefined}
-        searchInvalid={searchInvalid}
-      />
-      <div
-        ref={scrollRef}
-        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden -mx-8 px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
-        <DataTable className="w-full">
-          <DataTableHeader className="sticky top-0 z-30 bg-bg border-b-0 mb-px">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <DataTableRow
-                key={headerGroup.id}
-                className="border-b-0 flex items-center gap-6 -mx-8 px-8 w-[calc(100%+64px)]"
+    <TagDialogProvider
+      teamSlug={teamSlug}
+      templateId={templateId}
+      templateName={templateName}
+    >
+      <div className="flex flex-col gap-6 h-full min-h-0">
+        <TagsHeader
+          teamSlug={teamSlug}
+          templateId={templateId}
+          templateName={templateName}
+          total={countData?.total}
+          hasSearch={activeSearch !== undefined}
+          searchInvalid={searchInvalid}
+        />
+        <div
+          ref={scrollRef}
+          className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden -mx-8 px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          <DataTable className="w-full">
+            <DataTableHeader className="sticky top-0 z-30 bg-bg border-b-0 mb-px">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <DataTableRow
+                  key={headerGroup.id}
+                  className="border-b-0 flex items-center gap-6 -mx-8 px-8 w-[calc(100%+64px)]"
+                >
+                  {headerGroup.headers.map((header) => (
+                    <DataTableHead
+                      key={header.id}
+                      header={header}
+                      sorting={sorting.find((s) => s.id === header.id)?.desc}
+                      align={header.id === 'actions' ? 'right' : 'left'}
+                      className={cn(
+                        'h-auto px-0',
+                        header.id === 'tag' && 'flex-1 min-w-0',
+                        header.id === 'assignedAt' && 'w-[178px] shrink-0',
+                        header.id === 'actions' &&
+                          'w-[203px] max-sm:w-4 shrink-0 justify-end'
+                      )}
+                      style={
+                        header.id === 'tag' ? undefined : { width: undefined }
+                      }
+                    >
+                      <span>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </span>
+                    </DataTableHead>
+                  ))}
+                </DataTableRow>
+              ))}
+            </DataTableHeader>
+
+            {showLoader && (
+              <div className="h-[35svh] w-full flex items-center justify-center">
+                <Loader variant="slash" size="lg" />
+              </div>
+            )}
+
+            {showEmpty && <TagsEmpty hasSearch={activeSearch !== undefined} />}
+
+            {hasData && (
+              <div
+                className={cn(
+                  'relative',
+                  showFilterRefetchingOverlay && 'opacity-70 transition-opacity'
+                )}
+                style={{ height: `${virtualizer.getTotalSize()}px` }}
               >
-                {headerGroup.headers.map((header) => (
-                  <DataTableHead
-                    key={header.id}
-                    header={header}
-                    sorting={sorting.find((s) => s.id === header.id)?.desc}
-                    align={header.id === 'actions' ? 'right' : 'left'}
-                    className={cn(
-                      'h-auto px-0',
-                      header.id === 'tag' && 'flex-1 min-w-0',
-                      header.id === 'assignedAt' && 'w-[178px] shrink-0',
-                      header.id === 'actions' &&
-                        'w-[203px] max-sm:w-4 shrink-0 justify-end'
-                    )}
-                    style={
-                      header.id === 'tag' ? undefined : { width: undefined }
-                    }
-                  >
-                    <span>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </span>
-                  </DataTableHead>
-                ))}
-              </DataTableRow>
-            ))}
-          </DataTableHeader>
+                {virtualItems.map((virtualRow) => {
+                  const row = rows[virtualRow.index]
+                  if (!row) return null
+                  return (
+                    <div
+                      key={virtualRow.key}
+                      data-index={virtualRow.index}
+                      ref={(node) => virtualizer.measureElement(node)}
+                      className={cn(
+                        'absolute left-0 right-0',
+                        'hover:z-20 focus-within:z-10',
+                        'border-b border-stroke/80',
+                        'has-[button[aria-haspopup=menu][data-state=open]]:z-10'
+                      )}
+                      style={{
+                        transform: `translateY(${
+                          virtualRow.start - HEADER_SCROLL_MARGIN_PX
+                        }px)`,
+                      }}
+                    >
+                      <GroupSection
+                        row={row}
+                        teamSlug={teamSlug}
+                        templateId={templateId}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            )}
 
-          {showLoader && (
-            <div className="h-[35svh] w-full flex items-center justify-center">
-              <Loader variant="slash" size="lg" />
-            </div>
-          )}
-
-          {showEmpty && <TagsEmpty hasSearch={activeSearch !== undefined} />}
-
-          {hasData && (
-            <div
-              className={cn(
-                'relative',
-                showFilterRefetchingOverlay && 'opacity-70 transition-opacity'
-              )}
-              style={{ height: `${virtualizer.getTotalSize()}px` }}
-            >
-              {virtualItems.map((virtualRow) => {
-                const row = rows[virtualRow.index]
-                if (!row) return null
-                return (
-                  <div
-                    key={virtualRow.key}
-                    data-index={virtualRow.index}
-                    ref={(node) => virtualizer.measureElement(node)}
-                    className={cn(
-                      'absolute left-0 right-0',
-                      'hover:z-20 focus-within:z-10',
-                      'border-b border-stroke/80',
-                      'has-[button[aria-haspopup=menu][data-state=open]]:z-10'
-                    )}
-                    style={{
-                      transform: `translateY(${
-                        virtualRow.start - HEADER_SCROLL_MARGIN_PX
-                      }px)`,
-                    }}
-                  >
-                    <GroupSection
-                      row={row}
-                      teamSlug={teamSlug}
-                      templateId={templateId}
-                      templateName={templateName}
-                    />
-                  </div>
-                )
-              })}
-            </div>
-          )}
-
-          {hasNextPage && (
-            <div className="flex w-full items-center justify-center py-3">
-              <LoadMoreButton
-                isLoading={isFetchingNextPage}
-                onLoadMore={handleLoadMore}
-              />
-            </div>
-          )}
-        </DataTable>
+            {hasNextPage && (
+              <div className="flex w-full items-center justify-center py-3">
+                <LoadMoreButton
+                  isLoading={isFetchingNextPage}
+                  onLoadMore={handleLoadMore}
+                />
+              </div>
+            )}
+          </DataTable>
+        </div>
       </div>
-    </div>
+    </TagDialogProvider>
   )
 }
 
@@ -336,15 +340,9 @@ interface GroupSectionProps {
   row: Row<TagGroup>
   teamSlug: string
   templateId: string
-  templateName: string
 }
 
-function GroupSection({
-  row,
-  teamSlug,
-  templateId,
-  templateName,
-}: GroupSectionProps) {
+function GroupSection({ row, teamSlug, templateId }: GroupSectionProps) {
   'use no memo'
 
   const canExpand = row.getCanExpand()
@@ -352,19 +350,13 @@ function GroupSection({
   const dataState = isExpanded ? 'open' : 'closed'
   const shouldReduceMotion = useReducedMotion()
 
-  const [rollbackRequest, setRollbackRequest] = useState<{
-    target: TemplateTagAssignment
-    currentBuildId: string
-  } | null>(null)
+  const { actions } = useTagDialog()
 
   const handleRequestRowRollback = useCallback(
     (target: TemplateTagAssignment) => {
-      setRollbackRequest({
-        target,
-        currentBuildId: row.original.primaryAssignment.buildId,
-      })
+      actions.openRollback(row.original, target, 'history-row')
     },
-    [row.original.primaryAssignment.buildId]
+    [actions, row.original]
   )
 
   const toggle = () => {
@@ -496,20 +488,6 @@ function GroupSection({
           </motion.div>
         )}
       </AnimatePresence>
-
-      <RollbackTagDialog
-        open={rollbackRequest !== null}
-        onOpenChange={(next) => {
-          if (!next) setRollbackRequest(null)
-        }}
-        tag={row.original.tag}
-        currentBuildId={rollbackRequest?.currentBuildId ?? ''}
-        targetBuildId={rollbackRequest?.target.buildId ?? ''}
-        teamSlug={teamSlug}
-        templateId={templateId}
-        templateName={templateName}
-        surface="history-row"
-      />
     </div>
   )
 }
