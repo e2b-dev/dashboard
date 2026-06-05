@@ -25,16 +25,23 @@ const UpdateUserSchema = z
 
 const TIMEOUT = Symbol('profile-lookup-timeout')
 
-function withTimeout<T>(
+async function withTimeout<T>(
   promise: Promise<T>,
   ms: number
 ): Promise<T | typeof TIMEOUT> {
-  return Promise.race([
-    promise,
-    new Promise<typeof TIMEOUT>((resolve) => {
-      setTimeout(() => resolve(TIMEOUT), ms)
-    }),
-  ])
+  let timeout: ReturnType<typeof setTimeout> | undefined
+
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<typeof TIMEOUT>((resolve) => {
+        timeout = setTimeout(() => resolve(TIMEOUT), ms)
+        timeout.unref?.()
+      }),
+    ])
+  } finally {
+    if (timeout) clearTimeout(timeout)
+  }
 }
 
 export const userRouter = createTRPCRouter({
@@ -86,11 +93,21 @@ export const userRouter = createTRPCRouter({
 
       if (input.email !== undefined || input.password !== undefined) {
         const profile = await provider.getUserProfile()
+        const credentialProfile = profile ?? ctx.user
+
+        if (!profile) {
+          l.warn(
+            {
+              key: 'trpc_user_update:profile_fallback',
+              user_id: ctx.user.id,
+            },
+            'user profile lookup failed during credential update; falling back to session user capabilities'
+          )
+        }
 
         if (
-          !profile ||
-          (input.email !== undefined && !profile.canChangeEmail) ||
-          (input.password !== undefined && !profile.canChangePassword)
+          (input.email !== undefined && !credentialProfile.canChangeEmail) ||
+          (input.password !== undefined && !credentialProfile.canChangePassword)
         ) {
           return {
             status: 'error' as const,

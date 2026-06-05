@@ -58,4 +58,25 @@ describe('userRouter.update', () => {
     expect(providerMock.getUserProfile).toHaveBeenCalled()
     expect(providerMock.updateUser).not.toHaveBeenCalled()
   })
+
+  it('falls back to session capabilities when live profile lookup fails', async () => {
+    providerMock.getUserProfile.mockResolvedValue(null)
+    providerMock.updateUser.mockResolvedValue({
+      ok: true,
+      user: authUser,
+    })
+
+    const ctx = await createTRPCContext({ headers: new Headers() })
+    const caller = createCaller(ctx)
+
+    const result = await caller.update({ password: 'new-password' })
+
+    expect(result).toEqual({ status: 'ok', user: authUser })
+    expect(providerMock.getUserProfile).toHaveBeenCalled()
+    expect(providerMock.updateUser).toHaveBeenCalledWith({
+      email: undefined,
+      password: 'new-password',
+      name: undefined,
+    })
+  })
 })

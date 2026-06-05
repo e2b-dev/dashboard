@@ -196,7 +196,6 @@ export function EmailSettings({ className }: EmailSettingsProps) {
                   form.watch('email') === user.email
                 }
                 type="submit"
-                onClick={form.handleSubmit(submitEmailChange)}
               >
                 Save
               </Button>

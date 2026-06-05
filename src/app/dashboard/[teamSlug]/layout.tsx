@@ -61,7 +61,7 @@ export default async function DashboardLayout({
 
   return (
     <HydrateClient>
-      <DashboardTeamGate teamSlug={teamSlug}>
+      <DashboardTeamGate teamSlug={teamSlug} fallbackUser={authContext.user}>
         <SidebarProvider
           defaultOpen={typeof sidebarState === 'undefined' ? true : defaultOpen}
         >

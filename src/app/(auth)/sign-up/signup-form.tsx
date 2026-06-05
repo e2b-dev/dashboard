@@ -106,12 +106,8 @@ export default function SignUp() {
       <div className="flex w-full flex-col gap-3">
         <h1>Sign up</h1>
         <p className="text-fg-secondary leading-6">
-          New sign-ups are temporarily paused while we migrate our
-          authentication system. Existing users can still{' '}
-          <Link className="text-fg underline" href={AUTH_URLS.SIGN_IN}>
-            sign in
-          </Link>
-          .
+          Sign-ups and sign-ins are temporarily paused while we migrate our
+          authentication system. Please try again later.
         </p>
       </div>
     )
