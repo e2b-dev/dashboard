@@ -27,11 +27,10 @@ interface TagHistoryViewProps {
   tag: string
 }
 
-const ROW_HEIGHT_PX = 36
+const ROW_HEIGHT_PX = 32
 const VIRTUAL_OVERSCAN = 12
 const PREFETCH_THRESHOLD = 8
-// TagHistoryHeader (44px) + parent gap-3 (12px).
-const HEADER_SCROLL_MARGIN_PX = 56
+const HEADER_SCROLL_MARGIN_PX = 44
 
 export default function TagHistoryView({
   teamSlug,
@@ -168,7 +167,7 @@ export default function TagHistoryView({
   return (
     <div
       ref={scrollRef}
-      className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto overflow-x-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="flex h-full min-h-0 flex-col gap-0 overflow-y-auto overflow-x-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       <TagHistoryHeader
         tag={tag}
