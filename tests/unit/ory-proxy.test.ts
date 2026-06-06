@@ -49,7 +49,10 @@ describe('Ory proxy auth routes', () => {
   })
 
   it('redirects authenticated users from sign-in to the dashboard', async () => {
-    authSession.current = { user: { id: 'user-id' } } as Session
+    authSession.current = {
+      user: { id: 'user-id' },
+      accessToken: 'access-token',
+    } as Session
 
     const response = await proxy(request('/sign-in'), {} as NextFetchEvent)
 
@@ -69,9 +72,34 @@ describe('Ory proxy auth routes', () => {
     expect(location).toContain('returnTo=%2Fdashboard%2Fterminal')
   })
 
+  it('treats sessions without an access token as unauthenticated on auth routes', async () => {
+    authSession.current = {
+      user: { id: 'user-id' },
+    } as Session
+
+    const response = await proxy(request('/sign-in'), {} as NextFetchEvent)
+
+    expect(response.headers.get('location')).toContain(
+      '/api/auth/oauth-start?intent=signin'
+    )
+  })
+
+  it('treats sessions without a user id as unauthenticated on auth routes', async () => {
+    authSession.current = {
+      accessToken: 'access-token',
+    } as Session
+
+    const response = await proxy(request('/sign-in'), {} as NextFetchEvent)
+
+    expect(response.headers.get('location')).toContain(
+      '/api/auth/oauth-start?intent=signin'
+    )
+  })
+
   it('treats Auth.js error sessions as unauthenticated on auth routes', async () => {
     authSession.current = {
       user: { id: 'user-id' },
+      accessToken: 'access-token',
       error: 'RefreshTokenError',
     } as Session
 

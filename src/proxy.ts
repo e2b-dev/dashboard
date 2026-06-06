@@ -47,13 +47,11 @@ async function proxyCore(
   }
 }
 
-// req.auth is truthy even when the session carries a RefreshTokenError, so we
-// must check session.error too — otherwise the auth-route guard treats a
-// poisoned session as "logged in" and ping-pongs the user between /dashboard
-// (redirects to /sign-in via getAuthContext()) and /sign-in (redirects back to
-// /dashboard via the proxy's authenticated-on-auth-route rule).
+// Match the Ory auth provider's AuthContext requirements. req.auth can be
+// truthy while missing the user id/access token, or while carrying a
+// RefreshTokenError; in those cases the server auth context is unauthenticated.
 function isSessionAuthenticated(session: Session | null): boolean {
-  return !!session && !session.error
+  return !!session?.user?.id && !!session.accessToken && !session.error
 }
 
 // In Ory mode the Auth.js middleware wrapper populates req.auth and manages its
