@@ -104,7 +104,7 @@ function createTerminalSandbox({
       template,
       userId,
     },
-    headers: {
+    apiHeaders: {
       ...headers,
     },
   })
