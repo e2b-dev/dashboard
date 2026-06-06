@@ -49,7 +49,7 @@ function installLocalStorage() {
 
 describe('dashboard terminal helpers', () => {
   const sandboxManagementAuth = {
-    headers: {
+    apiHeaders: {
       [SUPABASE_TOKEN_HEADER]: 'supabase-token',
       [SUPABASE_TEAM_HEADER]: 'team-123',
     },
