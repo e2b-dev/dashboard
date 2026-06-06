@@ -77,7 +77,7 @@ function connectTerminalSandbox(
   return Sandbox.connect(sandboxId, {
     domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
     timeoutMs: TERMINAL_SANDBOX_TIMEOUT_MS,
-    headers: {
+    apiHeaders: {
       ...headers,
     },
   })
@@ -104,7 +104,7 @@ function createTerminalSandbox({
       template,
       userId,
     },
-    headers: {
+    apiHeaders: {
       ...headers,
     },
   })
