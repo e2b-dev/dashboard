@@ -34,17 +34,11 @@ afterEach(() => {
 })
 
 describe('signout-flow GET', () => {
-  it('revokes Kratos sessions and redirects through Hydra logout', async () => {
-    authMock.mockResolvedValue({
-      idToken: 'id.token.sig',
-      identityId: 'kratos-uuid',
-    })
+  it('redirects without changing sign-out state', async () => {
+    const response = GET(request())
 
-    const response = await GET(request())
-    const location = response.headers.get('location') ?? ''
-
-    expect(revokeKratosSessionsMock).toHaveBeenCalledWith('kratos-uuid')
-    expect(location).toContain('/oauth2/sessions/logout')
-    expect(location).toContain('id_token_hint=id.token.sig')
+    expect(response.headers.get('location')).toBe('https://app.e2b.dev/')
+    expect(signOutMock).not.toHaveBeenCalled()
+    expect(revokeKratosSessionsMock).not.toHaveBeenCalled()
   })
 })

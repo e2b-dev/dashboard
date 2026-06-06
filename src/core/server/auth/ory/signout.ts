@@ -1,7 +1,3 @@
-// Route handler that performs the full Ory sign-out (Auth.js + Kratos sessions
-// + Hydra RP-initiated logout). The provider redirects here on signOut().
-export const ORY_SIGN_OUT_FLOW_PATH = '/api/auth/oauth/signout-flow'
-
 // Used when sign-in bootstrap fails before Auth.js finalizes a session. The
 // callback stores the id_token in this short-lived httpOnly cookie, then
 // redirects through this route so the browser can clear the Ory session.

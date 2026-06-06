@@ -390,7 +390,8 @@ export const forgotPasswordAction = actionClient
   })
 
 export async function signOutAction(returnTo?: string) {
-  const { redirectTo } = await auth.signOut({ returnTo })
+  const origin = (await headers()).get('origin') ?? undefined
+  const { redirectTo } = await auth.signOut({ origin, returnTo })
 
   throw redirect(redirectTo)
 }

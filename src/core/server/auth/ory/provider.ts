@@ -21,7 +21,7 @@ import { oryAuthFlows } from './flows'
 import { isReauthFresh } from './freshness'
 import { fromAuthSession, fromOryIdentity } from './identity'
 import { revokeKratosSessionsForIdentity } from './kratos-session'
-import { ORY_SIGN_OUT_FLOW_PATH } from './signout'
+import { completeOrySignOut } from './signout-flow'
 
 // Where the account-settings page expects to land after a forced re-auth so it
 // reveals the password form (matches the Supabase ?reauth=1 contract).
@@ -73,8 +73,10 @@ export const oryAuthProvider: AuthProvider = {
       : null
   },
 
-  signOut() {
-    return Promise.resolve({ redirectTo: ORY_SIGN_OUT_FLOW_PATH })
+  async signOut(options) {
+    return {
+      redirectTo: await completeOrySignOut(options?.origin),
+    }
   },
 
   async updateUser(input: UpdateUserInput): Promise<UpdateUserResult> {

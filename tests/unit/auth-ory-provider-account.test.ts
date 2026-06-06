@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const loggerMocks = vi.hoisted(() => ({
   error: vi.fn(),
@@ -8,6 +8,7 @@ const loggerMocks = vi.hoisted(() => ({
 }))
 
 const authjsMock = vi.hoisted(() => vi.fn())
+const authjsSignOutMock = vi.hoisted(() => vi.fn())
 const updateUserMock = vi.hoisted(() => vi.fn())
 const revokeSessionsMock = vi.hoisted(() => vi.fn())
 const resolveIdentityMock = vi.hoisted(() => vi.fn())
@@ -17,7 +18,7 @@ vi.mock('@/core/shared/clients/logger/logger', () => ({
   serializeErrorForLog: vi.fn((error: unknown) => error),
 }))
 
-vi.mock('@/auth', () => ({ auth: authjsMock }))
+vi.mock('@/auth', () => ({ auth: authjsMock, signOut: authjsSignOutMock }))
 
 vi.mock('@/core/server/auth/ory/flows', () => ({
   oryAuthFlows: { updateUser: updateUserMock },
@@ -46,10 +47,16 @@ const nowSeconds = Math.floor(Date.now() / 1000)
 describe('oryAuthProvider account operations', () => {
   beforeEach(() => {
     authjsMock.mockReset()
+    authjsSignOutMock.mockReset().mockResolvedValue(undefined)
     updateUserMock.mockReset()
     revokeSessionsMock.mockReset()
     resolveIdentityMock.mockReset()
     resolveIdentityMock.mockResolvedValue({ id: 'kratos-uuid' })
+    vi.stubEnv('ORY_SDK_URL', 'https://project.oryapis.com')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
   })
 
   it('starts account reauth through the Ory OAuth flow', async () => {
@@ -156,5 +163,26 @@ describe('oryAuthProvider account operations', () => {
     await oryAuthProvider.signOutOtherSessions()
 
     expect(revokeSessionsMock).toHaveBeenCalledWith('kratos-uuid')
+  })
+
+  it('signs out Auth.js, revokes Kratos sessions, and returns the Ory logout URL', async () => {
+    authjsMock.mockResolvedValue({
+      user: { id: 'e2b-user-id' },
+      identityId: 'kratos-uuid',
+      accessToken: 'a',
+      idToken: 'id.token.sig',
+    })
+
+    const result = await oryAuthProvider.signOut({
+      origin: 'https://app.e2b.dev',
+    })
+
+    expect(authjsSignOutMock).toHaveBeenCalledWith({ redirect: false })
+    expect(revokeSessionsMock).toHaveBeenCalledWith('kratos-uuid')
+    expect(result.redirectTo).toContain('/oauth2/sessions/logout')
+    expect(result.redirectTo).toContain('id_token_hint=id.token.sig')
+    expect(result.redirectTo).toContain(
+      `post_logout_redirect_uri=${encodeURIComponent('https://app.e2b.dev/')}`
+    )
   })
 })

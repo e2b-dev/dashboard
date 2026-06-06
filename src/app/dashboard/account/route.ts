@@ -28,7 +28,9 @@ export async function GET(request: NextRequest) {
       'no personal team for user, signing out'
     )
 
-    const { redirectTo } = await auth.signOut()
+    const { redirectTo } = await auth.signOut({
+      origin: request.nextUrl.origin,
+    })
 
     if (!isOryAuthEnabled()) {
       const signInUrl = new URL(AUTH_URLS.SIGN_IN, request.url)
