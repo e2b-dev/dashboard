@@ -49,7 +49,7 @@ function installLocalStorage() {
 
 describe('dashboard terminal helpers', () => {
   const sandboxManagementAuth = {
-    apiHeaders: {
+    headers: {
       [SUPABASE_TOKEN_HEADER]: 'supabase-token',
       [SUPABASE_TEAM_HEADER]: 'team-123',
     },
@@ -212,7 +212,7 @@ describe('dashboard terminal helpers', () => {
       expect(mockConnectSandbox).toHaveBeenCalledWith('sandbox-from-url', {
         domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
         timeoutMs: 30 * 60 * 1000,
-        headers: {
+        apiHeaders: {
           [SUPABASE_TOKEN_HEADER]: 'supabase-token',
           [SUPABASE_TEAM_HEADER]: 'team-123',
         },
@@ -243,7 +243,7 @@ describe('dashboard terminal helpers', () => {
           template: 'base',
           userId: 'user-123',
         },
-        headers: {
+        apiHeaders: {
           [SUPABASE_TOKEN_HEADER]: 'supabase-token',
           [SUPABASE_TEAM_HEADER]: 'team-123',
         },

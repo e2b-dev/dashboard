@@ -31,7 +31,7 @@ export const GET = async (req: NextRequest) => {
 
     const sbx = await Sandbox.create('base', {
       domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
-      headers: {
+      apiHeaders: {
         ...SUPABASE_AUTH_HEADERS(authContext.accessToken, team.id),
       },
     })
