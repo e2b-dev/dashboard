@@ -77,7 +77,7 @@ export const TimezoneSettings = ({ className }: TimezoneSettingsProps) => {
       return
     }
 
-    toast(defaultSuccessToast('Timezone preference updated.'))
+    toast(defaultSuccessToast('Timezone updated.'))
     setOpen(false)
   }
 
