@@ -14,8 +14,6 @@ function isAfterOutsideRequestScopeError(error: unknown): boolean {
 }
 
 export class NextAfterLogRecordProcessor implements LogRecordProcessor {
-  private pendingFlushScheduled = false
-
   constructor(private readonly delegate: LogRecordProcessor) {}
 
   onEmit(logRecord: SdkLogRecord, context?: Context): void {
@@ -32,12 +30,6 @@ export class NextAfterLogRecordProcessor implements LogRecordProcessor {
   }
 
   private scheduleRequestFlush(): void {
-    if (this.pendingFlushScheduled) {
-      return
-    }
-
-    this.pendingFlushScheduled = true
-
     try {
       after(async () => {
         try {
@@ -47,13 +39,9 @@ export class NextAfterLogRecordProcessor implements LogRecordProcessor {
             'Failed to flush OpenTelemetry logs in Next.js after()',
             error
           )
-        } finally {
-          this.pendingFlushScheduled = false
         }
       })
     } catch (error) {
-      this.pendingFlushScheduled = false
-
       if (isAfterOutsideRequestScopeError(error)) {
         return
       }

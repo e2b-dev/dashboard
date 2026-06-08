@@ -43,10 +43,10 @@ describe('NextAfterLogRecordProcessor', () => {
     expect(delegate.forceFlush).not.toHaveBeenCalled()
   })
 
-  it('schedules one after() flush while a flush is pending', async () => {
-    let callback: (() => unknown) | undefined
+  it('schedules an after() flush for each emitted log record', async () => {
+    const callbacks: Array<() => unknown> = []
     mockedAfter.mockImplementation((task: AfterTask) => {
-      callback = typeof task === 'function' ? task : async () => await task
+      callbacks.push(typeof task === 'function' ? task : async () => await task)
     })
 
     const delegate = new TestLogRecordProcessor()
@@ -56,10 +56,10 @@ describe('NextAfterLogRecordProcessor', () => {
     processor.onEmit(logRecord)
 
     expect(delegate.onEmit).toHaveBeenCalledTimes(2)
-    expect(mockedAfter).toHaveBeenCalledTimes(1)
+    expect(mockedAfter).toHaveBeenCalledTimes(2)
 
-    await callback?.()
+    await Promise.all(callbacks.map((callback) => callback()))
 
-    expect(delegate.forceFlush).toHaveBeenCalledTimes(1)
+    expect(delegate.forceFlush).toHaveBeenCalledTimes(2)
   })
 })
