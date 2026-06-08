@@ -12,7 +12,15 @@ export const dynamic = 'force-dynamic'
 const REVALIDATE_TIME = 900 // 15 minutes ttl
 const CDN_CACHE_CONTROL = `public, s-maxage=${REVALIDATE_TIME}, stale-while-revalidate=${REVALIDATE_TIME}`
 
+function getRewriteRequestHeaders(): Headers {
+  return new Headers({
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  })
+}
+
 function setRewriteCacheHeaders(headers: Headers): void {
+  headers.delete('set-cookie')
+  headers.delete('set-cookie2')
   headers.set('Cache-Control', 'public, max-age=0, must-revalidate')
   headers.set('CDN-Cache-Control', CDN_CACHE_CONTROL)
   headers.set('Vercel-CDN-Cache-Control', CDN_CACHE_CONTROL)
@@ -55,7 +63,9 @@ export async function GET(request: NextRequest): Promise<Response> {
     const fetchUrl = notFound ? `${BASE_URL}/not-found` : url.toString()
 
     const res = await fetch(fetchUrl, {
-      headers: new Headers(request.headers),
+      headers: notFound
+        ? new Headers(request.headers)
+        : getRewriteRequestHeaders(),
       redirect: 'follow',
       ...(notFound
         ? { cache: 'no-store' }
@@ -78,6 +88,7 @@ export async function GET(request: NextRequest): Promise<Response> {
 
       // remove content-encoding header to ensure proper rendering
       newHeaders.delete('content-encoding')
+      newHeaders.delete('content-length')
 
       // rewrite absolute URLs pointing to the rewritten domain to relative paths and with correct SEO tags
       if (config) {
