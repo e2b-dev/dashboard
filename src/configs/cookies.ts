@@ -11,6 +11,8 @@ export const COOKIE_KEYS = {
   SIDEBAR_STATE: 'e2b-sidebar-state',
 
   SANDBOX_INSPECT_ROOT_PATH: 'e2b-sandbox-inspect-root-path',
+
+  DASHBOARD_TIMEZONE: 'e2b-dashboard-timezone',
 } as const
 
 const BASE_COOKIE_OPTIONS: Partial<ResponseCookie> = {
@@ -35,6 +37,9 @@ export const COOKIE_OPTIONS = {
     ...BASE_COOKIE_OPTIONS,
   },
   [COOKIE_KEYS.SANDBOX_INSPECT_ROOT_PATH]: {
+    ...BASE_COOKIE_OPTIONS,
+  },
+  [COOKIE_KEYS.DASHBOARD_TIMEZONE]: {
     ...BASE_COOKIE_OPTIONS,
   },
 } as const
