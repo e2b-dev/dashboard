@@ -1,14 +1,27 @@
 import 'server-only'
 
-import { Configuration, IdentityApi } from '@ory/client-fetch'
+import { Configuration, IdentityApi, OAuth2Api } from '@ory/client-fetch'
 
-let cached: IdentityApi | null = null
+let cachedIdentityApi: IdentityApi | null = null
+let cachedOAuth2Api: OAuth2Api | null = null
 
 // the IdentityApi requires the Ory project admin token (PAT). callers should
 // ensure ORY_PROJECT_API_TOKEN is set at deploy time when AUTH_PROVIDER=ory.
 export function getOryIdentityApi(): IdentityApi {
-  if (cached) return cached
+  if (cachedIdentityApi) return cachedIdentityApi
 
+  cachedIdentityApi = new IdentityApi(getOryConfiguration())
+  return cachedIdentityApi
+}
+
+export function getOryOAuth2Api(): OAuth2Api {
+  if (cachedOAuth2Api) return cachedOAuth2Api
+
+  cachedOAuth2Api = new OAuth2Api(getOryConfiguration())
+  return cachedOAuth2Api
+}
+
+function getOryConfiguration(): Configuration {
   const basePath = process.env.ORY_SDK_URL
   const accessToken = process.env.ORY_PROJECT_API_TOKEN
 
@@ -19,11 +32,8 @@ export function getOryIdentityApi(): IdentityApi {
     throw new Error('ORY_PROJECT_API_TOKEN is not configured')
   }
 
-  cached = new IdentityApi(
-    new Configuration({
-      basePath: basePath.replace(/\/$/, ''),
-      accessToken,
-    })
-  )
-  return cached
+  return new Configuration({
+    basePath: basePath.replace(/\/$/, ''),
+    accessToken,
+  })
 }

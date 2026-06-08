@@ -13,6 +13,7 @@ import {
   readOryEmailClaim,
   readOryProfileSubject,
 } from './authjs-boundary'
+import type { OryInternalAuthJsSession } from './authjs-session-boundary'
 import { ensureOryUserBootstrapped } from './dashboard-bootstrap'
 import { resolveOryIdentity } from './find-identity'
 import { refreshOryToken } from './refresh-token'
@@ -34,9 +35,9 @@ import { persistOrySignupMetadataFromCookie } from './signup-metadata'
  *   Persists selected Ory token fields into Auth.js's encrypted JWT cookie.
  *
  * session callback:
- *   Projects those fields from the JWT cookie onto the Session object consumed
- *   by our AuthProvider. Live Kratos traits/credentials are fetched separately
- *   through getUserProfile().
+ *   Projects token fields onto the Session object consumed by Auth.js's
+ *   server-side auth() helper. The public /session route strips those fields
+ *   before responding to browsers.
  */
 
 // Refresh the access token slightly before it actually expires so we never hand
@@ -120,12 +121,13 @@ export function projectOryJwtToAuthJsSession({
   session,
   token,
 }: OryAuthJsSessionInput) {
-  session.user.id = token.sub ?? session.user.id
-  session.accessToken = token.accessToken
-  session.idToken = token.idToken
-  session.identityId = token.identityId
-  session.error = token.error
-  return session
+  const orySession = session as OryInternalAuthJsSession
+  orySession.user.id = token.sub ?? orySession.user.id
+  orySession.accessToken = token.accessToken
+  orySession.idToken = token.idToken
+  orySession.identityId = token.identityId
+  orySession.error = token.error
+  return orySession
 }
 
 // Persist the Ory tokens on a fresh sign-in and cache the resolved Kratos

@@ -3,10 +3,10 @@ import {
   type NextRequest,
   NextResponse,
 } from 'next/server'
-import type { Session } from 'next-auth'
 import { auth as authjsMiddleware } from '@/auth'
 import { isOryAuthEnabled } from './configs/flags'
 import { getOryAuthRouteRedirect } from './core/server/auth/ory/auth-route-redirect'
+import { isOrySessionAuthenticated } from './core/server/auth/ory/authjs-session-boundary'
 import {
   handleAuthGate,
   handleMiddlewareRedirect,
@@ -47,19 +47,12 @@ async function proxyCore(
   }
 }
 
-// Match the Ory auth provider's AuthContext requirements. req.auth can be
-// truthy while missing the user id/access token, or while carrying a
-// RefreshTokenError; in those cases the server auth context is unauthenticated.
-function isSessionAuthenticated(session: Session | null): boolean {
-  return !!session?.user?.id && !!session.accessToken && !session.error
-}
-
 // In Ory mode the Auth.js middleware wrapper populates req.auth and manages its
 // session cookies, so auth is resolved here and threaded into proxyCore. Auth
 // pages still bypass the local UI, but only after checking whether an existing
 // session should send the user back to the dashboard instead of the hosted UI.
 const proxyWithOryAuth = authjsMiddleware((req, _event: NextFetchEvent) => {
-  const isAuthenticated = isSessionAuthenticated(req.auth)
+  const isAuthenticated = isOrySessionAuthenticated(req.auth)
   const authRouteRedirect = getOryAuthRouteRedirect(req, isAuthenticated)
   if (authRouteRedirect) return authRouteRedirect
 

@@ -18,5 +18,5 @@ export interface AuthProvider {
   signOut(options?: SignOutOptions): Promise<SignOutResult>
   updateUser(input: UpdateUserInput): Promise<UpdateUserResult>
   startReauthForAccountSettings(): Promise<ReauthDispatch>
-  signOutOtherSessions(): Promise<void>
+  handleCredentialChangeSuccess(): Promise<void>
 }

@@ -16,6 +16,21 @@ export async function GET(request: NextRequest) {
     ORY_BOOTSTRAP_FAILURE_ID_TOKEN_COOKIE
   )?.value
 
+  if (!idToken) {
+    l.warn(
+      {
+        key: 'oauth_bootstrap_failed:missing_handoff_cookie',
+      },
+      'Ignoring bootstrap-failed request without the Ory handoff cookie'
+    )
+
+    const response = NextResponse.redirect(
+      new URL(ORY_POST_LOGOUT_PATH, origin)
+    )
+    response.cookies.delete(ORY_BOOTSTRAP_FAILURE_ID_TOKEN_COOKIE)
+    return response
+  }
+
   try {
     await signOut({ redirect: false })
   } catch (error) {
@@ -28,14 +43,14 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  const logoutUrl = idToken ? buildOryLogoutUrl({ idToken, origin }) : null
+  const logoutUrl = buildOryLogoutUrl({ idToken, origin })
 
   if (!logoutUrl) {
     l.error(
       {
         key: 'oauth_bootstrap_failed:missing_logout_context',
         context: {
-          has_id_token: !!idToken,
+          has_id_token: true,
           has_ory_sdk_url: !!process.env.ORY_SDK_URL,
         },
       },

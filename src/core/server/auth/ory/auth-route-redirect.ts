@@ -16,7 +16,7 @@ export function getOryAuthRouteRedirect(
   request: NextRequest,
   isAuthenticated = false
 ): NextResponse | null {
-  const intent = INTENT_BY_PATH[request.nextUrl.pathname]
+  const intent = getOryAuthIntentFromPath(request.nextUrl.pathname)
   if (!intent) return null
 
   if (isAuthenticated) {
@@ -27,4 +27,15 @@ export function getOryAuthRouteRedirect(
   const target = new URL(buildOryStartURL(intent, returnTo), request.url)
 
   return NextResponse.redirect(target)
+}
+
+export function getOryAuthIntentFromPath(
+  pathname: string
+): OryAuthIntent | null {
+  return INTENT_BY_PATH[normalizeAuthPath(pathname)] ?? null
+}
+
+export function normalizeAuthPath(pathname: string): string {
+  if (pathname === '/') return pathname
+  return pathname.replace(/\/+$/, '')
 }

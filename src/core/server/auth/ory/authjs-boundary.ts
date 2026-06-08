@@ -14,7 +14,7 @@ import { decodeJwtClaims, readStringClaim } from './jwt-claims'
  * - `user`: Auth.js's synthetic user derived from the OIDC profile. It is not
  *   the dashboard AuthUser and not the Kratos Identity.
  * - `token`: Auth.js encrypted JWT session-cookie payload. We persist selected
- *   Ory token fields there, then project them onto `session`.
+ *   Ory token fields there so server-side auth() can forward them to APIs.
  */
 
 export type OryAuthJsAccount = Account & {

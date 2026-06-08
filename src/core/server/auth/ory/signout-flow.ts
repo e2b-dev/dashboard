@@ -3,7 +3,9 @@ import 'server-only'
 import { auth, signOut } from '@/auth'
 import { BASE_URL } from '@/configs/urls'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
+import { readOrySessionFields } from './authjs-session-boundary'
 import { revokeKratosSessionsForIdentity } from './kratos-session'
+import { revokeOryOAuthSessionsForSubject } from './oauth-session'
 import { buildOryLogoutUrl, ORY_POST_LOGOUT_PATH } from './signout'
 
 export async function completeOrySignOut(origin = BASE_URL): Promise<string> {
@@ -11,12 +13,15 @@ export async function completeOrySignOut(origin = BASE_URL): Promise<string> {
 
   let idToken: string | undefined
   let identityId: string | undefined
+  let userId: string | undefined
   try {
     const session = await auth()
-    idToken = session?.idToken
+    const serverFields = readOrySessionFields(session)
+    userId = session?.user?.id
+    idToken = serverFields?.idToken
     // The Kratos identity id resolved at sign-in — NOT the OIDC subject (which
     // is the E2B user id) — so we revoke the right identity's Kratos sessions.
-    identityId = session?.identityId
+    identityId = serverFields?.identityId
   } catch (error) {
     l.warn(
       {
@@ -37,6 +42,10 @@ export async function completeOrySignOut(origin = BASE_URL): Promise<string> {
       },
       'Auth.js signOut() failed'
     )
+  }
+
+  if (userId) {
+    await revokeOryOAuthSessionsForSubject(userId)
   }
 
   if (identityId) {

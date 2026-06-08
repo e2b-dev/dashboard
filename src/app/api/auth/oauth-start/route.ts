@@ -1,5 +1,11 @@
+import { NextResponse } from 'next/server'
 import { signIn } from '@/auth'
-import { normalizeOryReturnTo } from '@/core/server/auth/ory/build-start-url'
+import {
+  authorizationParamsForOryIntent,
+  normalizeOryReturnTo,
+  readOryAuthIntent,
+  shouldCaptureOrySignupMetadata,
+} from '@/core/server/auth/ory/build-start-url'
 import {
   readOrySignupMetadataFromHeaders,
   setOrySignupMetadataCookie,
@@ -20,22 +26,19 @@ import {
 // https://www.ory.com/docs/oauth2-oidc/authorization-code-flow
 export async function GET(request: Request) {
   const url = new URL(request.url)
-  const intent = url.searchParams.get('intent')
+  const intent = readOryAuthIntent(url.searchParams.get('intent'))
   const redirectTo =
     normalizeOryReturnTo(url.searchParams.get('returnTo')) ?? '/dashboard'
 
-  const authorizationParams =
-    intent === 'signup'
-      ? { prompt: 'registration' }
-      : intent === 'reauth'
-        ? { prompt: 'login' }
-        : undefined
+  if (!intent) {
+    return new NextResponse('Invalid Ory auth intent', { status: 400 })
+  }
 
-  if (intent === 'signup') {
+  if (shouldCaptureOrySignupMetadata(intent)) {
     await setOrySignupMetadataCookie(
       readOrySignupMetadataFromHeaders(request.headers)
     )
   }
 
-  await signIn('ory', { redirectTo }, authorizationParams)
+  await signIn('ory', { redirectTo }, authorizationParamsForOryIntent(intent))
 }

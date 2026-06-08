@@ -136,9 +136,9 @@ export const userRouter = createTRPCRouter({
       })
 
       if (result.ok) {
-        // Invalidate other sessions when the password changed.
+        // Invalidate sessions when the password changed.
         if (input.password) {
-          await provider.signOutOtherSessions()
+          await provider.handleCredentialChangeSuccess()
         }
 
         return { status: 'ok' as const, user: result.user }

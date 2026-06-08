@@ -35,7 +35,7 @@ vi.mock('@/core/shared/clients/api', () => ({
   },
 }))
 
-const { bootstrapOryUser, ensureOryUserBootstrapped } = await import(
+const { ensureOryUserBootstrapped } = await import(
   '@/core/server/auth/ory/dashboard-bootstrap'
 )
 
@@ -50,14 +50,14 @@ describe('dashboard bootstrap for Ory users', () => {
     process.env.DASHBOARD_API_ADMIN_TOKEN = originalDashboardApiAdminToken
   })
 
-  it('imports the access-token subject with id_token profile fallback', async () => {
+  it('bootstraps the dashboard user from Ory token claims', async () => {
     apiPostMock.mockResolvedValue({
       data: { id: 'team-1', slug: 'team-1' },
       error: null,
       response: { ok: true, status: 200, statusText: 'OK' },
     })
 
-    const result = await bootstrapOryUser({
+    const result = await ensureOryUserBootstrapped({
       accessToken: jwt({
         iss: 'https://ory.example.test',
         sub: 'e2b-user-id',
@@ -82,55 +82,7 @@ describe('dashboard bootstrap for Ory users', () => {
     })
   })
 
-  it('asks dashboard-api to confirm bootstrap during Ory sign-in', async () => {
-    apiPostMock.mockResolvedValue({
-      data: { id: 'team-1', slug: 'team-1' },
-      error: null,
-      response: { ok: true, status: 200, statusText: 'OK' },
-    })
-
-    const result = await ensureOryUserBootstrapped({
-      accessToken: jwt({
-        iss: 'https://ory.example.test',
-        sub: 'e2b-user-id',
-        email: 'ada@example.test',
-      }),
-      provider: 'ory',
-    })
-
-    expect(result).toBe(true)
-    expect(apiPostMock).toHaveBeenCalledWith('/admin/users/bootstrap', {
-      body: {
-        oidc_issuer: 'https://ory.example.test',
-        oidc_user_id: 'e2b-user-id',
-        oidc_user_email: 'ada@example.test',
-        oidc_user_name: null,
-      },
-      headers: { 'X-Admin-Token': 'admin-token' },
-    })
-  })
-
-  it('confirms bootstrap when the admin bootstrap call succeeds', async () => {
-    apiPostMock.mockResolvedValue({
-      data: { id: 'team-1', slug: 'team-1' },
-      error: null,
-      response: { ok: true, status: 200, statusText: 'OK' },
-    })
-
-    const result = await ensureOryUserBootstrapped({
-      accessToken: jwt({
-        iss: 'https://ory.example.test',
-        sub: 'e2b-user-id',
-        email: 'ada@example.test',
-      }),
-      provider: 'ory',
-    })
-
-    expect(result).toBe(true)
-    expect(apiPostMock).toHaveBeenCalledTimes(1)
-  })
-
-  it('denies bootstrap confirmation when the admin bootstrap call fails', async () => {
+  it('denies sign-in when dashboard bootstrap fails', async () => {
     apiPostMock.mockResolvedValue({
       data: null,
       error: { status: 503, message: 'dashboard-api unavailable' },

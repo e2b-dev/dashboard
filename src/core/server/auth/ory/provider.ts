@@ -1,7 +1,7 @@
 import 'server-only'
 
 import type { Session } from 'next-auth'
-import { auth as authjs } from '@/auth'
+import { auth as authjs, signOut as authjsSignOut } from '@/auth'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import type { AuthProvider } from '../provider'
@@ -12,6 +12,7 @@ import type {
   UpdateUserInput,
   UpdateUserResult,
 } from '../types'
+import { readOrySessionFields } from './authjs-session-boundary'
 import { buildOryStartURL } from './build-start-url'
 import {
   ACCOUNT_IDENTITY_CREDENTIALS,
@@ -21,6 +22,7 @@ import { oryAuthFlows } from './flows'
 import { isReauthFresh } from './freshness'
 import { fromAuthSession, fromOryIdentity } from './identity'
 import { revokeKratosSessionsForIdentity } from './kratos-session'
+import { revokeOryOAuthSessionsForSubject } from './oauth-session'
 import { completeOrySignOut } from './signout-flow'
 
 // Where the account-settings page expects to land after a forced re-auth so it
@@ -32,38 +34,41 @@ export const oryAuthProvider: AuthProvider = {
     const session = await readSession()
     if (!session) return null
 
-    if (!session.user?.id || !session.accessToken) {
+    const serverFields = readOrySessionFields(session)
+
+    if (!session.user?.id || !serverFields?.accessToken) {
       return null
     }
 
-    if (session.error) {
+    if (serverFields.error) {
       l.warn(
         {
           key: 'auth_provider:ory_session_error',
           user_id: session.user.id,
-          context: { error: session.error },
+          context: { error: serverFields.error },
         },
-        `Auth.js session reports error '${session.error}'; treating as unauthenticated`
+        `Auth.js session reports error '${serverFields.error}'; treating as unauthenticated`
       )
       return null
     }
 
     return {
       user: fromAuthSession(session),
-      accessToken: session.accessToken,
+      accessToken: serverFields.accessToken,
     } satisfies AuthContext
   },
 
   async getUserProfile(): Promise<AuthUser | null> {
     const session = await readSession()
     if (!session?.user?.id) return null
+    const serverFields = readOrySessionFields(session)
 
     // The live profile needs the full Kratos identity (traits + credentials).
-    // The cached session.identityId hits directly; user.id and email are
+    // The cached identity id hits directly; user.id and email are
     // fallbacks. Callers (the tRPC profile query) time this out and fall back to
     // the cheap session user, so a null/slow response never blocks the dashboard.
     const identity = await resolveOryIdentity({
-      subjects: [session.identityId, session.user.id],
+      subjects: [serverFields?.identityId, session.user.id],
       email: session.user.email,
       includeCredential: ACCOUNT_IDENTITY_CREDENTIALS,
     })
@@ -84,6 +89,7 @@ export const oryAuthProvider: AuthProvider = {
     if (!session?.user?.id) {
       throw new Error('updateUser called without an authenticated Ory session')
     }
+    const serverFields = readOrySessionFields(session)
 
     // Changing the password OR the email is privileged: require a recent active
     // login so a stolen dashboard session can't silently take over the account
@@ -91,7 +97,7 @@ export const oryAuthProvider: AuthProvider = {
     // turns this into the forced OAuth2 re-auth round-trip.
     const changesCredentials =
       input.password !== undefined || input.email !== undefined
-    if (changesCredentials && !isReauthFresh(session.idToken)) {
+    if (changesCredentials && !isReauthFresh(serverFields?.idToken)) {
       return { ok: false, code: 'reauthentication_needed' }
     }
 
@@ -127,17 +133,28 @@ export const oryAuthProvider: AuthProvider = {
     }
   },
 
-  async signOutOtherSessions(): Promise<void> {
+  async handleCredentialChangeSuccess(): Promise<void> {
     const session = await readSession()
     if (!session?.user?.id) return
 
-    const identityId = await resolveIdentityId(session)
-    if (!identityId) return
+    await revokeOryOAuthSessionsForSubject(session.user.id)
 
-    // The dashboard session is the Auth.js JWT, independent of Kratos identity
-    // sessions, so revoking all Kratos sessions invalidates other browsers
-    // without logging the current dashboard session out.
-    await revokeKratosSessionsForIdentity(identityId)
+    const identityId = await resolveIdentityId(session)
+    if (identityId) {
+      await revokeKratosSessionsForIdentity(identityId)
+    }
+
+    try {
+      await authjsSignOut({ redirect: false })
+    } catch (error) {
+      l.warn(
+        {
+          key: 'auth_provider:ory_sign_out_after_credential_change:error',
+          error: serializeErrorForLog(error),
+        },
+        'failed to clear current Auth.js session after credential change'
+      )
+    }
   },
 }
 
@@ -146,7 +163,8 @@ export const oryAuthProvider: AuthProvider = {
 // the verified email) for sessions minted before that wiring existed or when
 // the sign-in resolution failed.
 async function resolveIdentityId(session: Session): Promise<string | null> {
-  if (session.identityId) return session.identityId
+  const serverFields = readOrySessionFields(session)
+  if (serverFields?.identityId) return serverFields.identityId
 
   const identity = await resolveOryIdentity({
     subjects: [session.user.id],
