@@ -7,10 +7,16 @@ import {
   rewriteContentPagesHtml,
 } from '@/lib/utils/rewrites'
 
-export const dynamic = 'force-static'
-export const revalidate = 900
+export const dynamic = 'force-dynamic'
 
 const REVALIDATE_TIME = 900 // 15 minutes ttl
+const CDN_CACHE_CONTROL = `public, s-maxage=${REVALIDATE_TIME}, stale-while-revalidate=${REVALIDATE_TIME}`
+
+function setRewriteCacheHeaders(headers: Headers): void {
+  headers.set('Cache-Control', 'public, max-age=0, must-revalidate')
+  headers.set('CDN-Cache-Control', CDN_CACHE_CONTROL)
+  headers.set('Vercel-CDN-Cache-Control', CDN_CACHE_CONTROL)
+}
 
 export async function GET(request: NextRequest): Promise<Response> {
   const url = new URL(request.url)
@@ -63,6 +69,10 @@ export async function GET(request: NextRequest): Promise<Response> {
     const contentType = res.headers.get('Content-Type')
     const newHeaders = new Headers(res.headers)
 
+    if (!notFound) {
+      setRewriteCacheHeaders(newHeaders)
+    }
+
     if (contentType?.startsWith('text/html')) {
       let html = await res.text()
 
@@ -91,7 +101,11 @@ export async function GET(request: NextRequest): Promise<Response> {
       return modifiedResponse
     }
 
-    return res
+    return new Response(res.body, {
+      status: res.status,
+      statusText: res.statusText,
+      headers: newHeaders,
+    })
   } catch (error) {
     l.error({
       key: 'url_rewrite:unexpected_error',
