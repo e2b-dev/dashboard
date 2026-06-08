@@ -1,9 +1,9 @@
 // NOTE: related to src/configs/rewrites.ts
 import path from 'node:path'
+import type { NextConfig } from 'next'
+import { DOCUMENTATION_DOMAIN } from './src/configs/documentation'
 
-export const DOCUMENTATION_DOMAIN = 'e2b.mintlify.app'
-
-const browserStub = (file) => path.resolve(process.cwd(), 'stubs', file)
+const browserStub = (file: string) => path.resolve(process.cwd(), 'stubs', file)
 
 const browserNodeModuleStubs = {
   crypto: browserStub('crypto.ts'),
@@ -16,8 +16,7 @@ const browserNodeModuleStubs = {
   'node:path': browserStub('path.ts'),
 }
 
-/** @type {import('next').NextConfig} */
-const config = {
+const config: NextConfig = {
   reactStrictMode: true,
   reactCompiler: true,
   experimental: {
@@ -48,9 +47,12 @@ const config = {
       }
 
       webpackConfig.plugins.push(
-        new webpack.NormalModuleReplacementPlugin(/^node:/, (resource) => {
-          resource.request = resource.request.replace(/^node:/, '')
-        })
+        new webpack.NormalModuleReplacementPlugin(
+          /^node:/,
+          (resource: { request: string }) => {
+            resource.request = resource.request.replace(/^node:/, '')
+          }
+        )
       )
     }
 

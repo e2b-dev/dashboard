@@ -1,4 +1,4 @@
-import { DOCUMENTATION_DOMAIN } from '../../next.config.mjs'
+import { DOCUMENTATION_DOMAIN } from './documentation'
 
 export const SITEMAP_EXCLUDE_CONFIG: Array<{
   domain: string
