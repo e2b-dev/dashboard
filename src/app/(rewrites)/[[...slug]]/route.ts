@@ -1,7 +1,5 @@
 import type { NextRequest } from 'next/server'
-import { constructSitemap } from '@/app/sitemap'
 import { ALLOW_SEO_INDEXING } from '@/configs/flags'
-import { ROUTE_REWRITE_CONFIG } from '@/configs/rewrites'
 import { BASE_URL } from '@/configs/urls'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import {
@@ -9,10 +7,24 @@ import {
   rewriteContentPagesHtml,
 } from '@/lib/utils/rewrites'
 
-export const dynamic = 'force-static'
-export const revalidate = 900
+export const dynamic = 'force-dynamic'
 
 const REVALIDATE_TIME = 900 // 15 minutes ttl
+const CDN_CACHE_CONTROL = `public, s-maxage=${REVALIDATE_TIME}, stale-while-revalidate=${REVALIDATE_TIME}`
+
+function getRewriteRequestHeaders(): Headers {
+  return new Headers({
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  })
+}
+
+function setRewriteCacheHeaders(headers: Headers): void {
+  headers.delete('set-cookie')
+  headers.delete('set-cookie2')
+  headers.set('Cache-Control', 'public, max-age=0, must-revalidate')
+  headers.set('CDN-Cache-Control', CDN_CACHE_CONTROL)
+  headers.set('Vercel-CDN-Cache-Control', CDN_CACHE_CONTROL)
+}
 
 export async function GET(request: NextRequest): Promise<Response> {
   const url = new URL(request.url)
@@ -31,8 +43,6 @@ export async function GET(request: NextRequest): Promise<Response> {
     url.pathname = '/'
   }
 
-  const requestHostname = url.hostname
-
   const updateUrlHostname = (newHostname: string) => {
     url.hostname = newHostname
     url.port = ''
@@ -49,15 +59,14 @@ export async function GET(request: NextRequest): Promise<Response> {
   }
 
   try {
-    const notFound = url.hostname === requestHostname
-
-    // if hostname did not change, we want to make sure it does not cache the route based on the build times hostname (127.0.0.1:3000)
+    const notFound = !config
     const fetchUrl = notFound ? `${BASE_URL}/not-found` : url.toString()
 
     const res = await fetch(fetchUrl, {
-      headers: new Headers(request.headers),
+      headers: notFound
+        ? new Headers(request.headers)
+        : getRewriteRequestHeaders(),
       redirect: 'follow',
-      // if the hostname is the same, we don't want to cache the response, since it will not be available in build time
       ...(notFound
         ? { cache: 'no-store' }
         : {
@@ -70,11 +79,16 @@ export async function GET(request: NextRequest): Promise<Response> {
     const contentType = res.headers.get('Content-Type')
     const newHeaders = new Headers(res.headers)
 
+    if (!notFound) {
+      setRewriteCacheHeaders(newHeaders)
+    }
+
     if (contentType?.startsWith('text/html')) {
       let html = await res.text()
 
       // remove content-encoding header to ensure proper rendering
       newHeaders.delete('content-encoding')
+      newHeaders.delete('content-length')
 
       // rewrite absolute URLs pointing to the rewritten domain to relative paths and with correct SEO tags
       if (config) {
@@ -98,7 +112,11 @@ export async function GET(request: NextRequest): Promise<Response> {
       return modifiedResponse
     }
 
-    return res
+    return new Response(res.body, {
+      status: res.status,
+      statusText: res.statusText,
+      headers: newHeaders,
+    })
   } catch (error) {
     l.error({
       key: 'url_rewrite:unexpected_error',
@@ -113,45 +131,4 @@ export async function GET(request: NextRequest): Promise<Response> {
       }
     )
   }
-}
-
-export async function generateStaticParams() {
-  const sitemapEntries = await constructSitemap()
-
-  const slugs = sitemapEntries
-    .filter((entry) => {
-      const url = new URL(entry.url)
-      const pathname = url.pathname
-
-      // check if this path matches any rule in ROUTE_REWRITE_CONFIG
-      for (const domainConfig of ROUTE_REWRITE_CONFIG) {
-        const isIndex = pathname === '/' || pathname === ''
-        const matchingRule = domainConfig.rules.find((rule) => {
-          if (isIndex && rule.path === '/') {
-            return true
-          }
-          if (pathname === rule.path || pathname.startsWith(`${rule.path}/`)) {
-            return true
-          }
-          return false
-        })
-
-        if (matchingRule) {
-          return true
-        }
-      }
-      return false
-    })
-    .map((entry) => {
-      // map the filtered entries to slug format
-      const url = new URL(entry.url)
-      const pathname = url.pathname
-      const pathSegments = pathname
-        .split('/')
-        .filter((segment) => segment !== '')
-
-      return { slug: pathSegments }
-    })
-
-  return slugs
 }
