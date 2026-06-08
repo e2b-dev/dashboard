@@ -8,6 +8,7 @@ export type AuthContext = {
 }
 
 export type SignOutOptions = {
+  origin?: string
   scope?: 'local' | 'others' | 'global'
   returnTo?: string
 }

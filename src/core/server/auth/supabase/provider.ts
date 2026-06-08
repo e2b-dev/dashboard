@@ -152,7 +152,7 @@ export class SupabaseAuthProvider implements AuthProvider {
     return { kind: 'sign-out', returnTo: PROTECTED_URLS.ACCOUNT_SETTINGS }
   }
 
-  async signOutOtherSessions(): Promise<void> {
+  async handleCredentialChangeSuccess(): Promise<void> {
     const client = await this.resolveClient()
     const { error } = await client.auth.signOut({ scope: 'others' })
 

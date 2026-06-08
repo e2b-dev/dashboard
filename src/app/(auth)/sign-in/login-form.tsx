@@ -85,6 +85,18 @@ export default function Login() {
     window.location.href = `${AUTH_URLS.FORGOT_PASSWORD}?${params.toString()}`
   }
 
+  if (AUTH_MIGRATION_IN_PROGRESS) {
+    return (
+      <div className="flex w-full flex-col gap-3">
+        <h1>Sign in</h1>
+        <p className="text-fg-secondary leading-6">
+          Sign-ups and sign-ins are temporarily paused while we migrate our
+          authentication system. Please try again later.
+        </p>
+      </div>
+    )
+  }
+
   return (
     <div className="flex w-full flex-col">
       <h1>Sign in</h1>
@@ -153,12 +165,6 @@ export default function Login() {
           <Button
             type="submit"
             loading={isExecuting ? 'Signing in...' : undefined}
-            disabled={AUTH_MIGRATION_IN_PROGRESS}
-            title={
-              AUTH_MIGRATION_IN_PROGRESS
-                ? 'Sign-ins are temporarily paused'
-                : undefined
-            }
           >
             Sign in
           </Button>

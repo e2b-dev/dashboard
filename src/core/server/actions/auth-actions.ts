@@ -7,12 +7,14 @@ import { z } from 'zod'
 import {
   CAPTCHA_REQUIRED_SERVER,
   isAuthMigrationInProgress,
+  isOryAuthEnabled,
 } from '@/configs/flags'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { USER_MESSAGES } from '@/configs/user-messages'
 import { actionClient } from '@/core/server/actions/client'
 import { returnServerError } from '@/core/server/actions/utils'
 import { auth } from '@/core/server/auth'
+import { buildOryStartURL } from '@/core/server/auth/ory/build-start-url'
 import { supabaseAuthFlows } from '@/core/server/auth/supabase/flows'
 import {
   forgotPasswordSchema,
@@ -112,11 +114,22 @@ const SignInWithOAuthInputSchema = z.object({
   returnTo: relativeUrlSchema.optional(),
 })
 
+function redirectLegacyAuthToOryIfEnabled(
+  intent: 'signin' | 'signup',
+  returnTo?: string
+) {
+  if (!isOryAuthEnabled()) return
+
+  throw redirect(buildOryStartURL(intent, returnTo))
+}
+
 export const signInWithOAuthAction = actionClient
   .inputSchema(SignInWithOAuthInputSchema)
   .metadata({ actionName: 'signInWithOAuth' })
   .action(async ({ parsedInput }) => {
     const { provider, returnTo } = parsedInput
+
+    redirectLegacyAuthToOryIfEnabled('signin', returnTo)
 
     if (isAuthMigrationInProgress()) {
       const queryParams = returnTo ? { returnTo } : undefined
@@ -195,6 +208,8 @@ export const signUpAction = actionClient
     async ({
       parsedInput: { email, password, returnTo = '', captchaToken },
     }) => {
+      redirectLegacyAuthToOryIfEnabled('signup', returnTo)
+
       if (isAuthMigrationInProgress()) {
         return returnServerError(AUTH_MIGRATION_SIGN_UP_DISABLED_MESSAGE)
       }
@@ -298,6 +313,8 @@ export const signInAction = actionClient
   .schema(signInSchema)
   .metadata({ actionName: 'signInWithEmailAndPassword' })
   .action(async ({ parsedInput: { email, password, returnTo = '' } }) => {
+    redirectLegacyAuthToOryIfEnabled('signin', returnTo)
+
     if (isAuthMigrationInProgress()) {
       return returnServerError(AUTH_MIGRATION_SIGN_IN_DISABLED_MESSAGE)
     }
@@ -355,6 +372,8 @@ export const forgotPasswordAction = actionClient
   .schema(forgotPasswordSchema)
   .metadata({ actionName: 'forgotPassword' })
   .action(async ({ parsedInput: { email } }) => {
+    redirectLegacyAuthToOryIfEnabled('signin')
+
     if (isAuthMigrationInProgress()) {
       return returnServerError(AUTH_MIGRATION_SIGN_IN_DISABLED_MESSAGE)
     }
@@ -390,7 +409,8 @@ export const forgotPasswordAction = actionClient
   })
 
 export async function signOutAction(returnTo?: string) {
-  const { redirectTo } = await auth.signOut({ returnTo })
+  const origin = (await headers()).get('origin') ?? undefined
+  const { redirectTo } = await auth.signOut({ origin, returnTo })
 
   throw redirect(redirectTo)
 }

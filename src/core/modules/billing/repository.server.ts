@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { z } from 'zod'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { authHeaders } from '@/configs/api'
 import type {
   AddOnOrderConfirmResponse,
   AddOnOrderCreateResponse,
@@ -68,7 +68,7 @@ export function createBillingRepository(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...SUPABASE_AUTH_HEADERS(scope.accessToken, scope.teamId),
+          ...authHeaders(scope.accessToken, scope.teamId),
         },
         body: JSON.stringify({
           teamID: scope.teamId,
@@ -93,7 +93,7 @@ export function createBillingRepository(
         headers: {
           'Content-Type': 'application/json',
           ...(origin ? { Origin: origin } : {}),
-          ...SUPABASE_AUTH_HEADERS(scope.accessToken, scope.teamId),
+          ...authHeaders(scope.accessToken, scope.teamId),
         },
       })
 
@@ -110,7 +110,7 @@ export function createBillingRepository(
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            ...SUPABASE_AUTH_HEADERS(scope.accessToken, scope.teamId),
+            ...authHeaders(scope.accessToken, scope.teamId),
           },
         }
       )
@@ -128,7 +128,7 @@ export function createBillingRepository(
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            ...SUPABASE_AUTH_HEADERS(scope.accessToken, scope.teamId),
+            ...authHeaders(scope.accessToken, scope.teamId),
           },
         }
       )
@@ -151,7 +151,7 @@ export function createBillingRepository(
         `${deps.billingApiUrl}/teams/${scope.teamId}/invoices`,
         {
           headers: {
-            ...SUPABASE_AUTH_HEADERS(scope.accessToken, scope.teamId),
+            ...authHeaders(scope.accessToken, scope.teamId),
           },
         }
       )
@@ -169,7 +169,7 @@ export function createBillingRepository(
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            ...SUPABASE_AUTH_HEADERS(scope.accessToken, scope.teamId),
+            ...authHeaders(scope.accessToken, scope.teamId),
           },
         }
       )
@@ -191,7 +191,7 @@ export function createBillingRepository(
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
-            ...SUPABASE_AUTH_HEADERS(scope.accessToken, scope.teamId),
+            ...authHeaders(scope.accessToken, scope.teamId),
           },
           body: JSON.stringify({
             [key]: value,
@@ -212,7 +212,7 @@ export function createBillingRepository(
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
-            ...SUPABASE_AUTH_HEADERS(scope.accessToken, scope.teamId),
+            ...authHeaders(scope.accessToken, scope.teamId),
           },
         }
       )
@@ -230,7 +230,7 @@ export function createBillingRepository(
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            ...SUPABASE_AUTH_HEADERS(scope.accessToken, scope.teamId),
+            ...authHeaders(scope.accessToken, scope.teamId),
           },
           body: JSON.stringify({
             items: [{ name: itemId, quantity: 1 }],
@@ -251,7 +251,7 @@ export function createBillingRepository(
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            ...SUPABASE_AUTH_HEADERS(scope.accessToken, scope.teamId),
+            ...authHeaders(scope.accessToken, scope.teamId),
           },
         }
       )
@@ -269,7 +269,7 @@ export function createBillingRepository(
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            ...SUPABASE_AUTH_HEADERS(scope.accessToken, scope.teamId),
+            ...authHeaders(scope.accessToken, scope.teamId),
           },
         }
       )
@@ -287,7 +287,7 @@ export function createBillingRepository(
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            ...SUPABASE_AUTH_HEADERS(scope.accessToken, scope.teamId),
+            ...authHeaders(scope.accessToken, scope.teamId),
           },
         }
       )
@@ -315,7 +315,7 @@ export function createBillingRepository(
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            ...SUPABASE_AUTH_HEADERS(scope.accessToken, scope.teamId),
+            ...authHeaders(scope.accessToken, scope.teamId),
           },
         }
       )

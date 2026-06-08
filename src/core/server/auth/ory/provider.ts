@@ -1,78 +1,189 @@
 import 'server-only'
 
-import type { NextRequest, NextResponse } from 'next/server'
-import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { l } from '@/core/shared/clients/logger/logger'
+import type { Session } from 'next-auth'
+import { auth as authjs, signOut as authjsSignOut } from '@/auth'
+import { PROTECTED_URLS } from '@/configs/urls'
+import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import type { AuthProvider } from '../provider'
 import type {
   AuthContext,
   AuthUser,
   ReauthDispatch,
-  SignOutOptions,
-  SignOutResult,
   UpdateUserInput,
   UpdateUserResult,
 } from '../types'
+import { readOrySessionFields } from './authjs-session-boundary'
+import { buildOryStartURL } from './build-start-url'
+import {
+  ACCOUNT_IDENTITY_CREDENTIALS,
+  resolveOryIdentity,
+} from './find-identity'
+import { oryAuthFlows } from './flows'
+import { isReauthFresh } from './freshness'
+import { fromAuthSession, fromOryIdentity } from './identity'
+import { revokeKratosSessionsForIdentity } from './kratos-session'
+import { revokeOryOAuthSessionsForSubject } from './oauth-session'
+import { completeOrySignOut } from './signout-flow'
 
-export class OryHostedAuthProvider implements AuthProvider {
-  constructor(private readonly cookie: string = '') {}
+// Where the account-settings page expects to land after a forced re-auth so it
+// reveals the password form (matches the Supabase ?reauth=1 contract).
+const ACCOUNT_SETTINGS_REAUTH_RETURN_TO = `${PROTECTED_URLS.ACCOUNT_SETTINGS}?reauth=1`
 
-  // fail-closed until ory is wired: callers (proxy, middleware) treat null as
-  // unauthenticated and redirect to sign-in instead of letting requests through
-  getAuthContext(): Promise<AuthContext | null> {
-    void this.cookie
-    l.warn(
+export const oryAuthProvider: AuthProvider = {
+  async getAuthContext() {
+    const session = await readSession()
+    if (!session) return null
+
+    const serverFields = readOrySessionFields(session)
+
+    if (!session.user?.id || !serverFields?.accessToken) {
+      return null
+    }
+
+    if (serverFields.error) {
+      l.warn(
+        {
+          key: 'auth_provider:ory_session_error',
+          user_id: session.user.id,
+          context: { error: serverFields.error },
+        },
+        `Auth.js session reports error '${serverFields.error}'; treating as unauthenticated`
+      )
+      return null
+    }
+
+    return {
+      user: fromAuthSession(session),
+      accessToken: serverFields.accessToken,
+    } satisfies AuthContext
+  },
+
+  async getUserProfile(): Promise<AuthUser | null> {
+    const session = await readSession()
+    if (!session?.user?.id) return null
+    const serverFields = readOrySessionFields(session)
+
+    // The live profile needs the full Kratos identity (traits + credentials).
+    // The cached identity id hits directly; user.id and email are
+    // fallbacks. Callers (the tRPC profile query) time this out and fall back to
+    // the cheap session user, so a null/slow response never blocks the dashboard.
+    const identity = await resolveOryIdentity({
+      subjects: [serverFields?.identityId, session.user.id],
+      email: session.user.email,
+      includeCredential: ACCOUNT_IDENTITY_CREDENTIALS,
+    })
+
+    return identity
+      ? fromOryIdentity(identity, { userId: session.user.id })
+      : null
+  },
+
+  async signOut(options) {
+    return {
+      redirectTo: await completeOrySignOut(options?.origin),
+    }
+  },
+
+  async updateUser(input: UpdateUserInput): Promise<UpdateUserResult> {
+    const session = await readSession()
+    if (!session?.user?.id) {
+      throw new Error('updateUser called without an authenticated Ory session')
+    }
+    const serverFields = readOrySessionFields(session)
+
+    // Changing the password OR the email is privileged: require a recent active
+    // login so a stolen dashboard session can't silently take over the account
+    // (swap the email, then reset the password via the new inbox). The caller
+    // turns this into the forced OAuth2 re-auth round-trip.
+    const changesCredentials =
+      input.password !== undefined || input.email !== undefined
+    if (changesCredentials && !isReauthFresh(serverFields?.idToken)) {
+      return { ok: false, code: 'reauthentication_needed' }
+    }
+
+    const identityId = await resolveIdentityId(session)
+    if (!identityId) {
+      throw new Error(
+        'updateUser could not resolve an Ory identity for the session subject'
+      )
+    }
+
+    const result = await oryAuthFlows.updateUser({
+      identityId,
+      name: input.name,
+      email: input.email,
+      password: input.password,
+    })
+
+    if (!result.ok) return result
+
+    return {
+      ...result,
+      user: {
+        ...result.user,
+        id: session.user.id,
+      },
+    }
+  },
+
+  async startReauthForAccountSettings(): Promise<ReauthDispatch> {
+    return {
+      kind: 'redirect',
+      to: buildOryStartURL('reauth', ACCOUNT_SETTINGS_REAUTH_RETURN_TO),
+    }
+  },
+
+  async handleCredentialChangeSuccess(): Promise<void> {
+    const session = await readSession()
+    if (!session?.user?.id) return
+
+    await revokeOryOAuthSessionsForSubject(session.user.id)
+
+    const identityId = await resolveIdentityId(session)
+    if (identityId) {
+      await revokeKratosSessionsForIdentity(identityId)
+    }
+
+    try {
+      await authjsSignOut({ redirect: false })
+    } catch (error) {
+      l.warn(
+        {
+          key: 'auth_provider:ory_sign_out_after_credential_change:error',
+          error: serializeErrorForLog(error),
+        },
+        'failed to clear current Auth.js session after credential change'
+      )
+    }
+  },
+}
+
+// The Kratos identity id is resolved once at sign-in and cached on the session
+// (see src/auth.ts). Fall back to a per-request lookup (by the E2B user id, then
+// the verified email) for sessions minted before that wiring existed or when
+// the sign-in resolution failed.
+async function resolveIdentityId(session: Session): Promise<string | null> {
+  const serverFields = readOrySessionFields(session)
+  if (serverFields?.identityId) return serverFields.identityId
+
+  const identity = await resolveOryIdentity({
+    subjects: [session.user.id],
+    email: session.user.email,
+  })
+  return identity?.id ?? null
+}
+
+async function readSession(): Promise<Session | null> {
+  try {
+    return await authjs()
+  } catch (error) {
+    l.error(
       {
-        key: 'auth_provider:ory_stub_unauthenticated',
+        key: 'auth_provider:ory_get_session:error',
+        error: serializeErrorForLog(error),
       },
-      'OryHostedAuthProvider.getAuthContext is a stub and always returns null'
+      'Auth.js auth() helper threw while reading session'
     )
-    return Promise.resolve(null)
+    return null
   }
-
-  getUserProfile(): Promise<AuthUser | null> {
-    return Promise.resolve(null)
-  }
-
-  signOut(_options?: SignOutOptions): Promise<SignOutResult> {
-    return Promise.resolve({
-      redirectTo: AUTH_URLS.SIGN_IN,
-      error: {
-        message: 'OryHostedAuthProvider.signOut is not implemented yet',
-        code: 'ory_stub_not_implemented',
-      },
-    })
-  }
-
-  updateUser(_input: UpdateUserInput): Promise<UpdateUserResult> {
-    return Promise.resolve({
-      ok: false,
-      code: 'account_credentials_not_changeable',
-      message: 'OryHostedAuthProvider.updateUser is not implemented yet',
-    })
-  }
-
-  startReauthForAccountSettings(): Promise<ReauthDispatch> {
-    return Promise.resolve({
-      kind: 'sign-out',
-      returnTo: PROTECTED_URLS.ACCOUNT_SETTINGS,
-    })
-  }
-
-  signOutOtherSessions(): Promise<void> {
-    return Promise.resolve()
-  }
-}
-
-export function createOryAuthForProxy(
-  request: NextRequest,
-  _response: NextResponse
-): OryHostedAuthProvider {
-  return new OryHostedAuthProvider(request.headers.get('cookie') ?? '')
-}
-
-export function createOryAuthForHeaders(
-  headers: Headers
-): OryHostedAuthProvider {
-  return new OryHostedAuthProvider(headers.get('cookie') ?? '')
 }

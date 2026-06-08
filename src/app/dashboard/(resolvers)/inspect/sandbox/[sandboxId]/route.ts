@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers'
 import { type NextRequest, NextResponse } from 'next/server'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { authHeaders } from '@/configs/api'
 import { COOKIE_KEYS } from '@/configs/cookies'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
@@ -59,7 +59,7 @@ async function hasSandboxInTeam(
         },
       },
       headers: {
-        ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+        ...authHeaders(accessToken, teamId),
       },
       cache: 'no-store',
     })

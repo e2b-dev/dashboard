@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { authHeaders } from '@/configs/api'
 import type { components as DashboardComponents } from '@/contracts/dashboard-api'
 import { api } from '@/core/shared/clients/api'
 import { createRepoError, repoErrorFromHttp } from '@/core/shared/errors'
@@ -10,7 +10,7 @@ import type { TeamMember } from './models'
 
 type TeamsRepositoryDeps = {
   apiClient: typeof api
-  authHeaders: typeof SUPABASE_AUTH_HEADERS
+  authHeaders: typeof authHeaders
 }
 
 export type TeamsRequestScope = RequestScope & {
@@ -47,7 +47,7 @@ export function createTeamsRepository(
   scope: TeamsRequestScope,
   deps: TeamsRepositoryDeps = {
     apiClient: api,
-    authHeaders: SUPABASE_AUTH_HEADERS,
+    authHeaders: authHeaders,
   }
 ): TeamsRepository {
   return {
