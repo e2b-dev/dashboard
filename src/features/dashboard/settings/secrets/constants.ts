@@ -5,4 +5,4 @@ export const SECRETS_HELPER_COPY =
 
 export const SECRETS_SEARCH_PLACEHOLDER_EMPTY =
   'Add a secret to start searching'
-export const SECRETS_SEARCH_PLACEHOLDER = 'Search by label or host'
+export const SECRETS_SEARCH_PLACEHOLDER = 'Search by title, ID & allow list'

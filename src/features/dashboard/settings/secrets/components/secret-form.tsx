@@ -32,12 +32,18 @@ const DEFAULT_VALUES: SecretFormInput = {
   allowList: { mode: 'all', hosts: [] },
 }
 
+// Edit mode never roundtrips the plaintext (the BE owns the only copy), so we
+// satisfy zod's value.min(1) with a placeholder and skip rendering the field.
+// The edit dialog's onSubmit ignores `values.value`.
+const EDIT_VALUE_PLACEHOLDER = '__edit_placeholder__'
+
 interface SecretFormProps {
   defaultValues?: Partial<SecretFormInput>
   onSubmit: (values: SecretFormOutput) => void | Promise<void>
   submitLabel: string
   submitIcon?: ReactNode
   loadingLabel?: string
+  mode?: 'create' | 'edit'
   /** Edit flow only — keeps submit disabled until something actually changed. */
   requireDirty?: boolean
 }
@@ -48,12 +54,18 @@ export function SecretForm({
   submitLabel,
   submitIcon,
   loadingLabel = 'Saving…',
+  mode = 'create',
   requireDirty = false,
 }: SecretFormProps) {
+  const isEdit = mode === 'edit'
   const form = useForm<SecretFormInput>({
     resolver: zodResolver(SecretFormSchema),
     mode: 'onChange',
-    defaultValues: { ...DEFAULT_VALUES, ...defaultValues },
+    defaultValues: {
+      ...DEFAULT_VALUES,
+      ...defaultValues,
+      ...(isEdit && { value: EDIT_VALUE_PLACEHOLDER }),
+    },
   })
 
   const { formState } = form
@@ -70,7 +82,7 @@ export function SecretForm({
       >
         <div className="flex flex-1 flex-col gap-4 min-w-0 min-h-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <LabelField disabled={formState.isSubmitting} />
-          <SecretValueField disabled={formState.isSubmitting} />
+          {!isEdit && <SecretValueField disabled={formState.isSubmitting} />}
           <DescriptionField disabled={formState.isSubmitting} />
           <AllowListSection disabled={formState.isSubmitting} />
         </div>
@@ -117,7 +129,7 @@ function LabelField({ disabled }: { disabled?: boolean }) {
               clearable
               disabled={disabled}
               onClear={() => field.onChange('')}
-              placeholder="OpenAI API Key"
+              placeholder="e.g. Service API Key"
             />
           </FormControl>
           <FormMessage />

@@ -1,6 +1,7 @@
 'use client'
 
 import { type ReactNode, useState } from 'react'
+import { useDashboard } from '@/features/dashboard/context'
 import { defaultSuccessToast, toast } from '@/lib/hooks/use-toast'
 import {
   Dialog,
@@ -12,31 +13,34 @@ import {
 import { AddIcon } from '@/ui/primitives/icons'
 import { SecretForm } from './components/secret-form'
 import { flattenHosts, type SecretFormOutput } from './schema'
+import { useSecretsStore } from './store'
 
 interface NewSecretDialogProps {
   children: ReactNode
 }
 
 export function NewSecretDialog({ children }: NewSecretDialogProps) {
+  const { team, user } = useDashboard()
+  const addSecret = useSecretsStore((s) => s.addSecret)
   const [open, setOpen] = useState(false)
 
+  // TODO(secrets-be): swap for `trpc.secrets.create.mutateAsync(...)` once the
+  // backend ships. The secret's plaintext `value` intentionally never enters
+  // the store — only the BE should ever hold it.
   const handleSubmit = (values: SecretFormOutput) => {
-    // BE-ready payload shape: hosts come out of the form as `{ value }` objects
-    // (required by RHF's useFieldArray) and the BE expects plain strings.
-    const _payload = {
+    addSecret(team.slug, {
       label: values.label,
-      value: values.value,
-      description: values.description,
+      description: values.description || undefined,
       allowList:
         values.allowList.mode === 'all'
-          ? { mode: 'all' as const }
+          ? { mode: 'all' }
           : {
-              mode: 'specific' as const,
+              mode: 'specific',
               hosts: flattenHosts(values.allowList.hosts),
             },
-    }
-    // TODO(secrets-be): swap for `trpc.secrets.create.mutateAsync(_payload)`.
-    toast(defaultSuccessToast('Secret added (UI only — backend pending)'))
+      createdBy: { email: user.email, avatarUrl: user.avatarUrl },
+    })
+    toast(defaultSuccessToast('Secret added'))
     setOpen(false)
   }
 

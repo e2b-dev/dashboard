@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { useDashboard } from '@/features/dashboard/context'
 import { cn } from '@/lib/utils'
 import { pluralize } from '@/lib/utils/formatting'
 import { CatchErrorBoundary } from '@/ui/error'
@@ -13,21 +14,18 @@ import {
   SECRETS_SEARCH_PLACEHOLDER_EMPTY,
 } from './constants'
 import { NewSecretDialog } from './new-secret-dialog'
+import { useTeamSecrets } from './store'
 import { SecretsTable } from './table'
-import type { Secret } from './types'
-
-// tRPC list query lands with the BE ticket; until then the page renders empty.
-// Hoisted so the reference is stable across renders.
-const PLACEHOLDER_SECRETS: Secret[] = []
 
 interface SecretsPageContentProps {
   className?: string
 }
 
 export const SecretsPageContent = ({ className }: SecretsPageContentProps) => {
+  const { team } = useDashboard()
   const [query, setQuery] = useState('')
 
-  const secrets = PLACEHOLDER_SECRETS
+  const secrets = useTeamSecrets(team.slug)
   const normalizedQuery = query.trim().toLowerCase()
   const filteredSecrets = useMemo(() => {
     if (!normalizedQuery) return secrets
@@ -40,7 +38,7 @@ export const SecretsPageContent = ({ className }: SecretsPageContentProps) => {
         value.toLowerCase().includes(normalizedQuery)
       )
     })
-  }, [normalizedQuery])
+  }, [normalizedQuery, secrets])
 
   const totalCount = secrets.length
   const hasActiveSearch = normalizedQuery.length > 0
