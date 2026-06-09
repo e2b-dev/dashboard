@@ -15,23 +15,12 @@ const oryRequiredEnvVars = [
   'DASHBOARD_API_ADMIN_TOKEN',
 ] as const
 
-// Identity admin surface (Kratos): pick exactly one.
-//   - ORY_PROJECT_API_TOKEN: Ory Network. Bearer for the unified SDK host.
-//   - ORY_KRATOS_ADMIN_URL:  self-hosted Kratos admin (gated by network).
-// At least one must be set so IdentityApi calls can resolve.
-const oryIdentityAdminEnvVars = [
-  'ORY_PROJECT_API_TOKEN',
-  'ORY_KRATOS_ADMIN_URL',
-] as const
-
-// OAuth2 admin surface (Hydra): pick exactly one.
-//   - ORY_PROJECT_API_TOKEN: Ory Network. Bearer for the unified SDK host.
-//   - ORY_HYDRA_ADMIN_URL:   self-hosted Hydra admin (gated by network).
-// At least one must be set so OAuth2Api session revocations can resolve.
-const oryOAuth2AdminEnvVars = [
-  'ORY_PROJECT_API_TOKEN',
-  'ORY_HYDRA_ADMIN_URL',
-] as const
+// Admin surface resolution must be mode-coherent:
+//   - Ory Network:  ORY_PROJECT_API_TOKEN (bearer for the unified SDK host
+//                   covers both Kratos and Hydra admin).
+//   - Self-hosted:  BOTH ORY_KRATOS_ADMIN_URL and ORY_HYDRA_ADMIN_URL
+//                   (each admin surface lives on its own port; either alone
+//                   leaks the other call back to the public ORY_SDK_URL).
 
 const schema = serverSchema
   .merge(clientSchema)
@@ -100,24 +89,28 @@ const schema = serverSchema
       })
     }
 
-    const hasIdentityAdmin = oryIdentityAdminEnvVars.some(
-      (envVar) => !!data[envVar]
-    )
-    if (!hasIdentityAdmin) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: `AUTH_PROVIDER=ory requires either ${oryIdentityAdminEnvVars.join(' (Ory Network) or ')} (self-hosted Kratos admin)`,
-        path: ['AUTH_PROVIDER'],
-      })
-    }
+    const hasKratosAdmin = !!data.ORY_KRATOS_ADMIN_URL
+    const hasHydraAdmin = !!data.ORY_HYDRA_ADMIN_URL
+    const isSelfHosted = hasKratosAdmin || hasHydraAdmin
+    const hasProjectToken = !!data.ORY_PROJECT_API_TOKEN
 
-    const hasOAuth2Admin = oryOAuth2AdminEnvVars.some(
-      (envVar) => !!data[envVar]
-    )
-    if (!hasOAuth2Admin) {
+    if (isSelfHosted) {
+      const missingSelfHostedVars: string[] = []
+      if (!hasKratosAdmin) missingSelfHostedVars.push('ORY_KRATOS_ADMIN_URL')
+      if (!hasHydraAdmin) missingSelfHostedVars.push('ORY_HYDRA_ADMIN_URL')
+
+      if (missingSelfHostedVars.length > 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Self-hosted Ory is missing ${missingSelfHostedVars.join(', ')}`,
+          path: ['AUTH_PROVIDER'],
+        })
+      }
+    } else if (!hasProjectToken) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: `AUTH_PROVIDER=ory requires either ${oryOAuth2AdminEnvVars.join(' (Ory Network) or ')} (self-hosted Hydra admin)`,
+        message:
+          'AUTH_PROVIDER=ory requires ORY_PROJECT_API_TOKEN (Ory Network) or both ORY_KRATOS_ADMIN_URL and ORY_HYDRA_ADMIN_URL (self-hosted)',
         path: ['AUTH_PROVIDER'],
       })
     }
