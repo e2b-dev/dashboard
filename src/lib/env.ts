@@ -22,6 +22,8 @@ export const serverSchema = z.object({
   ORY_OAUTH2_CLIENT_SECRET: z.string().min(1).optional(),
   ORY_OAUTH2_AUDIENCE: z.string().min(1).optional(),
   ORY_PROJECT_API_TOKEN: z.string().min(1).optional(),
+  ORY_KRATOS_ADMIN_URL: z.url().optional(),
+  ORY_HYDRA_ADMIN_URL: z.url().optional(),
 
   OTEL_SERVICE_NAME: z.string().optional(),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
