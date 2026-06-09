@@ -12,7 +12,10 @@ import { handleDefaultInfraError } from '@/core/server/actions/utils'
 import { infra } from '@/core/shared/clients/api'
 import { l } from '@/core/shared/clients/logger/logger'
 import { TeamSlugSchema } from '@/core/shared/schemas/team'
-import { MAX_DAYS_AGO } from '@/features/dashboard/sandboxes/monitoring/time-picker/constants'
+import {
+  MAX_DAYS_AGO,
+  MAX_DAYS_AGO_BUFFER,
+} from '@/features/dashboard/sandboxes/monitoring/time-picker/constants'
 
 export const GetTeamMetricsMaxSchema = z
   .object({
@@ -26,7 +29,7 @@ export const GetTeamMetricsMaxSchema = z
         (start) => {
           const now = Date.now()
 
-          return start >= now - MAX_DAYS_AGO
+          return start >= now - MAX_DAYS_AGO_BUFFER
         },
         {
           message: `Start date cannot be more than ${MAX_DAYS_AGO / (1000 * 60 * 60 * 24)} days ago`,
@@ -44,7 +47,7 @@ export const GetTeamMetricsMaxSchema = z
   })
   .refine(
     (data) => {
-      return data.endDate - data.startDate <= MAX_DAYS_AGO
+      return data.endDate - data.startDate <= MAX_DAYS_AGO_BUFFER
     },
     {
       message: `Date range cannot exceed ${MAX_DAYS_AGO / (1000 * 60 * 60 * 24)} days`,

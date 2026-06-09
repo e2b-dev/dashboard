@@ -8,7 +8,10 @@ import {
 import { returnServerError } from '@/core/server/actions/utils'
 import { getPublicErrorMessage } from '@/core/shared/errors'
 import { TeamSlugSchema } from '@/core/shared/schemas/team'
-import { MAX_DAYS_AGO } from '@/features/dashboard/sandboxes/monitoring/time-picker/constants'
+import {
+  MAX_DAYS_AGO,
+  MAX_DAYS_AGO_BUFFER,
+} from '@/features/dashboard/sandboxes/monitoring/time-picker/constants'
 import { getTeamMetricsCore } from './get-team-metrics-core'
 
 export const GetTeamMetricsSchema = z
@@ -23,7 +26,7 @@ export const GetTeamMetricsSchema = z
         (start) => {
           const now = Date.now()
 
-          return start >= now - MAX_DAYS_AGO
+          return start >= now - MAX_DAYS_AGO_BUFFER
         },
         {
           message: `Start date cannot be more than ${MAX_DAYS_AGO / (1000 * 60 * 60 * 24)} days ago`,
@@ -40,7 +43,7 @@ export const GetTeamMetricsSchema = z
   })
   .refine(
     (data) => {
-      return data.endDate - data.startDate <= MAX_DAYS_AGO
+      return data.endDate - data.startDate <= MAX_DAYS_AGO_BUFFER
     },
     {
       message: `Date range cannot exceed ${MAX_DAYS_AGO / (1000 * 60 * 60 * 24)} days`,
