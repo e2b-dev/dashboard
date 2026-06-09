@@ -14,6 +14,6 @@ type SandboxLifecycleEventType = z.infer<typeof SandboxLifecycleEventTypeSchema>
 
 export {
   SANDBOX_LIFECYCLE_EVENT_TYPE_PREFIX,
-  SandboxLifecycleEventTypeSchema,
   type SandboxLifecycleEventType,
+  SandboxLifecycleEventTypeSchema,
 }

@@ -28,9 +28,7 @@ export function getHydraOAuth2Api(): OAuth2Api {
   const basePath =
     process.env.ORY_HYDRA_ADMIN_URL ?? process.env.ORY_SDK_URL ?? null
   if (!basePath) {
-    throw new Error(
-      'Neither ORY_HYDRA_ADMIN_URL nor ORY_SDK_URL is configured'
-    )
+    throw new Error('Neither ORY_HYDRA_ADMIN_URL nor ORY_SDK_URL is configured')
   }
 
   const accessToken = process.env.ORY_PROJECT_API_TOKEN
