@@ -25,6 +25,13 @@ function buildRedirectUrl(
     redirectUrl.searchParams.set(key, value)
   })
 
+  if (type === 'email_change') {
+    redirectUrl.pathname = PROTECTED_URLS.ACCOUNT_SETTINGS
+    redirectUrl.searchParams.set('success', 'E-Mail changed successfully')
+    redirectUrl.searchParams.set('type', 'update_email')
+    return redirectUrl.toString()
+  }
+
   if (type === 'recovery') {
     redirectUrl.pathname = PROTECTED_URLS.RESET_PASSWORD
     redirectUrl.searchParams.set('reauth', '1')

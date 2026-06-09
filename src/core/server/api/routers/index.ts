@@ -6,6 +6,7 @@ import { sandboxesRouter } from './sandboxes'
 import { supportRouter } from './support'
 import { teamsRouter } from './teams'
 import { templatesRouter } from './templates'
+import { userRouter } from './user'
 import { webhooksRouter } from './webhooks'
 
 export const trpcAppRouter = createTRPCRouter({
@@ -16,6 +17,7 @@ export const trpcAppRouter = createTRPCRouter({
   billing: billingRouter,
   support: supportRouter,
   teams: teamsRouter,
+  user: userRouter,
   webhooks: webhooksRouter,
 })
 

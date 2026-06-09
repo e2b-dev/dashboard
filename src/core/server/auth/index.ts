@@ -4,11 +4,7 @@ import type { NextRequest, NextResponse } from 'next/server'
 import { isOryAuthEnabled } from '@/configs/flags'
 import type { AuthAdmin } from './admin'
 import { oryAuthAdmin } from './ory/admin'
-import {
-  createOryAuthForHeaders,
-  createOryAuthForProxy,
-  OryHostedAuthProvider,
-} from './ory/provider'
+import { oryAuthProvider } from './ory/provider'
 import type { AuthProvider } from './provider'
 import { supabaseAuthAdmin } from './supabase/admin'
 import {
@@ -18,7 +14,7 @@ import {
 } from './supabase/provider'
 
 export const auth: AuthProvider = isOryAuthEnabled()
-  ? new OryHostedAuthProvider()
+  ? oryAuthProvider
   : new SupabaseAuthProvider()
 
 export const authAdmin: AuthAdmin = isOryAuthEnabled()
@@ -30,15 +26,15 @@ export function createAuthForProxy(
   response: NextResponse
 ): AuthProvider {
   return isOryAuthEnabled()
-    ? createOryAuthForProxy(request, response)
+    ? oryAuthProvider
     : createSupabaseAuthForProxy(request, response)
 }
 
 export function createAuthForHeaders(headers: Headers): AuthProvider {
   return isOryAuthEnabled()
-    ? createOryAuthForHeaders(headers)
+    ? oryAuthProvider
     : createSupabaseAuthForHeaders(headers)
 }
 
+export type { AuthUser } from '@/core/modules/auth/models'
 export type { AuthAdmin } from './admin'
-export type { AuthUser } from './types'

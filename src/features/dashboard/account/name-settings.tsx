@@ -1,17 +1,17 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useAction } from 'next-safe-action/hooks'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { USER_MESSAGES } from '@/configs/user-messages'
-import { updateUserAction } from '@/core/server/actions/user-actions'
 import {
   defaultErrorToast,
   defaultSuccessToast,
   useToast,
 } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
 import {
   Card,
@@ -49,6 +49,8 @@ export function NameSettings({ className }: NameSettingsProps) {
 
   const { user } = useDashboard()
   const { toast } = useToast()
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -60,18 +62,22 @@ export function NameSettings({ className }: NameSettingsProps) {
     },
   })
 
-  const { execute: updateName, isPending } = useAction(updateUserAction, {
-    onSuccess: async () => {
-      toast(defaultSuccessToast(USER_MESSAGES.nameUpdated.message))
-    },
-    onError: ({ error }) => {
-      toast(
-        defaultErrorToast(
-          error.serverError || USER_MESSAGES.failedUpdateName.message
-        )
-      )
-    },
-  })
+  const { mutate: updateName, isPending } = useMutation(
+    trpc.user.update.mutationOptions({
+      onSuccess: (data) => {
+        if (data.status === 'ok') {
+          queryClient.setQueryData(trpc.user.profile.queryKey(), data.user)
+          toast(defaultSuccessToast(USER_MESSAGES.nameUpdated.message))
+          return
+        }
+
+        toast(defaultErrorToast(USER_MESSAGES.failedUpdateName.message))
+      },
+      onError: () => {
+        toast(defaultErrorToast(USER_MESSAGES.failedUpdateName.message))
+      },
+    })
+  )
 
   if (!user) return null
 

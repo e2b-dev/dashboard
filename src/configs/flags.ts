@@ -29,3 +29,12 @@ export const CAPTCHA_REQUIRED_SERVER =
 export function isOryAuthEnabled() {
   return process.env.AUTH_PROVIDER === 'ory'
 }
+
+// Freezes interactive auth entry points while we migrate identity stores.
+// When on: blocks sign-ups and sign-ins so OAuth callback URLs can move
+// between providers without sending users into broken provider flows.
+export function isAuthMigrationInProgress() {
+  return process.env.NEXT_PUBLIC_AUTH_MIGRATION_IN_PROGRESS === '1'
+}
+
+export const AUTH_MIGRATION_IN_PROGRESS = isAuthMigrationInProgress()

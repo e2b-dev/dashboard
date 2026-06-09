@@ -163,7 +163,7 @@ This application is optimized for deployment on Vercel:
 2. Import your repository in Vercel
 3. Deploy!
 
-> **Note**: The application uses Partial Prerendering (PPR) which is currently only supported on Vercel's infrastructure. This can be turned off inside [`next.config.mjs`](./next.config.mjs).
+> **Note**: The application uses Partial Prerendering (PPR) which is currently only supported on Vercel's infrastructure. This can be turned off inside [`next.config.ts`](./next.config.ts).
 
 ## Contributing
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.

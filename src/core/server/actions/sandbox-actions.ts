@@ -1,9 +1,7 @@
 'use server'
 
-import { updateTag } from 'next/cache'
 import { z } from 'zod'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
-import { CACHE_TAGS } from '@/configs/cache'
+import { authHeaders } from '@/configs/api'
 import {
   authActionClient,
   withTeamSlugResolution,
@@ -28,7 +26,7 @@ export const killSandboxAction = authActionClient
 
     const res = await infra.DELETE('/sandboxes/{sandboxID}', {
       headers: {
-        ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
+        ...authHeaders(session.access_token, teamId),
       },
       params: {
         path: {

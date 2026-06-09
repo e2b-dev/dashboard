@@ -1,9 +1,7 @@
 import 'server-only'
 
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { authHeaders } from '@/configs/api'
 import type { components as DashboardComponents } from '@/contracts/dashboard-api'
-import type { AuthAdmin } from '@/core/server/auth'
-import { authAdmin } from '@/core/server/auth'
 import { api } from '@/core/shared/clients/api'
 import { createRepoError, repoErrorFromHttp } from '@/core/shared/errors'
 import type { RequestScope } from '@/core/shared/repository-scope'
@@ -12,8 +10,7 @@ import type { TeamMember } from './models'
 
 type TeamsRepositoryDeps = {
   apiClient: typeof api
-  authHeaders: typeof SUPABASE_AUTH_HEADERS
-  authAdmin: Pick<AuthAdmin, 'getUserById'>
+  authHeaders: typeof authHeaders
 }
 
 export type TeamsRequestScope = RequestScope & {
@@ -50,8 +47,7 @@ export function createTeamsRepository(
   scope: TeamsRequestScope,
   deps: TeamsRepositoryDeps = {
     apiClient: api,
-    authHeaders: SUPABASE_AUTH_HEADERS,
-    authAdmin,
+    authHeaders: authHeaders,
   }
 ): TeamsRepository {
   return {
@@ -79,29 +75,22 @@ export function createTeamsRepository(
         )
       }
 
-      const members = data?.members ?? []
-      const enrichedMembers = await Promise.all(
-        members.map(async (member) => {
-          const user = await deps.authAdmin.getUserById(member.id)
+      const mapped: TeamMember[] = (data?.members ?? []).map((member) => ({
+        info: {
+          id: member.id,
+          email: member.email,
+          name: member.name ?? undefined,
+          avatar_url: member.profilePictureUrl ?? undefined,
+          providers: member.providers ?? [],
+          createdAt: member.createdAt,
+        },
+        relation: {
+          added_by: member.addedBy ?? null,
+          is_default: member.isDefault,
+        },
+      }))
 
-          return {
-            info: {
-              id: member.id,
-              email: member.email,
-              name: user?.name ?? undefined,
-              avatar_url: user?.avatarUrl ?? undefined,
-              providers: user?.providers ?? [],
-              createdAt: member.createdAt,
-            },
-            relation: {
-              added_by: member.addedBy ?? null,
-              is_default: member.isDefault,
-            },
-          } satisfies TeamMember
-        })
-      )
-
-      return ok(enrichedMembers)
+      return ok(mapped)
     },
     async updateTeamName(
       name

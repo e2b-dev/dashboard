@@ -14,6 +14,17 @@ export const serverSchema = z.object({
 
   TURNSTILE_SECRET_KEY: z.string().optional(),
 
+  AUTH_PROVIDER: z.enum(['supabase', 'ory']).optional(),
+  AUTH_SECRET: z.string().min(1).optional(),
+  AUTH_TRUST_HOST: z.string().optional(),
+  ORY_SDK_URL: z.url().optional(),
+  ORY_OAUTH2_CLIENT_ID: z.string().min(1).optional(),
+  ORY_OAUTH2_CLIENT_SECRET: z.string().min(1).optional(),
+  ORY_OAUTH2_AUDIENCE: z.string().min(1).optional(),
+  ORY_PROJECT_API_TOKEN: z.string().min(1).optional(),
+  ORY_KRATOS_ADMIN_URL: z.url().optional(),
+  ORY_HYDRA_ADMIN_URL: z.url().optional(),
+
   OTEL_SERVICE_NAME: z.string().optional(),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
   OTEL_EXPORTER_OTLP_PROTOCOL: z
@@ -59,6 +70,7 @@ export const clientSchema = z.object({
   NEXT_PUBLIC_SCAN: z.string().optional(),
   NEXT_PUBLIC_MOCK_DATA: z.string().optional(),
   NEXT_PUBLIC_VERBOSE: z.string().optional(),
+  NEXT_PUBLIC_AUTH_MIGRATION_IN_PROGRESS: z.string().optional(),
 
   NEXT_PUBLIC_CAPTCHA_ENABLED: z.string().optional(),
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),

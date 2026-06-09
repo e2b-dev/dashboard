@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { Metadata } from 'next/types'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { authHeaders } from '@/configs/api'
 import { AUTH_URLS } from '@/configs/urls'
 import type { TeamModel } from '@/core/modules/teams/models'
 import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
@@ -11,6 +11,7 @@ import {
 import { auth } from '@/core/server/auth'
 import { resolveUserTeam } from '@/core/server/functions/team/resolve-user-team'
 import { infra } from '@/core/shared/clients/api'
+import { createSandboxManagementAuth } from '@/core/shared/sandbox-management-auth.server'
 import { SandboxIdSchema } from '@/core/shared/schemas/api'
 import DashboardTerminal from '@/features/dashboard/terminal/dashboard-terminal'
 import { normalizeTerminalTemplate } from '@/features/dashboard/terminal/template'
@@ -110,7 +111,10 @@ export default async function TerminalPage({
         initialCommand={command}
         initialSandboxId={terminalSandboxId}
         initialTemplate={terminalTemplate}
-        teamId={team.id}
+        sandboxManagementAuth={createSandboxManagementAuth(
+          authContext,
+          team.id
+        )}
       />
     </main>
   )
@@ -181,7 +185,7 @@ async function hasSandboxInTeam({
         },
       },
       headers: {
-        ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+        ...authHeaders(accessToken, teamId),
       },
       cache: 'no-store',
     })

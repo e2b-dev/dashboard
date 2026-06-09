@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { authHeaders } from '@/configs/api'
 import type { UpsertWebhookInput } from '@/core/server/functions/webhooks/schema'
 import { infra } from '@/core/shared/clients/api'
 import type {
@@ -13,7 +13,7 @@ import { err, ok, type RepoResult } from '@/core/shared/result'
 
 type WebhooksRepositoryDeps = {
   infraClient: typeof infra
-  authHeaders: typeof SUPABASE_AUTH_HEADERS
+  authHeaders: typeof authHeaders
 }
 
 export type WebhooksScope = TeamRequestScope
@@ -58,7 +58,7 @@ export function createWebhooksRepository(
   scope: WebhooksScope,
   deps: WebhooksRepositoryDeps = {
     infraClient: infra,
-    authHeaders: SUPABASE_AUTH_HEADERS,
+    authHeaders: authHeaders,
   }
 ): WebhooksRepository {
   return {

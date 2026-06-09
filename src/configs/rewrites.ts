@@ -1,8 +1,7 @@
 import type { DomainConfig } from '@/types/rewrites.types'
+import { DOCUMENTATION_DOMAIN } from './documentation'
 
 export const LANDING_PAGE_DOMAIN = 'www.e2b-landing-page.com'
-
-import { DOCUMENTATION_DOMAIN } from '../../next.config.mjs'
 
 // Currently we have two locations for rewrites to happen.
 
@@ -41,7 +40,7 @@ export const ROUTE_REWRITE_CONFIG: DomainConfig[] = [
  * Middleware native rewrite config
  *
  * We implement rewrites directly in middleware rather than using Next.js's built-in
- * `rewrites` configuration in next.config.js because we need to set custom request
+ * `rewrites` configuration in next.config.ts because we need to set custom request
  * and response headers for these rewritten requests.
  *
  * Specifically, we need to:

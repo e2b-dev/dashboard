@@ -4,12 +4,17 @@ import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { returnValidationErrors } from 'next-safe-action'
 import { z } from 'zod'
-import { CAPTCHA_REQUIRED_SERVER } from '@/configs/flags'
+import {
+  CAPTCHA_REQUIRED_SERVER,
+  isAuthMigrationInProgress,
+  isOryAuthEnabled,
+} from '@/configs/flags'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { USER_MESSAGES } from '@/configs/user-messages'
 import { actionClient } from '@/core/server/actions/client'
 import { returnServerError } from '@/core/server/actions/utils'
 import { auth } from '@/core/server/auth'
+import { buildOryStartURL } from '@/core/server/auth/ory/build-start-url'
 import { supabaseAuthFlows } from '@/core/server/auth/supabase/flows'
 import {
   forgotPasswordSchema,
@@ -99,17 +104,42 @@ async function checkAuthProviderHealth(): Promise<boolean> {
 
 const AUTH_PROVIDER_ERROR_MESSAGE =
   'Our authentication provider is experiencing issues. Please try again later.'
+const AUTH_MIGRATION_SIGN_IN_DISABLED_MESSAGE =
+  'Sign-ins are temporarily paused while we migrate our authentication system. Please try again later.'
+const AUTH_MIGRATION_SIGN_UP_DISABLED_MESSAGE =
+  'Sign-ups are temporarily paused while we migrate our authentication system. Please try again later.'
 
 const SignInWithOAuthInputSchema = z.object({
   provider: z.union([z.literal('github'), z.literal('google')]),
   returnTo: relativeUrlSchema.optional(),
 })
 
+function redirectLegacyAuthToOryIfEnabled(
+  intent: 'signin' | 'signup',
+  returnTo?: string
+) {
+  if (!isOryAuthEnabled()) return
+
+  throw redirect(buildOryStartURL(intent, returnTo))
+}
+
 export const signInWithOAuthAction = actionClient
   .inputSchema(SignInWithOAuthInputSchema)
   .metadata({ actionName: 'signInWithOAuth' })
   .action(async ({ parsedInput }) => {
     const { provider, returnTo } = parsedInput
+
+    redirectLegacyAuthToOryIfEnabled('signin', returnTo)
+
+    if (isAuthMigrationInProgress()) {
+      const queryParams = returnTo ? { returnTo } : undefined
+      throw encodedRedirect(
+        'error',
+        AUTH_URLS.SIGN_IN,
+        AUTH_MIGRATION_SIGN_IN_DISABLED_MESSAGE,
+        queryParams
+      )
+    }
 
     const isHealthy = await checkAuthProviderHealth()
     if (!isHealthy) {
@@ -178,6 +208,12 @@ export const signUpAction = actionClient
     async ({
       parsedInput: { email, password, returnTo = '', captchaToken },
     }) => {
+      redirectLegacyAuthToOryIfEnabled('signup', returnTo)
+
+      if (isAuthMigrationInProgress()) {
+        return returnServerError(AUTH_MIGRATION_SIGN_UP_DISABLED_MESSAGE)
+      }
+
       const captchaError = await validateCaptcha(captchaToken)
       if (captchaError) return captchaError
 
@@ -277,6 +313,12 @@ export const signInAction = actionClient
   .schema(signInSchema)
   .metadata({ actionName: 'signInWithEmailAndPassword' })
   .action(async ({ parsedInput: { email, password, returnTo = '' } }) => {
+    redirectLegacyAuthToOryIfEnabled('signin', returnTo)
+
+    if (isAuthMigrationInProgress()) {
+      return returnServerError(AUTH_MIGRATION_SIGN_IN_DISABLED_MESSAGE)
+    }
+
     const isHealthy = await checkAuthProviderHealth()
     if (!isHealthy) {
       const queryParams = returnTo ? { returnTo } : undefined
@@ -330,6 +372,12 @@ export const forgotPasswordAction = actionClient
   .schema(forgotPasswordSchema)
   .metadata({ actionName: 'forgotPassword' })
   .action(async ({ parsedInput: { email } }) => {
+    redirectLegacyAuthToOryIfEnabled('signin')
+
+    if (isAuthMigrationInProgress()) {
+      return returnServerError(AUTH_MIGRATION_SIGN_IN_DISABLED_MESSAGE)
+    }
+
     const isHealthy = await checkAuthProviderHealth()
     if (!isHealthy) {
       throw encodedRedirect(
@@ -361,10 +409,33 @@ export const forgotPasswordAction = actionClient
   })
 
 export async function signOutAction(returnTo?: string) {
-  await auth.signOut()
+  const origin = (await headers()).get('origin') ?? undefined
+  const { redirectTo } = await auth.signOut({ origin, returnTo })
 
-  throw redirect(
-    AUTH_URLS.SIGN_IN +
-      (returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : '')
-  )
+  throw redirect(redirectTo)
+}
+
+// Drives the account-settings re-authentication step and returns the URL the
+// client should HARD-navigate to. Supabase signs the user out and bounces
+// through /sign-in (which lands back on the account page with ?reauth=1); Ory
+// forces a fresh OAuth2 login via the oauth-start route.
+//
+// We deliberately return the URL instead of redirect()-ing: a server-action
+// redirect is a soft RSC navigation, which prefetches and re-invokes the
+// oauth-start GET (a side-effecting endpoint that mints OAuth state/pkce/
+// callback-url cookies). Those duplicate invocations corrupt the cookies so the
+// post-reauth callback loses its callbackUrl and falls back to "/". A single
+// window.location navigation on the client avoids that entirely.
+export async function reauthForAccountSettingsAction(): Promise<{
+  url: string
+}> {
+  const dispatch = await auth.startReauthForAccountSettings()
+
+  if (dispatch.kind === 'sign-out') {
+    // Supabase: clear the session server-side, then hand back the sign-in URL.
+    const { redirectTo } = await auth.signOut({ returnTo: dispatch.returnTo })
+    return { url: redirectTo }
+  }
+
+  return { url: dispatch.to }
 }

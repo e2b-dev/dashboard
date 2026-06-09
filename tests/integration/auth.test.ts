@@ -106,6 +106,7 @@ describe('Auth Actions - Integration Tests', () => {
   })
 
   afterEach(() => {
+    vi.unstubAllEnvs()
     // Restore original console.error after each test
     console.error = originalConsoleError
     global.fetch = originalFetch
@@ -151,6 +152,22 @@ describe('Auth Actions - Integration Tests', () => {
       })
 
       expect(redirect).toHaveBeenCalledWith('/dashboard/team-123/sandboxes')
+    })
+
+    it('should block password sign-in while auth migration is in progress', async () => {
+      vi.stubEnv('NEXT_PUBLIC_AUTH_MIGRATION_IN_PROGRESS', '1')
+
+      const result = await signInAction({
+        email: 'test@example.com',
+        password: 'password123',
+        returnTo: '/dashboard/team-123',
+      })
+
+      expect(result?.serverError).toBe(
+        'Sign-ins are temporarily paused while we migrate our authentication system. Please try again later.'
+      )
+      expect(fetchMock).not.toHaveBeenCalled()
+      expect(mockSupabaseClient.auth.signInWithPassword).not.toHaveBeenCalled()
     })
 
     it('should throw validation error if returnTo is not a relative path', async () => {
@@ -346,6 +363,22 @@ describe('Auth Actions - Integration Tests', () => {
       expect(result).not.toHaveProperty('validationErrors')
     })
 
+    it('should block forgot password while auth migration is in progress', async () => {
+      vi.stubEnv('NEXT_PUBLIC_AUTH_MIGRATION_IN_PROGRESS', '1')
+
+      const result = await forgotPasswordAction({
+        email: 'user@example.com',
+      })
+
+      expect(result?.serverError).toBe(
+        'Sign-ins are temporarily paused while we migrate our authentication system. Please try again later.'
+      )
+      expect(fetchMock).not.toHaveBeenCalled()
+      expect(
+        mockSupabaseClient.auth.resetPasswordForEmail
+      ).not.toHaveBeenCalled()
+    })
+
     /**
      * VALIDATION TEST: Verifies that forgot password with missing email
      * shows appropriate error message
@@ -458,6 +491,24 @@ describe('Auth Actions - Integration Tests', () => {
           scopes: 'email',
         },
       })
+    })
+
+    it('should block OAuth sign-in while auth migration is in progress', async () => {
+      vi.stubEnv('NEXT_PUBLIC_AUTH_MIGRATION_IN_PROGRESS', '1')
+
+      await signInWithOAuthAction({
+        provider: 'google',
+        returnTo: '/dashboard/team-123',
+      })
+
+      expect(encodedRedirect).toHaveBeenCalledWith(
+        'error',
+        AUTH_URLS.SIGN_IN,
+        'Sign-ins are temporarily paused while we migrate our authentication system. Please try again later.',
+        { returnTo: '/dashboard/team-123' }
+      )
+      expect(fetchMock).not.toHaveBeenCalled()
+      expect(mockSupabaseClient.auth.signInWithOAuth).not.toHaveBeenCalled()
     })
   })
 
