@@ -1,9 +1,10 @@
 import 'server-only'
 
 import { secondsInMinute } from 'date-fns/constants'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { authHeaders } from '@/configs/api'
 import type { components as DashboardComponents } from '@/contracts/dashboard-api'
 import { api } from '@/core/shared/clients/api'
+import { l } from '@/core/shared/clients/logger/logger'
 import { createRepoError, repoErrorFromHttp } from '@/core/shared/errors'
 import type { RequestScope } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
@@ -11,7 +12,7 @@ import type { ResolvedTeam, TeamModel } from './models'
 
 type UserTeamsRepositoryDeps = {
   apiClient: typeof api
-  authHeaders: typeof SUPABASE_AUTH_HEADERS
+  authHeaders: typeof authHeaders
 }
 
 export type UserTeamsRequestScope = RequestScope
@@ -31,7 +32,7 @@ export function createUserTeamsRepository(
   scope: UserTeamsRequestScope,
   deps: UserTeamsRepositoryDeps = {
     apiClient: api,
-    authHeaders: SUPABASE_AUTH_HEADERS,
+    authHeaders: authHeaders,
   }
 ): UserTeamsRepository {
   const listApiUserTeams = async (): Promise<RepoResult<TeamModel[]>> => {
@@ -40,6 +41,20 @@ export function createUserTeamsRepository(
     })
 
     if (!response.ok || error || !data?.teams) {
+      l.error(
+        {
+          key: 'repositories:user_teams:list_user_teams:api_error',
+          error,
+          context: {
+            status: response.status,
+            path: '/teams',
+            has_data: !!data,
+            has_teams: !!data?.teams,
+          },
+        },
+        `failed to fetch /teams: ${error?.message ?? 'missing teams in response'}`
+      )
+
       return err(
         repoErrorFromHttp(
           response.status,

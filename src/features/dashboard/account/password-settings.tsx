@@ -1,18 +1,18 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useAction } from 'next-safe-action/hooks'
-import { useEffect, useMemo, useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { USER_MESSAGES } from '@/configs/user-messages'
-import { updateUserAction } from '@/core/server/actions/user-actions'
 import {
   defaultErrorToast,
   defaultSuccessToast,
   useToast,
 } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
 import {
   Card,
@@ -61,6 +61,7 @@ export function PasswordSettings({
 
   const { user } = useDashboard()
   const { toast } = useToast()
+  const trpc = useTRPC()
   const [reauthDialogOpen, setReauthDialogOpen] = useState(false)
   const [clientShowPasswordForm, setClientShowPasswordForm] = useState(
     showPasswordChangeForm
@@ -70,11 +71,6 @@ export function PasswordSettings({
     setClientShowPasswordForm(showPasswordChangeForm)
   }, [showPasswordChangeForm])
 
-  const hasEmailProvider = useMemo(
-    () => user.providers.includes('email'),
-    [user]
-  )
-
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -83,33 +79,39 @@ export function PasswordSettings({
     },
   })
 
-  const { execute: updatePassword, isPending } = useAction(updateUserAction, {
-    onSuccess: ({ data }) => {
-      if (data?.requiresReauth) {
-        setReauthDialogOpen(true)
-        return
-      }
+  const { mutate: updatePassword, isPending } = useMutation(
+    trpc.user.update.mutationOptions({
+      onSuccess: (data) => {
+        if (data.status === 'reauth') {
+          setReauthDialogOpen(true)
+          return
+        }
 
-      toast(defaultSuccessToast(USER_MESSAGES.passwordUpdated.message))
+        if (data.status === 'error') {
+          if (data.code === 'account_credentials_not_changeable') {
+            toast(defaultErrorToast(USER_MESSAGES.failedUpdatePassword.message))
+            return
+          }
 
-      form.reset()
-      setClientShowPasswordForm(false)
-      window.history.replaceState({}, '', window.location.pathname)
-    },
-    onError: ({ error }) => {
-      if (error.validationErrors?.fieldErrors?.password) {
-        form.setError('confirmPassword', {
-          message: error.validationErrors.fieldErrors.password?.[0],
-        })
-      } else {
-        toast(
-          defaultErrorToast(
-            error.serverError || USER_MESSAGES.failedUpdatePassword.message
-          )
-        )
-      }
-    },
-  })
+          const message =
+            data.code === 'same_password'
+              ? 'New password cannot be the same as the old password.'
+              : 'Password is too weak.'
+          form.setError('confirmPassword', { message })
+          return
+        }
+
+        toast(defaultSuccessToast(USER_MESSAGES.passwordUpdated.message))
+
+        form.reset()
+        setClientShowPasswordForm(false)
+        window.history.replaceState({}, '', window.location.pathname)
+      },
+      onError: () => {
+        toast(defaultErrorToast(USER_MESSAGES.failedUpdatePassword.message))
+      },
+    })
+  )
 
   function onSubmit(values: FormValues) {
     updatePassword({ password: values.password })
@@ -119,7 +121,7 @@ export function PasswordSettings({
     setReauthDialogOpen(true)
   }
 
-  if (!user || !hasEmailProvider) return null
+  if (!user || !user.canChangePassword) return null
 
   return (
     <>

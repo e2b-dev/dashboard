@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { z } from 'zod'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { authHeaders } from '@/configs/api'
 import { USE_MOCK_DATA } from '@/configs/flags'
 import { MOCK_TEAM_METRICS_MAX_DATA } from '@/configs/mock-data'
 import {
@@ -82,7 +82,7 @@ export const getTeamMetricsMax = authActionClient
         },
       },
       headers: {
-        ...SUPABASE_AUTH_HEADERS(session.access_token, teamId),
+        ...authHeaders(session.access_token, teamId),
       },
       cache: 'no-store',
     })

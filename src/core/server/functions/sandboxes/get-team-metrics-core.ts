@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { cache } from 'react'
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { authHeaders } from '@/configs/api'
 import { USE_MOCK_DATA } from '@/configs/flags'
 import {
   calculateTeamMetricsStep,
@@ -89,7 +89,7 @@ export const getTeamMetricsCore = cache(
         },
       },
       headers: {
-        ...SUPABASE_AUTH_HEADERS(accessToken, teamId),
+        ...authHeaders(accessToken, teamId),
       },
       cache: 'no-store',
     })

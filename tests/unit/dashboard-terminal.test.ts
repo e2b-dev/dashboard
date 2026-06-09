@@ -13,26 +13,15 @@ import {
 } from '@/features/dashboard/terminal/template'
 import { calculateTerminalSize } from '@/features/dashboard/terminal/terminal-size'
 
-const { mockCreateSandbox, mockConnectSandbox, mockGetSession } = vi.hoisted(
-  () => ({
-    mockCreateSandbox: vi.fn(),
-    mockConnectSandbox: vi.fn(),
-    mockGetSession: vi.fn(),
-  })
-)
+const { mockCreateSandbox, mockConnectSandbox } = vi.hoisted(() => ({
+  mockCreateSandbox: vi.fn(),
+  mockConnectSandbox: vi.fn(),
+}))
 
 vi.mock('e2b', () => ({
   default: {
     connect: mockConnectSandbox,
     create: mockCreateSandbox,
-  },
-}))
-
-vi.mock('@/core/shared/clients/supabase/client', () => ({
-  supabase: {
-    auth: {
-      getSession: mockGetSession,
-    },
   },
 }))
 
@@ -59,19 +48,17 @@ function installLocalStorage() {
 }
 
 describe('dashboard terminal helpers', () => {
+  const sandboxManagementAuth = {
+    headers: {
+      [SUPABASE_TOKEN_HEADER]: 'supabase-token',
+      [SUPABASE_TEAM_HEADER]: 'team-123',
+    },
+    userId: 'user-123',
+  }
+
   beforeEach(() => {
     vi.clearAllMocks()
     installLocalStorage()
-    mockGetSession.mockResolvedValue({
-      data: {
-        session: {
-          access_token: 'supabase-token',
-          user: {
-            id: 'user-123',
-          },
-        },
-      },
-    })
     mockCreateSandbox.mockResolvedValue({ sandboxId: 'created-sandbox' })
     mockConnectSandbox.mockResolvedValue({ sandboxId: 'connected-sandbox' })
   })
@@ -217,15 +204,15 @@ describe('dashboard terminal helpers', () => {
 
       await openTerminalSandbox({
         onStatus: (message) => statuses.push(message),
+        sandboxManagementAuth,
         sandboxId: 'sandbox-from-url',
-        teamId: 'team-123',
         template: 'base',
       })
 
       expect(mockConnectSandbox).toHaveBeenCalledWith('sandbox-from-url', {
         domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
         timeoutMs: 30 * 60 * 1000,
-        headers: {
+        apiHeaders: {
           [SUPABASE_TOKEN_HEADER]: 'supabase-token',
           [SUPABASE_TEAM_HEADER]: 'team-123',
         },
@@ -240,7 +227,7 @@ describe('dashboard terminal helpers', () => {
     it('creates and stores a terminal sandbox when no reusable session exists', async () => {
       await openTerminalSandbox({
         onStatus: vi.fn(),
-        teamId: 'team-123',
+        sandboxManagementAuth,
         template: 'base',
       })
 
@@ -256,7 +243,7 @@ describe('dashboard terminal helpers', () => {
           template: 'base',
           userId: 'user-123',
         },
-        headers: {
+        apiHeaders: {
           [SUPABASE_TOKEN_HEADER]: 'supabase-token',
           [SUPABASE_TEAM_HEADER]: 'team-123',
         },
@@ -275,7 +262,7 @@ describe('dashboard terminal helpers', () => {
 
       await openTerminalSandbox({
         onStatus: vi.fn(),
-        teamId: 'team-123',
+        sandboxManagementAuth,
         template: 'base',
       })
 

@@ -1,93 +1,34 @@
-import { type NextRequest, NextResponse } from 'next/server'
-import { ALLOW_SEO_INDEXING } from './configs/flags'
-import { createAuthForProxy } from './core/server/auth'
-import { getAuthRedirect } from './core/server/http/proxy'
+import {
+  type NextFetchEvent,
+  type NextRequest,
+  NextResponse,
+} from 'next/server'
+import { auth as authjsMiddleware } from '@/auth'
+import { isOryAuthEnabled } from './configs/flags'
+import { getOryAuthRouteRedirect } from './core/server/auth/ory/auth-route-redirect'
+import { isOrySessionAuthenticated } from './core/server/auth/ory/authjs-session-boundary'
+import {
+  handleAuthGate,
+  handleMiddlewareRedirect,
+  handleMiddlewareRewrite,
+  handleRouteRewritePassthrough,
+} from './core/server/http/proxy'
 import { l, serializeErrorForLog } from './core/shared/clients/logger/logger'
-import { getMiddlewareRedirectFromPath } from './lib/utils/redirects'
-import { getRewriteForPath } from './lib/utils/rewrites'
 
-export async function proxy(request: NextRequest) {
+// Runs the proxy's ordered concerns: the first handler that returns a Response
+// wins; otherwise we fall through to the auth gate. `knownAuth` is passed in Ory
+// mode (resolved by the Auth.js middleware wrapper) and omitted in Supabase mode.
+async function proxyCore(
+  request: NextRequest,
+  knownAuth?: boolean
+): Promise<Response> {
   try {
-    const pathname = request.nextUrl.pathname
-
-    // Redirects, that require custom headers
-    // NOTE: We don't handle this via config matchers, because nextjs configs need to be static
-    const middlewareRedirect = getMiddlewareRedirectFromPath(
-      request.nextUrl.pathname
+    return (
+      handleMiddlewareRedirect(request) ??
+      handleRouteRewritePassthrough(request) ??
+      handleMiddlewareRewrite(request) ??
+      (await handleAuthGate(request, knownAuth))
     )
-
-    if (middlewareRedirect) {
-      const headers = new Headers(middlewareRedirect.headers)
-      const url = new URL(middlewareRedirect.destination, request.url)
-
-      return NextResponse.redirect(url, {
-        status: middlewareRedirect.statusCode,
-        headers,
-      })
-    }
-
-    // Catch-all route rewrite paths should not be handled by middleware
-    // NOTE: We don't handle this via config matchers, because nextjs configs need to be static
-    const { config: routeRewriteConfig } = getRewriteForPath(pathname, 'route')
-
-    if (routeRewriteConfig) {
-      return NextResponse.next({
-        request,
-      })
-    }
-
-    // Check if the path should be rewritten by middleware
-    const { config: middlewareRewriteConfig, rule: middlewareRewriteRule } =
-      getRewriteForPath(pathname, 'middleware')
-
-    if (middlewareRewriteConfig) {
-      const rewriteUrl = new URL(request.url)
-      rewriteUrl.hostname = middlewareRewriteConfig.domain
-      rewriteUrl.protocol = 'https'
-      rewriteUrl.port = ''
-      if (middlewareRewriteRule?.pathPreprocessor) {
-        rewriteUrl.pathname = middlewareRewriteRule.pathPreprocessor(
-          rewriteUrl.pathname
-        )
-      }
-
-      const headers = new Headers(request.headers)
-
-      if (ALLOW_SEO_INDEXING) {
-        headers.set('x-e2b-should-index', '1')
-      }
-
-      const response = NextResponse.rewrite(rewriteUrl, {
-        request: {
-          headers,
-        },
-      })
-
-      if (ALLOW_SEO_INDEXING) {
-        response.headers.set('X-Robots-Tag', 'index, follow')
-      } else {
-        response.headers.set('X-Robots-Tag', 'noindex, nofollow')
-      }
-
-      return response
-    }
-
-    const response = NextResponse.next({
-      request,
-    })
-    const authContext = await createAuthForProxy(
-      request,
-      response
-    ).getAuthContext()
-    const isAuthenticated = !!authContext
-
-    const authRedirect = getAuthRedirect(request, isAuthenticated)
-
-    if (authRedirect) {
-      return authRedirect
-    }
-
-    return response
   } catch (error) {
     l.error(
       {
@@ -102,10 +43,28 @@ export async function proxy(request: NextRequest) {
     )
 
     // return a basic response to avoid infinite loops
-    return NextResponse.next({
-      request,
-    })
+    return NextResponse.next({ request })
   }
+}
+
+// In Ory mode the Auth.js middleware wrapper populates req.auth and manages its
+// session cookies, so auth is resolved here and threaded into proxyCore. Auth
+// pages still bypass the local UI, but only after checking whether an existing
+// session should send the user back to the dashboard instead of the hosted UI.
+const proxyWithOryAuth = authjsMiddleware((req, _event: NextFetchEvent) => {
+  const isAuthenticated = isOrySessionAuthenticated(req.auth)
+  const authRouteRedirect = getOryAuthRouteRedirect(req, isAuthenticated)
+  if (authRouteRedirect) return authRouteRedirect
+
+  return proxyCore(req, isAuthenticated)
+})
+
+export async function proxy(request: NextRequest, event: NextFetchEvent) {
+  if (!isOryAuthEnabled()) {
+    return proxyCore(request)
+  }
+
+  return proxyWithOryAuth(request, event)
 }
 
 export const config = {
@@ -114,12 +73,11 @@ export const config = {
      * Match all request paths except:
      * - _next/static (static files)
      * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - images - .svg, .png, .jpg, .jpeg, .gif, .webp
+     * - static icons and images - .ico, .svg, .png, .jpg, .jpeg, .gif, .webp
      * - api routes
      * - vercel analytics route
      * - posthog routes
      */
-    '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|_vercel/|ingest/|ph-proxy/|array/|mintlify-assets/|_mintlify/).*)',
+    '/((?!_next/static|_next/image|api/|.*\\.(?:ico|svg|png|jpg|jpeg|gif|webp)$|_vercel/|ingest/|ph-proxy/|array/|mintlify-assets/|_mintlify/).*)',
   ],
 }
