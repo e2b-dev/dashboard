@@ -26,7 +26,7 @@ const CommandDialog = ({ children, ...props }: DialogProps) => {
   return (
     <Dialog {...props}>
       <DialogContent
-        className="!top-[20svh] !translate-y-0 overflow-hidden p-0"
+        className="top-[20svh] max-h-[calc(80svh-1rem)] translate-y-0 overflow-hidden p-0"
         hideClose
       >
         <DialogTitle className="sr-only">Search through dashboard</DialogTitle>
