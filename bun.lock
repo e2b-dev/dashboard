@@ -1,6 +1,5 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "@e2b/dashboard",
@@ -117,7 +116,7 @@
         "knip": "^6.11.0",
         "openapi-typescript": "^7.8.0",
         "pino-pretty": "^13.1.1",
-        "postcss": "^8.5.15",
+        "postcss": "8.5.15",
         "react-scan": "^0.4.3",
         "server-cli-only": "^0.3.2",
         "tailwindcss": "^4.0.15",
