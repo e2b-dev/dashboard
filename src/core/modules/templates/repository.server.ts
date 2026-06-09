@@ -102,15 +102,7 @@ export function createTemplatesRepository(
 
       const res = await deps.apiClient.GET('/templates', {
         params: {
-          query: {
-            cursor: options.cursor,
-            limit: options.limit,
-            cpuCount: options.cpuCount,
-            memoryMB: options.memoryMB,
-            public: options.public,
-            search: options.search,
-            sort: options.sort,
-          },
+          query: options,
         },
         headers: {
           ...deps.authHeaders(scope.accessToken, scope.teamId),
@@ -127,43 +119,37 @@ export function createTemplatesRepository(
         )
       }
 
-      const data = (res.data?.data ?? []).map(
-        (t): Template | DefaultTemplate => {
-          const base: Template = {
-            templateID: t.templateID,
-            buildID: t.buildID,
-            cpuCount: t.cpuCount,
-            memoryMB: t.memoryMB,
-            diskSizeMB: t.diskSizeMB ?? 0,
-            public: t.public,
-            aliases: t.aliases,
-            names: t.names,
-            createdAt: t.createdAt,
-            updatedAt: t.updatedAt,
-            // Email resolution is deferred while the Supabase auth migration is
-            // in progress; the endpoint returns only the creator id for now.
-            createdBy: t.createdBy
-              ? { id: t.createdBy.id, email: t.createdBy.email ?? '' }
-              : null,
-            lastSpawnedAt: t.lastSpawnedAt ?? null,
-            spawnCount: t.spawnCount,
-            buildCount: t.buildCount,
-            envdVersion: t.envdVersion ?? '',
-          }
+      if (!res.data?.data?.length) {
+        return ok({ data: [], nextCursor: res.data?.nextCursor ?? null })
+      }
 
-          if (t.isDefault) {
-            return {
-              ...base,
-              isDefault: true,
-              defaultDescription: t.defaultDescription ?? undefined,
-            }
-          }
+      const data = res.data.data.map((t): Template | DefaultTemplate => ({
+        templateID: t.templateID,
+        buildID: t.buildID,
+        cpuCount: t.cpuCount,
+        memoryMB: t.memoryMB,
+        diskSizeMB: t.diskSizeMB ?? 0,
+        public: t.public,
+        aliases: t.aliases,
+        names: t.names,
+        createdAt: t.createdAt,
+        updatedAt: t.updatedAt,
+        // Email resolution is deferred while the Supabase auth migration is
+        // in progress; the endpoint returns only the creator id for now.
+        createdBy: t.createdBy
+          ? { id: t.createdBy.id, email: t.createdBy.email ?? '' }
+          : null,
+        lastSpawnedAt: t.lastSpawnedAt ?? null,
+        spawnCount: t.spawnCount,
+        buildCount: t.buildCount,
+        envdVersion: t.envdVersion ?? '',
+        ...(t.isDefault && {
+          isDefault: true as const,
+          defaultDescription: t.defaultDescription ?? undefined,
+        }),
+      }))
 
-          return base
-        }
-      )
-
-      return ok({ data, nextCursor: res.data?.nextCursor ?? null })
+      return ok({ data, nextCursor: res.data.nextCursor ?? null })
     },
     async deleteTemplate(templateId) {
       const res = await deps.infraClient.DELETE('/templates/{templateID}', {
