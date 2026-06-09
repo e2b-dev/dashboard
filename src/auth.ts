@@ -8,7 +8,7 @@ import {
 
 const oryOAuth2Audience = process.env.ORY_OAUTH2_AUDIENCE
 
-const useSecureCookies = process.env.VERCEL_ENV === "production";
+const useSecureCookies = process.env.VERCEL_ENV === 'production'
 // Standard Auth.js secure-cookie convention.
 const securePrefix = useSecureCookies ? '__Secure-' : ''
 // Cookies are scoped by host+path+name, NOT by port. Running two local
