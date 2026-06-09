@@ -54,7 +54,6 @@
     "@opentelemetry/auto-instrumentations-node": "^0.62.1",
     "@opentelemetry/exporter-logs-otlp-http": "^0.203.0",
     "@opentelemetry/exporter-metrics-otlp-http": "^0.203.0",
-    "@opentelemetry/exporter-prometheus": "^0.218.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.203.0",
     "@opentelemetry/resources": "^2.0.1",
     "@opentelemetry/sdk-logs": "^0.203.0",
@@ -171,7 +170,8 @@
     "shiki": "2.3.2",
     "@shikijs/core": "2.3.2",
     "@nodelib/fs.scandir": "2.1.5",
-    "@nodelib/fs.stat": "2.0.5"
+    "@nodelib/fs.stat": "2.0.5",
+    "@opentelemetry/exporter-prometheus": "^0.218.0"
   },
   "packageManager": "bun@1.2.0"
 }
