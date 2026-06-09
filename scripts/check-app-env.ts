@@ -1,8 +1,19 @@
 import { loadEnvConfig } from '@next/env'
+import { z } from 'zod'
 import { clientSchema, serverSchema, validateEnv } from '../src/lib/env'
 
 const projectDir = process.cwd()
 loadEnvConfig(projectDir)
+
+const oryRequiredEnvVars = [
+  'AUTH_SECRET',
+  'ORY_SDK_URL',
+  'ORY_OAUTH2_CLIENT_ID',
+  'ORY_OAUTH2_CLIENT_SECRET',
+  'ORY_OAUTH2_AUDIENCE',
+  'ORY_PROJECT_API_TOKEN',
+  'DASHBOARD_API_ADMIN_TOKEN',
+] as const
 
 const schema = serverSchema
   .merge(clientSchema)
@@ -58,25 +69,18 @@ const schema = serverSchema
       path: ['PLAIN_API_KEY'],
     }
   )
-  .refine(
-    (data) => {
-      if (data.AUTH_PROVIDER !== 'ory') return true
+  .superRefine((data, ctx) => {
+    if (data.AUTH_PROVIDER !== 'ory') return
 
-      return Boolean(
-        data.AUTH_SECRET &&
-          data.ORY_SDK_URL &&
-          data.ORY_OAUTH2_CLIENT_ID &&
-          data.ORY_OAUTH2_CLIENT_SECRET &&
-          data.ORY_OAUTH2_AUDIENCE &&
-          data.ORY_PROJECT_API_TOKEN &&
-          data.DASHBOARD_API_ADMIN_TOKEN
-      )
-    },
-    {
-      message:
-        'AUTH_PROVIDER=ory requires AUTH_SECRET, ORY_SDK_URL, ORY_OAUTH2_CLIENT_ID, ORY_OAUTH2_CLIENT_SECRET, ORY_OAUTH2_AUDIENCE, ORY_PROJECT_API_TOKEN, and DASHBOARD_API_ADMIN_TOKEN',
-      path: ['AUTH_PROVIDER'],
+    const missingEnvVars = oryRequiredEnvVars.filter((envVar) => !data[envVar])
+
+    if (missingEnvVars.length > 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `AUTH_PROVIDER=ory is missing ${missingEnvVars.join(', ')}`,
+        path: ['AUTH_PROVIDER'],
+      })
     }
-  )
+  })
 
 validateEnv(schema)
