@@ -1,8 +1,8 @@
 'use client'
 
+import { Portal } from '@radix-ui/react-portal'
 import Link from 'next/link'
 import { useState } from 'react'
-import { createPortal } from 'react-dom'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { getTeamDisplayName } from '@/core/modules/teams/utils'
 import { signOutAction } from '@/core/server/actions/auth-actions'
@@ -117,14 +117,12 @@ export default function DashboardSidebarMenu() {
         open={createTeamOpen}
         onOpenChange={setCreateTeamOpen}
       />
-      {isLoggingOut &&
-        createPortal(
-          <div className="bg-bg/90 fixed inset-0 z-60 flex items-center justify-center gap-2.5">
-            <Loader variant="slash" size="sm" />
-            <span className="prose-body-highlight">Logging out...</span>
-          </div>,
-          document.body
-        )}
+      {isLoggingOut && (
+        <Portal className="bg-bg/90 fixed inset-0 z-60 flex items-center justify-center gap-2.5">
+          <Loader variant="slash" size="sm" />
+          <span className="prose-body-highlight">Logging out...</span>
+        </Portal>
+      )}
     </>
   )
 }
