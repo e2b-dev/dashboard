@@ -71,13 +71,13 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
+     * - _next/ (Next.js internals: static files, image optimization, etc.)
      * - static icons and images - .ico, .svg, .png, .jpg, .jpeg, .gif, .webp
      * - api routes
      * - vercel analytics route
      * - posthog routes
+     * - mintlify docs asset routes (rewritten in next.config.ts)
      */
-    '/((?!_next/static|_next/image|api/|.*\\.(?:ico|svg|png|jpg|jpeg|gif|webp)$|_vercel/|ingest/|ph-proxy/|array/|mintlify-assets/|_mintlify/).*)',
+    '/((?!_next/|api/|.*\\.(?:ico|svg|png|jpg|jpeg|gif|webp)$|_vercel/|ingest/|ph-proxy/|array/|mintlify-assets/|_mintlify/).*)',
   ],
 }
