@@ -5,6 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 const authSession = vi.hoisted(() => ({
   current: null as Session | null,
 }))
+// Counts requests that actually pass through the Auth.js middleware wrapper,
+// so tests can assert which routes are scoped into session resolution.
+const authWrapperCalls = vi.hoisted(() => ({ count: 0 }))
 const signInMock = vi.hoisted(() => vi.fn())
 const readSignupMetadataMock = vi.hoisted(() => vi.fn())
 const setSignupMetadataCookieMock = vi.hoisted(() => vi.fn())
@@ -18,6 +21,7 @@ vi.mock('@/auth', () => ({
       ) => Response | Promise<Response>
     ) =>
       (request: NextRequest, event: NextFetchEvent) => {
+        authWrapperCalls.count++
         Object.defineProperty(request, 'auth', {
           configurable: true,
           value: authSession.current,
@@ -166,5 +170,28 @@ describe('Ory auth entrypoints', () => {
     )
 
     expect(response?.status).toBe(400)
+  })
+
+  it('runs the Auth.js wrapper only for dashboard and auth routes', async () => {
+    authSession.current = orySession({ accessToken: 'access-token' })
+
+    for (const path of ['/dashboard/team/sandboxes', '/sign-in', '/sign-up']) {
+      const before = authWrapperCalls.count
+      await proxy(request(path), {} as NextFetchEvent)
+      expect(authWrapperCalls.count, path).toBe(before + 1)
+    }
+  })
+
+  it('keeps session-irrelevant routes out of the Auth.js wrapper', async () => {
+    authSession.current = orySession({ accessToken: 'access-token' })
+
+    for (const path of ['/', '/blog/post', '/_next/mintlify-assets/chunk.js']) {
+      const before = authWrapperCalls.count
+      const response = await proxy(request(path), {} as NextFetchEvent)
+
+      expect(authWrapperCalls.count, path).toBe(before)
+      // still served by the plain proxy, no auth redirect
+      expect(response.headers.get('location'), path).toBeNull()
+    }
   })
 })

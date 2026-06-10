@@ -12,6 +12,8 @@ import {
   handleMiddlewareRedirect,
   handleMiddlewareRewrite,
   handleRouteRewritePassthrough,
+  isAuthRoute,
+  isDashboardRoute,
 } from './core/server/http/proxy'
 import { l, serializeErrorForLog } from './core/shared/clients/logger/logger'
 
@@ -59,9 +61,25 @@ const proxyWithOryAuth = authjsMiddleware((req, _event: NextFetchEvent) => {
   return proxyCore(req, isAuthenticated)
 })
 
+// Dashboard and auth routes are the only matched paths whose handling depends
+// on the session (handleAuthGate / getOryAuthRouteRedirect). Everything else
+// must stay out of the Auth.js wrapper: its per-request session handling
+// re-sets the session cookie and deletes tokens it cannot decrypt, so a stray
+// request (e.g. a 404ing asset) could log the user out.
+function needsAuthResolution(pathname: string): boolean {
+  return isDashboardRoute(pathname) || isAuthRoute(pathname)
+}
+
 export async function proxy(request: NextRequest, event: NextFetchEvent) {
   if (!isOryAuthEnabled()) {
     return proxyCore(request)
+  }
+
+  // knownAuth=false is safe here: getAuthRedirect ignores it for
+  // non-dashboard/auth routes, and it stops handleAuthGate from resolving the
+  // session needlessly.
+  if (!needsAuthResolution(request.nextUrl.pathname)) {
+    return proxyCore(request, false)
   }
 
   return proxyWithOryAuth(request, event)
