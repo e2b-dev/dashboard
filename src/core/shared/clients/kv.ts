@@ -53,6 +53,9 @@ function createRedisClient() {
     // behind the auto-reconnect. Preserves the {status: 'error'} envelope on
     // pingKv() and keeps /api/health snappy during Redis outages.
     disableOfflineQueue: true,
+    socket: {
+      socketTimeout: 10_000,
+    },
   })
 
   client.on('error', (error) => {

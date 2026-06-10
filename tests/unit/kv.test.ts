@@ -103,6 +103,9 @@ describe('optional KV client', () => {
     expect(createClient).toHaveBeenCalledWith({
       url: 'redis://localhost:6379',
       disableOfflineQueue: true,
+      socket: {
+        socketTimeout: 10_000,
+      },
     })
     expect(redisClient.on).toHaveBeenCalledWith('error', expect.any(Function))
     expect(redisClient.on).toHaveBeenCalledWith('end', expect.any(Function))
