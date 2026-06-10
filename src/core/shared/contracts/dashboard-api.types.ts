@@ -1255,5 +1255,323 @@ export interface components {
   headers: never
   pathItems: never
 }
+export type webhooks = Record<string, never>
+export interface components {
+  schemas: {
+    Error: {
+      /**
+       * Format: int32
+       * @description Error code.
+       */
+      code: number
+      /** @description Error message. */
+      message: string
+    }
+    AdminAuthProviderProfile: {
+      /**
+       * Format: uuid
+       * @description Internal E2B user identifier.
+       */
+      userId: string
+      /** @description Email address from the configured auth provider. */
+      email: string | null
+    }
+    AdminAuthProviderProfilesResponse: {
+      profiles: components['schemas']['AdminAuthProviderProfile'][]
+    }
+    AdminAuthProviderProfilesResolveRequest: {
+      userIds: string[]
+    }
+    AdminAuthProviderProfilesLookupEmailRequest: {
+      /** Format: email */
+      email: string
+    }
+    AdminAuthProviderUserBootstrapRequest: {
+      oidc_user_id: string
+      /** Format: email */
+      oidc_user_email: string
+      oidc_user_name: string | null
+    }
+    /**
+     * @description Build status mapped for dashboard clients.
+     * @enum {string}
+     */
+    BuildStatus: 'building' | 'failed' | 'success'
+    ListedBuild: {
+      /**
+       * Format: uuid
+       * @description Identifier of the build.
+       */
+      id: string
+      /** @description Template alias when present, otherwise template ID. */
+      template: string
+      /** @description Identifier of the template. */
+      templateId: string
+      status: components['schemas']['BuildStatus']
+      /** @description Failure message when status is `failed`, otherwise `null`. */
+      statusMessage: string | null
+      /**
+       * Format: date-time
+       * @description Build creation timestamp in RFC3339 format.
+       */
+      createdAt: string
+      /**
+       * Format: date-time
+       * @description Build completion timestamp in RFC3339 format, if finished.
+       */
+      finishedAt: string | null
+    }
+    BuildsListResponse: {
+      data: components['schemas']['ListedBuild'][]
+      /** @description Cursor to pass to the next list request, or `null` if there is no next page. */
+      nextCursor: string | null
+    }
+    BuildStatusItem: {
+      /**
+       * Format: uuid
+       * @description Identifier of the build.
+       */
+      id: string
+      status: components['schemas']['BuildStatus']
+      /**
+       * Format: date-time
+       * @description Build completion timestamp in RFC3339 format, if finished.
+       */
+      finishedAt: string | null
+      /** @description Failure message when status is `failed`, otherwise `null`. */
+      statusMessage: string | null
+    }
+    BuildsStatusesResponse: {
+      /** @description List of build statuses */
+      buildStatuses: components['schemas']['BuildStatusItem'][]
+    }
+    BuildInfo: {
+      /** @description Template names related to this build, if available. */
+      names?: string[] | null
+      /**
+       * Format: date-time
+       * @description Build creation timestamp in RFC3339 format.
+       */
+      createdAt: string
+      /**
+       * Format: date-time
+       * @description Build completion timestamp in RFC3339 format, if finished.
+       */
+      finishedAt: string | null
+      status: components['schemas']['BuildStatus']
+      /** @description Failure message when status is `failed`, otherwise `null`. */
+      statusMessage: string | null
+    }
+    /**
+     * Format: int64
+     * @description CPU cores for the sandbox
+     */
+    CPUCount: number
+    /**
+     * Format: int64
+     * @description Memory for the sandbox in MiB
+     */
+    MemoryMB: number
+    /**
+     * Format: int64
+     * @description Disk size for the sandbox in MiB
+     */
+    DiskSizeMB: number
+    SandboxRecord: {
+      /** @description Identifier of the template from which is the sandbox created */
+      templateID: string
+      /** @description Alias of the template */
+      alias?: string
+      /** @description Identifier of the sandbox */
+      sandboxID: string
+      /**
+       * Format: date-time
+       * @description Time when the sandbox was started
+       */
+      startedAt: string
+      /**
+       * Format: date-time
+       * @description Time when the sandbox was stopped
+       */
+      stoppedAt?: string | null
+      /** @description Base domain where the sandbox traffic is accessible */
+      domain?: string | null
+      cpuCount: components['schemas']['CPUCount']
+      memoryMB: components['schemas']['MemoryMB']
+      diskSizeMB: components['schemas']['DiskSizeMB']
+    }
+    HealthResponse: {
+      /** @description Human-readable health check result. */
+      message: string
+    }
+    UserTeamLimits: {
+      /** Format: int64 */
+      maxLengthHours: number
+      /** Format: int32 */
+      concurrentSandboxes: number
+      /** Format: int32 */
+      concurrentTemplateBuilds: number
+      /** Format: int32 */
+      maxVcpu: number
+      /** Format: int32 */
+      maxRamMb: number
+      /** Format: int32 */
+      diskMb: number
+    }
+    UserTeam: {
+      /** Format: uuid */
+      id: string
+      name: string
+      slug: string
+      tier: string
+      email: string
+      profilePictureUrl: string | null
+      isBlocked: boolean
+      isBanned: boolean
+      blockedReason: string | null
+      isDefault: boolean
+      limits: components['schemas']['UserTeamLimits']
+      /** Format: date-time */
+      createdAt: string
+    }
+    UserTeamsResponse: {
+      teams: components['schemas']['UserTeam'][]
+    }
+    TeamMember: {
+      /** Format: uuid */
+      id: string
+      email: string
+      isDefault: boolean
+      /** Format: uuid */
+      addedBy?: string | null
+      /** Format: date-time */
+      createdAt: string | null
+    }
+    TeamMembersResponse: {
+      members: components['schemas']['TeamMember'][]
+    }
+    UpdateTeamRequest: {
+      name?: string
+      profilePictureUrl?: string | null
+    }
+    UpdateTeamResponse: {
+      /** Format: uuid */
+      id: string
+      name: string
+      profilePictureUrl?: string | null
+    }
+    AddTeamMemberRequest: {
+      /** Format: email */
+      email: string
+    }
+    CreateTeamRequest: {
+      name: string
+    }
+    DefaultTemplateAlias: {
+      alias: string
+      namespace?: string | null
+    }
+    DefaultTemplate: {
+      id: string
+      aliases: components['schemas']['DefaultTemplateAlias'][]
+      /** Format: uuid */
+      buildId: string
+      /** Format: int64 */
+      ramMb: number
+      /** Format: int64 */
+      vcpu: number
+      /** Format: int64 */
+      totalDiskSizeMb: number | null
+      envdVersion?: string | null
+      /** Format: date-time */
+      createdAt: string
+      public: boolean
+      /** Format: int32 */
+      buildCount: number
+      /** Format: int64 */
+      spawnCount: number
+    }
+    DefaultTemplatesResponse: {
+      templates: components['schemas']['DefaultTemplate'][]
+    }
+    TeamResolveResponse: {
+      /** Format: uuid */
+      id: string
+      slug: string
+    }
+  }
+  responses: {
+    /** @description Bad request */
+    400: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['Error']
+      }
+    }
+    /** @description Authentication error */
+    401: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['Error']
+      }
+    }
+    /** @description Forbidden */
+    403: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['Error']
+      }
+    }
+    /** @description Not found */
+    404: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['Error']
+      }
+    }
+    /** @description Server error */
+    500: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['Error']
+      }
+    }
+  }
+  parameters: {
+    /** @description Identifier of the build. */
+    build_id: string
+    /** @description Identifier of the sandbox. */
+    sandboxID: string
+    /** @description Maximum number of items to return per page. */
+    builds_limit: number
+    /** @description Cursor returned by the previous list response in `created_at|build_id` format. */
+    builds_cursor: string
+    /** @description Optional filter by build identifier, template identifier, or template alias. */
+    build_id_or_template: string
+    /** @description Comma-separated list of build statuses to include. */
+    build_statuses: components['schemas']['BuildStatus'][]
+    /** @description Comma-separated list of build IDs to get statuses for. */
+    build_ids: string[]
+    /** @description Identifier of the team. */
+    teamID: string
+    /** @description Identifier of the user. */
+    userId: string
+    /** @description Team slug to resolve. */
+    teamSlug: string
+  }
+  requestBodies: never
+  headers: never
+  pathItems: never
+}
 export type $defs = Record<string, never>
 export type operations = Record<string, never>

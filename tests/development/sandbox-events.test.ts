@@ -179,155 +179,153 @@ async function runDiskStress(sandbox: Sandbox, label: string) {
 }
 
 describe('E2B Sandbox lifecycle events with resource stress', () => {
-  it(
-    'creates variable resource usage with a pause gap',
-    { timeout: TEST_TIMEOUT_MS },
-    async () => {
-      const testId = `stress-test-${Date.now()}`
+  it('creates variable resource usage with a pause gap', {
+    timeout: TEST_TIMEOUT_MS,
+  }, async () => {
+    const testId = `stress-test-${Date.now()}`
 
-      // 1. Create sandbox
-      l.info('step:create', { template: TEMPLATE, testId })
-      const sandbox = await Sandbox.create(TEMPLATE, {
+    // 1. Create sandbox
+    l.info('step:create', { template: TEMPLATE, testId })
+    const sandbox = await Sandbox.create(TEMPLATE, {
+      ...sdkOpts,
+      timeoutMs: SANDBOX_TIMEOUT_MS,
+      metadata: { testId },
+    })
+    const sandboxId = sandbox.sandboxId
+    l.info('step:created', { sandboxId })
+
+    try {
+      // 2. Install stress-ng
+      await installStressNg(sandbox)
+      await sleep(INSTALL_SETTLE_MS)
+
+      // 3. Update timeout
+      l.info('step:set_timeout')
+      await sandbox.setTimeout(SANDBOX_TIMEOUT_MS)
+
+      // --- Pre-pause phases: variable load pattern ---
+
+      // Phase 1: Ramp-up — light CPU + small RAM
+      await runStress(sandbox, 'ramp-up', {
+        cpuWorkers: 1,
+        cpuLoad: 30,
+        vmWorkers: 1,
+        vmBytes: '32M',
+        durationS: 15,
+      })
+      await sleep(IDLE_GAP_MS)
+
+      // Phase 2: CPU burst — heavy CPU + moderate RAM + disk
+      await runStress(sandbox, 'cpu-burst', {
+        cpuWorkers: 2,
+        cpuLoad: 90,
+        vmWorkers: 1,
+        vmBytes: '96M',
+        hddWorkers: 1,
+        hddBytes: '64M',
+        durationS: 20,
+      })
+      await sleep(IDLE_GAP_MS)
+
+      // Phase 3: Disk-heavy — large sequential + random writes
+      await runDiskStress(sandbox, 'disk-heavy')
+      await sleep(IDLE_GAP_MS)
+
+      // Phase 4: Mixed — moderate CPU + heavy RAM + disk I/O
+      await runStress(sandbox, 'mixed', {
+        cpuWorkers: 1,
+        cpuLoad: 50,
+        vmWorkers: 2,
+        vmBytes: '128M',
+        hddWorkers: 2,
+        hddBytes: '128M',
+        durationS: 20,
+      })
+
+      // --- Pause / Resume ---
+
+      l.info('step:pause')
+      await sandbox.pause({ ...sdkOpts })
+      l.info('step:paused', { durationMs: PAUSE_DURATION_MS })
+      await sleep(PAUSE_DURATION_MS)
+
+      l.info('step:resume')
+      const resumed = await Sandbox.connect(sandboxId, {
         ...sdkOpts,
         timeoutMs: SANDBOX_TIMEOUT_MS,
-        metadata: { testId },
       })
-      const sandboxId = sandbox.sandboxId
-      l.info('step:created', { sandboxId })
+      l.info('step:resumed')
 
+      // --- Post-resume phases: different pattern ---
+
+      // Phase 5: Spike — max everything
+      await runStress(resumed, 'spike', {
+        cpuWorkers: 2,
+        cpuLoad: 95,
+        vmWorkers: 2,
+        vmBytes: '192M',
+        hddWorkers: 2,
+        hddBytes: '256M',
+        durationS: 15,
+      })
+
+      // Phase 6: Taper — light CPU only (visible drop)
+      await runStress(resumed, 'taper', {
+        cpuWorkers: 1,
+        cpuLoad: 20,
+        durationS: 10,
+      })
+      await sleep(IDLE_GAP_MS)
+
+      // Phase 7: Sustained — moderate across all resources
+      await runStress(resumed, 'sustained', {
+        cpuWorkers: 1,
+        cpuLoad: 60,
+        vmWorkers: 1,
+        vmBytes: '80M',
+        hddWorkers: 1,
+        hddBytes: '96M',
+        durationS: 25,
+      })
+
+      // Cooldown
+      l.info('step:cooldown', { durationMs: COOLDOWN_MS })
+      await sleep(COOLDOWN_MS)
+
+      // Kill sandbox
+      l.info('step:kill')
+      await resumed.kill()
+      l.info('step:killed')
+    } catch (err) {
+      l.error('step:error', { error: err })
       try {
-        // 2. Install stress-ng
-        await installStressNg(sandbox)
-        await sleep(INSTALL_SETTLE_MS)
-
-        // 3. Update timeout
-        l.info('step:set_timeout')
-        await sandbox.setTimeout(SANDBOX_TIMEOUT_MS)
-
-        // --- Pre-pause phases: variable load pattern ---
-
-        // Phase 1: Ramp-up — light CPU + small RAM
-        await runStress(sandbox, 'ramp-up', {
-          cpuWorkers: 1,
-          cpuLoad: 30,
-          vmWorkers: 1,
-          vmBytes: '32M',
-          durationS: 15,
-        })
-        await sleep(IDLE_GAP_MS)
-
-        // Phase 2: CPU burst — heavy CPU + moderate RAM + disk
-        await runStress(sandbox, 'cpu-burst', {
-          cpuWorkers: 2,
-          cpuLoad: 90,
-          vmWorkers: 1,
-          vmBytes: '96M',
-          hddWorkers: 1,
-          hddBytes: '64M',
-          durationS: 20,
-        })
-        await sleep(IDLE_GAP_MS)
-
-        // Phase 3: Disk-heavy — large sequential + random writes
-        await runDiskStress(sandbox, 'disk-heavy')
-        await sleep(IDLE_GAP_MS)
-
-        // Phase 4: Mixed — moderate CPU + heavy RAM + disk I/O
-        await runStress(sandbox, 'mixed', {
-          cpuWorkers: 1,
-          cpuLoad: 50,
-          vmWorkers: 2,
-          vmBytes: '128M',
-          hddWorkers: 2,
-          hddBytes: '128M',
-          durationS: 20,
-        })
-
-        // --- Pause / Resume ---
-
-        l.info('step:pause')
-        await sandbox.pause({ ...sdkOpts })
-        l.info('step:paused', { durationMs: PAUSE_DURATION_MS })
-        await sleep(PAUSE_DURATION_MS)
-
-        l.info('step:resume')
-        const resumed = await Sandbox.connect(sandboxId, {
-          ...sdkOpts,
-          timeoutMs: SANDBOX_TIMEOUT_MS,
-        })
-        l.info('step:resumed')
-
-        // --- Post-resume phases: different pattern ---
-
-        // Phase 5: Spike — max everything
-        await runStress(resumed, 'spike', {
-          cpuWorkers: 2,
-          cpuLoad: 95,
-          vmWorkers: 2,
-          vmBytes: '192M',
-          hddWorkers: 2,
-          hddBytes: '256M',
-          durationS: 15,
-        })
-
-        // Phase 6: Taper — light CPU only (visible drop)
-        await runStress(resumed, 'taper', {
-          cpuWorkers: 1,
-          cpuLoad: 20,
-          durationS: 10,
-        })
-        await sleep(IDLE_GAP_MS)
-
-        // Phase 7: Sustained — moderate across all resources
-        await runStress(resumed, 'sustained', {
-          cpuWorkers: 1,
-          cpuLoad: 60,
-          vmWorkers: 1,
-          vmBytes: '80M',
-          hddWorkers: 1,
-          hddBytes: '96M',
-          durationS: 25,
-        })
-
-        // Cooldown
-        l.info('step:cooldown', { durationMs: COOLDOWN_MS })
-        await sleep(COOLDOWN_MS)
-
-        // Kill sandbox
-        l.info('step:kill')
-        await resumed.kill()
-        l.info('step:killed')
-      } catch (err) {
-        l.error('step:error', { error: err })
-        try {
-          await Sandbox.kill(sandboxId, sdkOpts)
-        } catch {}
-        throw err
-      }
-
-      // Wait for events to settle
-      await sleep(EVENTS_SETTLE_MS)
-
-      // Verify lifecycle events
-      l.info('step:verify_events', { sandboxId })
-      const events = await fetchSandboxEvents(sandboxId)
-      const triggeredTypes = new Set(events.map((e) => e.type))
-
-      l.info('step:events_summary', {
-        total: events.length,
-        types: [...triggeredTypes],
-        timeline: events.map((e) => ({
-          type: e.type,
-          timestamp: e.timestamp,
-        })),
-      })
-
-      for (const expectedType of EXPECTED_LIFECYCLE_EVENTS) {
-        expect(
-          triggeredTypes.has(expectedType),
-          `Missing event: "${expectedType}"`
-        ).toBe(true)
-      }
+        await Sandbox.kill(sandboxId, sdkOpts)
+      } catch {}
+      throw err
     }
-  )
+
+    // Wait for events to settle
+    await sleep(EVENTS_SETTLE_MS)
+
+    // Verify lifecycle events
+    l.info('step:verify_events', { sandboxId })
+    const events = await fetchSandboxEvents(sandboxId)
+    const triggeredTypes = new Set(events.map((e) => e.type))
+
+    l.info('step:events_summary', {
+      total: events.length,
+      types: [...triggeredTypes],
+      timeline: events.map((e) => ({
+        type: e.type,
+        timestamp: e.timestamp,
+      })),
+    })
+
+    for (const expectedType of EXPECTED_LIFECYCLE_EVENTS) {
+      expect(
+        triggeredTypes.has(expectedType),
+        `Missing event: "${expectedType}"`
+      ).toBe(true)
+    }
+  })
 })
