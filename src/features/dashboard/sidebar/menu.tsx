@@ -117,7 +117,8 @@ export default function DashboardSidebarMenu() {
       {isLoggingOut && (
         // the dropdown closes on select, so surface the sign-out pending
         // state with a fullscreen overlay until the redirect lands
-        <div className="bg-bg/90 fixed inset-0 z-50 flex items-center justify-center gap-2.5">
+        // z-60: above the sticky dashboard header (z-50), below toasts (z-100)
+        <div className="bg-bg/90 fixed inset-0 z-60 flex items-center justify-center gap-2.5">
           <Loader variant="slash" size="sm" />
           <span className="prose-body-highlight">Logging out...</span>
         </div>
