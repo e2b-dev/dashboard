@@ -41,6 +41,12 @@ const OTP_TYPE_BUTTON_LABELS: Record<OtpType, string> = {
   email_change: 'Confirm Email',
 }
 
+function buildVerificationErrorRedirect(message: string): string {
+  const url = new URL(AUTH_URLS.SIGN_IN, window.location.origin)
+  url.searchParams.set('error', message)
+  return url.toString()
+}
+
 export default function ConfirmPage() {
   const router = useRouter()
   const trpc = useTRPC()
@@ -76,6 +82,15 @@ export default function ConfirmPage() {
       onSuccess: (data) => {
         startTransition(() => {
           router.push(data.redirectUrl)
+        })
+      },
+      onError: () => {
+        startTransition(() => {
+          router.push(
+            buildVerificationErrorRedirect(
+              'Verification failed. Please try again.'
+            )
+          )
         })
       },
     })
