@@ -5,10 +5,12 @@ import { useMemo } from 'react'
 import type { TeamMetricsResponse } from '@/core/modules/sandboxes/models.client'
 import { useDashboard } from '@/features/dashboard/context'
 import { formatDecimal, formatNumber } from '@/lib/utils/formatting'
-import { useTRPC } from '@/trpc/client'
+import { useTRPCClient } from '@/trpc/client'
 import { AnimatedNumber } from '@/ui/primitives/animated-number'
 import { useRecentMetrics } from './hooks/use-recent-metrics'
 import { MAX_DAYS_AGO } from './time-picker/constants'
+
+const MAX_CONCURRENT_SANDBOXES_REFRESH_MS = 5 * 60 * 1000
 
 interface TeamMonitoringHeaderClientProps {
   initialData?: TeamMetricsResponse
@@ -67,28 +69,36 @@ export function MaxConcurrentSandboxesClient({
   concurrentSandboxes,
 }: MaxConcurrentSandboxesClientProps = {}) {
   const { team } = useDashboard()
-  const trpc = useTRPC()
+  const trpcClient = useTRPCClient()
   const limit = team.limits.concurrentSandboxes
-  const maxRange = useMemo(() => {
-    const end = Date.now()
-    return {
-      start: end - (MAX_DAYS_AGO - 60_000),
-      end,
-    }
-  }, [])
-  const { data } = useQuery(
-    trpc.sandboxes.getTeamMetricsMax.queryOptions({
-      teamSlug: team.slug,
-      startDate: maxRange.start,
-      endDate: maxRange.end,
-      metric: 'concurrent_sandboxes',
-    })
-  )
+
+  const { data } = useQuery({
+    queryKey: [
+      'sandboxes.getTeamMetricsMax',
+      team.slug,
+      'concurrent_sandboxes',
+    ],
+    queryFn: () => {
+      const end = Date.now()
+      return trpcClient.sandboxes.getTeamMetricsMax.query({
+        teamSlug: team.slug,
+        startDate: end - (MAX_DAYS_AGO - 60_000),
+        endDate: end,
+        metric: 'concurrent_sandboxes',
+      })
+    },
+    refetchInterval: MAX_CONCURRENT_SANDBOXES_REFRESH_MS,
+    refetchIntervalInBackground: false,
+  })
+
+  const displayedConcurrentSandboxes = concurrentSandboxes ?? data?.value
 
   return (
     <>
       <span className="prose-value-big mt-1">
-        {formatNumber(concurrentSandboxes ?? data?.value ?? 0)}
+        {displayedConcurrentSandboxes === undefined
+          ? '—'
+          : formatNumber(displayedConcurrentSandboxes)}
       </span>
       <span className="absolute right-3 bottom-1 md:right-6 md:bottom-4 prose-label text-fg-tertiary ">
         LIMIT: {formatNumber(limit)}
