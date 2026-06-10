@@ -9,7 +9,8 @@ import {
   useMemo,
   useState,
 } from 'react'
-import { getBrowserTimezone, parseTimezone, type Timezone } from './utils'
+import type { Timezone } from './schema'
+import { getBrowserTimezone, parseTimezone } from './utils'
 
 interface TimezoneContextValue {
   timezone: Timezone

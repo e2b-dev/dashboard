@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useMemo, useState } from 'react'
+import { useTimezone } from '@/features/dashboard/timezone'
 import { cn } from '@/lib/utils'
 import { LiveDot } from '@/ui/live'
 import { Button } from '@/ui/primitives/button'
@@ -12,8 +13,7 @@ import {
   PopoverTrigger,
 } from '@/ui/primitives/popover'
 import { Separator } from '@/ui/primitives/separator'
-import { TimeRangePicker, type TimeRangeValues } from '@/ui/time-range-picker'
-import { parseTimeRangeValuesToTimestamps } from '@/ui/time-range-picker.logic'
+import { TimeRangePicker } from '@/ui/time-range-picker'
 import { type TimeRangePreset, TimeRangePresets } from '@/ui/time-range-presets'
 import {
   SANDBOX_MONITORING_CUSTOM_END_FUTURE_MS,
@@ -41,11 +41,6 @@ function toSafeIsoDateTime(
   return new Date(fallbackTimestampMs).toISOString()
 }
 
-const rangeLabelFormatter = new Intl.DateTimeFormat(
-  undefined,
-  SANDBOX_MONITORING_TIME_LABEL_FORMAT_OPTIONS
-)
-
 interface SandboxMonitoringTimeRangeControlsProps {
   timeframe: {
     start: number
@@ -72,6 +67,7 @@ export default function SandboxMonitoringTimeRangeControls({
   onResetZoom,
   className,
 }: SandboxMonitoringTimeRangeControlsProps) {
+  const { timezone } = useTimezone()
   const [isOpen, setIsOpen] = useState(false)
   const [pickerMaxDateMs, setPickerMaxDateMs] = useState(() => Date.now())
   const [pickerTimeframe, setPickerTimeframe] = useState(timeframe)
@@ -103,6 +99,10 @@ export default function SandboxMonitoringTimeRangeControls({
   }, [activePresetId, presets])
 
   const rangeLabel = useMemo(() => {
+    const rangeLabelFormatter = new Intl.DateTimeFormat(undefined, {
+      ...SANDBOX_MONITORING_TIME_LABEL_FORMAT_OPTIONS,
+      timeZone: timezone,
+    })
     const startDate = new Date(timeframe.start)
     const endDate = new Date(timeframe.end)
     if (!isValidDate(startDate) || !isValidDate(endDate)) {
@@ -112,7 +112,7 @@ export default function SandboxMonitoringTimeRangeControls({
     return `${rangeLabelFormatter.format(startDate)} - ${rangeLabelFormatter.format(
       endDate
     )}`
-  }, [timeframe.end, timeframe.start])
+  }, [timeframe.end, timeframe.start, timezone])
 
   const lifecyclePadding = useMemo(() => {
     const anchorEndMs = lifecycle.isRunning
@@ -164,13 +164,8 @@ export default function SandboxMonitoringTimeRangeControls({
   )
 
   const handleApply = useCallback(
-    (values: TimeRangeValues) => {
-      const timestamps = parseTimeRangeValuesToTimestamps(values)
-      if (!timestamps) {
-        return
-      }
-
-      onCustomTimeRange(timestamps.start, timestamps.end)
+    (start: number, end: number) => {
+      onCustomTimeRange(start, end)
       setIsOpen(false)
     },
     [onCustomTimeRange]
@@ -209,7 +204,7 @@ export default function SandboxMonitoringTimeRangeControls({
                 )}
                 endDateTime={toSafeIsoDateTime(pickerTimeframe.end)}
                 bounds={pickerBounds}
-                onApply={handleApply}
+                onApplyTimestamps={handleApply}
                 className="p-3 w-56 max-md:w-full"
               />
               <Separator
