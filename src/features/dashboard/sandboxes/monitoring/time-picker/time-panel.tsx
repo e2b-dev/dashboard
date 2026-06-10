@@ -16,10 +16,8 @@ import {
 } from 'react'
 import { type UseFormReturn, useForm } from 'react-hook-form'
 
-import {
-  parseDateTimeComponents,
-  tryParseDatetime,
-} from '@/lib/utils/formatting'
+import { useTimezone } from '@/features/dashboard/timezone'
+import { parseDateTimeComponents } from '@/lib/utils/formatting'
 import { Button } from '@/ui/primitives/button'
 import { Checkbox } from '@/ui/primitives/checkbox'
 import {
@@ -31,9 +29,13 @@ import {
   FormMessage,
 } from '@/ui/primitives/form'
 import { TimeInput } from '@/ui/time-input'
+import { parsePickerDateTime } from '@/ui/time-range-picker.logic'
 
 import { MAX_DAYS_AGO } from './constants'
-import { type CustomTimeFormValues, customTimeFormSchema } from './validation'
+import {
+  type CustomTimeFormValues,
+  createCustomTimeFormSchema,
+} from './validation'
 
 export interface TimePanelRef {
   form: UseFormReturn<CustomTimeFormValues>
@@ -56,8 +58,13 @@ export const TimePanel = forwardRef<TimePanelRef, TimePanelProps>(
   ) {
     'use no memo'
 
+    const { timezone } = useTimezone()
     const startParts = parseDateTimeComponents(startDateTime)
     const endParts = parseDateTimeComponents(endDateTime)
+    const customTimeFormSchema = useMemo(
+      () => createCustomTimeFormSchema(timezone),
+      [timezone]
+    )
 
     const form = useForm<CustomTimeFormValues>({
       resolver: zodResolver(customTimeFormSchema),
@@ -102,12 +109,20 @@ export const TimePanel = forwardRef<TimePanelRef, TimePanelProps>(
 
       const currentFormStart = form.getValues('startDate')
       const currentFormStartTime = currentFormStart
-        ? tryParseDatetime(
-            `${currentFormStart} ${form.getValues('startTime')}`
+        ? parsePickerDateTime(
+            currentFormStart,
+            form.getValues('startTime'),
+            '00:00:00',
+            timezone
           )?.getTime()
         : undefined
       const propStartTime = startDateTime
-        ? tryParseDatetime(startDateTime)?.getTime()
+        ? parsePickerDateTime(
+            startParts.date,
+            startParts.time,
+            '00:00:00',
+            timezone
+          )?.getTime()
         : undefined
 
       // detect meaningful external changes (>1s difference)
@@ -141,6 +156,9 @@ export const TimePanel = forwardRef<TimePanelRef, TimePanelProps>(
       form,
       form.formState.isDirty,
       isFocused,
+      startParts.date,
+      startParts.time,
+      timezone,
     ])
 
     useEffect(() => {
@@ -177,7 +195,8 @@ export const TimePanel = forwardRef<TimePanelRef, TimePanelProps>(
             <div className="flex gap-2">
               <FormItem className="flex-1">
                 <FormControl>
-                  <div
+                  <fieldset
+                    className="contents"
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
                   >
@@ -194,7 +213,7 @@ export const TimePanel = forwardRef<TimePanelRef, TimePanelProps>(
                       }
                       disabled={false}
                     />
-                  </div>
+                  </fieldset>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -221,7 +240,8 @@ export const TimePanel = forwardRef<TimePanelRef, TimePanelProps>(
                   <div className="flex gap-2">
                     <FormItem className="flex-1">
                       <FormControl>
-                        <div
+                        <fieldset
+                          className="contents"
                           onFocus={() => setIsFocused(true)}
                           onBlur={() => setIsFocused(false)}
                         >
@@ -243,7 +263,7 @@ export const TimePanel = forwardRef<TimePanelRef, TimePanelProps>(
                             disabled={!field.value}
                             isLive={!field.value}
                           />
-                        </div>
+                        </fieldset>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
