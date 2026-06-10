@@ -99,23 +99,9 @@ export default function DashboardSidebarMenu() {
                 variant="error"
                 className="h-9 gap-2.5 [&_svg]:size-5 font-sans prose-body-highlight"
                 disabled={isLoggingOut}
-                onSelect={(e) => {
-                  // keep the menu open so the pending state stays visible
-                  // until the sign-out redirect lands
-                  e.preventDefault()
-                  handleLogout()
-                }}
+                onSelect={handleLogout}
               >
-                {isLoggingOut ? (
-                  <>
-                    <Loader variant="slash" size="sm" className="ml-0.5" />{' '}
-                    Logging out...
-                  </>
-                ) : (
-                  <>
-                    <LogoutIcon className="ml-0.5" /> Log out
-                  </>
-                )}
+                <LogoutIcon className="ml-0.5" /> Log out
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>
@@ -125,6 +111,14 @@ export default function DashboardSidebarMenu() {
         open={createTeamOpen}
         onOpenChange={setCreateTeamOpen}
       />
+      {isLoggingOut && (
+        // the dropdown closes on select, so surface the sign-out pending
+        // state with a fullscreen overlay until the redirect lands
+        <div className="bg-bg/90 fixed inset-0 z-50 flex items-center justify-center gap-2.5">
+          <Loader variant="slash" size="sm" />
+          <span className="prose-body-highlight">Logging out...</span>
+        </div>
+      )}
     </>
   )
 }
