@@ -1,6 +1,5 @@
 'use client'
 
-import Sandbox from 'e2b'
 import type { ReactNode } from 'react'
 import {
   createContext,
@@ -10,7 +9,7 @@ import {
   useMemo,
   useRef,
 } from 'react'
-import type { SandboxManagementAuth } from '@/core/shared/sandbox-management-auth'
+import { createEnvdSandbox } from '@/core/shared/create-envd-sandbox'
 import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
 import { getParentPath, normalizePath } from '@/lib/utils/filesystem'
 import { useDashboard } from '../../context'
@@ -31,13 +30,11 @@ const SandboxInspectContext = createContext<SandboxInspectContextValue | null>(
 interface SandboxInspectProviderProps {
   children: ReactNode
   rootPath: string
-  sandboxManagementAuth: SandboxManagementAuth
 }
 
 export default function SandboxInspectProvider({
   children,
   rootPath,
-  sandboxManagementAuth,
 }: SandboxInspectProviderProps) {
   const { team } = useDashboard()
   const teamId = team.id
@@ -174,18 +171,24 @@ export default function SandboxInspectProvider({
   const connectSandbox = useCallback(async () => {
     if (!storeRef.current || !sandboxInfo || !teamId) return
 
+    // Build an envd-only client from the sandbox-scoped credentials already
+    // provided by the `sandbox.details` query. No account-level access token
+    // ever reaches the browser, and no control-plane call is made here (the
+    // sandbox is already running — inspect only connects when `isRunning`).
+    if (sandboxInfo.state === 'killed') return
+    if (!sandboxInfo.envdAccessToken || !sandboxInfo.domain) return
+
     // (re)create the sandbox-manager when sandbox / team / root changes
     if (sandboxManagerRef.current) {
       sandboxManagerRef.current.stopWatching()
     }
 
-    const sandbox = await Sandbox.connect(sandboxInfo.sandboxID, {
+    const sandbox = createEnvdSandbox({
+      sandboxId: sandboxInfo.sandboxID,
+      sandboxDomain: sandboxInfo.domain,
+      envdAccessToken: sandboxInfo.envdAccessToken,
+      envdVersion: sandboxInfo.envdVersion,
       domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
-      // Keep inspect connections from extending sandbox TTL via SDK default connect timeout.
-      timeoutMs: 1_000,
-      apiHeaders: {
-        ...sandboxManagementAuth.headers,
-      },
     })
 
     sandboxManagerRef.current = new SandboxManager(
@@ -200,7 +203,7 @@ export default function SandboxInspectProvider({
       team_id: teamId,
       root_path: rootPath,
     })
-  }, [sandboxInfo, teamId, rootPath, trackInteraction, sandboxManagementAuth])
+  }, [sandboxInfo, teamId, rootPath, trackInteraction])
 
   // handle sandbox connection / disconnection
   useEffect(() => {

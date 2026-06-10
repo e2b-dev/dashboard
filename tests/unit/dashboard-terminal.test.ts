@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { SUPABASE_TEAM_HEADER, SUPABASE_TOKEN_HEADER } from '@/configs/api'
 import { TERMINAL_SESSION_STORAGE_PREFIX } from '@/features/dashboard/terminal/constants'
 import { openTerminalSandbox } from '@/features/dashboard/terminal/sandbox-session'
 import {
@@ -13,16 +12,19 @@ import {
 } from '@/features/dashboard/terminal/template'
 import { calculateTerminalSize } from '@/features/dashboard/terminal/terminal-size'
 
-const { mockCreateSandbox, mockConnectSandbox } = vi.hoisted(() => ({
-  mockCreateSandbox: vi.fn(),
-  mockConnectSandbox: vi.fn(),
+const { mockOpenTerminalSandboxAction, mockCreateEnvdSandbox } = vi.hoisted(
+  () => ({
+    mockOpenTerminalSandboxAction: vi.fn(),
+    mockCreateEnvdSandbox: vi.fn(),
+  })
+)
+
+vi.mock('@/core/server/actions/terminal-actions', () => ({
+  openTerminalSandboxAction: mockOpenTerminalSandboxAction,
 }))
 
-vi.mock('e2b', () => ({
-  default: {
-    connect: mockConnectSandbox,
-    create: mockCreateSandbox,
-  },
+vi.mock('@/core/shared/create-envd-sandbox', () => ({
+  createEnvdSandbox: mockCreateEnvdSandbox,
 }))
 
 function installLocalStorage() {
@@ -48,19 +50,25 @@ function installLocalStorage() {
 }
 
 describe('dashboard terminal helpers', () => {
-  const sandboxManagementAuth = {
-    headers: {
-      [SUPABASE_TOKEN_HEADER]: 'supabase-token',
-      [SUPABASE_TEAM_HEADER]: 'team-123',
-    },
-    userId: 'user-123',
-  }
-
   beforeEach(() => {
     vi.clearAllMocks()
     installLocalStorage()
-    mockCreateSandbox.mockResolvedValue({ sandboxId: 'created-sandbox' })
-    mockConnectSandbox.mockResolvedValue({ sandboxId: 'connected-sandbox' })
+    // The server action returns sandbox-scoped envd credentials; for an
+    // explicit/stored sandbox id it echoes that id back, otherwise it reports
+    // the freshly created sandbox id.
+    mockOpenTerminalSandboxAction.mockImplementation(
+      async (input: { sandboxId?: string }) => ({
+        data: {
+          sandboxId: input.sandboxId ?? 'created-sandbox',
+          sandboxDomain: 'sandbox.example.com',
+          envdVersion: '0.2.0',
+          envdAccessToken: 'envd-token',
+        },
+      })
+    )
+    mockCreateEnvdSandbox.mockImplementation(
+      (params: { sandboxId: string }) => ({ sandboxId: params.sandboxId })
+    )
   })
 
   describe('normalizeTerminalTemplate', () => {
@@ -204,20 +212,24 @@ describe('dashboard terminal helpers', () => {
 
       await openTerminalSandbox({
         onStatus: (message) => statuses.push(message),
-        sandboxManagementAuth,
+        teamSlug: 'team-slug',
+        userId: 'user-123',
         sandboxId: 'sandbox-from-url',
         template: 'base',
       })
 
-      expect(mockConnectSandbox).toHaveBeenCalledWith('sandbox-from-url', {
-        domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
-        timeoutMs: 30 * 60 * 1000,
-        apiHeaders: {
-          [SUPABASE_TOKEN_HEADER]: 'supabase-token',
-          [SUPABASE_TEAM_HEADER]: 'team-123',
-        },
+      expect(mockOpenTerminalSandboxAction).toHaveBeenCalledWith({
+        teamSlug: 'team-slug',
+        template: 'base',
+        sandboxId: 'sandbox-from-url',
       })
-      expect(mockCreateSandbox).not.toHaveBeenCalled()
+      expect(mockCreateEnvdSandbox).toHaveBeenCalledWith({
+        sandboxId: 'sandbox-from-url',
+        sandboxDomain: 'sandbox.example.com',
+        envdVersion: '0.2.0',
+        envdAccessToken: 'envd-token',
+        domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
+      })
       expect(readStoredTerminalSession('user-123')).toBeNull()
       expect(statuses).toEqual([
         'Connecting to terminal sandbox sandbox-from-url...\r\n',
@@ -227,26 +239,14 @@ describe('dashboard terminal helpers', () => {
     it('creates and stores a terminal sandbox when no reusable session exists', async () => {
       await openTerminalSandbox({
         onStatus: vi.fn(),
-        sandboxManagementAuth,
+        teamSlug: 'team-slug',
+        userId: 'user-123',
         template: 'base',
       })
 
-      expect(mockCreateSandbox).toHaveBeenCalledWith('base', {
-        domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
-        timeoutMs: 30 * 60 * 1000,
-        lifecycle: {
-          onTimeout: 'pause',
-          autoResume: true,
-        },
-        metadata: {
-          source: 'dashboard-terminal',
-          template: 'base',
-          userId: 'user-123',
-        },
-        apiHeaders: {
-          [SUPABASE_TOKEN_HEADER]: 'supabase-token',
-          [SUPABASE_TEAM_HEADER]: 'team-123',
-        },
+      expect(mockOpenTerminalSandboxAction).toHaveBeenCalledWith({
+        teamSlug: 'team-slug',
+        template: 'base',
       })
       expect(readStoredTerminalSession('user-123')).toEqual({
         sandboxId: 'created-sandbox',
@@ -262,15 +262,49 @@ describe('dashboard terminal helpers', () => {
 
       await openTerminalSandbox({
         onStatus: vi.fn(),
-        sandboxManagementAuth,
+        teamSlug: 'team-slug',
+        userId: 'user-123',
         template: 'base',
       })
 
-      expect(mockConnectSandbox).toHaveBeenCalledWith(
-        'stored-sandbox',
-        expect.anything()
-      )
-      expect(mockCreateSandbox).not.toHaveBeenCalled()
+      expect(mockOpenTerminalSandboxAction).toHaveBeenCalledWith({
+        teamSlug: 'team-slug',
+        template: 'base',
+        sandboxId: 'stored-sandbox',
+      })
+    })
+
+    it('falls back to creating a new sandbox when reconnecting fails', async () => {
+      writeStoredTerminalSession('user-123', {
+        sandboxId: 'stored-sandbox',
+        template: 'base',
+      })
+
+      mockOpenTerminalSandboxAction.mockImplementationOnce(async () => ({
+        serverError: 'Failed to connect to terminal sandbox',
+      }))
+
+      await openTerminalSandbox({
+        onStatus: vi.fn(),
+        teamSlug: 'team-slug',
+        userId: 'user-123',
+        template: 'base',
+      })
+
+      // First call attempts the stored sandbox, second call creates a new one.
+      expect(mockOpenTerminalSandboxAction).toHaveBeenNthCalledWith(1, {
+        teamSlug: 'team-slug',
+        template: 'base',
+        sandboxId: 'stored-sandbox',
+      })
+      expect(mockOpenTerminalSandboxAction).toHaveBeenNthCalledWith(2, {
+        teamSlug: 'team-slug',
+        template: 'base',
+      })
+      expect(readStoredTerminalSession('user-123')).toEqual({
+        sandboxId: 'created-sandbox',
+        template: 'base',
+      })
     })
   })
 })
