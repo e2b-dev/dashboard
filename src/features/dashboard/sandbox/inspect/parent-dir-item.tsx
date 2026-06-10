@@ -5,17 +5,12 @@ import { useTransition } from 'react'
 import { COOKIE_KEYS } from '@/configs/cookies'
 import { cn } from '@/lib/utils'
 import { setBrowserCookie } from '@/lib/utils/browser-cookies'
+import { getParentPath } from '@/lib/utils/filesystem'
 import { DataTableRow } from '@/ui/data-table'
 import { FolderUpIcon } from '@/ui/primitives/icons'
 
 interface SandboxInspectParentDirItemProps {
   rootPath: string
-}
-
-function getParentPath(rootPath: string): string {
-  const normalized = rootPath.replace(/\/+$/, '')
-  const lastSlashIndex = normalized.lastIndexOf('/')
-  return lastSlashIndex <= 0 ? '/' : normalized.slice(0, lastSlashIndex)
 }
 
 export default function SandboxInspectParentDirItem({

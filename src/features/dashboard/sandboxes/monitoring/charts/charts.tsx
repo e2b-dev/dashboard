@@ -1,8 +1,7 @@
 import { Suspense } from 'react'
 import { TeamMetricsChartsProvider } from '../charts-context'
-import ConcurrentChartClient from './concurrent-chart'
+import TeamMetricsChartsContent from './content'
 import ChartFallback from './fallback'
-import StartRateChartClient from './startrate-chart'
 
 interface TeamMetricsChartsProps {
   params: Promise<{ teamSlug: string }>
@@ -38,8 +37,7 @@ async function TeamMetricsChartsResolver({
 
   return (
     <TeamMetricsChartsProvider>
-      <ConcurrentChartClient />
-      <StartRateChartClient />
+      <TeamMetricsChartsContent />
     </TeamMetricsChartsProvider>
   )
 }
