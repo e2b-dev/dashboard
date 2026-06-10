@@ -17,10 +17,14 @@ export function LiveSandboxCounterClient({
     initialData,
   })
 
-  const lastConcurrentSandboxes =
-    data?.metrics?.[(data?.metrics?.length ?? 0) - 1]?.concurrentSandboxes ?? 0
+  const latestMetric = data?.metrics.length
+    ? data.metrics[data.metrics.length - 1]
+    : undefined
 
   return (
-    <LiveSandboxCounter count={lastConcurrentSandboxes} className={className} />
+    <LiveSandboxCounter
+      count={latestMetric?.concurrentSandboxes}
+      className={className}
+    />
   )
 }

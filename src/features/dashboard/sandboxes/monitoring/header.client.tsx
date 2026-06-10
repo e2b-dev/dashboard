@@ -16,16 +16,23 @@ interface TeamMonitoringHeaderClientProps {
   initialData?: TeamMetricsResponse
 }
 
+function getLatestMetric(data: TeamMetricsResponse | undefined) {
+  if (!data?.metrics.length) return undefined
+  return data.metrics[data.metrics.length - 1]
+}
+
 export function ConcurrentSandboxesClient({
   initialData,
 }: TeamMonitoringHeaderClientProps) {
   const { team } = useDashboard()
   const { data } = useRecentMetrics({ initialData })
   const limit = team.limits.concurrentSandboxes
+  const latestMetric = getLatestMetric(data)
 
-  const lastConcurrentSandboxes = formatNumber(
-    data?.metrics?.[(data?.metrics?.length ?? 0) - 1]?.concurrentSandboxes ?? 0
-  )
+  const lastConcurrentSandboxes =
+    latestMetric === undefined
+      ? '—'
+      : formatNumber(latestMetric.concurrentSandboxes)
 
   return (
     <>
@@ -48,9 +55,10 @@ export function SandboxesStartRateClient({
   const { data } = useRecentMetrics({ initialData })
 
   const lastSandboxesStartRate = useMemo(() => {
-    const rate =
-      data?.metrics?.[(data?.metrics?.length ?? 0) - 1]?.sandboxStartRate ?? 0
-    return formatDecimal(rate, 3)
+    const latestMetric = getLatestMetric(data)
+    return latestMetric === undefined
+      ? '—'
+      : formatDecimal(latestMetric.sandboxStartRate, 3)
   }, [data])
 
   return (
