@@ -1,6 +1,6 @@
 import { Page } from '@/features/dashboard/layouts/page'
 import { MembersPageContent } from '@/features/dashboard/members/members-page-content'
-import { HydrateClient } from '@/trpc/server'
+import { HydrateClient, prefetch, trpc } from '@/trpc/server'
 
 interface MembersPageProps {
   params: Promise<{
@@ -9,7 +9,9 @@ interface MembersPageProps {
 }
 
 export default async function MembersPage({ params }: MembersPageProps) {
-  await params
+  const { teamSlug } = await params
+
+  prefetch(trpc.teams.members.queryOptions({ teamSlug }))
 
   return (
     <HydrateClient>

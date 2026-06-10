@@ -1,12 +1,18 @@
 import { Suspense } from 'react'
 import LoadingLayout from '@/features/dashboard/loading-layout'
 import SandboxesTable from '@/features/dashboard/sandboxes/list/table'
-import { HydrateClient } from '@/trpc/server'
+import { HydrateClient, prefetch, trpc } from '@/trpc/server'
 
 export default async function SandboxesListPage({
   params,
 }: PageProps<'/dashboard/[teamSlug]/sandboxes/list'>) {
-  await params
+  const { teamSlug } = await params
+
+  prefetch(
+    trpc.sandboxes.getSandboxes.queryOptions({
+      teamSlug,
+    })
+  )
 
   return (
     <HydrateClient>

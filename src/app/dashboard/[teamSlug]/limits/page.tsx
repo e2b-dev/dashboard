@@ -1,13 +1,15 @@
 import { Page } from '@/features/dashboard/layouts/page'
 import { UsageLimits } from '@/features/dashboard/limits/usage-limits'
-import { HydrateClient } from '@/trpc/server'
+import { HydrateClient, prefetch, trpc } from '@/trpc/server'
 
 interface LimitsPageProps {
   params: Promise<{ teamSlug: string }>
 }
 
 export default async function LimitsPage({ params }: LimitsPageProps) {
-  await params
+  const { teamSlug } = await params
+
+  prefetch(trpc.billing.getLimits.queryOptions({ teamSlug }))
 
   return (
     <HydrateClient>

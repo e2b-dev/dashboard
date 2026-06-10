@@ -1,11 +1,16 @@
 import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 import type { Metadata } from 'next/types'
 import { DashboardTeamGate } from '@/app/dashboard/[teamSlug]/team-gate'
 import { COOKIE_KEYS } from '@/configs/cookies'
 import { METADATA } from '@/configs/metadata'
+import { AUTH_URLS } from '@/configs/urls'
+import { DASHBOARD_TEAMS_LIST_QUERY_OPTIONS } from '@/core/application/teams/queries'
+import { DASHBOARD_USER_PROFILE_QUERY_OPTIONS } from '@/core/application/user/queries'
+import { auth } from '@/core/server/auth'
 import DashboardLayoutView from '@/features/dashboard/layouts/layout'
 import Sidebar from '@/features/dashboard/sidebar/sidebar'
-import { HydrateClient } from '@/trpc/server'
+import { HydrateClient, prefetchAsync, trpc } from '@/trpc/server'
 import { SidebarInset, SidebarProvider } from '@/ui/primitives/sidebar'
 
 export const metadata: Metadata = {
@@ -29,13 +34,33 @@ export default async function DashboardLayout({
 }: DashboardLayoutProps) {
   const cookieStore = await cookies()
   const { teamSlug } = await params
+  const authContext = await auth.getAuthContext()
 
   const sidebarState = cookieStore.get(COOKIE_KEYS.SIDEBAR_STATE)?.value
   const defaultOpen = sidebarState === 'true'
 
+  if (!authContext) {
+    throw redirect(AUTH_URLS.SIGN_IN)
+  }
+
+  await Promise.all([
+    prefetchAsync(
+      trpc.teams.list.queryOptions(
+        undefined,
+        DASHBOARD_TEAMS_LIST_QUERY_OPTIONS
+      )
+    ),
+    prefetchAsync(
+      trpc.user.profile.queryOptions(
+        undefined,
+        DASHBOARD_USER_PROFILE_QUERY_OPTIONS
+      )
+    ),
+  ])
+
   return (
     <HydrateClient>
-      <DashboardTeamGate teamSlug={teamSlug}>
+      <DashboardTeamGate teamSlug={teamSlug} fallbackUser={authContext.user}>
         <SidebarProvider
           defaultOpen={typeof sidebarState === 'undefined' ? true : defaultOpen}
         >
