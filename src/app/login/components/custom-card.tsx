@@ -8,7 +8,9 @@ import type { PropsWithChildren } from 'react'
 // with the dashboard's own classes.
 export function OryCard({ children }: PropsWithChildren) {
   return (
-    <div className="bg-bg flex w-full flex-col gap-6 border p-6">{children}</div>
+    <div className="bg-bg flex w-full flex-col gap-6 border p-6">
+      {children}
+    </div>
   )
 }
 
