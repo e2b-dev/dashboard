@@ -33,8 +33,11 @@ export default function DashboardSidebarMenu() {
   const [isLoggingOut, startLogoutTransition] = useTransition()
 
   const handleLogout = () => {
-    startLogoutTransition(async () => {
-      await signOutAction()
+    startLogoutTransition(() => {
+      // not awaited on purpose: the action redirects (throws NEXT_REDIRECT),
+      // and awaiting it inside the transition surfaces noisy aborted-action
+      // errors; the transition still tracks the resulting navigation
+      void signOutAction()
     })
   }
 
