@@ -1,24 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { createClient, redisClient } = vi.hoisted(() => {
-  const handlers: Record<string, (arg?: unknown) => void> = {}
   const client = {
-    isReady: false,
-    on: vi.fn((event: string, handler: (arg?: unknown) => void) => {
-      handlers[event] = handler
-      return client
-    }),
-    emit: (event: string, arg?: unknown) => handlers[event]?.(arg),
-    connect: vi.fn(),
+    on: vi.fn(() => client),
+    connect: vi.fn(async () => client),
+    destroy: vi.fn(),
     ping: vi.fn(),
     get: vi.fn(),
     set: vi.fn(),
   }
-
-  client.connect.mockImplementation(async () => {
-    client.isReady = true
-    return client
-  })
 
   return {
     createClient: vi.fn(() => client),
@@ -55,11 +45,9 @@ function resetRedisEnv() {
 describe('optional KV client', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    redisClient.isReady = false
-    redisClient.connect.mockImplementation(async () => {
-      redisClient.isReady = true
-      return redisClient
-    })
+    // clearAllMocks wipes call data but not implementations, so restore the
+    // default connect after any test that overrode it with a rejection.
+    redisClient.connect.mockImplementation(async () => redisClient)
     delete process.env.REDIS_URL
   })
 
@@ -108,53 +96,44 @@ describe('optional KV client', () => {
       },
     })
     expect(redisClient.on).toHaveBeenCalledWith('error', expect.any(Function))
-    expect(redisClient.on).toHaveBeenCalledWith('end', expect.any(Function))
     expect(redisClient.connect).toHaveBeenCalledTimes(1)
     expect(redisClient.ping).toHaveBeenCalledTimes(1)
+    expect(redisClient.destroy).toHaveBeenCalledTimes(1)
   })
 
-  it('fails fast when the client disconnects mid-session', async () => {
+  it('opens and tears down a dedicated connection per operation', async () => {
     process.env.REDIS_URL = 'redis://localhost:6379'
-    redisClient.ping.mockResolvedValueOnce('PONG')
+    redisClient.ping.mockResolvedValue('PONG')
+    redisClient.get.mockResolvedValue('true')
+    const { getKvValue, pingKv } = await loadKvClient()
+
+    await pingKv()
+    await getKvValue<boolean>('warned-alternate-email:user@example.com')
+
+    // No singleton: each operation connects and closes its own client.
+    expect(createClient).toHaveBeenCalledTimes(2)
+    expect(redisClient.connect).toHaveBeenCalledTimes(2)
+    expect(redisClient.destroy).toHaveBeenCalledTimes(2)
+  })
+
+  it('reports an error and still tears down when a command fails', async () => {
+    process.env.REDIS_URL = 'redis://localhost:6379'
+    const commandError = new Error(
+      "Socket timeout. Expecting data, but didn't receive any in 10000ms."
+    )
+    redisClient.ping.mockRejectedValueOnce(commandError)
     const { pingKv } = await loadKvClient()
-
-    // First ping: healthy
-    await expect(pingKv()).resolves.toMatchObject({ status: 'ok' })
-
-    // Simulate disconnect: isReady flips and the next ping rejects fast
-    // because the singleton was created with disableOfflineQueue: true.
-    redisClient.isReady = false
-    const closedError = new Error('The client is closed')
-    redisClient.ping.mockRejectedValueOnce(closedError)
 
     await expect(pingKv()).resolves.toEqual({
       configured: true,
       available: false,
       status: 'error',
-      error: closedError,
+      error: commandError,
     })
+    expect(redisClient.destroy).toHaveBeenCalledTimes(1)
   })
 
-  it('rebuilds the singleton after the client emits end', async () => {
-    process.env.REDIS_URL = 'redis://localhost:6379'
-    redisClient.ping.mockResolvedValue('PONG')
-    const { pingKv } = await loadKvClient()
-
-    await pingKv()
-    expect(createClient).toHaveBeenCalledTimes(1)
-    expect(redisClient.connect).toHaveBeenCalledTimes(1)
-
-    // Permanent disconnect — drives the 'end' handler, which should null out
-    // the cached singletons so the next call rebuilds from scratch.
-    redisClient.isReady = false
-    redisClient.emit('end')
-
-    await pingKv()
-    expect(createClient).toHaveBeenCalledTimes(2)
-    expect(redisClient.connect).toHaveBeenCalledTimes(2)
-  })
-
-  it('reports KV errors when Redis connection fails', async () => {
+  it('reports an error and still tears down when the connection fails', async () => {
     process.env.REDIS_URL = 'redis://localhost:6379'
     const error = new Error('redis unavailable')
     redisClient.connect.mockRejectedValue(error)
@@ -166,18 +145,8 @@ describe('optional KV client', () => {
       status: 'error',
       error,
     })
-  })
-
-  it('connects once across repeated operations', async () => {
-    process.env.REDIS_URL = 'redis://localhost:6379'
-    redisClient.ping.mockResolvedValue('PONG')
-    redisClient.get.mockResolvedValue('true')
-    const { getKvValue, pingKv } = await loadKvClient()
-
-    await pingKv()
-    await getKvValue<boolean>('warned-alternate-email:user@example.com')
-
-    expect(redisClient.connect).toHaveBeenCalledTimes(1)
+    // finally runs even when connect throws, releasing the socket.
+    expect(redisClient.destroy).toHaveBeenCalledTimes(1)
   })
 
   it('serializes values as JSON when setting KV values', async () => {
