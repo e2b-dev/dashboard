@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { getTeamDisplayName } from '@/core/modules/teams/utils'
 import { signOutAction } from '@/core/server/actions/auth-actions'
@@ -20,6 +20,7 @@ import {
   LogoutIcon,
   UnpackIcon,
 } from '@/ui/primitives/icons'
+import { Loader } from '@/ui/primitives/loader'
 import { SidebarMenuButton, SidebarMenuItem } from '@/ui/primitives/sidebar'
 import { useDashboard } from '../context'
 import { CreateTeamDialog } from './create-team-dialog'
@@ -29,9 +30,12 @@ import { TeamAvatar } from './team-avatar'
 export default function DashboardSidebarMenu() {
   const { team } = useDashboard()
   const [createTeamOpen, setCreateTeamOpen] = useState(false)
+  const [isLoggingOut, startLogoutTransition] = useTransition()
 
   const handleLogout = () => {
-    signOutAction()
+    startLogoutTransition(async () => {
+      await signOutAction()
+    })
   }
 
   return (
@@ -94,9 +98,24 @@ export default function DashboardSidebarMenu() {
               <DropdownMenuItem
                 variant="error"
                 className="h-9 gap-2.5 [&_svg]:size-5 font-sans prose-body-highlight"
-                onSelect={handleLogout}
+                disabled={isLoggingOut}
+                onSelect={(e) => {
+                  // keep the menu open so the pending state stays visible
+                  // until the sign-out redirect lands
+                  e.preventDefault()
+                  handleLogout()
+                }}
               >
-                <LogoutIcon className="ml-0.5" /> Log out
+                {isLoggingOut ? (
+                  <>
+                    <Loader variant="slash" size="sm" className="ml-0.5" />{' '}
+                    Logging out...
+                  </>
+                ) : (
+                  <>
+                    <LogoutIcon className="ml-0.5" /> Log out
+                  </>
+                )}
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>
