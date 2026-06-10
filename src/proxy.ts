@@ -1,3 +1,4 @@
+import { createOryMiddleware } from '@ory/nextjs/middleware'
 import {
   type NextFetchEvent,
   type NextRequest,
@@ -59,9 +60,36 @@ const proxyWithOryAuth = authjsMiddleware((req, _event: NextFetchEvent) => {
   return proxyCore(req, isAuthenticated)
 })
 
+// Path prefixes the @ory/nextjs proxy forwards to the Ory SDK (Kratos public,
+// from NEXT_PUBLIC_ORY_SDK_URL). The custom login UI's flow creation and form
+// submit go through these same-origin paths so Kratos cookies stay first-party;
+// see src/configs/ory.ts and src/app/login/page.tsx. Mirrors the
+// match list inside createOryMiddleware.
+const ORY_SDK_PROXY_PREFIXES = [
+  '/self-service',
+  '/sessions/whoami',
+  '/ui',
+  '/.well-known/ory',
+  '/.ory',
+]
+
+// Created once; the returned closure reads NEXT_PUBLIC_ORY_SDK_URL lazily at
+// request time, so this is inert in Supabase mode where the var is unset.
+const oryProxy = createOryMiddleware({})
+
+function isOrySdkProxyPath(pathname: string): boolean {
+  return ORY_SDK_PROXY_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+}
+
 export async function proxy(request: NextRequest, event: NextFetchEvent) {
   if (!isOryAuthEnabled()) {
     return proxyCore(request)
+  }
+
+  // Ory SDK traffic is proxied straight to Kratos before the Auth.js wrapper
+  // and auth gate run — those would otherwise rewrite/redirect these paths.
+  if (isOrySdkProxyPath(request.nextUrl.pathname)) {
+    return oryProxy(request)
   }
 
   return proxyWithOryAuth(request, event)
