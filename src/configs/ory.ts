@@ -1,11 +1,11 @@
 import type { OryClientConfiguration } from '@ory/elements-react'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 
-// Configuration for the custom Ory self-service login UI rendered with
-// @ory/elements-react. Only the login flow is served by the dashboard; every
-// other self-service flow (registration, recovery, verification, settings)
-// stays on the Ory/Kratos hosted UI, so those *_ui_url values are only used for
-// the in-card links and are left disabled/hidden here.
+// Configuration for the custom Ory self-service UI rendered with
+// @ory/elements-react. The dashboard serves the login (/login) and registration
+// (/register) flows; the remaining self-service flows (recovery, verification,
+// settings) stay on the Ory/Kratos hosted UI, so those *_ui_url values are only
+// used for the in-card links and are left disabled/hidden here.
 //
 // NOTE on `sdk.url`: the Elements client builds its SDK base path from this
 // value (`sdk.url + "/self-service/..."`). It MUST be the app's own origin so
@@ -26,11 +26,10 @@ const oryConfig: OryClientConfiguration = {
     default_redirect_url: PROTECTED_URLS.DASHBOARD,
     error_ui_url: AUTH_URLS.SIGN_IN,
     login_ui_url: '/login',
-    // Login-only scope: hide links into flows the dashboard does not yet render
-    // with Elements. Flip these on as those flows are migrated.
-    registration_enabled: false,
-    hide_registration_link: true,
-    registration_ui_url: AUTH_URLS.SIGN_UP,
+    registration_enabled: true,
+    registration_ui_url: '/register',
+    // Remaining flows are not yet rendered with Elements — hide their in-card
+    // links. Flip these on as those flows are migrated.
     recovery_enabled: false,
     recovery_ui_url: AUTH_URLS.FORGOT_PASSWORD,
     verification_enabled: false,
