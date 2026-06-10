@@ -23,9 +23,20 @@ export const createTRPCContext = async (opts: {
 }) => {
   return {
     ...opts,
+    requestOrigin: getRequestOrigin(opts.requestUrl),
     session: undefined as AuthenticatedSession | undefined,
     user: undefined as AuthUser | undefined,
     teamId: undefined as string | undefined,
+  }
+}
+
+function getRequestOrigin(requestUrl: string | undefined): string | undefined {
+  if (!requestUrl) return undefined
+
+  try {
+    return new URL(requestUrl).origin
+  } catch {
+    return undefined
   }
 }
 
