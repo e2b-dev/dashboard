@@ -1,6 +1,8 @@
 import 'server-only'
 
+import { headers } from 'next/headers'
 import type { Session } from 'next-auth'
+import { cache } from 'react'
 import { auth as authjs, signOut as authjsSignOut } from '@/auth'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
@@ -12,7 +14,12 @@ import type {
   UpdateUserInput,
   UpdateUserResult,
 } from '../types'
-import { readOrySessionFields } from './authjs-session-boundary'
+import {
+  type ForwardedOryRequestSession,
+  type OrySessionFields,
+  readForwardedOryRequestSession,
+  readOrySessionFields,
+} from './authjs-session-boundary'
 import { buildOryStartURL } from './build-start-url'
 import {
   ACCOUNT_IDENTITY_CREDENTIALS,
@@ -20,7 +27,7 @@ import {
 } from './find-identity'
 import { oryAuthFlows } from './flows'
 import { isReauthFresh } from './freshness'
-import { fromAuthSession, fromOryIdentity } from './identity'
+import { fromOryIdentity } from './identity'
 import { revokeKratosSessionsForIdentity } from './kratos-session'
 import { revokeOryOAuthSessionsForSubject } from './oauth-session'
 import { completeOrySignOut } from './signout-flow'
@@ -29,14 +36,29 @@ import { completeOrySignOut } from './signout-flow'
 // reveals the password form (matches the Supabase ?reauth=1 contract).
 const ACCOUNT_SETTINGS_REAUTH_RETURN_TO = `${PROTECTED_URLS.ACCOUNT_SETTINGS}?reauth=1`
 
+type OryRequestSessionUser = {
+  id: string
+  email: string | null
+  name: string | null
+  image: string | null
+}
+
+type OryRequestSession =
+  | {
+      status: 'session'
+      user: OryRequestSessionUser
+      fields: OrySessionFields
+    }
+  | { status: 'unauthenticated'; error?: string }
+
 export const oryAuthProvider: AuthProvider = {
   async getAuthContext() {
-    const session = await readSession()
-    if (!session) return null
+    const session = await readRequestSession()
+    if (!session || session.status === 'unauthenticated') return null
 
-    const serverFields = readOrySessionFields(session)
+    const serverFields = session.fields
 
-    if (!session.user?.id || !serverFields?.accessToken) {
+    if (!serverFields.accessToken) {
       return null
     }
 
@@ -53,22 +75,22 @@ export const oryAuthProvider: AuthProvider = {
     }
 
     return {
-      user: fromAuthSession(session),
+      user: fromRequestSessionUser(session.user),
       accessToken: serverFields.accessToken,
     } satisfies AuthContext
   },
 
   async getUserProfile(): Promise<AuthUser | null> {
-    const session = await readSession()
-    if (!session?.user?.id) return null
-    const serverFields = readOrySessionFields(session)
+    const session = await readRequestSession()
+    if (!session || session.status === 'unauthenticated') return null
+    const serverFields = session.fields
 
     // The live profile needs the full Kratos identity (traits + credentials).
     // The cached identity id hits directly; user.id and email are
     // fallbacks. Callers (the tRPC profile query) time this out and fall back to
     // the cheap session user, so a null/slow response never blocks the dashboard.
     const identity = await resolveOryIdentity({
-      subjects: [serverFields?.identityId, session.user.id],
+      subjects: [serverFields.identityId, session.user.id],
       email: session.user.email,
       includeCredential: ACCOUNT_IDENTITY_CREDENTIALS,
     })
@@ -85,11 +107,11 @@ export const oryAuthProvider: AuthProvider = {
   },
 
   async updateUser(input: UpdateUserInput): Promise<UpdateUserResult> {
-    const session = await readSession()
-    if (!session?.user?.id) {
+    const session = await readRequestSession()
+    if (!session || session.status === 'unauthenticated') {
       throw new Error('updateUser called without an authenticated Ory session')
     }
-    const serverFields = readOrySessionFields(session)
+    const serverFields = session.fields
 
     // Changing the password OR the email is privileged: require a recent active
     // login so a stolen dashboard session can't silently take over the account
@@ -134,8 +156,8 @@ export const oryAuthProvider: AuthProvider = {
   },
 
   async handleCredentialChangeSuccess(): Promise<void> {
-    const session = await readSession()
-    if (!session?.user?.id) return
+    const session = await readRequestSession()
+    if (!session || session.status === 'unauthenticated') return
 
     await revokeOryOAuthSessionsForSubject(session.user.id)
 
@@ -162,9 +184,10 @@ export const oryAuthProvider: AuthProvider = {
 // (see src/auth.ts). Fall back to a per-request lookup (by the E2B user id, then
 // the verified email) for sessions minted before that wiring existed or when
 // the sign-in resolution failed.
-async function resolveIdentityId(session: Session): Promise<string | null> {
-  const serverFields = readOrySessionFields(session)
-  if (serverFields?.identityId) return serverFields.identityId
+async function resolveIdentityId(
+  session: Extract<OryRequestSession, { status: 'session' }>
+): Promise<string | null> {
+  if (session.fields.identityId) return session.fields.identityId
 
   const identity = await resolveOryIdentity({
     subjects: [session.user.id],
@@ -173,7 +196,40 @@ async function resolveIdentityId(session: Session): Promise<string | null> {
   return identity?.id ?? null
 }
 
-async function readSession(): Promise<Session | null> {
+async function readRequestSession(): Promise<OryRequestSession | null> {
+  return (await readForwardedRequestSession()) ?? readAuthJsRequestSession()
+}
+
+const readForwardedRequestSession = cache(
+  async (): Promise<OryRequestSession | null> => {
+    try {
+      const requestHeaders = new Headers(await headers())
+      const forwarded = readForwardedOryRequestSession(requestHeaders)
+      if (!forwarded) return null
+      return fromForwardedOrySession(forwarded)
+    } catch {
+      return null
+    }
+  }
+)
+
+const readAuthJsRequestSession = cache(
+  async (): Promise<OryRequestSession | null> => {
+    const session = await readAuthJsSession()
+    if (!session) return null
+
+    const user = readSessionUser(session)
+    if (!user) return { status: 'unauthenticated' }
+
+    return {
+      status: 'session',
+      user,
+      fields: readOrySessionFields(session) ?? {},
+    }
+  }
+)
+
+async function readAuthJsSession(): Promise<Session | null> {
   try {
     return await authjs()
   } catch (error) {
@@ -185,5 +241,40 @@ async function readSession(): Promise<Session | null> {
       'Auth.js auth() helper threw while reading session'
     )
     return null
+  }
+}
+
+function fromForwardedOrySession(
+  session: ForwardedOryRequestSession
+): OryRequestSession {
+  if (session.status === 'unauthenticated') return session
+
+  return {
+    status: 'session',
+    user: session.user,
+    fields: session.fields,
+  }
+}
+
+function readSessionUser(session: Session): OryRequestSessionUser | null {
+  if (!session.user?.id) return null
+
+  return {
+    id: session.user.id,
+    email: session.user.email ?? null,
+    name: session.user.name ?? null,
+    image: session.user.image ?? null,
+  }
+}
+
+function fromRequestSessionUser(user: OryRequestSessionUser): AuthUser {
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    avatarUrl: user.image,
+    providers: [],
+    canChangeEmail: false,
+    canChangePassword: false,
   }
 }
