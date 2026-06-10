@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { getTeamDisplayName } from '@/core/modules/teams/utils'
@@ -31,14 +31,16 @@ import { TeamAvatar } from './team-avatar'
 export default function DashboardSidebarMenu() {
   const { team } = useDashboard()
   const [createTeamOpen, setCreateTeamOpen] = useState(false)
-  const [isLoggingOut, startLogoutTransition] = useTransition()
+  // explicit state instead of useTransition: a sync transition callback
+  // settles immediately, so isPending would flip back to false while the
+  // sign-out action is still in flight; this stays true until the redirect
+  // navigates away, and only resets if the action fails before that
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const handleLogout = () => {
-    startLogoutTransition(() => {
-      // not awaited on purpose: the action redirects (throws NEXT_REDIRECT),
-      // and awaiting it inside the transition surfaces noisy aborted-action
-      // errors; the transition still tracks the resulting navigation
-      void signOutAction()
+    setIsLoggingOut(true)
+    signOutAction().catch(() => {
+      setIsLoggingOut(false)
     })
   }
 
