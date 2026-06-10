@@ -63,20 +63,16 @@ export function handleMiddlewareRedirect(
 // Catch-all route rewrites are resolved by the route itself, so the proxy just
 // passes them through untouched.
 export function handleRouteRewritePassthrough(
-  request: NextRequest,
-  requestHeaders: Headers
+  request: NextRequest
 ): NextResponse | null {
   const { config } = getRewriteForPath(request.nextUrl.pathname, 'route')
-  return config
-    ? NextResponse.next({ request: { headers: requestHeaders } })
-    : null
+  return config ? NextResponse.next({ request }) : null
 }
 
 // Rewrites the proxy performs itself (serving another origin under our domain),
 // tagging the request/response with the SEO-indexing intent.
 export function handleMiddlewareRewrite(
-  request: NextRequest,
-  requestHeaders: Headers
+  request: NextRequest
 ): NextResponse | null {
   const { config, rule } = getRewriteForPath(
     request.nextUrl.pathname,
@@ -92,13 +88,13 @@ export function handleMiddlewareRewrite(
     rewriteUrl.pathname = rule.pathPreprocessor(rewriteUrl.pathname)
   }
 
-  const rewriteRequestHeaders = new Headers(requestHeaders)
+  const requestHeaders = new Headers(request.headers)
   if (ALLOW_SEO_INDEXING) {
-    rewriteRequestHeaders.set('x-e2b-should-index', '1')
+    requestHeaders.set('x-e2b-should-index', '1')
   }
 
   const response = NextResponse.rewrite(rewriteUrl, {
-    request: { headers: rewriteRequestHeaders },
+    request: { headers: requestHeaders },
   })
   response.headers.set(
     'X-Robots-Tag',
@@ -112,10 +108,9 @@ export function handleMiddlewareRewrite(
 // Supabase mode it's resolved here from the request/response cookies.
 export async function handleAuthGate(
   request: NextRequest,
-  knownAuth: boolean | undefined,
-  requestHeaders: Headers
+  knownAuth?: boolean
 ): Promise<Response> {
-  const response = NextResponse.next({ request: { headers: requestHeaders } })
+  const response = NextResponse.next({ request })
 
   const isAuthenticated =
     knownAuth ??

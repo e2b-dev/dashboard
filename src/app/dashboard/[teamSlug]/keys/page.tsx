@@ -1,6 +1,6 @@
 import { Page } from '@/features/dashboard/layouts/page'
 import { ApiKeysPageContent } from '@/features/dashboard/settings/keys'
-import { HydrateClient, prefetch, trpc } from '@/trpc/server'
+import { HydrateClient } from '@/trpc/server'
 
 interface KeysPageProps {
   params: Promise<{
@@ -9,9 +9,7 @@ interface KeysPageProps {
 }
 
 export default async function KeysPage({ params }: KeysPageProps) {
-  const { teamSlug } = await params
-
-  prefetch(trpc.teams.listApiKeys.queryOptions({ teamSlug }))
+  await params
 
   return (
     <HydrateClient>

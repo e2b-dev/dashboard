@@ -1,5 +1,4 @@
 import { NextRequest } from 'next/server'
-import type { Session } from 'next-auth'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const ensureBootstrappedMock = vi.hoisted(() => vi.fn())
@@ -32,11 +31,6 @@ vi.mock('@/core/shared/clients/logger/logger', () => ({
 const { handleOryAuthJsSignIn } = await import(
   '@/core/server/auth/ory/authjs-callbacks'
 )
-const {
-  createForwardedOryAuthHeaders,
-  readForwardedOryRequestSession,
-  stripForwardedOryAuthHeaders,
-} = await import('@/core/server/auth/ory/authjs-session-boundary')
 const { GET: authSessionGET } = await import(
   '@/app/api/auth/oauth/[...nextauth]/route'
 )
@@ -106,49 +100,6 @@ describe('Ory Auth.js session boundary', () => {
     expect(JSON.stringify(body)).not.toContain('access-token')
     expect(JSON.stringify(body)).not.toContain('id-token')
     expect(JSON.stringify(body)).not.toContain('refresh-token')
-  })
-
-  it('forwards verified Ory auth fields through internal request headers', () => {
-    const headers = createForwardedOryAuthHeaders(new Headers(), {
-      user: {
-        id: 'user-1',
-        email: 'user@example.com',
-        name: 'User One',
-        image: 'https://example.com/avatar.png',
-      },
-      accessToken: 'access-token',
-      idToken: 'id-token',
-      identityId: 'kratos-id',
-    } as Session)
-
-    expect(readForwardedOryRequestSession(headers)).toEqual({
-      status: 'authenticated',
-      user: {
-        id: 'user-1',
-        email: 'user@example.com',
-        name: 'User One',
-        image: 'https://example.com/avatar.png',
-      },
-      fields: {
-        accessToken: 'access-token',
-        idToken: 'id-token',
-        identityId: 'kratos-id',
-      },
-    })
-  })
-
-  it('strips spoofed internal Ory auth headers', () => {
-    const headers = new Headers({
-      'x-e2b-internal-ory-auth-status': 'authenticated',
-      'x-e2b-internal-auth-user-id': 'attacker',
-      'x-e2b-internal-ory-access-token': 'fake-token',
-      'x-regular-header': 'kept',
-    })
-
-    const stripped = stripForwardedOryAuthHeaders(headers)
-
-    expect(readForwardedOryRequestSession(stripped)).toBeNull()
-    expect(stripped.get('x-regular-header')).toBe('kept')
   })
 
   it('only signs out from bootstrap-failed when the handoff cookie is present', async () => {

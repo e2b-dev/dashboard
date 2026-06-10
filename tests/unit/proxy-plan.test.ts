@@ -6,8 +6,8 @@ describe('classifyProxyRequest', () => {
     ['/dashboard/team/sandboxes', 'page-auth', true, true, true],
     ['/sign-in', 'page-auth', true, true, true],
     ['/sign-up', 'page-auth', true, true, true],
-    ['/api/trpc/user.update', 'api-auth-session', true, false, false],
-    ['/api/teams/team-slug/metrics', 'api-auth-session', true, false, false],
+    ['/api/trpc/user.update', 'api-trpc', false, false, false],
+    ['/api/teams/team-slug/metrics', 'api-public', false, false, false],
     ['/api/auth/oauth/session', 'authjs-endpoint', false, false, false],
     ['/api/auth/oauth-start', 'authjs-endpoint', false, false, false],
     ['/api/health', 'api-public', false, false, false],
@@ -27,16 +27,14 @@ describe('classifyProxyRequest', () => {
     })
   })
 
-  it('only forwards verified Ory auth context for protected API routes', () => {
+  it('runs proxy concerns only for page and rewrite routes', () => {
     expect(classifyProxyRequest('/api/trpc/user.update')).toMatchObject({
-      forwardVerifiedOryAuth: true,
       runMiddlewareRedirect: false,
       runRouteRewritePassthrough: false,
       runMiddlewareRewrite: false,
     })
 
     expect(classifyProxyRequest('/dashboard/team')).toMatchObject({
-      forwardVerifiedOryAuth: true,
       runMiddlewareRedirect: true,
       runRouteRewritePassthrough: true,
       runMiddlewareRewrite: true,

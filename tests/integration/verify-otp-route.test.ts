@@ -1,7 +1,7 @@
-import { NextRequest } from 'next/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { POST } from '@/app/api/auth/verify-otp/route'
 import { PROTECTED_URLS } from '@/configs/urls'
+import { authRouter } from '@/core/server/api/routers/auth'
+import { createCallerFactory, createTRPCContext } from '@/core/server/trpc/init'
 
 const { mockVerifyOtp } = vi.hoisted(() => ({
   mockVerifyOtp: vi.fn(),
@@ -13,7 +13,9 @@ vi.mock('@/core/modules/auth/repository.server', () => ({
   },
 }))
 
-describe('Verify OTP Route', () => {
+const createCaller = createCallerFactory(authRouter)
+
+describe('Verify OTP procedure', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -24,15 +26,19 @@ describe('Verify OTP Route', () => {
       data: { userId: 'user-123' },
     })
 
-    const response = await POST(
-      createRequest({
-        token_hash: 'token-hash',
-        type: 'email_change',
-        next: 'http://localhost:3000/api/auth/email-callback?new_email=new%40example.com',
+    const caller = createCaller(
+      await createTRPCContext({
+        headers: new Headers(),
+        requestUrl: 'http://localhost:3000/api/trpc',
       })
     )
 
-    const body = await response.json()
+    const body = await caller.verifyOtp({
+      token_hash: 'token-hash',
+      type: 'email_change',
+      next: 'http://localhost:3000/api/auth/email-callback?new_email=new%40example.com',
+    })
+
     const redirectUrl = new URL(body.redirectUrl)
 
     expect(mockVerifyOtp).toHaveBeenCalledWith('token-hash', 'email_change')
@@ -45,13 +51,3 @@ describe('Verify OTP Route', () => {
     expect(redirectUrl.searchParams.has('reauth')).toBe(false)
   })
 })
-
-function createRequest(body: unknown): NextRequest {
-  return new NextRequest('http://localhost:3000/api/auth/verify-otp', {
-    method: 'POST',
-    body: JSON.stringify(body),
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  })
-}

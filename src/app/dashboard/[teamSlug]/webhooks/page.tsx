@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import { INCLUDE_ARGUS } from '@/configs/flags'
 import { Page } from '@/features/dashboard/layouts/page'
 import { WebhooksPageContent } from '@/features/dashboard/settings/webhooks/webhooks-page-content'
-import { HydrateClient, prefetch, trpc } from '@/trpc/server'
+import { HydrateClient } from '@/trpc/server'
 
 interface WebhooksPageProps {
   params: Promise<{
@@ -15,9 +15,7 @@ export default async function WebhooksPage({ params }: WebhooksPageProps) {
     return notFound()
   }
 
-  const { teamSlug } = await params
-
-  prefetch(trpc.webhooks.list.queryOptions({ teamSlug }))
+  await params
 
   return (
     <HydrateClient>

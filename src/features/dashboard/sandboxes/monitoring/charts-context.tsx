@@ -1,5 +1,6 @@
 'use client'
 
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import {
   createContext,
   type ReactNode,
@@ -7,8 +8,8 @@ import {
   useMemo,
   useState,
 } from 'react'
-import useSWR from 'swr'
-import type { TeamMetricsResponse } from '@/app/api/teams/[teamSlug]/metrics/types'
+import type { TeamMetricsResponse } from '@/core/modules/sandboxes/models.client'
+import { useTRPC } from '@/trpc/client'
 import { useDashboard } from '../../context'
 import { useTimeframe } from './hooks/use-timeframe'
 
@@ -21,7 +22,7 @@ interface HoveredChartValue {
 interface TeamMetricsChartsContextValue
   extends ReturnType<typeof useTimeframe> {
   data: TeamMetricsResponse | undefined
-  error: Error | undefined
+  error: unknown
   isLoading: boolean
   isValidating: boolean
   isPolling: boolean
@@ -34,7 +35,7 @@ const TeamMetricsChartsContext = createContext<
 >(undefined)
 
 interface TeamMetricsChartsProviderProps {
-  initialData: TeamMetricsResponse
+  initialData?: TeamMetricsResponse
   children: ReactNode
 }
 
@@ -43,44 +44,33 @@ export function TeamMetricsChartsProvider({
   children,
 }: TeamMetricsChartsProviderProps) {
   const { team } = useDashboard()
+  const trpc = useTRPC()
   const { timeframe, setTimeRange, setCustomRange } = useTimeframe()
   const [hoveredValue, setHoveredValue] = useState<HoveredChartValue | null>(
     null
   )
 
-  const { data, error, isLoading, isValidating } = useSWR<TeamMetricsResponse>(
-    [`/api/teams/${team.slug}/metrics`, timeframe.start, timeframe.end],
-    async ([url, start, end]: [string, number, number]) => {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          start,
-          end,
-        }),
-        cache: 'no-store',
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to fetch metrics')
+  const {
+    data,
+    error,
+    isLoading,
+    isFetching: isValidating,
+  } = useQuery(
+    trpc.sandboxes.getTeamMetrics.queryOptions(
+      {
+        teamSlug: team.slug,
+        startDate: timeframe.start,
+        endDate: timeframe.end,
+      },
+      {
+        initialData,
+        placeholderData: keepPreviousData,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
+        retry: 3,
+        retryDelay: 5000,
       }
-
-      return (await response.json()) as TeamMetricsResponse
-    },
-    {
-      fallbackData: initialData,
-      keepPreviousData: true,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      revalidateIfStale: true,
-      revalidateOnMount: false,
-      dedupingInterval: 500,
-      errorRetryInterval: 5000,
-      errorRetryCount: 3,
-    }
+    )
   )
 
   const value = useMemo(

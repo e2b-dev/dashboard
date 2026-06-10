@@ -5,12 +5,12 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useMemo, useTransition } from 'react'
 import { AUTH_URLS } from '@/configs/urls'
 import {
-  type ConfirmEmailInput,
   ConfirmEmailInputSchema,
   type OtpType,
   OtpTypeSchema,
 } from '@/core/modules/auth/models'
 import { AuthFormMessage } from '@/features/auth/form-message'
+import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
 
 const OTP_TYPE_LABELS: Record<OtpType, string> = {
@@ -41,26 +41,9 @@ const OTP_TYPE_BUTTON_LABELS: Record<OtpType, string> = {
   email_change: 'Confirm Email',
 }
 
-interface VerifyOtpResponse {
-  redirectUrl: string
-}
-
-/**
- * Verifies OTP and returns a redirect URL.
- * The API always returns a redirectUrl - errors redirect to sign-in with encoded error params.
- */
-async function verifyOtp(input: ConfirmEmailInput): Promise<VerifyOtpResponse> {
-  const response = await fetch('/api/auth/verify-otp', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
-  })
-
-  return response.json()
-}
-
 export default function ConfirmPage() {
   const router = useRouter()
+  const trpc = useTRPC()
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
 
@@ -88,14 +71,15 @@ export default function ConfirmPage() {
     ? OTP_TYPE_BUTTON_LABELS[params.type]
     : 'Continue'
 
-  const mutation = useMutation({
-    mutationFn: verifyOtp,
-    onSuccess: (data) => {
-      startTransition(() => {
-        router.push(data.redirectUrl)
-      })
-    },
-  })
+  const mutation = useMutation(
+    trpc.auth.verifyOtp.mutationOptions({
+      onSuccess: (data) => {
+        startTransition(() => {
+          router.push(data.redirectUrl)
+        })
+      },
+    })
+  )
 
   const handleConfirm = () => {
     if (!isValidParams || !params.type) return

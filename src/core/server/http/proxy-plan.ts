@@ -5,7 +5,7 @@ import { getMiddlewareRedirectFromPath } from '@/lib/utils/redirects'
 import { getRewriteForPath } from '@/lib/utils/rewrites'
 
 export type ProxyRouteKind =
-  | 'api-auth-session'
+  | 'api-trpc'
   | 'api-public'
   | 'authjs-endpoint'
   | 'page-auth'
@@ -15,7 +15,6 @@ export type ProxyRouteKind =
 export type ProxyPlan = {
   kind: ProxyRouteKind
   needsOryAuthJsSession: boolean
-  forwardVerifiedOryAuth: boolean
   runAuthRouteRedirect: boolean
   runAuthGate: boolean
   runMiddlewareRedirect: boolean
@@ -23,7 +22,7 @@ export type ProxyPlan = {
   runMiddlewareRewrite: boolean
 }
 
-const API_AUTH_SESSION_PREFIXES = ['/api/trpc', '/api/teams'] as const
+const TRPC_API_PREFIXES = ['/api/trpc'] as const
 const AUTHJS_ENDPOINT_PREFIXES = ['/api/auth'] as const
 
 export function classifyProxyRequest(pathname: string): ProxyPlan {
@@ -31,11 +30,10 @@ export function classifyProxyRequest(pathname: string): ProxyPlan {
     return bypassPlan('authjs-endpoint')
   }
 
-  if (matchesAnyPrefix(pathname, API_AUTH_SESSION_PREFIXES)) {
+  if (matchesAnyPrefix(pathname, TRPC_API_PREFIXES)) {
     return {
-      kind: 'api-auth-session',
-      needsOryAuthJsSession: true,
-      forwardVerifiedOryAuth: true,
+      kind: 'api-trpc',
+      needsOryAuthJsSession: false,
       runAuthRouteRedirect: false,
       runAuthGate: false,
       runMiddlewareRedirect: false,
@@ -64,7 +62,6 @@ export function classifyProxyRequest(pathname: string): ProxyPlan {
   return {
     kind,
     needsOryAuthJsSession: runsAuthGate,
-    forwardVerifiedOryAuth: runsAuthGate,
     runAuthRouteRedirect: runsAuthGate,
     runAuthGate: runsAuthGate,
     runMiddlewareRedirect: true,
@@ -89,7 +86,6 @@ function bypassPlan(kind: ProxyRouteKind): ProxyPlan {
   return {
     kind,
     needsOryAuthJsSession: false,
-    forwardVerifiedOryAuth: false,
     runAuthRouteRedirect: false,
     runAuthGate: false,
     runMiddlewareRedirect: false,

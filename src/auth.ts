@@ -20,7 +20,7 @@ const cookiePrefix = process.env.AUTH_COOKIE_PREFIX
   : ''
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  // isolates from existing /api/auth/{callback,email-callback,verify-otp}
+  // isolates from existing /api/auth/{callback,email-callback}
   basePath: '/api/auth/oauth',
   secret: process.env.AUTH_SECRET,
   session: { strategy: 'jwt' },

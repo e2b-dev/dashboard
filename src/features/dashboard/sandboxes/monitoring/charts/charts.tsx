@@ -1,6 +1,4 @@
 import { Suspense } from 'react'
-import { TEAM_METRICS_INITIAL_RANGE_MS } from '@/configs/intervals'
-import { getTeamMetrics } from '@/core/server/functions/sandboxes/get-team-metrics'
 import { TeamMetricsChartsProvider } from '../charts-context'
 import ConcurrentChartClient from './concurrent-chart'
 import ChartFallback from './fallback'
@@ -36,50 +34,10 @@ async function TeamMetricsChartsResolver({
   params,
   searchParams,
 }: TeamMetricsChartsProps) {
-  const { teamSlug } = await params
-  const { start: startParam, end: endParam } = await searchParams
-
-  // parse start/end from URL params with defaults
-  const now = Date.now()
-  const start = startParam
-    ? parseInt(startParam, 10)
-    : now - TEAM_METRICS_INITIAL_RANGE_MS
-  const end = endParam ? parseInt(endParam, 10) : now
-
-  const teamMetricsResult = await getTeamMetrics({
-    teamSlug,
-    startDate: start,
-    endDate: end,
-  })
-
-  if (
-    !teamMetricsResult?.data ||
-    teamMetricsResult.serverError ||
-    teamMetricsResult.validationErrors
-  ) {
-    const errorMessage =
-      teamMetricsResult?.serverError ||
-      teamMetricsResult?.validationErrors?.formErrors[0] ||
-      'Failed to load metrics data.'
-
-    return (
-      <>
-        <ChartFallback
-          title="Concurrent"
-          subtitle="Average over range"
-          error={errorMessage}
-        />
-        <ChartFallback
-          title="Start Rate per Second"
-          subtitle="Median over range"
-          error={errorMessage}
-        />
-      </>
-    )
-  }
+  await Promise.all([params, searchParams])
 
   return (
-    <TeamMetricsChartsProvider initialData={teamMetricsResult.data}>
+    <TeamMetricsChartsProvider>
       <ConcurrentChartClient />
       <StartRateChartClient />
     </TeamMetricsChartsProvider>

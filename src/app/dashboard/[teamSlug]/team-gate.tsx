@@ -3,7 +3,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { DASHBOARD_TEAMS_LIST_QUERY_OPTIONS } from '@/core/application/teams/queries'
 import { DASHBOARD_USER_PROFILE_QUERY_OPTIONS } from '@/core/application/user/queries'
-import type { AuthUser } from '@/core/modules/auth/models'
 import { DashboardContextProvider } from '@/features/dashboard/context'
 import LoadingLayout from '@/features/dashboard/loading-layout'
 import { useTRPC } from '@/trpc/client'
@@ -11,13 +10,11 @@ import Unauthorized from '../unauthorized'
 
 interface DashboardTeamGateProps {
   teamSlug: string
-  fallbackUser: AuthUser
   children: React.ReactNode
 }
 
 export function DashboardTeamGate({
   teamSlug,
-  fallbackUser,
   children,
 }: DashboardTeamGateProps) {
   const trpc = useTRPC()
@@ -37,10 +34,9 @@ export function DashboardTeamGate({
     return <LoadingLayout />
   }
 
-  const resolvedUser = user ?? fallbackUser
   const team = teams?.find((candidate) => candidate.slug === teamSlug)
 
-  if (!team || !teams) {
+  if (!team || !teams || !user) {
     return <Unauthorized />
   }
 
@@ -48,7 +44,7 @@ export function DashboardTeamGate({
     <DashboardContextProvider
       initialTeam={team}
       initialTeams={teams}
-      initialUser={resolvedUser}
+      initialUser={user}
     >
       {children}
     </DashboardContextProvider>

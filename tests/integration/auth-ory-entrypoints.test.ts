@@ -125,19 +125,8 @@ describe('Ory auth entrypoints', () => {
     )
   })
 
-  it('runs Auth.js only as a session refresher for authenticated API routes', async () => {
-    authSession.current = orySession({ accessToken: 'access-token' })
-
-    const response = await proxy(
-      request('/api/trpc/user.update'),
-      {} as NextFetchEvent
-    )
-
-    expect(authMiddlewareMock).toHaveBeenCalledTimes(1)
-    expect(response.headers.get('location')).toBeNull()
-  })
-
-  it('does not run Auth.js for public API and Auth.js endpoint routes', async () => {
+  it('does not run proxy Auth.js for API routes', async () => {
+    await proxy(request('/api/trpc/user.update'), {} as NextFetchEvent)
     await proxy(request('/api/health'), {} as NextFetchEvent)
     await proxy(request('/api/auth/oauth/session'), {} as NextFetchEvent)
 

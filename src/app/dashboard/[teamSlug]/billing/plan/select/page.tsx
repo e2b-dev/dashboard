@@ -1,14 +1,12 @@
 import SelectPlan from '@/features/dashboard/billing/select-plan'
-import { HydrateClient, prefetch, trpc } from '@/trpc/server'
+import { HydrateClient } from '@/trpc/server'
 
 export default async function BillingPlanSelectPage({
   params,
 }: {
   params: Promise<{ teamSlug: string }>
 }) {
-  const { teamSlug } = await params
-
-  prefetch(trpc.billing.getItems.queryOptions({ teamSlug }))
+  await params
 
   return (
     <HydrateClient>

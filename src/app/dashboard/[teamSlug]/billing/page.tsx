@@ -1,18 +1,14 @@
 import Credits from '@/features/dashboard/billing/credits'
 import Invoices from '@/features/dashboard/billing/invoices'
 import SelectedPlan from '@/features/dashboard/billing/selected-plan'
-import { HydrateClient, prefetch, trpc } from '@/trpc/server'
+import { HydrateClient } from '@/trpc/server'
 
 export default async function BillingPage({
   params,
 }: {
   params: Promise<{ teamSlug: string }>
 }) {
-  const { teamSlug } = await params
-
-  prefetch(trpc.billing.getItems.queryOptions({ teamSlug }))
-  prefetch(trpc.billing.getUsage.queryOptions({ teamSlug }))
-  prefetch(trpc.billing.getInvoices.queryOptions({ teamSlug }))
+  await params
 
   return (
     <HydrateClient>

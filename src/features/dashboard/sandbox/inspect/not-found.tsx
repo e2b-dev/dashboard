@@ -2,10 +2,11 @@
 
 import { useParams, useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState, useTransition } from 'react'
+import { COOKIE_KEYS } from '@/configs/cookies'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
-import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
 import { cn } from '@/lib/utils'
+import { setBrowserCookie } from '@/lib/utils/browser-cookies'
 import { Button } from '@/ui/primitives/button'
 import {
   ArrowLeftIcon,
@@ -26,13 +27,9 @@ export default function SandboxInspectNotFound() {
   const [isPending, startTransition] = useTransition()
   const [isResetPending, resetTransition] = useTransition()
 
-  const save = async (newPath: string) => {
+  const save = useCallback((newPath: string) => {
     try {
-      await fetch('/api/sandbox/inspect/root-path', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: newPath }),
-      })
+      setBrowserCookie(COOKIE_KEYS.SANDBOX_INSPECT_ROOT_PATH, newPath)
     } catch (error) {
       l.error(
         {
@@ -42,17 +39,17 @@ export default function SandboxInspectNotFound() {
         `${error instanceof Error ? error.message : 'Failed to save root path'}`
       )
     }
-  }
+  }, [])
 
   const setRootPath = useCallback(
     (newPath: string) => {
       setPendingPath(newPath)
-      startTransition(async () => {
-        await save(newPath)
+      startTransition(() => {
+        save(newPath)
         router.refresh()
       })
     },
-    [router, startTransition]
+    [router, save]
   )
 
   useEffect(() => {

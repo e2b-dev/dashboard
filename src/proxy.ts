@@ -6,11 +6,7 @@ import {
 import { auth as authjsMiddleware } from '@/auth'
 import { isOryAuthEnabled } from './configs/flags'
 import { getOryAuthRouteRedirect } from './core/server/auth/ory/auth-route-redirect'
-import {
-  createForwardedOryAuthHeaders,
-  isOrySessionAuthenticated,
-  stripForwardedOryAuthHeaders,
-} from './core/server/auth/ory/authjs-session-boundary'
+import { isOrySessionAuthenticated } from './core/server/auth/ory/authjs-session-boundary'
 import {
   handleAuthGate,
   handleMiddlewareRedirect,
@@ -25,20 +21,15 @@ import { l, serializeErrorForLog } from './core/shared/clients/logger/logger'
 
 type ProxyCoreOptions = {
   knownAuth?: boolean
-  requestHeaders?: Headers
 }
 
 // Runs the selected proxy concerns in order; the first handler that returns a
-// Response wins. Ory mode supplies `knownAuth` from the Auth.js wrapper and may
-// add verified auth headers for downstream API handlers.
+// Response wins. Ory mode supplies `knownAuth` from the Auth.js wrapper.
 async function proxyCore(
   request: NextRequest,
   plan: ProxyPlan,
   options: ProxyCoreOptions = {}
 ): Promise<Response> {
-  const requestHeaders =
-    options.requestHeaders ?? stripForwardedOryAuthHeaders(request.headers)
-
   try {
     if (plan.runMiddlewareRedirect) {
       const response = handleMiddlewareRedirect(request)
@@ -46,20 +37,20 @@ async function proxyCore(
     }
 
     if (plan.runRouteRewritePassthrough) {
-      const response = handleRouteRewritePassthrough(request, requestHeaders)
+      const response = handleRouteRewritePassthrough(request)
       if (response) return response
     }
 
     if (plan.runMiddlewareRewrite) {
-      const response = handleMiddlewareRewrite(request, requestHeaders)
+      const response = handleMiddlewareRewrite(request)
       if (response) return response
     }
 
     if (plan.runAuthGate) {
-      return handleAuthGate(request, options.knownAuth, requestHeaders)
+      return handleAuthGate(request, options.knownAuth)
     }
 
-    return NextResponse.next({ request: { headers: requestHeaders } })
+    return NextResponse.next({ request })
   } catch (error) {
     l.error(
       {
@@ -74,7 +65,7 @@ async function proxyCore(
     )
 
     // return a basic response to avoid infinite loops
-    return NextResponse.next({ request: { headers: requestHeaders } })
+    return NextResponse.next({ request })
   }
 }
 
@@ -85,9 +76,6 @@ function proxyWithOryAuth(
 ) {
   const proxyWithAuth = authjsMiddleware((req, _event: NextFetchEvent) => {
     const isAuthenticated = isOrySessionAuthenticated(req.auth)
-    const requestHeaders = plan.forwardVerifiedOryAuth
-      ? createForwardedOryAuthHeaders(req.headers, req.auth)
-      : stripForwardedOryAuthHeaders(req.headers)
 
     if (plan.runAuthRouteRedirect) {
       const authRouteRedirect = getOryAuthRouteRedirect(req, isAuthenticated)
@@ -96,7 +84,6 @@ function proxyWithOryAuth(
 
     return proxyCore(req, plan, {
       knownAuth: isAuthenticated,
-      requestHeaders,
     })
   })
 
