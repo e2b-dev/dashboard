@@ -2,7 +2,6 @@
 
 import type { OryNodeSsoButtonProps } from '@ory/elements-react'
 import type { ComponentType } from 'react'
-import { GitHubLogo } from '@/features/auth/logos/github-logo'
 import { GoogleLogo } from '@/features/auth/logos/google-logo'
 import { Button } from '@/ui/primitives/button'
 
@@ -10,7 +9,6 @@ import { Button } from '@/ui/primitives/button'
 // providers fall back to whatever label Ory supplies, with no logo.
 const PROVIDERS: Record<string, { label: string; Logo: ComponentType }> = {
   google: { label: 'Continue with Google', Logo: GoogleLogo },
-  github: { label: 'Continue with GitHub', Logo: GitHubLogo },
 }
 
 // The `provider` prop Ory passes comes from the node's label *context*, which
@@ -30,7 +28,6 @@ function resolveProvider({
     .join(' ')
     .toLowerCase()
 
-  if (haystack.includes('github')) return PROVIDERS.github
   if (haystack.includes('google')) return PROVIDERS.google
   return undefined
 }

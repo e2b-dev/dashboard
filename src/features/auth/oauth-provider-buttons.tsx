@@ -2,11 +2,34 @@
 
 import { useSearchParams } from 'next/navigation'
 import { useAction } from 'next-safe-action/hooks'
+import { GithubDark } from '@/components/ui/svgs/githubDark'
+import { GithubLight } from '@/components/ui/svgs/githubLight'
 import { AUTH_MIGRATION_IN_PROGRESS } from '@/configs/flags'
 import { signInWithOAuthAction } from '@/core/server/actions/auth-actions'
 import { Button } from '@/ui/primitives/button'
-import { GitHubLogo } from './logos/github-logo'
 import { GoogleLogo } from './logos/google-logo'
+
+// GitHub's mark is monochrome, so the svgl registry ships light/dark variants;
+// render both and toggle with Tailwind's `dark:` variant (class strategy) so
+// there's no theme-flash. The hidden variant is display:none, so it doesn't
+// affect the button's flex `gap`. GithubLight is the dark mark (light mode);
+// GithubDark is the light mark (dark mode).
+function GitHubLogo() {
+  return (
+    <>
+      <GithubLight
+        className="h-5 w-5 dark:hidden"
+        aria-hidden="true"
+        focusable="false"
+      />
+      <GithubDark
+        className="hidden h-5 w-5 dark:block"
+        aria-hidden="true"
+        focusable="false"
+      />
+    </>
+  )
+}
 
 export function OAuthProviders() {
   const searchParams = useSearchParams()

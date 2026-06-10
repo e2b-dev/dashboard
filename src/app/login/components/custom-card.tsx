@@ -13,12 +13,24 @@ export function OryCard({ children }: PropsWithChildren) {
   return <div className="bg-bg flex w-full flex-col border p-6">{children}</div>
 }
 
-// Card footer, shared by the login and registration flows. The login card has
-// no footer links here; the registration card shows the "Sign in" cross-link
-// and the legal copy from the mockup. The card sets no flex `gap`, so the
-// footer owns its own top margin.
+// Card footer, shared by the login and registration flows. Login shows the
+// "Sign up" cross-link; registration shows the "Sign in" cross-link plus the
+// legal copy from the mockup. The card sets no flex `gap`, so the footer owns
+// its own top margin.
 export function OryCardFooter() {
   const { flowType } = useOryFlow()
+
+  if (flowType === FlowType.Login) {
+    return (
+      <p className="text-fg-secondary mt-6">
+        Don't have an account?{' '}
+        <Link href="/register" className="text-fg underline">
+          Sign up
+        </Link>
+        .
+      </p>
+    )
+  }
 
   if (flowType !== FlowType.Registration) {
     return null
