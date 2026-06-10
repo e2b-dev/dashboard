@@ -3,7 +3,7 @@ import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 
 // Configuration for the custom Ory self-service UI rendered with
 // @ory/elements-react. The dashboard serves the login (/login) and registration
-// (/register) flows; the remaining self-service flows (recovery, verification,
+// (/registration) flows; the remaining self-service flows (recovery, verification,
 // settings) stay on the Ory/Kratos hosted UI, so those *_ui_url values are only
 // used for the in-card links and are left disabled/hidden here.
 //
@@ -27,7 +27,7 @@ const oryConfig: OryClientConfiguration = {
     error_ui_url: AUTH_URLS.SIGN_IN,
     login_ui_url: '/login',
     registration_enabled: true,
-    registration_ui_url: '/register',
+    registration_ui_url: '/registration',
     // Remaining flows are not yet rendered with Elements — hide their in-card
     // links. Flip these on as those flows are migrated.
     recovery_enabled: false,

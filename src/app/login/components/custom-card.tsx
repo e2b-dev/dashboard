@@ -24,7 +24,7 @@ export function OryCardFooter() {
     return (
       <p className="text-fg-secondary mt-6">
         Don't have an account?{' '}
-        <Link href="/register" className="text-fg underline">
+        <Link href="/registration" className="text-fg underline">
           Sign up
         </Link>
         .

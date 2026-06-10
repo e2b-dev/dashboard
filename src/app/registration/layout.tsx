@@ -6,7 +6,7 @@ import { GridPattern } from '@/ui/grid-pattern'
 // Dedicated layout for the custom Ory registration page. Mirrors /login's
 // layout (grid background + centering, no inner card wrapper since
 // @ory/elements-react renders its own self-contained card). Registration lives
-// at the top-level /register because the legacy (auth) group already owns
+// at the top-level /registration because the legacy (auth) group already owns
 // /sign-up.
 export const metadata = {
   title: METADATA.title,
