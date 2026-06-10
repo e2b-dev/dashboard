@@ -9,7 +9,7 @@ import {
 import { TIME_RANGES, type TimeRangeKey } from '@/lib/utils/timeframe'
 import { calculateIsLive } from '../utils'
 
-const MAX_DAYS_AGO = 31 * 24 * 60 * 60 * 1000
+const MAX_DAYS_AGO = 90 * 24 * 60 * 60 * 1000
 const MIN_RANGE_MS = 1.5 * 60 * 1000
 
 const getStableNow = () => {

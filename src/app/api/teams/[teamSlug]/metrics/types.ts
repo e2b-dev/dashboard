@@ -1,6 +1,9 @@
 import { z } from 'zod'
 import type { ClientTeamMetrics } from '@/core/modules/sandboxes/models.client'
-import { MAX_DAYS_AGO } from '@/features/dashboard/sandboxes/monitoring/time-picker/constants'
+import {
+  MAX_DAYS_AGO,
+  MAX_DAYS_AGO_BUFFER,
+} from '@/features/dashboard/sandboxes/monitoring/time-picker/constants'
 
 export const TeamMetricsRequestSchema = z
   .object({
@@ -12,7 +15,7 @@ export const TeamMetricsRequestSchema = z
       .refine(
         (start) => {
           const now = Date.now()
-          return start >= now - MAX_DAYS_AGO
+          return start >= now - MAX_DAYS_AGO_BUFFER
         },
         {
           message: `Start date cannot be more than ${MAX_DAYS_AGO / (1000 * 60 * 60 * 24)} days ago`,
@@ -29,7 +32,7 @@ export const TeamMetricsRequestSchema = z
   })
   .refine(
     (data) => {
-      return data.end - data.start <= MAX_DAYS_AGO
+      return data.end - data.start <= MAX_DAYS_AGO_BUFFER
     },
     {
       message: `Date range cannot exceed ${MAX_DAYS_AGO / (1000 * 60 * 60 * 24)} days`,

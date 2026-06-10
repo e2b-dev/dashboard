@@ -4,7 +4,12 @@
 
 import { z } from 'zod'
 import { combineDateTimeStrings } from '@/lib/utils/formatting'
-import { CLOCK_SKEW_TOLERANCE, MAX_DAYS_AGO, MIN_RANGE_MS } from './constants'
+import {
+  CLOCK_SKEW_TOLERANCE,
+  MAX_DAYS_AGO,
+  MAX_DAYS_AGO_BUFFER,
+  MIN_RANGE_MS,
+} from './constants'
 
 export const customTimeFormSchema = z
   .object({
@@ -39,11 +44,11 @@ export const customTimeFormSchema = z
     const now = Date.now()
     const startTimestamp = startDateTime.getTime()
 
-    // validate start date is not more than 31 days ago
-    if (startTimestamp < now - MAX_DAYS_AGO) {
+    // validate start date is not more than MAX_DAYS_AGO
+    if (startTimestamp < now - MAX_DAYS_AGO_BUFFER) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Start date cannot be more than 31 days ago',
+        message: `Start date cannot be more than ${MAX_DAYS_AGO / (1000 * 60 * 60 * 24)} days ago`,
         path: ['startDate'],
       })
       return
@@ -105,10 +110,10 @@ export const customTimeFormSchema = z
       }
 
       // ensure range doesn't exceed maximum
-      if (endTimestamp - startTimestamp > MAX_DAYS_AGO) {
+      if (endTimestamp - startTimestamp > MAX_DAYS_AGO_BUFFER) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Date range cannot exceed 31 days',
+          message: `Date range cannot exceed ${MAX_DAYS_AGO / (1000 * 60 * 60 * 24)} days`,
           path: ['endDate'],
         })
         return

@@ -86,7 +86,7 @@ export default function SandboxesMonitoringHeader({
         <BaseSubtitle>
           Peak Concurrent Sandboxes
           <br className="max-md:hidden" />
-          <span className="max-md:hidden">(30-day max)</span>
+          <span className="max-md:hidden">(90-day max)</span>
         </BaseSubtitle>
       </BaseCard>
     </div>

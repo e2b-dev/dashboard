@@ -67,10 +67,17 @@ export const TIME_OPTIONS: TimeOption[] = [
     shortcut: '30D',
     rangeMs: 30 * 24 * 60 * 60 * 1000,
   },
+  {
+    label: `Last 90 days`,
+    value: '90d',
+    shortcut: '90D',
+    rangeMs: 90 * 24 * 60 * 60 * 1000,
+  },
 ]
 
 // constraints
-export const MAX_DAYS_AGO = 31 * 24 * 60 * 60 * 1000 // 31 days in ms
+export const MAX_DAYS_AGO = 90 * 24 * 60 * 60 * 1000 // 90 days in ms
+export const MAX_DAYS_AGO_BUFFER = MAX_DAYS_AGO + 60 * 1000 // validation buffer to prevent preset race conditions
 export const MIN_RANGE_MS = 1.5 * 60 * 1000 // 1.5 minutes minimum
 export const CLOCK_SKEW_TOLERANCE = 60 * 1000 // 60 seconds
 export const DEFAULT_RANGE_MS = 60 * 60 * 1000 // 1 hour default

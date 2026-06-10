@@ -1,5 +1,8 @@
 import { z } from 'zod'
-import { MAX_DAYS_AGO } from '@/features/dashboard/sandboxes/monitoring/time-picker/constants'
+import {
+  MAX_DAYS_AGO,
+  MAX_DAYS_AGO_BUFFER,
+} from '@/features/dashboard/sandboxes/monitoring/time-picker/constants'
 
 // PRIVATE
 
@@ -12,7 +15,7 @@ const _startDateSchema = z
     (start) => {
       const now = Date.now()
 
-      return start >= now - MAX_DAYS_AGO
+      return start >= now - MAX_DAYS_AGO_BUFFER
     },
     {
       message: `Start date cannot be more than ${MAX_DAYS_AGO / (1000 * 60 * 60 * 24)} days ago`,
@@ -29,7 +32,7 @@ const _endDateSchema = z
   })
 
 const _dateRangeRefine = (data: { startDate: number; endDate: number }) => {
-  return data.endDate - data.startDate <= MAX_DAYS_AGO
+  return data.endDate - data.startDate <= MAX_DAYS_AGO_BUFFER
 }
 
 const _dateRangeRefineMessage = {

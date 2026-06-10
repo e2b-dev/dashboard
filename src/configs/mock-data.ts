@@ -1082,18 +1082,18 @@ export function calculateTeamMetricsStep(
 /**
  * Generate mock team metrics for monitoring charts
  * Supports small, medium, and large teams with realistic patterns
- * Can generate data for the past 30 days from now
+ * Can generate data for the past 90 days from now
  */
 export function generateMockTeamMetrics(
   startMs: number,
   endMs: number
 ): { metrics: ClientTeamMetrics; step: number } {
   const now = Date.now()
-  const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000
+  const ninetyDaysAgo = now - 90 * 24 * 60 * 60 * 1000
 
-  // Clamp start time to no earlier than 30 days ago
-  if (startMs < thirtyDaysAgo) {
-    startMs = thirtyDaysAgo
+  // Clamp start time to no earlier than 90 days ago
+  if (startMs < ninetyDaysAgo) {
+    startMs = ninetyDaysAgo
   }
 
   // Don't generate data beyond current time

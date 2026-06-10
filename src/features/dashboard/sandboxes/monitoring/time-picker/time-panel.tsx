@@ -153,7 +153,7 @@ export const TimePanel = forwardRef<TimePanelRef, TimePanelProps>(
     const { minDate, maxDate } = useMemo(() => {
       const now = new Date()
 
-      // create new Date object for minDate (31 days ago)
+      // create new Date object for minDate (MAX_DAYS_AGO ago)
       const minDate = new Date(now.getTime() - MAX_DAYS_AGO)
       minDate.setHours(0, 0, 0, 0)
 
