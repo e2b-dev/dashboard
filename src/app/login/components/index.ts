@@ -2,6 +2,7 @@ import type { OryFlowComponentOverrides } from '@ory/elements-react'
 import { OryButton } from './custom-button'
 import { OryCard, OryCardFooter } from './custom-card'
 import { OryCardHeader } from './custom-card-header'
+import { OryDivider } from './custom-divider'
 import { OryFormGroup } from './custom-form-group'
 import { OryInput } from './custom-input'
 import { OryLabel } from './custom-label'
@@ -22,6 +23,7 @@ export const oryComponents: OryFlowComponentOverrides = {
     Root: OryCard,
     Header: OryCardHeader,
     Footer: OryCardFooter,
+    Divider: OryDivider,
   },
   Form: {
     Group: OryFormGroup,

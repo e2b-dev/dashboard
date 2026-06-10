@@ -17,5 +17,8 @@
     "utils": "@/lib/utils",
     "hooks": "@/lib/hooks"
   },
-  "iconLibrary": "lucide"
+  "iconLibrary": "lucide",
+  "registries": {
+    "@svgl": "https://svgl.app/r/{name}.json"
+  }
 }
