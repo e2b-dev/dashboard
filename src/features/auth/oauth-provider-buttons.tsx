@@ -5,7 +5,8 @@ import { useAction } from 'next-safe-action/hooks'
 import { AUTH_MIGRATION_IN_PROGRESS } from '@/configs/flags'
 import { signInWithOAuthAction } from '@/core/server/actions/auth-actions'
 import { Button } from '@/ui/primitives/button'
-import { GitHubLogo, GoogleLogo } from './logos'
+import { GitHubLogo } from './logos/github-logo'
+import { GoogleLogo } from './logos/google-logo'
 
 export function OAuthProviders() {
   const searchParams = useSearchParams()

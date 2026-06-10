@@ -2,7 +2,8 @@
 
 import type { OryNodeSsoButtonProps } from '@ory/elements-react'
 import type { ComponentType } from 'react'
-import { GitHubLogo, GoogleLogo } from '@/features/auth/logos'
+import { GitHubLogo } from '@/features/auth/logos/github-logo'
+import { GoogleLogo } from '@/features/auth/logos/google-logo'
 import { Button } from '@/ui/primitives/button'
 
 // Known OIDC providers get a branded logo and a "Continue with …" label. Other
@@ -10,6 +11,28 @@ import { Button } from '@/ui/primitives/button'
 const PROVIDERS: Record<string, { label: string; Logo: ComponentType }> = {
   google: { label: 'Continue with Google', Logo: GoogleLogo },
   github: { label: 'Continue with GitHub', Logo: GitHubLogo },
+}
+
+// The `provider` prop Ory passes comes from the node's label *context*, which
+// Kratos sets to the provider's human-facing label (e.g. "Google"), not a
+// stable lowercase id. The configured id lives on `node.attributes.value`. Match
+// leniently across the id, the prop, and the label text so casing / id naming
+// can't cause a miss.
+function resolveProvider({
+  node,
+  provider,
+}: Pick<OryNodeSsoButtonProps, 'node' | 'provider'>) {
+  const haystack = [
+    typeof node.attributes.value === 'string' ? node.attributes.value : '',
+    provider,
+    node.meta?.label?.text ?? '',
+  ]
+    .join(' ')
+    .toLowerCase()
+
+  if (haystack.includes('github')) return PROVIDERS.github
+  if (haystack.includes('google')) return PROVIDERS.google
+  return undefined
 }
 
 // Social/SSO buttons ("Continue with …"), styled as the dashboard's secondary
@@ -21,7 +44,7 @@ export function OrySsoButton({
   buttonProps,
   isSubmitting,
 }: OryNodeSsoButtonProps) {
-  const known = PROVIDERS[provider]
+  const known = resolveProvider({ node, provider })
   const label = known?.label ?? node.meta?.label?.text
   const Logo = known?.Logo
 
