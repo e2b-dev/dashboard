@@ -31,18 +31,28 @@ const getZonedDateParts = (
   value: Date,
   timezone: Timezone
 ): CalendarDateParts => {
-  const [yearPart, monthPart, dayPart] = new Intl.DateTimeFormat('en-CA', {
+  const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: timezone,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
   })
-    .format(value)
-    .split('-')
+    .formatToParts(value)
+    .reduce<Record<string, string>>((result, part) => {
+      if (
+        part.type === 'year' ||
+        part.type === 'month' ||
+        part.type === 'day'
+      ) {
+        result[part.type] = part.value
+      }
 
-  const year = Number.parseInt(yearPart ?? '', 10)
-  const month = Number.parseInt(monthPart ?? '', 10)
-  const day = Number.parseInt(dayPart ?? '', 10)
+      return result
+    }, {})
+
+  const year = Number.parseInt(parts.year ?? '', 10)
+  const month = Number.parseInt(parts.month ?? '', 10)
+  const day = Number.parseInt(parts.day ?? '', 10)
 
   if (Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) {
     throw new Error('Unable to format usage preset date')

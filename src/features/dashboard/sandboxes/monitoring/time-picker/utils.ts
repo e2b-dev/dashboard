@@ -1,5 +1,8 @@
 import { calculateStepForDuration } from '@/features/dashboard/sandboxes/monitoring/utils'
-import { formatDatetimeInput, tryParseDatetime } from '@/lib/utils/formatting'
+import {
+  formatZonedDateTimeInput,
+  type Timezone,
+} from '@/features/dashboard/timezone'
 import type { TimeframeState } from '@/lib/utils/timeframe'
 import {
   CUSTOM_PANEL_HEIGHT,
@@ -40,7 +43,10 @@ export function getDurationFromTimeframe(
  * Convert TimeframeState to formatted datetime strings
  * Handles both live and static modes with fallback to last hour
  */
-export function formatTimeframeValues(value: TimeframeState) {
+export function formatTimeframeValues(
+  value: TimeframeState,
+  timezone: Timezone
+) {
   const now = new Date()
 
   let startDateTime: string
@@ -50,16 +56,22 @@ export function formatTimeframeValues(value: TimeframeState) {
     const startTime = value.start || now.getTime() - value.range
     const endTime = value.end || now.getTime()
 
-    startDateTime = formatDatetimeInput(new Date(startTime))
-    endDateTime = formatDatetimeInput(new Date(endTime))
+    const startParts = formatZonedDateTimeInput(startTime, timezone)
+    const endParts = formatZonedDateTimeInput(endTime, timezone)
+    startDateTime = `${startParts.date} ${startParts.time}`
+    endDateTime = `${endParts.date} ${endParts.time}`
   } else if (value.mode === 'static' && value.start && value.end) {
-    startDateTime = formatDatetimeInput(new Date(value.start))
-    endDateTime = formatDatetimeInput(new Date(value.end))
+    const startParts = formatZonedDateTimeInput(value.start, timezone)
+    const endParts = formatZonedDateTimeInput(value.end, timezone)
+    startDateTime = `${startParts.date} ${startParts.time}`
+    endDateTime = `${endParts.date} ${endParts.time}`
   } else {
     // fallback to last hour when no valid timeframe
     const hourAgo = now.getTime() - 60 * 60 * 1000
-    startDateTime = formatDatetimeInput(new Date(hourAgo))
-    endDateTime = formatDatetimeInput(now)
+    const startParts = formatZonedDateTimeInput(hourAgo, timezone)
+    const endParts = formatZonedDateTimeInput(now, timezone)
+    startDateTime = `${startParts.date} ${startParts.time}`
+    endDateTime = `${endParts.date} ${endParts.time}`
   }
 
   return {
@@ -95,9 +107,4 @@ export function calculatePanelPosition(
     // will overflow but prevents layout breaks
     return 'right'
   }
-}
-
-export function parseDateTimeStrings(dateStr: string, timeStr: string) {
-  if (!dateStr || !timeStr) return null
-  return tryParseDatetime(`${dateStr} ${timeStr}`)
 }
