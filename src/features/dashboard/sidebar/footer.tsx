@@ -46,7 +46,12 @@ export default function DashboardSidebarFooter() {
             </SidebarMenuItem>
             <SidebarMenuItem key="docs">
               <SidebarMenuButton asChild tooltip="Documentation">
-                <Link href="/docs" target="_blank" rel="noopener noreferrer">
+                <Link
+                  href="/docs"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  prefetch={false}
+                >
                   <DocsIcon />
                   Documentation
                   <ExternalLinkIcon className="ml-auto !size-4 text-fg-tertiary" />
