@@ -87,6 +87,11 @@ export const clientSchema = z.object({
   // page. Read by @ory/nextjs and src/configs/ory.ts. Required when
   // AUTH_PROVIDER=ory; unused otherwise.
   NEXT_PUBLIC_ORY_SDK_URL: z.url().optional(),
+
+  // Opt-in flag ("1") for the custom @ory/elements-react login/registration UI.
+  // Set in non-production envs and by the local harness; unset in production
+  // (which keeps the existing /sign-in flow). See isOryCustomUiEnabled().
+  NEXT_PUBLIC_ORY_CUSTOM_UI: z.string().optional(),
 })
 
 const merged = serverSchema.extend(clientSchema.shape)
