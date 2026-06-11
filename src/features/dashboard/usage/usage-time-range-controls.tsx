@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   formatZonedDateRange,
   useTimezone,
@@ -46,8 +46,6 @@ export function UsageTimeRangeControls({
 }: UsageTimeRangeControlsProps) {
   const { timezone } = useTimezone()
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false)
-  const lastMatchedPresetIdRef = useRef<string | undefined>(undefined)
-  const previousTimezoneRef = useRef(timezone)
 
   const timeRangePresets = useMemo(
     () => getUsageTimeRangePresets(timezone),
@@ -64,33 +62,6 @@ export function UsageTimeRangeControls({
       ),
     [timeRangePresets, timeframe.start, timeframe.end]
   )
-
-  useEffect(() => {
-    if (previousTimezoneRef.current === timezone) return
-
-    previousTimezoneRef.current = timezone
-    const presetId = selectedPresetId ?? lastMatchedPresetIdRef.current
-    if (!presetId) return
-
-    const preset = timeRangePresets.find((option) => option.id === presetId)
-    if (!preset) return
-
-    const { start, end } = preset.getValue()
-    if (start === timeframe.start && end === timeframe.end) return
-
-    onTimeRangeChange(start, end)
-  }, [
-    onTimeRangeChange,
-    selectedPresetId,
-    timeframe.end,
-    timeframe.start,
-    timeRangePresets,
-    timezone,
-  ])
-
-  useEffect(() => {
-    lastMatchedPresetIdRef.current = selectedPresetId
-  }, [selectedPresetId])
 
   const rangeLabel = useMemo(() => {
     return formatZonedDateRange(timeframe.start, timeframe.end, timezone)
