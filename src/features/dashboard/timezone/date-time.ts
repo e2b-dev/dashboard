@@ -203,7 +203,15 @@ const DATE_FORMAT_PRESETS = {
   'exact-timestamp': 'yyyy-MM-dd HH:mm:ss zzz',
 } as const
 
-type DateFormatPreset = keyof typeof DATE_FORMAT_PRESETS | 'compact-timestamp'
+type StaticDateFormatPreset = keyof typeof DATE_FORMAT_PRESETS
+
+// Special presets resolved outside DATE_FORMAT_PRESETS:
+// compact-timestamp: Jun 8, 9:05:12 AM EDT (current year) / 2025 Jun 8, 9:05:12 AM EST
+// time-with-centiseconds: 09:05:09.87 AM
+type DateFormatPreset =
+  | StaticDateFormatPreset
+  | 'compact-timestamp'
+  | 'time-with-centiseconds'
 
 // Resolves a preset to a date-fns format string; compact-timestamp varies by year.
 // e.g. current year -> 'MMM d, h:mm:ss a zzz' (Jun 8, 9:05:12 AM EDT)
@@ -211,7 +219,7 @@ type DateFormatPreset = keyof typeof DATE_FORMAT_PRESETS | 'compact-timestamp'
 const resolveDateFormatPreset = (
   value: Date,
   timezone: Timezone,
-  preset: DateFormatPreset
+  preset: StaticDateFormatPreset | 'compact-timestamp'
 ): string => {
   if (preset === 'compact-timestamp') {
     const timestampYear = formatInTimeZone(value, timezone, 'yyyy')
@@ -258,12 +266,26 @@ interface FormatDateOptions {
   format?: DateFormatPreset
 }
 
+const formatTimeWithCentiseconds = (
+  value: Date,
+  timezone: Timezone
+): string => {
+  const centiseconds = Math.floor((value.getMilliseconds() / 10) % 100)
+    .toString()
+    .padStart(2, '0')
+
+  return `${formatInTimeZone(value, timezone, 'hh:mm:ss')}.${centiseconds} ${formatInTimeZone(value, timezone, 'a')}`
+}
+
 const formatDate = (
   value: string | number | Date,
   { timezone, format = 'date' }: FormatDateOptions
 ): string | null => {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return null
+
+  if (format === 'time-with-centiseconds')
+    return formatTimeWithCentiseconds(date, timezone)
 
   return formatInTimeZone(
     date,
@@ -276,18 +298,6 @@ const formatZonedExactTimestamp = (
   value: string | number | Date,
   timezone: Timezone
 ): string => formatInTimeZone(value, timezone, 'yyyy-MM-dd HH:mm:ss zzz')
-
-const formatZonedBuildLogTime = (
-  value: string | number | Date,
-  timezone: Timezone
-): string => {
-  const date = new Date(value)
-  const centiseconds = Math.floor((date.getMilliseconds() / 10) % 100)
-    .toString()
-    .padStart(2, '0')
-
-  return `${formatInTimeZone(value, timezone, 'hh:mm:ss')}.${centiseconds} ${formatInTimeZone(value, timezone, 'a')}`
-}
 
 const formatZonedTime = (
   value: string | number | Date,
@@ -321,7 +331,6 @@ export {
   createZonedTimeAxisLabelFormatter,
   formatDate,
   formatTimezoneAbbreviation,
-  formatZonedBuildLogTime,
   formatZonedDateRange,
   formatZonedDateTimeInput,
   formatZonedExactTimestamp,

@@ -10,7 +10,6 @@ export {
   createZonedTimeAxisLabelFormatter,
   formatDate,
   formatTimezoneAbbreviation,
-  formatZonedBuildLogTime,
   formatZonedDateRange,
   formatZonedDateTimeInput,
   formatZonedExactTimestamp,
