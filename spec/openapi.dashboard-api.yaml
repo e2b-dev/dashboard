@@ -557,7 +557,6 @@ components:
         - slug
         - tier
         - email
-        - profilePictureUrl
         - isBlocked
         - isBanned
         - blockedReason
@@ -576,9 +575,6 @@ components:
           type: string
         email:
           type: string
-        profilePictureUrl:
-          type: string
-          nullable: true
         isBlocked:
           type: boolean
         isBanned:
@@ -658,9 +654,6 @@ components:
           type: string
           minLength: 1
           maxLength: 255
-        profilePictureUrl:
-          type: string
-          nullable: true
 
     UpdateTeamResponse:
       type: object
@@ -673,9 +666,6 @@ components:
           format: uuid
         name:
           type: string
-        profilePictureUrl:
-          type: string
-          nullable: true
 
     AddTeamMemberRequest:
       type: object
