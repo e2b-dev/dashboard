@@ -890,6 +890,8 @@ export interface components {
       /** Format: email */
       oidc_user_email: string
       oidc_user_name?: string | null
+      signup_ip?: string
+      signup_user_agent?: string
     }
     AdminTeamBootstrapRequest: {
       /** @description Team name. */

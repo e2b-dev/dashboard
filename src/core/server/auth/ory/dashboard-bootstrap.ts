@@ -5,6 +5,7 @@ import { api } from '@/core/shared/clients/api'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import { decodeJwtClaims, readStringClaim, tokenFormat } from './jwt-claims'
+import { readOrySignupMetadataCookie } from './signup-metadata'
 
 type BootstrapOryUserInput = {
   accessToken: string
@@ -26,6 +27,15 @@ type OryTokenClaims = {
   name?: unknown
   given_name?: unknown
   preferred_username?: unknown
+}
+
+type DashboardBootstrapBody = {
+  oidc_issuer: string
+  oidc_user_id: string
+  oidc_user_email: string
+  oidc_user_name: string | null
+  signup_ip?: string
+  signup_user_agent?: string
 }
 
 export async function ensureOryUserBootstrapped(
@@ -109,11 +119,16 @@ async function bootstrapOryUserWithClaims(
       return false
     }
 
-    const body = {
+    const signupMetadata = await readOrySignupMetadataCookie()
+    const body: DashboardBootstrapBody = {
       oidc_issuer: claims.oidcIssuer,
       oidc_user_id: claims.oidcUserId,
       oidc_user_email: claims.oidcUserEmail,
       oidc_user_name: claims.oidcUserName,
+    }
+    if (signupMetadata?.signup_ip) body.signup_ip = signupMetadata.signup_ip
+    if (signupMetadata?.signup_user_agent) {
+      body.signup_user_agent = signupMetadata.signup_user_agent
     }
 
     const { error, response } = await api.POST('/admin/users/bootstrap', {

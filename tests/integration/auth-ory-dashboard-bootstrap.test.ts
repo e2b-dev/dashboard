@@ -8,6 +8,7 @@ const loggerMocks = vi.hoisted(() => ({
 }))
 
 const apiPostMock = vi.hoisted(() => vi.fn())
+const readSignupMetadataCookieMock = vi.hoisted(() => vi.fn())
 const originalDashboardApiAdminToken = process.env.DASHBOARD_API_ADMIN_TOKEN
 
 function jwt(claims: Record<string, unknown>) {
@@ -35,6 +36,10 @@ vi.mock('@/core/shared/clients/api', () => ({
   },
 }))
 
+vi.mock('@/core/server/auth/ory/signup-metadata', () => ({
+  readOrySignupMetadataCookie: readSignupMetadataCookieMock,
+}))
+
 const { ensureOryUserBootstrapped } = await import(
   '@/core/server/auth/ory/dashboard-bootstrap'
 )
@@ -43,6 +48,7 @@ describe('dashboard bootstrap for Ory users', () => {
   beforeEach(() => {
     process.env.DASHBOARD_API_ADMIN_TOKEN = 'admin-token'
     apiPostMock.mockReset()
+    readSignupMetadataCookieMock.mockReset().mockResolvedValue(null)
     loggerMocks.error.mockClear()
   })
 
@@ -77,6 +83,40 @@ describe('dashboard bootstrap for Ory users', () => {
         oidc_user_id: 'e2b-user-id',
         oidc_user_email: 'ada@example.test',
         oidc_user_name: 'Ada',
+      },
+      headers: { 'X-Admin-Token': 'admin-token' },
+    })
+  })
+
+  it('passes signup metadata to dashboard-api when available', async () => {
+    readSignupMetadataCookieMock.mockResolvedValue({
+      signup_ip: '203.0.113.10',
+      signup_user_agent: 'Mozilla/5.0',
+    })
+    apiPostMock.mockResolvedValue({
+      data: { id: 'team-1', slug: 'team-1' },
+      error: null,
+      response: { ok: true, status: 200, statusText: 'OK' },
+    })
+
+    const result = await ensureOryUserBootstrapped({
+      accessToken: jwt({
+        iss: 'https://ory.example.test',
+        sub: 'e2b-user-id',
+        email: 'ada@example.test',
+      }),
+      provider: 'ory',
+    })
+
+    expect(result).toBe(true)
+    expect(apiPostMock).toHaveBeenCalledWith('/admin/users/bootstrap', {
+      body: {
+        oidc_issuer: 'https://ory.example.test',
+        oidc_user_id: 'e2b-user-id',
+        oidc_user_email: 'ada@example.test',
+        oidc_user_name: null,
+        signup_ip: '203.0.113.10',
+        signup_user_agent: 'Mozilla/5.0',
       },
       headers: { 'X-Admin-Token': 'admin-token' },
     })
