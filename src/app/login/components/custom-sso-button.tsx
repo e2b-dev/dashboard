@@ -1,14 +1,17 @@
 'use client'
 
 import type { OryNodeSsoButtonProps } from '@ory/elements-react'
-import type { ComponentType } from 'react'
-import { GoogleLogo } from '@/features/auth/logos/google-logo'
+import type { ComponentType, SVGProps } from 'react'
+import { Google } from '@/components/ui/svgs/google'
 import { Button } from '@/ui/primitives/button'
 
 // Known OIDC providers get a branded logo and a "Continue with …" label. Other
 // providers fall back to whatever label Ory supplies, with no logo.
-const PROVIDERS: Record<string, { label: string; Logo: ComponentType }> = {
-  google: { label: 'Continue with Google', Logo: GoogleLogo },
+const PROVIDERS: Record<
+  string,
+  { label: string; Logo: ComponentType<SVGProps<SVGSVGElement>> }
+> = {
+  google: { label: 'Continue with Google', Logo: Google },
 }
 
 // The `provider` prop Ory passes comes from the node's label *context*, which
@@ -52,7 +55,9 @@ export function OrySsoButton({
       {...buttonProps}
       loading={isSubmitting ? 'Redirecting…' : undefined}
     >
-      {Logo && <Logo />}
+      {Logo && (
+        <Logo className="h-5 w-5" aria-hidden="true" focusable="false" />
+      )}
       {label}
     </Button>
   )

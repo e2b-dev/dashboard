@@ -4,10 +4,10 @@ import { useSearchParams } from 'next/navigation'
 import { useAction } from 'next-safe-action/hooks'
 import { GithubDark } from '@/components/ui/svgs/githubDark'
 import { GithubLight } from '@/components/ui/svgs/githubLight'
+import { Google } from '@/components/ui/svgs/google'
 import { AUTH_MIGRATION_IN_PROGRESS } from '@/configs/flags'
 import { signInWithOAuthAction } from '@/core/server/actions/auth-actions'
 import { Button } from '@/ui/primitives/button'
-import { GoogleLogo } from './logos/google-logo'
 
 // GitHub's mark is monochrome, so the svgl registry ships light/dark variants;
 // render both and toggle with Tailwind's `dark:` variant (class strategy) so
@@ -53,7 +53,7 @@ export function OAuthProviders() {
             : undefined
         }
       >
-        <GoogleLogo />
+        <Google className="h-5 w-5" aria-hidden="true" focusable="false" />
         Continue with Google
       </Button>
 

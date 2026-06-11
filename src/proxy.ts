@@ -6,6 +6,7 @@ import {
 } from 'next/server'
 import { auth as authjsMiddleware } from '@/auth'
 import { isOryAuthEnabled } from './configs/flags'
+import oryConfig from './configs/ory'
 import { getOryAuthRouteRedirect } from './core/server/auth/ory/auth-route-redirect'
 import { isOrySessionAuthenticated } from './core/server/auth/ory/authjs-session-boundary'
 import {
@@ -106,7 +107,12 @@ const ORY_SDK_PROXY_PREFIXES = [
 
 // Created once; the returned closure reads NEXT_PUBLIC_ORY_SDK_URL lazily at
 // request time, so this is inert in Supabase mode where the var is unset.
-const oryProxy = createOryMiddleware({})
+//
+// Pass the same `project` config as @ory/elements-react: the middleware's
+// rewriteUrls() uses its built-in Ory-path↔ui_url table to rewrite Kratos
+// redirect Location headers / response bodies (e.g. /login, /registration) onto
+// our own UI URLs. Without it those rewrites are no-ops.
+const oryProxy = createOryMiddleware({ project: oryConfig.project })
 
 function isOrySdkProxyPath(pathname: string): boolean {
   return ORY_SDK_PROXY_PREFIXES.some((prefix) => pathname.startsWith(prefix))
