@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   formatTimezoneLabel,
   getBrowserTimezone,
@@ -46,18 +46,33 @@ export const TimezoneSettings = ({ className }: TimezoneSettingsProps) => {
   const [open, setOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
-  const browserTimezone = useMemo(() => getBrowserTimezone(), [])
+  const [browserTimezone, setBrowserTimezone] = useState<Timezone | null>(null)
+  const [availableTimezones, setAvailableTimezones] = useState<Timezone[]>([
+    timezone,
+  ])
+
+  useEffect(() => {
+    const detectedBrowserTimezone = getBrowserTimezone()
+    setBrowserTimezone(detectedBrowserTimezone)
+    setAvailableTimezones(
+      Array.from(
+        new Set([timezone, detectedBrowserTimezone, ...getTimezones()])
+      )
+    )
+  }, [timezone])
+
   const timezoneOptions = useMemo(
     () =>
-      getTimezones().map((option) => ({
+      availableTimezones.map((option) => ({
         value: option,
         label: formatTimezoneLabel(option),
       })),
-    []
+    [availableTimezones]
   )
   const timezoneLabel = useMemo(() => formatTimezoneLabel(timezone), [timezone])
   const browserTimezoneLabel = useMemo(
-    () => formatTimezoneLabel(browserTimezone),
+    () =>
+      browserTimezone ? formatTimezoneLabel(browserTimezone) : 'Detecting...',
     [browserTimezone]
   )
   const isBrowserTimezoneSelected = timezone === browserTimezone
@@ -137,7 +152,7 @@ export const TimezoneSettings = ({ className }: TimezoneSettingsProps) => {
           Browser timezone:{' '}
           <span className="font-mono">{browserTimezoneLabel}</span>
         </p>
-        {!isBrowserTimezoneSelected ? (
+        {browserTimezone && !isBrowserTimezoneSelected ? (
           <Button
             type="button"
             variant="secondary"
