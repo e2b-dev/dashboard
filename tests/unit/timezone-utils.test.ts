@@ -55,6 +55,12 @@ describe('timezone utils', () => {
 
       expect(options).toContain(getBrowserTimezone())
     })
+
+    it('includes UTC even when Intl.supportedValuesOf omits it', () => {
+      const options = getTimezones()
+
+      expect(options).toContain('UTC')
+    })
   })
 
   describe('formatTimezoneLabel', () => {
