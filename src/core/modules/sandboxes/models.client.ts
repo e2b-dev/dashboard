@@ -20,3 +20,8 @@ export type ClientTeamMetric = Pick<
 }
 
 export type ClientTeamMetrics = Array<ClientTeamMetric>
+
+export type TeamMetricsResponse = {
+  metrics: ClientTeamMetrics
+  step: number
+}

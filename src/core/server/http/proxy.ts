@@ -6,18 +6,10 @@ import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { createAuthForProxy } from '@/core/server/auth'
 import { getMiddlewareRedirectFromPath } from '@/lib/utils/redirects'
 import { getRewriteForPath } from '@/lib/utils/rewrites'
+import { isProxyAuthRoute, isProxyDashboardRoute } from './proxy-plan'
 
-export function isAuthRoute(pathname: string): boolean {
-  return (
-    pathname.includes(AUTH_URLS.SIGN_IN) ||
-    pathname.includes(AUTH_URLS.SIGN_UP) ||
-    pathname.includes(AUTH_URLS.FORGOT_PASSWORD)
-  )
-}
-
-export function isDashboardRoute(pathname: string): boolean {
-  return pathname.startsWith(PROTECTED_URLS.DASHBOARD)
-}
+export { isProxyAuthRoute as isAuthRoute }
+export { isProxyDashboardRoute as isDashboardRoute }
 
 function isDashboardTerminalRoute(pathname: string): boolean {
   return (
@@ -34,14 +26,14 @@ export function getAuthRedirect(
   isAuthenticated: boolean
 ): NextResponse | null {
   if (
-    isDashboardRoute(request.nextUrl.pathname) &&
+    isProxyDashboardRoute(request.nextUrl.pathname) &&
     !isDashboardTerminalRoute(request.nextUrl.pathname) &&
     !isAuthenticated
   ) {
     return NextResponse.redirect(buildRedirectUrl(AUTH_URLS.SIGN_IN, request))
   }
 
-  if (isAuthRoute(request.nextUrl.pathname) && isAuthenticated) {
+  if (isProxyAuthRoute(request.nextUrl.pathname) && isAuthenticated) {
     return NextResponse.redirect(
       buildRedirectUrl(PROTECTED_URLS.DASHBOARD, request)
     )

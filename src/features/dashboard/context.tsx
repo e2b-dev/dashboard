@@ -2,8 +2,10 @@
 
 import { createContext, type ReactNode, useContext, useEffect } from 'react'
 import { useDebounceCallback } from 'usehooks-ts'
+import { COOKIE_KEYS } from '@/configs/cookies'
 import type { AuthUser } from '@/core/modules/auth/models'
 import type { TeamModel } from '@/core/modules/teams/models'
+import { setBrowserCookie } from '@/lib/utils/browser-cookies'
 
 interface DashboardContextValue {
   team: TeamModel
@@ -28,14 +30,9 @@ export function DashboardContextProvider({
   initialTeams,
   initialUser,
 }: DashboardContextProviderProps) {
-  const updateTeamCookieState = useDebounceCallback(async (team: TeamModel) => {
-    await fetch('/api/team/state', {
-      method: 'POST',
-      body: JSON.stringify({
-        teamId: team.id,
-        teamSlug: team.slug,
-      }),
-    })
+  const updateTeamCookieState = useDebounceCallback((team: TeamModel) => {
+    setBrowserCookie(COOKIE_KEYS.SELECTED_TEAM_ID, team.id)
+    setBrowserCookie(COOKIE_KEYS.SELECTED_TEAM_SLUG, team.slug)
   }, 1000)
 
   useEffect(() => {

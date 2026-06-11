@@ -42,9 +42,6 @@ export const USER_MESSAGES = {
   teamNameUpdated: {
     message: 'Team name updated.',
   },
-  teamLogoUpdated: {
-    message: 'Your team logo has been updated.',
-  },
   failedUpdateName: {
     message: 'Failed to update name.',
   },
@@ -53,15 +50,6 @@ export const USER_MESSAGES = {
   },
   failedUpdateTeamName: {
     message: 'Failed to update team name.',
-  },
-  failedUpdateLogo: {
-    message: 'Failed to update logo.',
-  },
-  teamLogoRemoved: {
-    message: 'Your team logo has been removed.',
-  },
-  failedRemoveLogo: {
-    message: 'Failed to remove logo.',
   },
   emailInUse: {
     message: 'E-mail already in use.',

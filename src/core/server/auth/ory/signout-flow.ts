@@ -44,13 +44,14 @@ export async function completeOrySignOut(origin = BASE_URL): Promise<string> {
     )
   }
 
-  if (userId) {
-    await revokeOryOAuthSessionsForSubject(userId)
-  }
-
-  if (identityId) {
-    await revokeKratosSessionsForIdentity(identityId)
-  }
+  // Hydra OAuth and Kratos session revocations are independent admin calls;
+  // run them concurrently to keep the sign-out action fast. Both helpers
+  // log-and-swallow their own errors, and the Kratos helper retries 429
+  // contention, so Promise.all never rejects here.
+  await Promise.all([
+    userId ? revokeOryOAuthSessionsForSubject(userId) : null,
+    identityId ? revokeKratosSessionsForIdentity(identityId) : null,
+  ])
 
   const logoutUrl = idToken ? buildOryLogoutUrl({ idToken, origin }) : null
   return (logoutUrl ?? postLogoutUrl).toString()
