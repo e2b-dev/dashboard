@@ -2,7 +2,7 @@
 
 import { Fragment, useState } from 'react'
 import { SandboxLifecycleEventTypeSchema } from '@/core/modules/sandboxes/lifecycle-event-types'
-import { formatZonedDate, useTimezone } from '@/features/dashboard/timezone'
+import { formatDate, useTimezone } from '@/features/dashboard/timezone'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { defaultSuccessToast, toast } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
@@ -191,7 +191,7 @@ export const WebhookTableRow = ({ webhook }: WebhookRowProps) => {
   const { timezone } = useTimezone()
 
   const createdAt = webhook.createdAt
-    ? (formatZonedDate(webhook.createdAt, timezone) ?? '-')
+    ? (formatDate(webhook.createdAt, { timezone }) ?? '-')
     : '-'
 
   return (

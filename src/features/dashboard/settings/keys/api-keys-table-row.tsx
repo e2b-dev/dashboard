@@ -5,7 +5,7 @@ import { CLI_GENERATED_KEY_NAME } from '@/configs/api'
 import type { TeamAPIKey } from '@/core/modules/keys/models'
 import { IdBadge, UserAvatar } from '@/features/dashboard/shared'
 import {
-  formatZonedDate,
+  formatDate,
   formatZonedExactTimestamp,
   useTimezone,
 } from '@/features/dashboard/timezone'
@@ -35,7 +35,7 @@ export const ApiKeysTableRow = ({ apiKey, onDelete }: ApiKeysTableRowProps) => {
   const { timezone } = useTimezone()
 
   const addedDate = apiKey.createdAt
-    ? (formatZonedDate(apiKey.createdAt, timezone) ?? '—')
+    ? (formatDate(apiKey.createdAt, { timezone }) ?? '—')
     : '—'
 
   const maskedKey = formatMaskedApiKey(apiKey)

@@ -1,21 +1,22 @@
 export { TimezoneProvider, useTimezone } from './context'
 export type {
+  FormatDateOptions,
   ZonedDateParts,
   ZonedDateRangeFormatOptions,
   ZonedDateTimeParts,
 } from './date-time'
 export {
   createZonedTimeAxisLabelFormatter,
+  formatDate,
   formatTimezoneAbbreviation,
   formatZonedBuildLogTime,
-  formatZonedCompactDate,
-  formatZonedDate,
   formatZonedDateRange,
   formatZonedDateTimeInput,
   formatZonedExactTimestamp,
   formatZonedRelativeDayTime,
   formatZonedTime,
   formatZonedTimeAxisLabel,
+  getCompactTimestampFormat,
   getZonedDateParts,
   getZonedDateTimeParts,
   shiftCalendarDays,

@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
 import type { TeamMetricsResponse } from '@/core/modules/sandboxes/models.client'
 import {
-  formatZonedCompactDate,
+  formatDate,
+  getCompactTimestampFormat,
   useTimezone,
 } from '@/features/dashboard/timezone'
 import { formatDecimal } from '@/lib/utils/formatting'
@@ -30,10 +31,10 @@ export function useStartRateDisplayMetric(
 
   return useMemo(() => {
     if (hoveredValue?.sandboxStartRate !== undefined) {
-      const formattedDate = formatZonedCompactDate(
-        hoveredValue.timestamp,
-        timezone
-      )
+      const formattedDate = formatDate(hoveredValue.timestamp, {
+        timezone,
+        format: getCompactTimestampFormat(hoveredValue.timestamp, timezone),
+      })
       return {
         displayValue: formatDecimal(hoveredValue.sandboxStartRate, 3),
         label: 'at',

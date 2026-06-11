@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { formatZonedDate, useTimezone } from '@/features/dashboard/timezone'
+import { formatDate, useTimezone } from '@/features/dashboard/timezone'
 import { cn } from '@/lib/utils'
 import { formatCurrency } from '@/lib/utils/formatting'
 import { Badge } from '@/ui/primitives/badge'
@@ -96,11 +96,10 @@ export default function BillingInvoicesTable() {
             invoices.map((invoice) => (
               <TableRow key={invoice.url} className="h-11">
                 <TableCell className="py-0">
-                  {formatZonedDate(
-                    invoice.date_created,
+                  {formatDate(invoice.date_created, {
                     timezone,
-                    'MMM dd, yyyy'
-                  ) ?? '—'}
+                    format: 'MMM dd, yyyy',
+                  }) ?? '—'}
                 </TableCell>
                 <TableCell className="py-0">
                   <Badge variant={invoice.paid ? 'positive' : 'warning'}>

@@ -193,18 +193,17 @@ const formatZonedDateRange = (
   )}`
 }
 
-const formatZonedCompactDate = (
+// Returns a date-fns format string for compact timestamps; e.g. 2026-06-08 -> 'MMM d, h:mm:ss a zzz'.
+const getCompactTimestampFormat = (
   timestamp: number,
   timezone: Timezone
 ): string => {
   const timestampYear = formatInTimeZone(timestamp, timezone, 'yyyy')
   const currentYear = formatInTimeZone(Date.now(), timezone, 'yyyy')
 
-  if (timestampYear === currentYear) {
-    return formatInTimeZone(timestamp, timezone, 'MMM d, h:mm:ss a zzz')
-  }
+  if (timestampYear === currentYear) return 'MMM d, h:mm:ss a zzz'
 
-  return formatInTimeZone(timestamp, timezone, 'yyyy MMM d, h:mm:ss a zzz')
+  return 'yyyy MMM d, h:mm:ss a zzz'
 }
 
 const formatZonedTimeAxisLabel = (
@@ -235,15 +234,19 @@ const createZonedTimeAxisLabelFormatter = (
   return (value: number) => formatInTimeZone(value, timezone, format)
 }
 
-const formatZonedDate = (
+interface FormatDateOptions {
+  timezone: Timezone
+  format?: string
+}
+
+const formatDate = (
   value: string | number | Date,
-  timezone: Timezone,
-  formatStr = 'MMM d, yyyy'
+  { timezone, format = 'MMM d, yyyy' }: FormatDateOptions
 ): string | null => {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return null
 
-  return formatInTimeZone(date, timezone, formatStr)
+  return formatInTimeZone(date, timezone, format)
 }
 
 const formatZonedExactTimestamp = (
@@ -293,16 +296,16 @@ const formatZonedRelativeDayTime = (
 
 export {
   createZonedTimeAxisLabelFormatter,
+  formatDate,
   formatTimezoneAbbreviation,
   formatZonedBuildLogTime,
-  formatZonedCompactDate,
-  formatZonedDate,
   formatZonedDateRange,
   formatZonedDateTimeInput,
   formatZonedExactTimestamp,
   formatZonedRelativeDayTime,
   formatZonedTime,
   formatZonedTimeAxisLabel,
+  getCompactTimestampFormat,
   getZonedDateParts,
   getZonedDateTimeParts,
   shiftCalendarDays,
@@ -310,4 +313,9 @@ export {
   zonedDateTimePartsToUtcTimestamp,
   zonedInstantToCalendarDate,
 }
-export type { ZonedDateParts, ZonedDateRangeFormatOptions, ZonedDateTimeParts }
+export type {
+  FormatDateOptions,
+  ZonedDateParts,
+  ZonedDateRangeFormatOptions,
+  ZonedDateTimeParts,
+}
