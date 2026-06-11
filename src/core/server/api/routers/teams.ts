@@ -163,5 +163,4 @@ export const teamsRouter = createTRPCRouter({
 
       revalidatePath(`/dashboard/${input.teamSlug}/members`, 'page')
     }),
-
 })

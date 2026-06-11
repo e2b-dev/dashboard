@@ -24,7 +24,6 @@ export interface TeamsRepository {
   ): Promise<RepoResult<DashboardComponents['schemas']['UpdateTeamResponse']>>
   addTeamMember(email: string): Promise<RepoResult<void>>
   removeTeamMember(userId: string): Promise<RepoResult<void>>
-
 }
 
 function requireTeamId(scope: TeamsRequestScope): RepoResult<string> {
@@ -174,6 +173,5 @@ export function createTeamsRepository(
 
       return ok(undefined)
     },
-
   }
 }
