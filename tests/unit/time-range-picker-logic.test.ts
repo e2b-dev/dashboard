@@ -52,6 +52,17 @@ describe('time-range-picker logic', () => {
       expect(canonical?.getTime()).toBe(display?.getTime())
     })
 
+    it('validates calendar dates without relying on browser-local midnight', () => {
+      const parsed = parsePickerDateTime(
+        '2026/12/31',
+        '23:00:00',
+        '00:00:00',
+        utc
+      )
+
+      expect(parsed?.toISOString()).toBe('2026-12-31T23:00:00.000Z')
+    })
+
     it('interprets wall-clock values in the selected timezone', () => {
       const parsed = parsePickerDateTime(
         '2026/06/08',

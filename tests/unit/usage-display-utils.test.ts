@@ -48,4 +48,22 @@ describe('usage display utilities', () => {
         .sandboxes.timestamp
     ).toBe('Jun 8, 6am')
   })
+
+  it('formats partial daily edge buckets using the actual range boundary hour', () => {
+    const timeframe = {
+      start: Date.UTC(2026, 5, 1, 13, 0, 0),
+      end: Date.UTC(2026, 5, 8, 15, 0, 0),
+    }
+    const startBucket = Date.UTC(2026, 5, 1, 4, 0, 0)
+    const endBucket = Date.UTC(2026, 5, 8, 4, 0, 0)
+
+    expect(
+      formatHoveredValues(1, 2, 3, 4, startBucket, timeframe, newYork).sandboxes
+        .timestamp
+    ).toBe('Jun 1, 9am - end of Jun 1')
+    expect(
+      formatHoveredValues(1, 2, 3, 4, endBucket, timeframe, newYork).sandboxes
+        .timestamp
+    ).toBe('Jun 8 - Jun 8, 11am')
+  })
 })
