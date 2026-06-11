@@ -3,10 +3,7 @@ import {
   LogLevelBadge,
   LogMessage,
 } from '@/features/dashboard/common/log-cells'
-import {
-  formatZonedBuildLogTime,
-  useTimezone,
-} from '@/features/dashboard/timezone'
+import { formatDate, useTimezone } from '@/features/dashboard/timezone'
 import { formatDurationCompact } from '@/lib/utils/formatting'
 import CopyButtonInline from '@/ui/copy-button-inline'
 
@@ -33,7 +30,10 @@ export const Timestamp = ({
     >
       {formatDurationCompact(millisAfterStart, true)}{' '}
       <span className="group-hover:text-current transition-colors text-fg-tertiary">
-        {formatZonedBuildLogTime(timestampUnix, timezone)}
+        {formatDate(timestampUnix, {
+          timezone,
+          format: 'time-with-centiseconds',
+        })}
       </span>
     </CopyButtonInline>
   )

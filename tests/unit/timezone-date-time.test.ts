@@ -4,7 +4,6 @@ import {
   createZonedTimeAxisLabelFormatter,
   formatDate,
   formatTimezoneAbbreviation,
-  formatZonedBuildLogTime,
   formatZonedDateRange,
   formatZonedDateTimeInput,
   formatZonedExactTimestamp,
@@ -210,15 +209,15 @@ describe('timezone date-time helpers', () => {
     })
   })
 
-  describe('formatZonedBuildLogTime', () => {
-    it('formats build log times with centiseconds in the selected timezone', () => {
-      const result = formatZonedBuildLogTime(
-        '2026-06-08T13:05:09.870Z',
-        newYork
-      )
+  describe('formatDate time-with-centiseconds preset', () => {
+    it('formats time with centiseconds in the selected timezone', () => {
+      const result = formatDate('2026-06-08T13:05:09.870Z', {
+        timezone: newYork,
+        format: 'time-with-centiseconds',
+      })
 
       expect(result).toContain('09:05:09.87')
-      expect(result.toLowerCase()).toMatch(/am|pm/)
+      expect(result?.toLowerCase()).toMatch(/am|pm/)
     })
   })
 
