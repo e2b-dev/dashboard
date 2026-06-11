@@ -85,7 +85,9 @@ function connectTerminalSandbox(
   options: { requestTimeoutMs?: number } = {}
 ) {
   return Sandbox.connect(sandboxId, {
+    apiUrl: process.env.NEXT_PUBLIC_INFRA_API_URL,
     domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
+    sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
     timeoutMs: TERMINAL_SANDBOX_TIMEOUT_MS,
     requestTimeoutMs: options.requestTimeoutMs,
     headers: {
@@ -104,7 +106,9 @@ function createTerminalSandbox({
   userId: string
 }) {
   return Sandbox.create(template, {
+    apiUrl: process.env.NEXT_PUBLIC_INFRA_API_URL,
     domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
+    sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
     timeoutMs: TERMINAL_SANDBOX_TIMEOUT_MS,
     lifecycle: {
       onTimeout: 'pause',
