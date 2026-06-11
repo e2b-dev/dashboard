@@ -210,8 +210,8 @@ export function normalizeToEndOfSamplingPeriod(
 
 /**
  * Aggregates hourly usage data into sampling periods (hourly, daily, or weekly).
- * For daily and weekly modes, partial buckets at the start and end of the timeframe
- * are truncated to align with the timeframe boundaries, normalized to hourly timestamps.
+ * Daily and weekly bucket timestamps represent the selected-zone start of that
+ * calendar period while totals include the hourly points returned for the query range.
  */
 function aggregateHours(
   hourlyData: UsageResponse['hour_usages'],

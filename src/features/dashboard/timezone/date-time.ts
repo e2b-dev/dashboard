@@ -27,6 +27,7 @@ const formatZonedDateTimeInput = (
 })
 
 // Converts timezone wall-clock parts to UTC; e.g. 2026-06-08 09:00:00 in America/New_York -> 2026-06-08T13:00:00.000Z.
+// DST gaps/overlaps are resolved by date-fns-tz consistently instead of rejected.
 const zonedDateTimePartsToUtcDate = (
   parts: ZonedDateTimeParts,
   timezone: Timezone
