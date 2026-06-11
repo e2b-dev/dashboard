@@ -12,7 +12,7 @@ interface TeamAvatarProps {
 export const TeamAvatar = ({ team, classNames }: TeamAvatarProps) => {
   return (
     <PatternAvatar
-      className={cn('size-9 [&>svg]:!size-full', classNames?.root)}
+      className={cn('size-9', classNames?.root)}
       letter={team.name}
     />
   )
