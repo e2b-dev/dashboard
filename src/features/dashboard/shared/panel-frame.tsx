@@ -12,7 +12,7 @@ type SandboxInspectFrameProps = React.ComponentProps<typeof motion.div> & {
   }
 }
 
-export default function SandboxInspectFrame({
+export function SandboxInspectFrame({
   className,
   classNames,
   children,
