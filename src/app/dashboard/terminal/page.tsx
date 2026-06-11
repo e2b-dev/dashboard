@@ -78,7 +78,15 @@ export default async function TerminalPage({
     : teamsResult.data.find((candidate) => candidate.id === resolvedTeam?.id)
 
   if (!team) {
-    return <TerminalUnavailable />
+    return (
+      <TerminalUnavailable
+        message={
+          terminalSandboxId
+            ? 'Sandbox not found or you do not have access to it.'
+            : undefined
+        }
+      />
+    )
   }
 
   const templateAvailable = terminalSandboxId
@@ -107,9 +115,11 @@ export default async function TerminalPage({
     <main className="h-dvh min-h-[360px] bg-bg p-3">
       <DashboardTerminal
         autoStart
-        initialCommand={command}
-        initialSandboxId={terminalSandboxId}
-        initialTemplate={terminalTemplate}
+        launchTarget={{
+          command,
+          sandboxId: terminalSandboxId,
+          template: terminalTemplate,
+        }}
         teamSlug={team.slug}
         userId={authContext.user.id}
       />

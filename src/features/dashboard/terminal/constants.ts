@@ -5,3 +5,12 @@ export const DEFAULT_PANEL_HEIGHT = 260
 export const MAX_TERMINAL_TRANSCRIPT_CHARS = 200_000
 export const TERMINAL_SESSION_STORAGE_PREFIX = 'dashboard-terminal-session'
 export const DEFAULT_CWD = '/home/user'
+export const TERMINAL_AUTOSTART_DEBOUNCE_MS = 300
+export const TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS = 15_000
+export const TERMINAL_ATTACH_MAX_RETRIES = 3
+export const TERMINAL_ATTACH_RETRY_BASE_DELAY_MS = 1500
+export const TERMINAL_ATTACH_RETRY_MAX_DELAY_MS = 5000
+// Sentinel server-error returned by openTerminalSandboxAction when the
+// server-side control-plane connect times out, so the client can rethrow a
+// TimeoutError and let the attach-retry logic recognize it.
+export const TERMINAL_SANDBOX_TIMEOUT_ERROR = 'terminal-sandbox-timeout'

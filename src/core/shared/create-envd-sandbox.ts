@@ -11,6 +11,7 @@ export interface EnvdSandboxParams {
   envdVersion: string
   envdAccessToken: string
   domain?: string
+  sandboxUrl?: string
   trafficAccessToken?: string
 }
 
@@ -47,5 +48,6 @@ export function createEnvdSandbox(params: EnvdSandboxParams): Sandbox {
     envdAccessToken: params.envdAccessToken,
     trafficAccessToken: params.trafficAccessToken,
     domain: params.domain,
+    sandboxUrl: params.sandboxUrl,
   })
 }

@@ -1,15 +1,11 @@
 'use client'
 
-import type { InferSafeActionFnResult } from 'next-safe-action'
-import type { NonUndefined } from 'react-hook-form'
-import type { getTeamMetrics } from '@/core/server/functions/sandboxes/get-team-metrics'
+import type { TeamMetricsResponse } from '@/core/modules/sandboxes/models.client'
 import { LiveSandboxCounter } from './live-counter'
 import { useRecentMetrics } from './monitoring/hooks/use-recent-metrics'
 
 interface LiveSandboxCounterClientProps {
-  initialData: NonUndefined<
-    InferSafeActionFnResult<typeof getTeamMetrics>['data']
-  >
+  initialData?: TeamMetricsResponse
   className?: string
 }
 
@@ -21,10 +17,14 @@ export function LiveSandboxCounterClient({
     initialData,
   })
 
-  const lastConcurrentSandboxes =
-    data?.metrics?.[(data?.metrics?.length ?? 0) - 1]?.concurrentSandboxes ?? 0
+  const latestMetric = data?.metrics.length
+    ? data.metrics[data.metrics.length - 1]
+    : undefined
 
   return (
-    <LiveSandboxCounter count={lastConcurrentSandboxes} className={className} />
+    <LiveSandboxCounter
+      count={latestMetric?.concurrentSandboxes}
+      className={className}
+    />
   )
 }

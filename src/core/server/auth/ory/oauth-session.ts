@@ -18,8 +18,12 @@ export async function revokeOryOAuthSessionsForSubject(
     return
   }
 
-  await revokeConsentSessions(subject, clientId)
-  await revokeLoginSessions(subject)
+  // Independent Hydra revocations; run concurrently. Each call logs and
+  // swallows its own errors.
+  await Promise.all([
+    revokeConsentSessions(subject, clientId),
+    revokeLoginSessions(subject),
+  ])
 }
 
 async function revokeConsentSessions(

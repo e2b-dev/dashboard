@@ -890,6 +890,8 @@ export interface components {
       /** Format: email */
       oidc_user_email: string
       oidc_user_name?: string | null
+      signup_ip?: string
+      signup_user_agent?: string
     }
     AdminTeamBootstrapRequest: {
       /** @description Team name. */
@@ -1033,7 +1035,6 @@ export interface components {
       slug: string
       tier: string
       email: string
-      profilePictureUrl: string | null
       isBlocked: boolean
       isBanned: boolean
       blockedReason: string | null
@@ -1064,13 +1065,11 @@ export interface components {
     }
     UpdateTeamRequest: {
       name?: string
-      profilePictureUrl?: string | null
     }
     UpdateTeamResponse: {
       /** Format: uuid */
       id: string
       name: string
-      profilePictureUrl?: string | null
     }
     AddTeamMemberRequest: {
       /** Format: email */

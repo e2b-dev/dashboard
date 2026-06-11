@@ -1,6 +1,7 @@
-import type Sandbox from 'e2b'
+import { type Sandbox, TimeoutError } from 'e2b'
 import { openTerminalSandboxAction } from '@/core/server/actions/terminal-actions'
 import { createEnvdSandbox } from '@/core/shared/create-envd-sandbox'
+import { TERMINAL_SANDBOX_TIMEOUT_ERROR } from './constants'
 import {
   clearStoredTerminalSession,
   readStoredTerminalSession,
@@ -10,6 +11,8 @@ import {
 interface OpenTerminalSandboxOptions {
   forceNewSandbox?: boolean
   onStatus: (message: string) => void
+  requestTimeoutMs?: number
+  shouldStoreSession?: boolean
   teamSlug: string
   userId: string
   sandboxId?: string
@@ -19,6 +22,8 @@ interface OpenTerminalSandboxOptions {
 export async function openTerminalSandbox({
   forceNewSandbox = false,
   onStatus,
+  requestTimeoutMs,
+  shouldStoreSession,
   teamSlug,
   userId,
   sandboxId,
@@ -26,7 +31,12 @@ export async function openTerminalSandbox({
 }: OpenTerminalSandboxOptions) {
   if (sandboxId) {
     onStatus(`Connecting to terminal sandbox ${sandboxId}...\r\n`)
-    const sandbox = await connectTerminalSandbox(teamSlug, template, sandboxId)
+    const sandbox = await connectTerminalSandbox({
+      teamSlug,
+      template,
+      sandboxId,
+      requestTimeoutMs,
+    })
 
     return {
       sandbox,
@@ -45,50 +55,63 @@ export async function openTerminalSandbox({
     )
 
     try {
-      sandbox = await connectTerminalSandbox(
+      sandbox = await connectTerminalSandbox({
         teamSlug,
         template,
-        storedTerminalSession.sandboxId
-      )
+        sandboxId: storedTerminalSession.sandboxId,
+        requestTimeoutMs,
+      })
     } catch {
       clearStoredTerminalSession(userId)
       onStatus('Stored terminal sandbox is unavailable.\r\n')
       onStatus(`Starting ${template} terminal sandbox...\r\n`)
-      sandbox = await createTerminalSandbox(teamSlug, template)
+      sandbox = await createTerminalSandbox({ teamSlug, template })
     }
   } else {
     onStatus(`Starting ${template} terminal sandbox...\r\n`)
-    sandbox = await createTerminalSandbox(teamSlug, template)
+    sandbox = await createTerminalSandbox({ teamSlug, template })
   }
 
-  writeStoredTerminalSession(userId, {
-    sandboxId: sandbox.sandboxId,
-    template,
-  })
+  if (shouldStoreSession ?? true) {
+    writeStoredTerminalSession(userId, {
+      sandboxId: sandbox.sandboxId,
+      template,
+    })
+  }
 
   return {
     sandbox,
   }
 }
 
-async function connectTerminalSandbox(
-  teamSlug: string,
-  template: string,
+async function connectTerminalSandbox({
+  teamSlug,
+  template,
+  sandboxId,
+  requestTimeoutMs,
+}: {
+  teamSlug: string
+  template: string
   sandboxId: string
-): Promise<Sandbox> {
+  requestTimeoutMs?: number
+}): Promise<Sandbox> {
   const result = await openTerminalSandboxAction({
     teamSlug,
     template,
     sandboxId,
+    requestTimeoutMs,
   })
 
   return toEnvdSandbox(result, 'Failed to connect to terminal sandbox')
 }
 
-async function createTerminalSandbox(
-  teamSlug: string,
+async function createTerminalSandbox({
+  teamSlug,
+  template,
+}: {
+  teamSlug: string
   template: string
-): Promise<Sandbox> {
+}): Promise<Sandbox> {
   const result = await openTerminalSandboxAction({ teamSlug, template })
 
   return toEnvdSandbox(result, 'Failed to create terminal sandbox')
@@ -99,11 +122,18 @@ function toEnvdSandbox(
   fallbackMessage: string
 ): Sandbox {
   if (!result?.data) {
+    // Preserve TimeoutError across the server-action boundary so the
+    // attach-retry logic can recognize and retry transient connect timeouts.
+    if (result?.serverError === TERMINAL_SANDBOX_TIMEOUT_ERROR) {
+      throw new TimeoutError(fallbackMessage)
+    }
+
     throw new Error(result?.serverError ?? fallbackMessage)
   }
 
   return createEnvdSandbox({
     ...result.data,
     domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
+    sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
   })
 }

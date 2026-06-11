@@ -1,6 +1,6 @@
 'use server'
 
-import Sandbox from 'e2b'
+import Sandbox, { TimeoutError } from 'e2b'
 import { z } from 'zod'
 import { authHeaders } from '@/configs/api'
 import {
@@ -11,13 +11,17 @@ import { returnServerError } from '@/core/server/actions/utils'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { SandboxIdSchema } from '@/core/shared/schemas/api'
 import { TeamSlugSchema } from '@/core/shared/schemas/team'
-import { TERMINAL_SANDBOX_TIMEOUT_MS } from '@/features/dashboard/terminal/constants'
+import {
+  TERMINAL_SANDBOX_TIMEOUT_ERROR,
+  TERMINAL_SANDBOX_TIMEOUT_MS,
+} from '@/features/dashboard/terminal/constants'
 import { normalizeTerminalTemplate } from '@/features/dashboard/terminal/template'
 
 const OpenTerminalSandboxSchema = z.object({
   teamSlug: TeamSlugSchema,
   template: z.string().min(1, 'Template is required'),
   sandboxId: SandboxIdSchema.optional(),
+  requestTimeoutMs: z.number().int().positive().optional(),
 })
 
 /**
@@ -44,7 +48,7 @@ export const openTerminalSandboxAction = authActionClient
   .metadata({ actionName: 'openTerminalSandbox' })
   .use(withTeamSlugResolution)
   .action(async ({ parsedInput, ctx }): Promise<TerminalSandboxConnection> => {
-    const { sandboxId, template } = parsedInput
+    const { sandboxId, template, requestTimeoutMs } = parsedInput
     const { session, teamId } = ctx
 
     const normalizedTemplate = normalizeTerminalTemplate(template)
@@ -53,7 +57,9 @@ export const openTerminalSandboxAction = authActionClient
     }
 
     const connectionOpts = {
+      apiUrl: process.env.NEXT_PUBLIC_INFRA_API_URL,
       domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
+      sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
       apiHeaders: {
         ...authHeaders(session.access_token, teamId),
       },
@@ -65,6 +71,7 @@ export const openTerminalSandboxAction = authActionClient
         const sandbox = await Sandbox.connect(sandboxId, {
           ...connectionOpts,
           timeoutMs: TERMINAL_SANDBOX_TIMEOUT_MS,
+          requestTimeoutMs,
         })
         resolvedSandboxId = sandbox.sandboxId
       } else {
@@ -96,6 +103,14 @@ export const openTerminalSandboxAction = authActionClient
           error instanceof Error ? error.message : 'Unknown error'
         }`
       )
+
+      // Surface timeouts with a stable sentinel so the client can rethrow a
+      // TimeoutError and let the attach-retry logic recognize them.
+      if (error instanceof TimeoutError) {
+        return returnServerError(TERMINAL_SANDBOX_TIMEOUT_ERROR, {
+          cause: error,
+        })
+      }
 
       return returnServerError(
         sandboxId
