@@ -121,15 +121,18 @@ function isOrySdkProxyPath(pathname: string): boolean {
 export async function proxy(request: NextRequest, event: NextFetchEvent) {
   const plan = classifyProxyRequest(request.nextUrl.pathname)
 
-  if (!isOryAuthEnabled() || !plan.needsOryAuthJsSession) {
-    return proxyCore(request, plan)
-  }
-
-  // Ory SDK traffic is proxied straight to Kratos before the Auth.js wrapper
-  // and auth gate run — those would otherwise rewrite/redirect these paths.
-  // Only the custom Elements UI (staging/preview) needs this same-origin proxy.
+  // Ory SDK traffic (/self-service, /sessions/whoami, …) must be forwarded to
+  // Kratos before anything else. These paths classify as public
+  // (needsOryAuthJsSession: false), so the bypass below would otherwise send
+  // them to proxyCore/Next instead of Kratos — breaking the custom UI's flow
+  // creation and form submits. Only the custom Elements UI needs this
+  // same-origin proxy (gated, so production is unaffected).
   if (isOryCustomUiEnabled() && isOrySdkProxyPath(request.nextUrl.pathname)) {
     return oryProxy(request)
+  }
+
+  if (!isOryAuthEnabled() || !plan.needsOryAuthJsSession) {
+    return proxyCore(request, plan)
   }
 
   return proxyWithOryAuth(request, event, plan)
