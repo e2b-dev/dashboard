@@ -3,7 +3,7 @@
 import { motion } from 'motion/react'
 import { cn } from '@/lib/utils'
 import { Alert, AlertDescription } from '@/ui/primitives/alert'
-import { AlertIcon, InfoIcon, SuccessIcon } from '@/ui/primitives/icons'
+import { AlertIcon, CheckCircleIcon, InfoIcon } from '@/ui/primitives/icons'
 
 // TODO: this type is used in more places than just authentication
 // -> should probably be renamed / moved to a more appropriate location
@@ -29,7 +29,7 @@ export function AuthFormMessage({
     >
       {'success' in message && (
         <Alert variant="success">
-          <SuccessIcon className="h-4 w-4" />
+          <CheckCircleIcon className="h-4 w-4" />
           <AlertDescription>{message.success}</AlertDescription>
         </Alert>
       )}

@@ -17,7 +17,8 @@ import {
 import CopyButtonInline from '@/ui/copy-button-inline'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
-import { CheckIcon, CloseIcon } from '@/ui/primitives/icons'
+import { CheckmarkIcon, CloseIcon } from '@/ui/primitives/icons'
+import { Loader } from '@/ui/primitives/loader'
 
 export function BuildId({ id }: { id: string }) {
   return (
@@ -57,6 +58,42 @@ export function Template({
     >
       <p className="truncate">{template}</p>
     </Button>
+  )
+}
+
+export function LoadMoreButton({
+  isLoading,
+  onLoadMore,
+}: {
+  isLoading: boolean
+  onLoadMore: () => void
+}) {
+  if (isLoading) {
+    return (
+      <span className="inline-flex items-center gap-1">
+        Loading
+        <Loader variant="dots" />
+      </span>
+    )
+  }
+  return (
+    <button
+      onClick={onLoadMore}
+      className="underline text-fg-secondary hover:text-accent-main-highlight transition-colors"
+    >
+      Load more
+    </button>
+  )
+}
+
+export function BackToTopButton({ onBackToTop }: { onBackToTop: () => void }) {
+  return (
+    <button
+      onClick={onBackToTop}
+      className="underline text-fg-secondary hover:text-accent-main-highlight transition-colors"
+    >
+      Back to top
+    </button>
   )
 }
 
@@ -125,7 +162,7 @@ export function Status({ status }: StatusProps) {
     success: {
       label: 'Success',
       variant: 'positive',
-      icon: <CheckIcon className="size-4 scale-125" />,
+      icon: <CheckmarkIcon className="size-4 scale-125" />,
     },
     failed: {
       label: 'Failed',

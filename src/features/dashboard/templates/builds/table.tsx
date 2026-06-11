@@ -16,7 +16,6 @@ import type {
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils/ui'
 import { useTRPC } from '@/trpc/client'
-import { BackToTopButton, LoadMoreButton } from '@/ui/pagination-buttons'
 import { ArrowDownIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
 import {
@@ -29,8 +28,10 @@ import {
 } from '@/ui/primitives/table'
 import BuildsEmpty from './empty'
 import {
+  BackToTopButton,
   BuildId,
   Duration,
+  LoadMoreButton,
   Reason,
   StartedAt,
   Status,

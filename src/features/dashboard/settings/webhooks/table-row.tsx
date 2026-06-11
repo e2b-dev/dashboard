@@ -16,12 +16,12 @@ import {
 } from '@/ui/primitives/dropdown-menu'
 import { IconButton } from '@/ui/primitives/icon-button'
 import {
-  CheckIcon,
+  CheckmarkIcon,
   CopyIcon,
   EditIcon,
   IndicatorDotsIcon,
   PrivateIcon,
-  TrashIcon,
+  RemoveIcon,
   WebhookIcon,
 } from '@/ui/primitives/icons'
 import { TableCell, TableRow } from '@/ui/primitives/table'
@@ -54,7 +54,7 @@ type WebhookNameAndUrlProps = {
 type UrlIconState = 'copied' | 'hovered' | 'idle'
 
 const urlIconMap: Record<UrlIconState, typeof WebhookIcon> = {
-  copied: CheckIcon,
+  copied: CheckmarkIcon,
   hovered: CopyIcon,
   idle: WebhookIcon,
 }
@@ -170,7 +170,7 @@ const WebhookRowActions = ({ webhook }: WebhookRowActionsProps) => {
           </UpsertWebhookDialog>
           <DeleteWebhookDialog webhook={webhook}>
             <DropdownMenuItem inset onSelect={(e) => e.preventDefault()}>
-              <TrashIcon className={actionIconClassName} />
+              <RemoveIcon className={actionIconClassName} />
               Delete
             </DropdownMenuItem>
           </DeleteWebhookDialog>

@@ -1,7 +1,6 @@
 import type { Table } from '@tanstack/react-table'
 import { Suspense } from 'react'
 import type { Template } from '@/core/modules/templates/models'
-import { useTemplateTableStore } from './stores/table-store'
 import TemplatesTableFilters from './table-filters'
 import { SearchInput } from './table-search'
 
@@ -12,16 +11,13 @@ interface TemplatesHeaderProps {
 export default function TemplatesHeader({ table }: TemplatesHeaderProps) {
   'use no memo'
 
-  const { globalFilter, cpuCount, memoryMB, isPublic } = useTemplateTableStore()
-  const isFiltered =
-    Boolean(globalFilter) ||
-    cpuCount !== undefined ||
-    memoryMB !== undefined ||
-    isPublic !== undefined
+  const { columnFilters, globalFilter } = table.getState()
+  const showFilteredRowCount = columnFilters.length > 0 || Boolean(globalFilter)
 
-  // With server-side pagination we only know how many rows are currently
-  // loaded, not the grand total.
-  const loadedCount = table.options.data.length
+  const totalCount = table.options.data.length
+  const filteredCount = showFilteredRowCount
+    ? table.getFilteredRowModel().rows.length
+    : totalCount
 
   return (
     <div className="flex min-w-0 flex-wrap items-start gap-1 sm:items-center">
@@ -37,12 +33,17 @@ export default function TemplatesHeader({ table }: TemplatesHeaderProps) {
       <div className="hidden w-2 shrink-0 sm:block" aria-hidden="true" />
 
       <span className="prose-label-highlight h-9 flex w-full min-w-0 items-center gap-1 uppercase sm:w-auto">
-        <span className="text-fg">
-          {loadedCount} {loadedCount === 1 ? 'template' : 'templates'}
-        </span>
-        {isFiltered ? (
-          <span className="text-fg-tertiary"> · filtered</span>
-        ) : null}
+        {showFilteredRowCount ? (
+          <>
+            <span className="text-fg">
+              {filteredCount} {filteredCount === 1 ? 'result' : 'results'}
+            </span>
+            <span className="text-fg-tertiary"> · </span>
+            <span className="text-fg-tertiary">{totalCount} total</span>
+          </>
+        ) : (
+          <span className="text-fg-tertiary">{totalCount} total</span>
+        )}
       </span>
     </div>
   )

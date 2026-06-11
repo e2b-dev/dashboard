@@ -19,7 +19,7 @@ import {
 import {
   AccountSettingsIcon,
   AddIcon,
-  LogoutIcon,
+  LogOutIcon,
   UnpackIcon,
 } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
@@ -117,7 +117,7 @@ export default function DashboardSidebarMenu() {
                 disabled={isLoggingOut}
                 onSelect={handleLogout}
               >
-                <LogoutIcon className="ml-0.5" /> Log out
+                <LogOutIcon className="ml-0.5" /> Log out
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>

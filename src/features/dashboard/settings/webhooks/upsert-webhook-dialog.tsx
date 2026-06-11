@@ -28,7 +28,7 @@ import {
   DialogTrigger,
 } from '@/ui/primitives/dialog'
 import { Form } from '@/ui/primitives/form'
-import { AddIcon, CheckIcon } from '@/ui/primitives/icons'
+import { AddIcon, CheckmarkIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
 import { useDashboard } from '../../context'
 import { DiscardWebhookChangesDialog } from './discard-webhook-changes-dialog'
@@ -306,7 +306,7 @@ export function UpsertWebhookDialog({
                     className="w-full"
                     disabled={!isStep1Valid || !hasChanges}
                   >
-                    <CheckIcon className="size-4" />
+                    <CheckmarkIcon className="size-4" />
                     Confirm
                   </Button>
                 ) : currentStep === 1 ? (

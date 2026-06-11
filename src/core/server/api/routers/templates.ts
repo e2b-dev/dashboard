@@ -36,44 +36,11 @@ const teamTemplatesRepositoryProcedure = protectedTeamProcedure.use(
 export const templatesRouter = createTRPCRouter({
   // QUERIES
 
-  getTemplates: teamTemplatesRepositoryProcedure
-    .input(
-      z.object({
-        cursor: z.string().optional(),
-        limit: z.number().int().min(1).max(100).default(50),
-        cpuCount: z.number().int().positive().optional(),
-        memoryMB: z.number().int().positive().optional(),
-        public: z.boolean().optional(),
-        search: z.string().optional(),
-        sort: z
-          .enum([
-            'name_asc',
-            'name_desc',
-            'cpu_count_asc',
-            'cpu_count_desc',
-            'memory_mb_asc',
-            'memory_mb_desc',
-            'created_at_asc',
-            'created_at_desc',
-            'updated_at_asc',
-            'updated_at_desc',
-          ])
-          .default('updated_at_desc'),
-      })
-    )
-    .query(async ({ ctx, input }) => {
-      const result = await ctx.templatesRepository.listTeamTemplates({
-        cursor: input.cursor,
-        limit: input.limit,
-        cpuCount: input.cpuCount,
-        memoryMB: input.memoryMB,
-        public: input.public,
-        search: input.search,
-        sort: input.sort,
-      })
-      if (!result.ok) throwTRPCErrorFromRepoError(result.error)
-      return result.data
-    }),
+  getTemplates: teamTemplatesRepositoryProcedure.query(async ({ ctx }) => {
+    const result = await ctx.templatesRepository.getTeamTemplates()
+    if (!result.ok) throwTRPCErrorFromRepoError(result.error)
+    return result.data
+  }),
 
   getDefaultTemplatesCached: templatesRepositoryProcedure.query(
     async ({ ctx }) => {
