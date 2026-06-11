@@ -5,12 +5,6 @@ const loggerMocks = vi.hoisted(() => ({
   warn: vi.fn(),
 }))
 
-vi.mock('@/core/shared/clients/supabase/admin', () => ({
-  supabaseAdmin: {
-    from: vi.fn(),
-  },
-}))
-
 vi.mock('@/core/shared/clients/logger/logger', () => ({
   l: loggerMocks,
   serializeErrorForLog: vi.fn((error: unknown) => error),
@@ -45,7 +39,7 @@ const baseApiKey = {
 }
 
 describe('createKeysRepository', () => {
-  it('hydrates creator emails from Supabase Auth when listing API keys', async () => {
+  it('hydrates creator emails when listing API keys', async () => {
     const firstUserId = '11111111-1111-1111-1111-111111111111'
     const secondUserId = '22222222-2222-2222-2222-222222222222'
     const resolveAuthUserEmailsById = vi.fn().mockResolvedValue(

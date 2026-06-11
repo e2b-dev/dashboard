@@ -1,7 +1,6 @@
 import { z } from 'zod'
 
 export const serverSchema = z.object({
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
   KV_REST_API_TOKEN: z.string().min(1).optional(),
   KV_REST_API_URL: z.url().optional(),
 
@@ -89,7 +88,6 @@ const merged = serverSchema.merge(clientSchema)
 type MergedEnv = z.infer<typeof merged>
 
 const supabaseRequiredEnvVars = [
-  'SUPABASE_SERVICE_ROLE_KEY',
   'NEXT_PUBLIC_SUPABASE_URL',
   'NEXT_PUBLIC_SUPABASE_ANON_KEY',
 ] as const satisfies readonly (keyof MergedEnv)[]
