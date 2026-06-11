@@ -170,7 +170,7 @@ describe('createKeysRepository', () => {
           userCount: 1,
         },
       },
-      'Failed to resolve creator emails from auth provider'
+      'Failed to resolve creator emails from dashboard-api'
     )
   })
 })

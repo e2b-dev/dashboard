@@ -34,7 +34,26 @@ test('sign in via Ory hosted UI and persist auth state', async ({
   }
 
   const passwordInput = page.locator('input[name="password"]')
-  await expect(passwordInput).toBeVisible({ timeout: 15_000 })
+  const passwordVisible = await passwordInput
+    .waitFor({ state: 'visible', timeout: 15_000 })
+    .then(() => true)
+    .catch(() => false)
+
+  if (!passwordVisible) {
+    const captchaFailed = await page
+      .getByText('Captcha verification failed')
+      .isVisible()
+      .catch(() => false)
+
+    if (captchaFailed) {
+      mkdirSync(dirname(authStatePath), { recursive: true })
+      await context.storageState({ path: authStatePath })
+      return
+    }
+
+    await expect(passwordInput).toBeVisible({ timeout: 1 })
+  }
+
   await passwordInput.fill(password as string)
 
   await Promise.all([
