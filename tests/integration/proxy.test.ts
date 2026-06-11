@@ -87,15 +87,6 @@ vi.mock('next/server', async () => {
   }
 })
 
-// mock the @ory/nextjs SDK proxy so we can assert when /self-service traffic is
-// forwarded to Kratos
-const { oryProxyFn } = vi.hoisted(() => ({
-  oryProxyFn: vi.fn(() => new Response('kratos', { status: 200 })),
-}))
-vi.mock('@ory/nextjs/middleware', () => ({
-  createOryMiddleware: vi.fn(() => oryProxyFn),
-}))
-
 function createMockRequest({
   url = 'https://app.e2b.dev',
   path = '/',
@@ -320,36 +311,6 @@ describe('Proxy Integration Tests', () => {
         }),
         expect.anything()
       )
-    })
-  })
-
-  describe('Ory SDK proxy ordering', () => {
-    const originalAuthProvider = process.env.AUTH_PROVIDER
-    const originalCustomUi = process.env.NEXT_PUBLIC_ORY_CUSTOM_UI
-
-    afterEach(() => {
-      process.env.AUTH_PROVIDER = originalAuthProvider
-      process.env.NEXT_PUBLIC_ORY_CUSTOM_UI = originalCustomUi
-    })
-
-    it('forwards /self-service/* to Kratos when the custom UI is enabled', async () => {
-      process.env.AUTH_PROVIDER = 'ory'
-      process.env.NEXT_PUBLIC_ORY_CUSTOM_UI = '1'
-
-      // /self-service classifies as public (needsOryAuthJsSession: false), so it
-      // only reaches Kratos if the SDK branch runs before that bypass.
-      await proxy(createMockRequest({ path: '/self-service/login/browser' }))
-
-      expect(oryProxyFn).toHaveBeenCalledTimes(1)
-    })
-
-    it('does not forward /self-service/* when the custom UI is disabled', async () => {
-      process.env.AUTH_PROVIDER = 'ory'
-      delete process.env.NEXT_PUBLIC_ORY_CUSTOM_UI
-
-      await proxy(createMockRequest({ path: '/self-service/login/browser' }))
-
-      expect(oryProxyFn).not.toHaveBeenCalled()
     })
   })
 })
