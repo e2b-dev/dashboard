@@ -9,11 +9,6 @@ import { AUTH_MIGRATION_IN_PROGRESS } from '@/configs/flags'
 import { signInWithOAuthAction } from '@/core/server/actions/auth-actions'
 import { Button } from '@/ui/primitives/button'
 
-// GitHub's mark is monochrome, so the svgl registry ships light/dark variants;
-// render both and toggle with Tailwind's `dark:` variant (class strategy) so
-// there's no theme-flash. The hidden variant is display:none, so it doesn't
-// affect the button's flex `gap`. GithubLight is the dark mark (light mode);
-// GithubDark is the light mark (dark mode).
 function GitHubLogo() {
   return (
     <>

@@ -30,6 +30,12 @@ export function isOryAuthEnabled() {
   return process.env.AUTH_PROVIDER === 'ory'
 }
 
+// The custom @ory/elements-react login/registration UI is gated to non-production
+// (staging/preview); production keeps Ory auth on but uses its existing flow.
+export function isOryCustomUiEnabled() {
+  return isOryAuthEnabled() && process.env.VERCEL_ENV !== 'production'
+}
+
 // Freezes interactive auth entry points while we migrate identity stores.
 // When on: blocks sign-ups and sign-ins so OAuth callback URLs can move
 // between providers without sending users into broken provider flows.

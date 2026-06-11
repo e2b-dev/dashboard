@@ -4,8 +4,6 @@ import type { OryNodeLabelProps } from '@ory/elements-react'
 import { cn } from '@/lib/utils'
 import { Label } from '@/ui/primitives/label'
 
-// Wraps each field with the dashboard's uppercase <Label> above the input, plus
-// any Kratos validation messages below — mirroring the dashboard's FormItem.
 export function OryLabel({ node, children, fieldError }: OryNodeLabelProps) {
   const label = node.meta?.label?.text
   const messages = node.messages ?? []

@@ -5,7 +5,7 @@ import {
   NextResponse,
 } from 'next/server'
 import { auth as authjsMiddleware } from '@/auth'
-import { isOryAuthEnabled } from './configs/flags'
+import { isOryAuthEnabled, isOryCustomUiEnabled } from './configs/flags'
 import oryConfig from './configs/ory'
 import { getOryAuthRouteRedirect } from './core/server/auth/ory/auth-route-redirect'
 import { isOrySessionAuthenticated } from './core/server/auth/ory/authjs-session-boundary'
@@ -127,7 +127,8 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
 
   // Ory SDK traffic is proxied straight to Kratos before the Auth.js wrapper
   // and auth gate run — those would otherwise rewrite/redirect these paths.
-  if (isOrySdkProxyPath(request.nextUrl.pathname)) {
+  // Only the custom Elements UI (staging/preview) needs this same-origin proxy.
+  if (isOryCustomUiEnabled() && isOrySdkProxyPath(request.nextUrl.pathname)) {
     return oryProxy(request)
   }
 

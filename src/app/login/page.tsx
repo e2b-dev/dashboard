@@ -1,6 +1,9 @@
 import { getLoginFlow, type OryPageParams } from '@ory/nextjs/app'
 import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
+import { isOryCustomUiEnabled } from '@/configs/flags'
 import oryConfig from '@/configs/ory'
+import { AUTH_URLS } from '@/configs/urls'
 import { LoginCard } from './login-card'
 
 // Custom login page rendered with @ory/elements-react. This is the URL both
@@ -15,6 +18,12 @@ import { LoginCard } from './login-card'
 //     the Kratos action URLs onto this origin so the form posts through the
 //     proxy wired in src/proxy.ts.
 export default async function OryLoginPage(props: OryPageParams) {
+  // The custom Elements UI is staging/preview-only; production uses Ory's
+  // existing flow via /sign-in.
+  if (!isOryCustomUiEnabled()) {
+    redirect(AUTH_URLS.SIGN_IN)
+  }
+
   const flow = await getLoginFlow(oryConfig, props.searchParams)
 
   // getLoginFlow redirects (to create or restart a flow) in the cases above; a

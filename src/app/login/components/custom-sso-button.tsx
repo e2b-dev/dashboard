@@ -5,8 +5,6 @@ import type { ComponentType, SVGProps } from 'react'
 import { Google } from '@/components/ui/svgs/google'
 import { Button } from '@/ui/primitives/button'
 
-// Known OIDC providers get a branded logo and a "Continue with …" label. Other
-// providers fall back to whatever label Ory supplies, with no logo.
 const PROVIDERS: Record<
   string,
   { label: string; Logo: ComponentType<SVGProps<SVGSVGElement>> }
@@ -14,11 +12,9 @@ const PROVIDERS: Record<
   google: { label: 'Continue with Google', Logo: Google },
 }
 
-// The `provider` prop Ory passes comes from the node's label *context*, which
-// Kratos sets to the provider's human-facing label (e.g. "Google"), not a
-// stable lowercase id. The configured id lives on `node.attributes.value`. Match
-// leniently across the id, the prop, and the label text so casing / id naming
-// can't cause a miss.
+// Ory's `provider` prop is the label *context* (a display name like "Google"),
+// not a stable id — the id is on `node.attributes.value`. Match leniently across
+// id, prop, and label text so casing / naming can't cause a miss.
 function resolveProvider({
   node,
   provider,
@@ -35,9 +31,6 @@ function resolveProvider({
   return undefined
 }
 
-// Social/SSO buttons ("Continue with …"), styled as the dashboard's secondary
-// button. Only rendered when Kratos has OIDC providers enabled (the local
-// harness disables OIDC, so this is dormant there).
 export function OrySsoButton({
   node,
   provider,

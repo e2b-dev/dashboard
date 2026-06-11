@@ -5,18 +5,10 @@ import { useOryFlow } from '@ory/elements-react'
 import Link from 'next/link'
 import type { PropsWithChildren } from 'react'
 
-// Card container (Card.Root). Replaces Ory's DefaultCard — the white, rounded,
-// heavily-padded, fixed-480px surface — with the dashboard's compact bordered
-// card. We no longer load Ory's theme stylesheet, so this is styled entirely
-// with the dashboard's own classes.
 export function OryCard({ children }: PropsWithChildren) {
   return <div className="bg-bg flex w-full flex-col border p-6">{children}</div>
 }
 
-// Card footer, shared by the login and registration flows. Login shows the
-// "Sign up" cross-link; registration shows the "Sign in" cross-link plus the
-// legal copy from the mockup. The card sets no flex `gap`, so the footer owns
-// its own top margin.
 export function OryCardFooter() {
   const { flowType } = useOryFlow()
 

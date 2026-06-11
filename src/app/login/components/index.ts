@@ -9,9 +9,6 @@ import { OryLabel } from './custom-label'
 import { OryMessageContent, OryMessageRoot } from './custom-message'
 import { OrySsoButton } from './custom-sso-button'
 
-// Full set of dashboard-styled components for the Ory login flow. We render
-// every visible slot ourselves and do NOT import Ory's theme stylesheet, so the
-// card is styled purely with the dashboard's design system.
 export const oryComponents: OryFlowComponentOverrides = {
   Node: {
     Button: OryButton,
