@@ -90,6 +90,7 @@ type MergedEnv = z.infer<typeof merged>
 const supabaseRequiredEnvVars = [
   'NEXT_PUBLIC_SUPABASE_URL',
   'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+  'DASHBOARD_API_ADMIN_TOKEN',
 ] as const satisfies readonly (keyof MergedEnv)[]
 
 const oryRequiredEnvVars = [
