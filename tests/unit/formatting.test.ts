@@ -3,9 +3,7 @@ import {
   formatAveragingPeriod,
   formatChartTimestampLocal,
   formatChartTimestampUTC,
-  formatCompactDate,
   formatCPUCores,
-  formatDate,
   formatDecimal,
   formatDuration,
   formatMemory,
@@ -59,37 +57,6 @@ describe('Date & Time Formatting', () => {
     it('formats with date when showDate is true', () => {
       const timestamp = new Date('2024-01-05T14:30:45Z').getTime()
       expect(formatChartTimestampLocal(timestamp, true)).toBe('Jan 5')
-    })
-  })
-
-  describe('formatCompactDate', () => {
-    it('formats current year date without year', () => {
-      const timestamp = new Date('2024-01-05T14:30:00Z').getTime()
-      const result = formatCompactDate(timestamp)
-      expect(result).toContain('Jan 5')
-      expect(result).not.toContain('2024')
-    })
-
-    it('formats different year date with year', () => {
-      const timestamp = new Date('2023-01-05T14:30:00Z').getTime()
-      const result = formatCompactDate(timestamp)
-      expect(result).toContain('2023')
-    })
-  })
-
-  describe('formatDate', () => {
-    it('formats a date with the requested structure', () => {
-      const date = new Date('2024-01-05T14:30:00Z')
-      expect(formatDate(date, 'MMM d')).toBe('Jan 5')
-    })
-
-    it('supports a format that includes the year', () => {
-      const date = new Date('2024-01-05T14:30:00Z')
-      expect(formatDate(date, 'MMM d, yyyy')).toBe('Jan 5, 2024')
-    })
-
-    it('returns null for invalid dates', () => {
-      expect(formatDate(new Date('not-a-date'), 'MMM d')).toBeNull()
     })
   })
 

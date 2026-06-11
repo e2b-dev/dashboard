@@ -4,7 +4,7 @@
  */
 
 import * as chrono from 'chrono-node'
-import { format, isThisYear, isValid } from 'date-fns'
+import { format, isValid } from 'date-fns'
 import { formatInTimeZone } from 'date-fns-tz'
 
 // ============================================================================
@@ -160,126 +160,6 @@ export const formatRelativeAgo = (date: Date): string => {
 
   const years = Math.floor(days / 365)
   return `${years}y ago`
-}
-
-/** Formats a UTC timestamp for tooltips; e.g. `new Date('2025-09-29T14:18:49.000Z')` -> `"2025-09-29T14:18:49+00:00"` */
-export const formatUTCTimestamp = (date: Date): string =>
-  formatInTimeZone(date, 'UTC', "yyyy-MM-dd'T'HH:mm:ssxxx")
-
-/**
- * Format a date for compact display (used in chart range labels)
- * @param timestamp - Unix timestamp in milliseconds
- * @returns Formatted date string
- */
-export function formatCompactDate(timestamp: number): string {
-  const date = new Date(timestamp)
-
-  if (isThisYear(date)) {
-    return format(date, 'MMM d, h:mm:ss a zzz')
-  }
-
-  return format(date, 'yyyy MMM d, h:mm:ss a zzz')
-}
-
-const DATE_STRUCTURES = ['MMM d', 'MMM d, yyyy'] as const
-
-type DateStructure = (typeof DATE_STRUCTURES)[number]
-
-/**
- * Returns a formatted date string
- * @param date - Date to format
- * @param dateStructure - Supported date format structure
- * @returns Formatted date string (e.g., "Apr 8, 2026") or null for invalid dates
- */
-export const formatDate = (
-  date: Date,
-  dateStructure: DateStructure
-): string | null => {
-  if (!isValid(date)) return null
-  return format(date, dateStructure)
-}
-
-export function formatDay(timestamp: number): string {
-  if (isThisYear(timestamp)) {
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-    }).format(timestamp)
-  }
-
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }).format(timestamp)
-}
-
-/**
- * Format a timestamp to show date and hour (for hourly aggregations)
- * @param timestamp - Unix timestamp in milliseconds
- * @returns Formatted string (e.g., "Jan 5, 2pm" or "Jan 5, 2024, 2pm")
- */
-export function formatHour(timestamp: number): string {
-  const date = new Date(timestamp)
-  const hour = date.getHours()
-  const ampm = hour >= 12 ? 'pm' : 'am'
-  const hour12 = hour % 12 || 12
-
-  if (isThisYear(timestamp)) {
-    return (
-      new Intl.DateTimeFormat('en-US', {
-        month: 'short',
-        day: 'numeric',
-      }).format(timestamp) + `, ${hour12}${ampm}`
-    )
-  }
-
-  return (
-    new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    }).format(timestamp) + `, ${hour12}${ampm}`
-  )
-}
-
-/**
- * Format a date range (e.g., for weekly aggregations)
- * @param startTimestamp - Start of the range in milliseconds
- * @param endTimestamp - End of the range in milliseconds
- * @returns Formatted date range string (e.g., "Jan 1 - Jan 7" or "Dec 26, 2023 - Jan 1, 2024")
- */
-export function formatDateRange(
-  startTimestamp: number,
-  endTimestamp: number
-): string {
-  const startDate = new Date(startTimestamp)
-  const endDate = new Date(endTimestamp)
-
-  const startYear = startDate.getFullYear()
-  const endYear = endDate.getFullYear()
-  const startMonth = startDate.getMonth()
-  const endMonth = endDate.getMonth()
-  const sameYear = startYear === endYear
-  const sameMonth = sameYear && startMonth === endMonth
-
-  const startFormat = new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    ...(sameYear ? {} : { year: 'numeric' }),
-  })
-
-  const endFormat = new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: isThisYear(endDate) ? undefined : 'numeric',
-  })
-
-  if (sameMonth) {
-    return `${startFormat.format(startDate)} - ${endDate.getDate()}`
-  }
-
-  return `${startFormat.format(startDate)} - ${endFormat.format(endDate)}`
 }
 
 /**
@@ -547,15 +427,6 @@ export function tryParseDatetime(input: string): Date | null {
   }
 }
 
-/**
- * Format a datetime to a standard format for display in inputs
- * @param date - Date to format
- * @returns Formatted datetime string (yyyy-MM-dd HH:mm:ss)
- */
-export function formatDatetimeInput(date: Date): string {
-  return format(date, 'yyyy-MM-dd HH:mm:ss')
-}
-
 // ============================================================================
 // Date/Time Component Formatting
 // ============================================================================
@@ -618,20 +489,6 @@ export function parseDateTimeComponents(dateTimeStr: string): {
     date: `${year}/${month}/${day}`,
     time: `${hours}:${minutes}:${seconds}`,
   }
-}
-
-/**
- * Combine separate date and time strings into a Date object
- * @param date - Date string (any format parseable by chrono)
- * @param time - Time string (any format parseable by chrono)
- * @returns Date object or null if invalid
- */
-export function combineDateTimeStrings(
-  date: string,
-  time: string
-): Date | null {
-  if (!date || !time) return null
-  return tryParseDatetime(`${date} ${time}`)
 }
 
 /**

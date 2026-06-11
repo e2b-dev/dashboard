@@ -10,6 +10,14 @@ import {
   TIME_OPTIONS,
 } from './constants'
 
+const formatZonedDateTimeString = (
+  timestamp: number,
+  timezone: Timezone
+): string => {
+  const parts = formatZonedDateTimeInput(timestamp, timezone)
+  return `${parts.date} ${parts.time}`
+}
+
 /**
  * Find a matching time option for a given duration based on the step size
  */
@@ -55,23 +63,16 @@ export function formatTimeframeValues(
   if (value.mode === 'live' && value.range) {
     const startTime = value.start || now.getTime() - value.range
     const endTime = value.end || now.getTime()
-
-    const startParts = formatZonedDateTimeInput(startTime, timezone)
-    const endParts = formatZonedDateTimeInput(endTime, timezone)
-    startDateTime = `${startParts.date} ${startParts.time}`
-    endDateTime = `${endParts.date} ${endParts.time}`
+    startDateTime = formatZonedDateTimeString(startTime, timezone)
+    endDateTime = formatZonedDateTimeString(endTime, timezone)
   } else if (value.mode === 'static' && value.start && value.end) {
-    const startParts = formatZonedDateTimeInput(value.start, timezone)
-    const endParts = formatZonedDateTimeInput(value.end, timezone)
-    startDateTime = `${startParts.date} ${startParts.time}`
-    endDateTime = `${endParts.date} ${endParts.time}`
+    startDateTime = formatZonedDateTimeString(value.start, timezone)
+    endDateTime = formatZonedDateTimeString(value.end, timezone)
   } else {
     // fallback to last hour when no valid timeframe
     const hourAgo = now.getTime() - 60 * 60 * 1000
-    const startParts = formatZonedDateTimeInput(hourAgo, timezone)
-    const endParts = formatZonedDateTimeInput(now, timezone)
-    startDateTime = `${startParts.date} ${startParts.time}`
-    endDateTime = `${endParts.date} ${endParts.time}`
+    startDateTime = formatZonedDateTimeString(hourAgo, timezone)
+    endDateTime = formatZonedDateTimeString(now.getTime(), timezone)
   }
 
   return {
