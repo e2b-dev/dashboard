@@ -5,12 +5,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 const authSession = vi.hoisted(() => ({
   current: null as Session | null,
 }))
+const authMiddlewareMock = vi.hoisted(() => vi.fn())
 const signInMock = vi.hoisted(() => vi.fn())
 const readSignupMetadataMock = vi.hoisted(() => vi.fn())
 const setSignupMetadataCookieMock = vi.hoisted(() => vi.fn())
 
 vi.mock('@/auth', () => ({
-  auth: vi.fn(
+  auth: authMiddlewareMock.mockImplementation(
     (
       handler: (
         request: NextRequest & { auth: Session | null },
@@ -67,6 +68,7 @@ describe('Ory auth entrypoints', () => {
   beforeEach(() => {
     process.env.AUTH_PROVIDER = 'ory'
     authSession.current = null
+    authMiddlewareMock.mockClear()
     signInMock.mockReset().mockResolvedValue(undefined)
     readSignupMetadataMock.mockReset().mockReturnValue({
       signup_ip: '203.0.113.10',
@@ -121,6 +123,14 @@ describe('Ory auth entrypoints', () => {
     expect(response.headers.get('location')).toBe(
       'https://app.e2b.dev/dashboard'
     )
+  })
+
+  it('does not run proxy Auth.js for API routes', async () => {
+    await proxy(request('/api/trpc/user.update'), {} as NextFetchEvent)
+    await proxy(request('/api/health'), {} as NextFetchEvent)
+    await proxy(request('/api/auth/oauth/session'), {} as NextFetchEvent)
+
+    expect(authMiddlewareMock).not.toHaveBeenCalled()
   })
 
   it('starts Ory sign-in, registration, and re-auth with the right parameters', async () => {

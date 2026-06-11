@@ -51,7 +51,7 @@ export const userRouter = createTRPCRouter({
   // against a timeout and falls back to the cheap session user so the dashboard
   // never hangs on the identity provider.
   profile: protectedProcedure.query(async ({ ctx }): Promise<AuthUser> => {
-    const provider = createAuthForHeaders(ctx.headers)
+    const provider = createAuthForHeaders(ctx.headers, ctx.authSession)
 
     const result = await withTimeout(
       provider.getUserProfile().catch(() => null),
@@ -90,7 +90,7 @@ export const userRouter = createTRPCRouter({
         }
       }
 
-      const provider = createAuthForHeaders(ctx.headers)
+      const provider = createAuthForHeaders(ctx.headers, ctx.authSession)
 
       if (input.email !== undefined || input.password !== undefined) {
         if (isAuthMigrationInProgress()) {
