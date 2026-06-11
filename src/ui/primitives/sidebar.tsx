@@ -3,8 +3,10 @@
 import { Slot } from '@radix-ui/react-slot'
 import { cva, type VariantProps } from 'class-variance-authority'
 import * as React from 'react'
+import { COOKIE_KEYS } from '@/configs/cookies'
 import { useIsMobile } from '@/lib/hooks/use-mobile'
 import { cn } from '@/lib/utils'
+import { setBrowserCookie } from '@/lib/utils/browser-cookies'
 import { Button } from '@/ui/primitives/button'
 import { CollapseLeftIcon, MenuIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
@@ -69,12 +71,9 @@ function SidebarProvider({
   const isMobile = useIsMobile()
   const [openMobile, setOpenMobile] = React.useState(false)
 
-  const updateSidebarStateCookie = async (open: boolean) => {
-    await fetch('/api/sidebar/state', {
-      method: 'POST',
-      body: JSON.stringify({ state: open }),
-    })
-  }
+  const updateSidebarStateCookie = React.useCallback((open: boolean) => {
+    setBrowserCookie(COOKIE_KEYS.SIDEBAR_STATE, open.toString())
+  }, [])
 
   // This is the internal state of the sidebar.
   // We use openProp and setOpenProp for control from outside the component.
@@ -92,13 +91,13 @@ function SidebarProvider({
 
       updateSidebarStateCookie(openState)
     },
-    [setOpenProp, open]
+    [setOpenProp, open, updateSidebarStateCookie]
   )
 
   // Helper to toggle the sidebar.
   const toggleSidebar = React.useCallback(() => {
     return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open)
-  }, [isMobile, setOpen, setOpenMobile])
+  }, [isMobile, setOpen])
 
   // Adds a keyboard shortcut to toggle the sidebar.
   React.useEffect(() => {
@@ -130,7 +129,7 @@ function SidebarProvider({
       setOpenMobile,
       toggleSidebar,
     }),
-    [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
+    [state, open, setOpen, isMobile, openMobile, toggleSidebar]
   )
 
   const activeSidebarWidth = React.useMemo(

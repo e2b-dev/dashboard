@@ -7,7 +7,7 @@ const providerMock = vi.hoisted(() => ({
   updateUser: vi.fn(),
   signOut: vi.fn(),
   startReauthForAccountSettings: vi.fn(),
-  signOutOtherSessions: vi.fn(),
+  handleCredentialChangeSuccess: vi.fn(),
 }))
 
 vi.mock('@/core/server/auth', () => ({

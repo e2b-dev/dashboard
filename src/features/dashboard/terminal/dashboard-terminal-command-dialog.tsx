@@ -39,18 +39,18 @@ export default function DashboardTerminalCommandDialog({
 
         {launch ? (
           <div className="space-y-3">
-            {launch.sandboxId ? (
+            {launch.target?.sandboxId ? (
               <div className="space-y-1">
                 <p className="prose-label text-fg-tertiary">Sandbox</p>
                 <code className="block border bg-bg px-3 py-2 font-mono text-xs text-fg">
-                  {launch.sandboxId}
+                  {launch.target.sandboxId}
                 </code>
               </div>
             ) : null}
             <div className="space-y-1">
               <p className="prose-label text-fg-tertiary">Template</p>
               <code className="block border bg-bg px-3 py-2 font-mono text-xs text-fg">
-                {launch.template}
+                {launch.target?.template ?? 'base'}
               </code>
             </div>
             <div className="space-y-1">

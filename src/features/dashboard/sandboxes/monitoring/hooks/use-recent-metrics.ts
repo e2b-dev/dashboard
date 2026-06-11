@@ -1,13 +1,13 @@
 'use client'
 
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { usePathname } from 'next/navigation'
 import { parseAsInteger, useQueryStates } from 'nuqs'
 import { useMemo } from 'react'
-import useSWR from 'swr'
-import type { TeamMetricsResponse } from '@/app/api/teams/[teamSlug]/metrics/types'
 import { TEAM_METRICS_POLLING_INTERVAL_MS } from '@/configs/intervals'
-import { SWR_KEYS } from '@/configs/keys'
+import type { TeamMetricsResponse } from '@/core/modules/sandboxes/models.client'
 import { useDashboard } from '@/features/dashboard/context'
+import { useTRPCClient } from '@/trpc/client'
 import { calculateIsLive } from '../utils'
 
 interface UseRecentMetricsOptions {
@@ -34,6 +34,7 @@ export function useRecentMetrics({
   initialData,
 }: UseRecentMetricsOptions = {}) {
   const { team } = useDashboard()
+  const trpcClient = useTRPCClient()
   const pathname = usePathname()
 
   const [timeframeParams] = useQueryStates(
@@ -61,58 +62,32 @@ export function useRecentMetrics({
     ]
   )
 
-  const swrKey: readonly [string | null, string | null, ...unknown[]] = team
-    ? shouldSyncWithTimeframe
-      ? [
-          ...SWR_KEYS.TEAM_METRICS_RECENT(team.slug),
-          timeframeParams.start,
-          timeframeParams.end,
-        ]
-      : SWR_KEYS.TEAM_METRICS_RECENT(team.slug)
-    : [null, null]
-
-  return useSWR<TeamMetricsResponse | undefined>(
-    swrKey,
-    async ([url, teamSlug]: typeof swrKey) => {
-      if (!url || !teamSlug) return
-
+  return useQuery<TeamMetricsResponse | undefined>({
+    queryKey: [
+      'sandboxes.getTeamMetrics.recent',
+      team.slug,
+      shouldSyncWithTimeframe ? timeframeParams.start : null,
+      shouldSyncWithTimeframe ? timeframeParams.end : null,
+    ],
+    queryFn: () => {
       const fetchEnd = Date.now()
       const fetchStart = fetchEnd - 60_000
 
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          start: fetchStart,
-          end: fetchEnd,
-        }),
-        cache: 'no-store',
+      return trpcClient.sandboxes.getTeamMetrics.query({
+        teamSlug: team.slug,
+        startDate: fetchStart,
+        endDate: fetchEnd,
       })
-
-      if (!response.ok) {
-        const { error } = await response.json()
-        throw new Error(error || 'Failed to fetch metrics')
-      }
-
-      return (await response.json()) as TeamMetricsResponse
     },
-    {
-      fallbackData: initialData,
-      shouldRetryOnError: false,
-      // disable polling when syncing with timeframe (key changes trigger refetch)
-      // enable polling on other pages
-      refreshInterval: shouldSyncWithTimeframe
-        ? 0
-        : TEAM_METRICS_POLLING_INTERVAL_MS,
-      refreshWhenHidden: false,
-      refreshWhenOffline: false,
-      keepPreviousData: true,
-      revalidateOnMount: true,
-      revalidateIfStale: true,
-      revalidateOnFocus: true,
-      revalidateOnReconnect: true,
-    }
-  )
+    initialData,
+    retry: false,
+    refetchInterval: shouldSyncWithTimeframe
+      ? false
+      : TEAM_METRICS_POLLING_INTERVAL_MS,
+    refetchIntervalInBackground: false,
+    placeholderData: keepPreviousData,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+  })
 }

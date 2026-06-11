@@ -36,7 +36,6 @@ export default async function DashboardLayout({
 }: DashboardLayoutProps) {
   const cookieStore = await cookies()
   const { teamSlug } = await params
-
   const authContext = await auth.getAuthContext()
 
   const sidebarState = cookieStore.get(COOKIE_KEYS.SIDEBAR_STATE)?.value

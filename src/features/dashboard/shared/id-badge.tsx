@@ -4,7 +4,7 @@ import type { MouseEvent } from 'react'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
-import { CheckIcon, CopyIcon } from '@/ui/primitives/icons'
+import { CheckmarkIcon, CopyIcon } from '@/ui/primitives/icons'
 
 /** Builds the visible uppercase ID badge label; e.g. "e2b_c28e178eecf2" -> "E2B_...ECF2". */
 const getIdBadgeLabel = (id: string): string => {
@@ -45,7 +45,7 @@ export const IdBadge = ({
         aria-label={copyAriaLabel}
         onClick={handleCopy}
       >
-        {wasCopied ? <CheckIcon /> : <CopyIcon />}
+        {wasCopied ? <CheckmarkIcon /> : <CopyIcon />}
       </Button>
     </Badge>
   )

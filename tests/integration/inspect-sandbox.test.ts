@@ -150,7 +150,6 @@ function setupUserTeams(teams: Array<{ id: string; slug: string | null }>) {
       name: `Team ${team.id}`,
       tier: 'pro',
       email: `${team.id}@example.com`,
-      profilePictureUrl: null,
       isBlocked: false,
       isBanned: false,
       blockedReason: null,

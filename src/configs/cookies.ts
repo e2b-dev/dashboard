@@ -15,9 +15,11 @@ export const COOKIE_KEYS = {
   DASHBOARD_TIMEZONE: 'e2b-dashboard-timezone',
 } as const
 
+export const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365 // 1 year
+
 const BASE_COOKIE_OPTIONS: Partial<ResponseCookie> = {
   path: '/',
-  maxAge: 60 * 60 * 24 * 365, // 1 year
+  maxAge: COOKIE_MAX_AGE_SECONDS,
   sameSite: 'lax',
   secure: process.env.NODE_ENV === 'production',
 }

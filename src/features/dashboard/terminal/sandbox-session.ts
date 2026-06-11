@@ -10,7 +10,9 @@ import {
 interface OpenTerminalSandboxOptions {
   forceNewSandbox?: boolean
   onStatus: (message: string) => void
+  requestTimeoutMs?: number
   sandboxManagementAuth: SandboxManagementAuth
+  shouldStoreSession?: boolean
   sandboxId?: string
   template: string
 }
@@ -18,7 +20,9 @@ interface OpenTerminalSandboxOptions {
 export async function openTerminalSandbox({
   forceNewSandbox = false,
   onStatus,
+  requestTimeoutMs,
   sandboxManagementAuth,
+  shouldStoreSession,
   sandboxId,
   template,
 }: OpenTerminalSandboxOptions) {
@@ -26,7 +30,9 @@ export async function openTerminalSandbox({
 
   if (sandboxId) {
     onStatus(`Connecting to terminal sandbox ${sandboxId}...\r\n`)
-    const sandbox = await connectTerminalSandbox(sandboxId, headers)
+    const sandbox = await connectTerminalSandbox(sandboxId, headers, {
+      requestTimeoutMs,
+    })
 
     return {
       sandbox,
@@ -47,7 +53,8 @@ export async function openTerminalSandbox({
     try {
       sandbox = await connectTerminalSandbox(
         storedTerminalSession.sandboxId,
-        headers
+        headers,
+        { requestTimeoutMs }
       )
     } catch {
       clearStoredTerminalSession(userId)
@@ -60,10 +67,12 @@ export async function openTerminalSandbox({
     sandbox = await createTerminalSandbox({ headers, template, userId })
   }
 
-  writeStoredTerminalSession(userId, {
-    sandboxId: sandbox.sandboxId,
-    template,
-  })
+  if (shouldStoreSession ?? true) {
+    writeStoredTerminalSession(userId, {
+      sandboxId: sandbox.sandboxId,
+      template,
+    })
+  }
 
   return {
     sandbox,
@@ -72,12 +81,16 @@ export async function openTerminalSandbox({
 
 function connectTerminalSandbox(
   sandboxId: string,
-  headers: Record<string, string>
+  headers: Record<string, string>,
+  options: { requestTimeoutMs?: number } = {}
 ) {
   return Sandbox.connect(sandboxId, {
+    apiUrl: process.env.NEXT_PUBLIC_INFRA_API_URL,
     domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
+    sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
     timeoutMs: TERMINAL_SANDBOX_TIMEOUT_MS,
-    apiHeaders: {
+    requestTimeoutMs: options.requestTimeoutMs,
+    headers: {
       ...headers,
     },
   })
@@ -93,7 +106,9 @@ function createTerminalSandbox({
   userId: string
 }) {
   return Sandbox.create(template, {
+    apiUrl: process.env.NEXT_PUBLIC_INFRA_API_URL,
     domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
+    sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
     timeoutMs: TERMINAL_SANDBOX_TIMEOUT_MS,
     lifecycle: {
       onTimeout: 'pause',
@@ -104,7 +119,7 @@ function createTerminalSandbox({
       template,
       userId,
     },
-    apiHeaders: {
+    headers: {
       ...headers,
     },
   })

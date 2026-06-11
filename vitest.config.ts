@@ -1,4 +1,4 @@
-import path from 'path'
+import path from 'node:path'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
@@ -15,6 +15,14 @@ export default defineConfig({
       reporter: ['text', 'json', 'html'],
     },
     setupFiles: ['./tests/setup.ts'],
+    server: {
+      deps: {
+        // next-auth ships ESM that imports 'next/server' without the .js extension
+        // which vitest's default resolver cannot follow. inlining lets vite's
+        // bundler resolve next.js exports correctly.
+        inline: [/next-auth/, /@auth\/core/],
+      },
+    },
   },
 
   resolve: {

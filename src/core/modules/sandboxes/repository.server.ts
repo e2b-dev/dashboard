@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { authHeaders } from '@/configs/api'
 import type { components as DashboardComponents } from '@/contracts/dashboard-api'
 import type { components as InfraComponents } from '@/contracts/infra-api'
 import type {
@@ -18,7 +18,7 @@ import { err, ok, type RepoResult } from '@/core/shared/result'
 type SandboxesRepositoryDeps = {
   apiClient: typeof api
   infraClient: typeof infra
-  authHeaders: typeof SUPABASE_AUTH_HEADERS
+  authHeaders: typeof authHeaders
 }
 
 export type SandboxesRequestScope = TeamRequestScope
@@ -86,7 +86,7 @@ export function createSandboxesRepository(
   deps: SandboxesRepositoryDeps = {
     apiClient: api,
     infraClient: infra,
-    authHeaders: SUPABASE_AUTH_HEADERS,
+    authHeaders: authHeaders,
   }
 ): SandboxesRepository {
   return {

@@ -19,7 +19,7 @@ interface StoppedBannerProps {
 }
 
 export function StoppedBanner({ rootNodeCount }: StoppedBannerProps) {
-  const { isRunning } = useSandboxContext()
+  const { isRunning, sandboxInfo } = useSandboxContext()
   const { timezone } = useTimezone()
   const lastUpdated = useLastUpdated()
   const watcherError = useWatcherError()
@@ -30,6 +30,13 @@ export function StoppedBanner({ rootNodeCount }: StoppedBannerProps) {
   )
 
   const showWatcherError = watcherError && isRunning && rootNodeCount > 0
+
+  const stoppedLabel =
+    sandboxInfo?.state === 'paused'
+      ? 'Sandbox Paused'
+      : sandboxInfo?.state === 'killed'
+        ? 'Sandbox Killed'
+        : 'Sandbox Stopped'
 
   return (
     <AnimatePresence mode="wait">
@@ -50,7 +57,7 @@ export function StoppedBanner({ rootNodeCount }: StoppedBannerProps) {
               <span className="prose-headline-small uppercase">
                 {showWatcherError
                   ? 'Live filesystem updates disabled'
-                  : 'Sandbox Stopped'}
+                  : stoppedLabel}
               </span>
             </CardTitle>
             <CardDescription>

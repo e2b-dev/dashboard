@@ -27,7 +27,7 @@ import {
   FormMessage,
 } from '@/ui/primitives/form'
 import { IconButton } from '@/ui/primitives/icon-button'
-import { CheckIcon, EditIcon } from '@/ui/primitives/icons'
+import { CheckmarkIcon, EditIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
 
 const TeamNameFormSchema = UpdateTeamNameSchema.pick({ name: true })
@@ -143,7 +143,7 @@ export const TeamName = (): ReactElement => {
                   {updateNameMutation.isPending ? (
                     <Loader variant="slash" size="sm" />
                   ) : (
-                    <CheckIcon className="size-6 shrink-0" />
+                    <CheckmarkIcon className="size-6 shrink-0" />
                   )}
                 </IconButton>
               </>

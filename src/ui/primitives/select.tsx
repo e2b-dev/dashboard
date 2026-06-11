@@ -3,7 +3,7 @@
 import * as SelectPrimitive from '@radix-ui/react-select'
 import * as React from 'react'
 import { cn } from '@/lib/utils'
-import { SelectIcon } from '@/ui/primitives/icons'
+import { UpDownIcon } from '@/ui/primitives/icons'
 import {
   menuContentStyles,
   menuGroupStyles,
@@ -54,7 +54,7 @@ const SelectTrigger = React.forwardRef<
     {...props}
   >
     {children}
-    <SelectIcon
+    <UpDownIcon
       className={cn('text-fg-secondary ml-2 size-3.5', props.classNames?.icon)}
     />
   </SelectPrimitive.Trigger>

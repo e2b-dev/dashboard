@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { authHeaders } from '@/configs/api'
 import type { components as DashboardComponents } from '@/contracts/dashboard-api'
 import { api } from '@/core/shared/clients/api'
 import { createRepoError, repoErrorFromHttp } from '@/core/shared/errors'
@@ -10,7 +10,7 @@ import type { TeamMember } from './models'
 
 type TeamsRepositoryDeps = {
   apiClient: typeof api
-  authHeaders: typeof SUPABASE_AUTH_HEADERS
+  authHeaders: typeof authHeaders
 }
 
 export type TeamsRequestScope = RequestScope & {
@@ -24,9 +24,6 @@ export interface TeamsRepository {
   ): Promise<RepoResult<DashboardComponents['schemas']['UpdateTeamResponse']>>
   addTeamMember(email: string): Promise<RepoResult<void>>
   removeTeamMember(userId: string): Promise<RepoResult<void>>
-  updateTeamProfilePictureUrl(
-    profilePictureUrl: string | null
-  ): Promise<RepoResult<DashboardComponents['schemas']['UpdateTeamResponse']>>
 }
 
 function requireTeamId(scope: TeamsRequestScope): RepoResult<string> {
@@ -47,7 +44,7 @@ export function createTeamsRepository(
   scope: TeamsRequestScope,
   deps: TeamsRepositoryDeps = {
     apiClient: api,
-    authHeaders: SUPABASE_AUTH_HEADERS,
+    authHeaders: authHeaders,
   }
 ): TeamsRepository {
   return {
@@ -175,37 +172,6 @@ export function createTeamsRepository(
       }
 
       return ok(undefined)
-    },
-    async updateTeamProfilePictureUrl(
-      profilePictureUrl
-    ): Promise<
-      RepoResult<DashboardComponents['schemas']['UpdateTeamResponse']>
-    > {
-      const teamId = requireTeamId(scope)
-      if (!teamId.ok) {
-        return teamId
-      }
-
-      const { data, error, response } = await deps.apiClient.PATCH(
-        '/teams/{teamID}',
-        {
-          params: { path: { teamID: teamId.data } },
-          headers: deps.authHeaders(scope.accessToken, teamId.data),
-          body: { profilePictureUrl },
-        }
-      )
-
-      if (!response.ok || error || !data) {
-        return err(
-          repoErrorFromHttp(
-            response.status,
-            error?.message ?? 'Failed to update team profile picture',
-            error
-          )
-        )
-      }
-
-      return ok(data)
     },
   }
 }

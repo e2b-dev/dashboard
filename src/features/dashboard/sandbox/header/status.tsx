@@ -17,6 +17,15 @@ export default function Status() {
     )
   }
 
+  if (state === 'killed') {
+    return (
+      <Badge variant="error" className="uppercase">
+        <DotIcon className="size-3 fill-current" />
+        Killed
+      </Badge>
+    )
+  }
+
   return (
     <Badge variant={isRunning ? 'positive' : 'error'} className="uppercase">
       <DotIcon

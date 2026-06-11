@@ -1,11 +1,13 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import path from 'path'
 import { useTransition } from 'react'
+import { COOKIE_KEYS } from '@/configs/cookies'
 import { cn } from '@/lib/utils'
+import { setBrowserCookie } from '@/lib/utils/browser-cookies'
+import { getParentPath } from '@/lib/utils/filesystem'
 import { DataTableRow } from '@/ui/data-table'
-import { FolderUpIcon } from '@/ui/primitives/icons'
+import { FolderUploadIcon } from '@/ui/primitives/icons'
 
 interface SandboxInspectParentDirItemProps {
   rootPath: string
@@ -23,14 +25,10 @@ export default function SandboxInspectParentDirItem({
   }
 
   const handleNavigateUp = async () => {
-    const parentPath = path.dirname(rootPath)
+    const parentPath = getParentPath(rootPath)
 
     try {
-      await fetch('/api/sandbox/inspect/root-path', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: parentPath }),
-      })
+      setBrowserCookie(COOKIE_KEYS.SANDBOX_INSPECT_ROOT_PATH, parentPath)
 
       startTransition(() => {
         router.refresh()
@@ -55,7 +53,7 @@ export default function SandboxInspectParentDirItem({
         }
       }}
     >
-      <FolderUpIcon className="size-3.5 [color:var(--color-fg-tertiary)]" />
+      <FolderUploadIcon className="size-3.5 [color:var(--color-fg-tertiary)]" />
       <span className="truncate">..</span>
     </DataTableRow>
   )

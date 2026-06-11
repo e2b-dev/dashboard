@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { SUPABASE_AUTH_HEADERS } from '@/configs/api'
+import { authHeaders } from '@/configs/api'
 import type { components as InfraComponents } from '@/contracts/infra-api'
 import { INITIAL_BUILD_STATUSES } from '@/core/modules/builds/constants'
 import type {
@@ -17,7 +17,7 @@ import { err, ok, type RepoResult } from '@/core/shared/result'
 type BuildsRepositoryDeps = {
   apiClient: typeof api
   infraClient: typeof infra
-  authHeaders: typeof SUPABASE_AUTH_HEADERS
+  authHeaders: typeof authHeaders
 }
 
 export type BuildsScope = TeamRequestScope
@@ -86,7 +86,7 @@ export function createBuildsRepository(
   deps: BuildsRepositoryDeps = {
     apiClient: api,
     infraClient: infra,
-    authHeaders: SUPABASE_AUTH_HEADERS,
+    authHeaders: authHeaders,
   }
 ): BuildsRepository {
   return {

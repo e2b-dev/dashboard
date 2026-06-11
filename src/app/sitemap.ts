@@ -9,11 +9,11 @@
 
 import { XMLParser } from 'fast-xml-parser'
 import type { MetadataRoute } from 'next'
+import { DOCUMENTATION_DOMAIN } from '@/configs/documentation'
 import { ALLOW_SEO_INDEXING } from '@/configs/flags'
 import { LANDING_PAGE_DOMAIN, ROUTE_REWRITE_CONFIG } from '@/configs/rewrites'
 import { SITEMAP_EXCLUDE_CONFIG } from '@/configs/sitemap'
 import type { DomainConfig } from '@/types/rewrites.types'
-import { DOCUMENTATION_DOMAIN } from '../../next.config.mjs'
 
 // Cache the sitemap for 15 minutes (in seconds)
 const SITEMAP_CACHE_TIME = 15 * 60

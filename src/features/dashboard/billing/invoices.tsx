@@ -6,11 +6,8 @@ import { cn } from '@/lib/utils'
 import { formatCurrency } from '@/lib/utils/formatting'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
-import {
-  ArrowDownIcon,
-  ExternalLinkIcon,
-  InvoiceIcon,
-} from '@/ui/primitives/icons'
+import { ArrowDownIcon, ExternalLinkIcon } from '@/ui/primitives/icons'
+import { InvoiceIcon } from '@/ui/primitives/icons-legacy'
 import { Label } from '@/ui/primitives/label'
 import {
   Table,

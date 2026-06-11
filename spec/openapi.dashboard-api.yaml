@@ -6,7 +6,7 @@ info:
 
 components:
   securitySchemes:
-    AdminTokenAuth:
+    AdminApiKeyAuth:
       type: apiKey
       in: header
       name: X-Admin-Token
@@ -313,6 +313,10 @@ components:
         oidc_user_name:
           type: string
           nullable: true
+        signup_ip:
+          type: string
+        signup_user_agent:
+          type: string
 
     AdminTeamBootstrapRequest:
       type: object
@@ -557,7 +561,6 @@ components:
         - slug
         - tier
         - email
-        - profilePictureUrl
         - isBlocked
         - isBanned
         - blockedReason
@@ -576,9 +579,6 @@ components:
           type: string
         email:
           type: string
-        profilePictureUrl:
-          type: string
-          nullable: true
         isBlocked:
           type: boolean
         isBanned:
@@ -658,9 +658,6 @@ components:
           type: string
           minLength: 1
           maxLength: 255
-        profilePictureUrl:
-          type: string
-          nullable: true
 
     UpdateTeamResponse:
       type: object
@@ -673,9 +670,6 @@ components:
           format: uuid
         name:
           type: string
-        profilePictureUrl:
-          type: string
-          nullable: true
 
     AddTeamMemberRequest:
       type: object
@@ -1054,7 +1048,7 @@ paths:
       summary: Bootstrap user
       tags: [teams]
       security:
-        - AdminTokenAuth: []
+        - AdminApiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/userId"
       responses:
@@ -1074,7 +1068,7 @@ paths:
       summary: Bootstrap auth provider user
       tags: [teams]
       security:
-        - AdminTokenAuth: []
+        - AdminApiKeyAuth: []
       requestBody:
         required: true
         content:
@@ -1101,7 +1095,7 @@ paths:
       description: Creates and provisions a team for an admin-authenticated bootstrap workflow.
       tags: [admin]
       security:
-        - AdminTokenAuth: []
+        - AdminApiKeyAuth: []
       requestBody:
         required: true
         content:
@@ -1129,7 +1123,7 @@ paths:
       summary: Resolve user profiles
       tags: [admin]
       security:
-        - AdminTokenAuth: []
+        - AdminApiKeyAuth: []
       requestBody:
         required: true
         content:
@@ -1155,7 +1149,7 @@ paths:
       summary: Lookup user profiles by email
       tags: [admin]
       security:
-        - AdminTokenAuth: []
+        - AdminApiKeyAuth: []
       requestBody:
         required: true
         content:
@@ -1181,7 +1175,7 @@ paths:
       summary: Get user profile
       tags: [admin]
       security:
-        - AdminTokenAuth: []
+        - AdminApiKeyAuth: []
       parameters:
         - $ref: "#/components/parameters/userId"
       responses:

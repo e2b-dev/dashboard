@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/ui/primitives/dialog'
-import { TrashIcon } from '@/ui/primitives/icons'
+import { RemoveIcon } from '@/ui/primitives/icons'
 
 interface RemoveMemberDialogProps {
   isRemoving: boolean
@@ -67,7 +67,7 @@ export const RemoveMemberDialog = ({
               type="button"
               variant="error"
             >
-              <TrashIcon className="size-4" />
+              <RemoveIcon className="size-4" />
               Remove
             </Button>
           </div>

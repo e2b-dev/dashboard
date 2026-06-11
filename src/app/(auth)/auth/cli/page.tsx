@@ -7,7 +7,7 @@ import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { encodedRedirect } from '@/lib/utils/auth'
 import { generateE2BUserAccessToken } from '@/lib/utils/server'
 import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
-import { CloudIcon, LinkIcon, SystemIcon } from '@/ui/primitives/icons'
+import { CloudIcon, LaptopIcon, LinkIcon } from '@/ui/primitives/icons'
 
 // Types
 type CLISearchParams = Promise<{
@@ -59,7 +59,7 @@ function CLIIcons() {
   return (
     <p className="flex items-center justify-center gap-4 text-3xl  tracking-tight sm:text-4xl">
       <span className="text-fg-tertiary">
-        <SystemIcon className="size-8" />
+        <LaptopIcon className="size-8" />
       </span>
       <span className="text-fg-secondary">
         <LinkIcon className="size-4" />

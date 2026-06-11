@@ -21,7 +21,7 @@ import { E2BLogo } from '@/ui/brand'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import { Badge } from '@/ui/primitives/badge'
 import { IconButton } from '@/ui/primitives/icon-button'
-import { TrashIcon } from '@/ui/primitives/icons'
+import { RemoveIcon } from '@/ui/primitives/icons'
 import { TableCell, TableRow } from '@/ui/primitives/table'
 import { useDashboard } from '../context'
 import {
@@ -272,7 +272,7 @@ const AddedCell = ({
           teamName={teamName}
           trigger={
             <IconButton aria-label={`Remove ${memberName ?? memberEmail}`}>
-              <TrashIcon />
+              <RemoveIcon />
             </IconButton>
           }
         />
