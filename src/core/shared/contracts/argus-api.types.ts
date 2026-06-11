@@ -53,6 +53,8 @@ export interface paths {
           offset?: number
           limit?: number
           orderAsc?: boolean
+          /** @description Filter events to the provided event types */
+          types?: string[]
         }
         header?: never
         path: {
@@ -71,6 +73,7 @@ export interface paths {
             'application/json': components['schemas']['SandboxEvent'][]
           }
         }
+        400: components['responses']['400']
         401: components['responses']['401']
         404: components['responses']['404']
         500: components['responses']['500']
@@ -98,6 +101,8 @@ export interface paths {
           offset?: number
           limit?: number
           orderAsc?: boolean
+          /** @description Filter events to the provided event types */
+          types?: string[]
         }
         header?: never
         path?: never
@@ -114,6 +119,7 @@ export interface paths {
             'application/json': components['schemas']['SandboxEvent'][]
           }
         }
+        400: components['responses']['400']
         401: components['responses']['401']
         404: components['responses']['404']
         500: components['responses']['500']
@@ -162,6 +168,40 @@ export interface paths {
     head?: never
     /** @description Update a registered webhook configuration. */
     patch: operations['webhookUpdate']
+    trace?: never
+  }
+  '/events/webhooks/{webhookID}/deliveries': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description List webhook delivery attempts. */
+    get: operations['webhookDeliveriesList']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/events/webhooks/{webhookID}/stats': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description Get webhook delivery aggregate stats. */
+    get: operations['webhookDeliveryStats']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
     trace?: never
   }
 }
@@ -288,6 +328,123 @@ export interface components {
       events?: string[]
       /** @description Secret used to sign the webhook payloads */
       signatureSecret?: string
+    }
+    /** @description Webhook delivery attempt */
+    WebhookDelivery: {
+      /**
+       * Format: uuid
+       * @description Delivery attempt identifier
+       */
+      id: string
+      /**
+       * Format: uuid
+       * @description Team identifier
+       */
+      teamId: string
+      /**
+       * Format: uuid
+       * @description Webhook configuration identifier
+       */
+      webhookId: string
+      /**
+       * Format: uuid
+       * @description Sandbox event identifier
+       */
+      eventId: string
+      /** @description Sandbox identifier */
+      sandboxId: string
+      /** @description Sandbox event type */
+      eventType: string
+      /**
+       * @description Delivery attempt status
+       * @enum {string}
+       */
+      status: 'success' | 'failed'
+      /**
+       * Format: int32
+       * @description Delivery request duration in milliseconds
+       */
+      durationMs: number
+      /** @description Serialized webhook request body */
+      requestBody: string
+      /** @description JSON-encoded request headers with sensitive values redacted */
+      requestHeaders: string
+      /**
+       * Format: uri
+       * @description URL attempted for this delivery
+       */
+      requestUrl: string
+      /** @description Truncated response body, if a response was received */
+      responseBody?: string | null
+      /** @description JSON-encoded response headers, if a response was received */
+      responseHeaders?: string | null
+      /**
+       * Format: int32
+       * @description HTTP response status code, if a response was received
+       */
+      responseHttpStatusCode?: number | null
+      /**
+       * @description Machine-readable non-HTTP or HTTP failure class
+       * @enum {string|null}
+       */
+      errorClass:
+        | 'http_error'
+        | 'dns_error'
+        | 'timeout'
+        | 'transport_error'
+        | 'request_error'
+        | 'signature_error'
+        | 'canceled'
+        | null
+      /** @description Error message for failures without a useful response body */
+      errorMessage?: string | null
+      /**
+       * Format: date-time
+       * @description Time when the delivery attempt started
+       */
+      timestamp: string
+    }
+    /** @description Webhook delivery aggregate stats */
+    WebhookDeliveryStats: {
+      buckets: components['schemas']['WebhookDeliveryStatsBucket'][]
+      /** Format: int64 */
+      total: number
+      /** Format: int64 */
+      failed: number
+      durationMs: components['schemas']['WebhookDeliveryDurationStats']
+    }
+    /** @description Webhook delivery duration statistics in milliseconds */
+    WebhookDeliveryDurationStats: {
+      /** Format: double */
+      minimum: number
+      /** Format: double */
+      average: number
+      /** Format: double */
+      maximum: number
+    }
+    /** @description Webhook delivery stats for a time bucket */
+    WebhookDeliveryStatsBucket: {
+      /** Format: date-time */
+      timestamp: string
+      /** Format: int64 */
+      total: number
+      /** Format: int64 */
+      failed: number
+      durationMs: components['schemas']['WebhookDeliveryDurationStats']
+    }
+    /** @description Webhook delivery attempts grouped by sandbox event */
+    WebhookDeliveryGroup: {
+      /** Format: uuid */
+      eventId: string
+      eventType: string
+      sandboxId: string
+      attempts: components['schemas']['WebhookDelivery'][]
+    }
+    /** @description Paginated webhook delivery attempts grouped by event */
+    WebhookDeliveriesListPayload: {
+      data: components['schemas']['WebhookDeliveryGroup'][]
+      /** @description Cursor to pass to the next list request, or null when there is no next page. */
+      nextCursor: string | null
     }
   }
   responses: {
@@ -471,6 +628,77 @@ export interface operations {
         }
       }
       400: components['responses']['400']
+      401: components['responses']['401']
+      404: components['responses']['404']
+      500: components['responses']['500']
+    }
+  }
+  webhookDeliveriesList: {
+    parameters: {
+      query?: {
+        /** @description Opaque cursor from the previous response's nextCursor field. */
+        cursor?: string
+        limit?: number
+        orderAsc?: boolean
+        /** @description Include deliveries at or after this timestamp. */
+        start?: string
+        /** @description Include deliveries before this timestamp. */
+        end?: string
+        /** @description Filter deliveries by delivery status */
+        deliveryStatus?: ('success' | 'failed')[]
+        /** @description Filter deliveries by event type */
+        eventType?: string[]
+      }
+      header?: never
+      path: {
+        webhookID: components['parameters']['webhookID']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description List of webhook delivery attempts grouped by event. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['WebhookDeliveriesListPayload']
+        }
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      404: components['responses']['404']
+      500: components['responses']['500']
+    }
+  }
+  webhookDeliveryStats: {
+    parameters: {
+      query?: {
+        /** @description Inclusive stats range start. Defaults to 24 hours ago. */
+        start?: string
+        /** @description Exclusive stats range end. Defaults to now. */
+        end?: string
+        /** @description Stats bucket interval in seconds. Defaults based on the selected range. */
+        bucketIntervalSeconds?: 60 | 300 | 600 | 1800 | 3600 | 14400 | 86400
+      }
+      header?: never
+      path: {
+        webhookID: components['parameters']['webhookID']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Webhook delivery stats. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['WebhookDeliveryStats']
+        }
+      }
       401: components['responses']['401']
       404: components['responses']['404']
       500: components['responses']['500']

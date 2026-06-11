@@ -95,6 +95,23 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
     title: 'Webhooks',
     type: 'default',
   }),
+  '/dashboard/*/webhooks/*/*': (pathname) => {
+    const parts = pathname.split('/')
+    const teamSlug = parts[2] ?? ''
+
+    return {
+      title: [
+        {
+          label: 'Webhooks',
+          href: PROTECTED_URLS.WEBHOOKS(teamSlug),
+        },
+      ],
+      type: 'custom',
+      custom: {
+        includeHeaderBottomStyles: true,
+      },
+    }
+  },
 
   // team
   '/dashboard/*/general': () => ({

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import type { ClientTeamMetric } from '@/core/modules/sandboxes/models.client'
 import { transformMetrics } from '@/features/dashboard/sandboxes/monitoring/charts/team-metrics-chart/utils'
+import {
+  getDeliveryCountSeriesData,
+  getResponseTimeSeriesData,
+} from '@/features/dashboard/settings/webhooks/detail/chart-utils'
 import { calculateAxisMax } from '@/lib/utils/chart'
 
 describe('team-metrics-chart-utils', () => {
@@ -92,5 +96,139 @@ describe('team-metrics-chart-utils', () => {
         { x: 2000, y: 1.0 },
       ])
     })
+  })
+})
+
+describe('webhook chart utils', () => {
+  it('fills missing delivery count buckets from API bucket data', () => {
+    const rangeBounds = {
+      start: Date.UTC(2026, 5, 3, 13, 30),
+      end: Date.UTC(2026, 5, 3, 17, 30),
+    }
+    const buckets = [
+      {
+        timestamp: new Date(Date.UTC(2026, 5, 3, 16)).toISOString(),
+        total: 1,
+        failed: 0,
+        durationMs: {
+          minimum: 65,
+          average: 82,
+          maximum: 99,
+        },
+      },
+      {
+        timestamp: new Date(Date.UTC(2026, 5, 3, 17)).toISOString(),
+        total: 1,
+        failed: 0,
+        durationMs: {
+          minimum: 65,
+          average: 82,
+          maximum: 99,
+        },
+      },
+    ] satisfies Parameters<typeof getDeliveryCountSeriesData>[0]
+
+    expect(getDeliveryCountSeriesData(buckets, rangeBounds, 3600)).toEqual([
+      {
+        synthetic: true,
+        timestamp: new Date(Date.UTC(2026, 5, 3, 13)).toISOString(),
+        value: 0,
+      },
+      {
+        synthetic: true,
+        timestamp: new Date(Date.UTC(2026, 5, 3, 14)).toISOString(),
+        value: 0,
+      },
+      {
+        synthetic: true,
+        timestamp: new Date(Date.UTC(2026, 5, 3, 15)).toISOString(),
+        value: 0,
+      },
+      {
+        synthetic: false,
+        timestamp: new Date(Date.UTC(2026, 5, 3, 16)).toISOString(),
+        value: 1,
+      },
+      {
+        synthetic: false,
+        timestamp: new Date(Date.UTC(2026, 5, 3, 17)).toISOString(),
+        value: 1,
+      },
+    ])
+  })
+
+  it('maps response times from API bucket data', () => {
+    const rangeBounds = {
+      start: Date.UTC(2026, 5, 3, 13, 30),
+      end: Date.UTC(2026, 5, 3, 17, 30),
+    }
+    const buckets = [
+      {
+        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 40)).toISOString(),
+        total: 1,
+        failed: 0,
+        durationMs: {
+          minimum: 65,
+          average: 82,
+          maximum: 99,
+        },
+      },
+      {
+        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 50)).toISOString(),
+        total: 1,
+        failed: 0,
+        durationMs: {
+          minimum: 50,
+          average: 100,
+          maximum: 150,
+        },
+      },
+    ] satisfies Parameters<typeof getResponseTimeSeriesData>[0]
+
+    expect(getResponseTimeSeriesData(buckets, rangeBounds, 'avg')).toEqual([
+      {
+        synthetic: true,
+        timestamp: new Date(rangeBounds.start).toISOString(),
+        value: 0,
+      },
+      {
+        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 40)).toISOString(),
+        value: 82,
+      },
+      {
+        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 50)).toISOString(),
+        value: 100,
+      },
+    ])
+    expect(getResponseTimeSeriesData(buckets, rangeBounds, 'min')).toEqual([
+      {
+        synthetic: true,
+        timestamp: new Date(rangeBounds.start).toISOString(),
+        value: 0,
+      },
+      {
+        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 40)).toISOString(),
+        value: 65,
+      },
+      {
+        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 50)).toISOString(),
+        value: 50,
+      },
+    ])
+    expect(getResponseTimeSeriesData(buckets, rangeBounds, 'max')).toEqual([
+      {
+        synthetic: true,
+        timestamp: new Date(rangeBounds.start).toISOString(),
+        value: 0,
+      },
+      {
+        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 40)).toISOString(),
+        value: 99,
+      },
+      {
+        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 50)).toISOString(),
+        value: 150,
+      },
+    ])
   })
 })

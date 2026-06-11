@@ -3,7 +3,10 @@ import 'server-only'
 import { authHeaders } from '@/configs/api'
 import type { UpsertWebhookInput } from '@/core/server/functions/webhooks/schema'
 import { infra } from '@/core/shared/clients/api'
-import type { components as ArgusComponents } from '@/core/shared/contracts/argus-api.types'
+import type {
+  components as ArgusComponents,
+  operations as ArgusOperations,
+} from '@/core/shared/contracts/argus-api.types'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import type { TeamRequestScope } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
@@ -15,10 +18,34 @@ type WebhooksRepositoryDeps = {
 
 export type WebhooksScope = TeamRequestScope
 
+type ListWebhookDeliveriesInput = NonNullable<
+  ArgusOperations['webhookDeliveriesList']['parameters']['query']
+> & {
+  webhookId: string
+}
+
+type ListWebhookDeliveriesResult =
+  ArgusComponents['schemas']['WebhookDeliveriesListPayload']
+
+type GetWebhookDeliveryStatsInput = NonNullable<
+  ArgusOperations['webhookDeliveryStats']['parameters']['query']
+> & {
+  webhookId: string
+}
+
 export interface WebhooksRepository {
   listWebhooks(): Promise<
     RepoResult<ArgusComponents['schemas']['WebhookDetail'][]>
   >
+  getWebhook(
+    webhookId: string
+  ): Promise<RepoResult<ArgusComponents['schemas']['WebhookDetail']>>
+  listWebhookDeliveries(
+    input: ListWebhookDeliveriesInput
+  ): Promise<RepoResult<ListWebhookDeliveriesResult>>
+  getWebhookDeliveryStats(
+    input: GetWebhookDeliveryStatsInput
+  ): Promise<RepoResult<ArgusComponents['schemas']['WebhookDeliveryStats']>>
   upsertWebhook(input: UpsertWebhookInput): Promise<RepoResult<void>>
   deleteWebhook(webhookId: string): Promise<RepoResult<void>>
   updateWebhookSecret(
@@ -57,6 +84,98 @@ export function createWebhooksRepository(
       }
 
       return ok(response.data ?? [])
+    },
+    async getWebhook(webhookId) {
+      const response = await deps.infraClient.GET(
+        '/events/webhooks/{webhookID}',
+        {
+          headers: {
+            ...deps.authHeaders(scope.accessToken, scope.teamId),
+          },
+          params: {
+            path: { webhookID: webhookId },
+          },
+        }
+      )
+
+      if (!response.response.ok || response.error) {
+        return err(
+          repoErrorFromHttp(
+            response.response.status,
+            response.error?.message ?? 'Failed to get webhook',
+            response.error
+          )
+        )
+      }
+
+      return ok(response.data)
+    },
+    async listWebhookDeliveries(input) {
+      const response = await deps.infraClient.GET(
+        '/events/webhooks/{webhookID}/deliveries',
+        {
+          headers: {
+            ...deps.authHeaders(scope.accessToken, scope.teamId),
+          },
+          params: {
+            path: { webhookID: input.webhookId },
+            query: {
+              limit: input.limit,
+              cursor: input.cursor,
+              orderAsc: input.orderAsc,
+              start: input.start,
+              end: input.end,
+              deliveryStatus: input.deliveryStatus,
+              eventType: input.eventType,
+            },
+          },
+        }
+      )
+
+      if (!response.response.ok || response.error) {
+        return err(
+          repoErrorFromHttp(
+            response.response.status,
+            response.error?.message ?? 'Failed to list webhook deliveries',
+            response.error
+          )
+        )
+      }
+
+      return ok({
+        data: response.data?.data ?? [],
+        nextCursor: response.data?.nextCursor ?? null,
+      })
+    },
+    async getWebhookDeliveryStats(input) {
+      const response = await deps.infraClient.GET(
+        '/events/webhooks/{webhookID}/stats',
+        {
+          headers: {
+            ...deps.authHeaders(scope.accessToken, scope.teamId),
+          },
+          params: {
+            path: { webhookID: input.webhookId },
+            query: {
+              start: input.start,
+              end: input.end,
+              bucketIntervalSeconds: input.bucketIntervalSeconds,
+            },
+          },
+        }
+      )
+
+      if (!response.response.ok || response.error) {
+        return err(
+          repoErrorFromHttp(
+            response.response.status,
+            response.error?.message ?? 'Failed to get webhook delivery stats',
+            response.error
+          )
+        )
+      }
+
+      return ok(response.data)
     },
     async upsertWebhook(input) {
       if (input.mode === 'update') {

@@ -1,10 +1,10 @@
 'use client'
 
 import { AnimatePresence, motion } from 'motion/react'
-import { FC } from 'react'
+import type { FC } from 'react'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { EASE_APPEAR } from '@/lib/utils/ui'
-import { IconButton, IconButtonProps } from '@/ui/primitives/icon-button'
+import { IconButton, type IconButtonProps } from '@/ui/primitives/icon-button'
 import { CheckIcon, CopyIcon } from '@/ui/primitives/icons'
 
 interface CopyButtonProps extends IconButtonProps {
