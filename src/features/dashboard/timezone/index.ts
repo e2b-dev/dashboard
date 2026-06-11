@@ -17,6 +17,7 @@ export {
   formatZonedTimeAxisLabel,
   zonedDateTimePartsToUtcDate,
   zonedDateTimePartsToUtcTimestamp,
+  zonedInstantToCalendarDate,
 } from './date-time'
 export type { Timezone } from './schema'
 export { TimezoneSchema } from './schema'

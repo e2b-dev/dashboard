@@ -26,6 +26,17 @@ const formatZonedDateTimeInput = (
   time: formatInTimeZone(value, timezone, 'HH:mm:ss'),
 })
 
+// Maps an instant to a browser-local calendar Date from dashboard wall-clock date parts; e.g. 2023-01-01T00:00:00Z in UTC -> new Date(2023, 0, 1).
+const zonedInstantToCalendarDate = (
+  value: string | number | Date,
+  timezone: Timezone
+): Date => {
+  const { date } = formatZonedDateTimeInput(value, timezone)
+  const [year, month, day] = date.split('/').map(Number)
+
+  return new Date(year, month - 1, day)
+}
+
 // Converts timezone wall-clock parts to UTC; e.g. 2026-06-08 09:00:00 in America/New_York -> 2026-06-08T13:00:00.000Z.
 // DST gaps/overlaps are resolved by date-fns-tz consistently instead of rejected.
 const zonedDateTimePartsToUtcDate = (
@@ -216,5 +227,6 @@ export {
   formatZonedTimeAxisLabel,
   zonedDateTimePartsToUtcDate,
   zonedDateTimePartsToUtcTimestamp,
+  zonedInstantToCalendarDate,
 }
 export type { ZonedDateRangeFormatOptions, ZonedDateTimeParts }

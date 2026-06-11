@@ -1,3 +1,4 @@
+import { startOfDay } from 'date-fns'
 import { describe, expect, it, vi } from 'vitest'
 import {
   createZonedTimeAxisLabelFormatter,
@@ -15,6 +16,7 @@ import {
   type Timezone,
   zonedDateTimePartsToUtcDate,
   zonedDateTimePartsToUtcTimestamp,
+  zonedInstantToCalendarDate,
 } from '@/features/dashboard/timezone'
 
 const requireTimezone = (value: string): Timezone => {
@@ -52,6 +54,47 @@ describe('timezone date-time helpers', () => {
         date: '2026/06/08',
         time: '15:05:09',
       })
+    })
+  })
+
+  describe('zonedInstantToCalendarDate', () => {
+    it('maps an instant to a local calendar date from dashboard wall-clock parts', () => {
+      const calendarDate = zonedInstantToCalendarDate(
+        '2023-01-01T00:00:00.000Z',
+        utc
+      )
+
+      expect(calendarDate.getFullYear()).toBe(2023)
+      expect(calendarDate.getMonth()).toBe(0)
+      expect(calendarDate.getDate()).toBe(1)
+    })
+
+    it('uses the dashboard timezone instead of browser-local day boundaries', () => {
+      const minBound = new Date('2023-01-01T00:00:00.000Z')
+      const calendarMin = zonedInstantToCalendarDate(minBound, utc)
+
+      vi.stubEnv('TZ', 'America/Los_Angeles')
+      const browserLocalMin = startOfDay(minBound)
+      vi.unstubAllEnvs()
+
+      expect(browserLocalMin.getFullYear()).toBe(2022)
+      expect(browserLocalMin.getMonth()).toBe(11)
+      expect(browserLocalMin.getDate()).toBe(31)
+
+      expect(calendarMin.getFullYear()).toBe(2023)
+      expect(calendarMin.getMonth()).toBe(0)
+      expect(calendarMin.getDate()).toBe(1)
+    })
+
+    it('maps max-bound instants to the dashboard wall-clock calendar day', () => {
+      const calendarMax = zonedInstantToCalendarDate(
+        '2026-02-24T18:17:41.000Z',
+        utc
+      )
+
+      expect(calendarMax.getFullYear()).toBe(2026)
+      expect(calendarMax.getMonth()).toBe(1)
+      expect(calendarMax.getDate()).toBe(24)
     })
   })
 
