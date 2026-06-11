@@ -5,8 +5,7 @@ import Link from 'next/link'
 import { useMemo } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import ResourceUsage from '@/features/dashboard/common/resource-usage'
-import { useTimezone } from '@/features/dashboard/timezone'
-import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
+import { formatDateParts, useTimezone } from '@/features/dashboard/timezone'
 import { JsonPopover } from '@/ui/json-popover'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
@@ -238,7 +237,7 @@ export function StartedAtCell({
   const dateValue = (getValue() as string | undefined) ?? ''
 
   const formattedTimestamp = useMemo(() => {
-    return formatLocalLogStyleTimestamp(dateValue, { timeZone: timezone })
+    return formatDateParts(dateValue, { timezone })
   }, [dateValue, timezone])
 
   return (

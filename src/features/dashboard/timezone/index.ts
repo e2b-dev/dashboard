@@ -1,7 +1,10 @@
 export { TimezoneProvider, useTimezone } from './context'
 export type {
   DateFormatPreset,
+  DatePartsFormatPreset,
+  DateTimeParts,
   FormatDateOptions,
+  FormatDatePartsOptions,
   ZonedDateParts,
   ZonedDateRangeFormatOptions,
   ZonedDateTimeParts,
@@ -9,6 +12,7 @@ export type {
 export {
   createZonedTimeAxisLabelFormatter,
   formatDate,
+  formatDateParts,
   formatTimezoneAbbreviation,
   formatZonedDateRange,
   formatZonedDateTimeInput,

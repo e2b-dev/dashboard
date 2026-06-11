@@ -2,8 +2,7 @@
 
 import type { SandboxLogModel } from '@/core/modules/sandboxes/models'
 import { LogLevelBadge } from '@/features/dashboard/common/log-cells'
-import { useTimezone } from '@/features/dashboard/timezone'
-import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
+import { formatDateParts, useTimezone } from '@/features/dashboard/timezone'
 import CopyButtonInline from '@/ui/copy-button-inline'
 
 export const LogLevel = ({ level }: { level: SandboxLogModel['level'] }) => {
@@ -16,9 +15,9 @@ interface TimestampProps {
 
 export const Timestamp = ({ timestampUnix }: TimestampProps) => {
   const { timezone } = useTimezone()
-  const formattedTimestamp = formatLocalLogStyleTimestamp(timestampUnix, {
-    includeCentiseconds: true,
-    timeZone: timezone,
+  const formattedTimestamp = formatDateParts(timestampUnix, {
+    timezone,
+    format: 'date-time-with-centiseconds',
   })
 
   if (!formattedTimestamp) {

@@ -3,8 +3,8 @@
 import type { CSSProperties, ReactNode } from 'react'
 import type { TemplateDetail } from '@/core/modules/templates/models'
 import { getTemplateDisplayName } from '@/features/dashboard/templates/helpers'
+import { formatDateParts, useTimezone } from '@/features/dashboard/timezone'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
-import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
 import { cn } from '@/lib/utils/ui'
 import { IconButton } from '@/ui/primitives/icon-button'
 import { CheckmarkIcon, CopyIcon } from '@/ui/primitives/icons'
@@ -17,19 +17,20 @@ interface TemplateSectionProps {
 }
 
 export function TemplateSection({ template, teamSlug }: TemplateSectionProps) {
+  const { timezone } = useTimezone()
   const displayName = getTemplateDisplayName(template)
 
-  const created = formatLocalLogStyleTimestamp(template.createdAt, {
-    includeSeconds: false,
-    includeYear: false,
+  const created = formatDateParts(template.createdAt, {
+    timezone,
+    format: 'date-year-time-no-seconds',
   })
 
   const isModified =
     template.updatedAt && template.updatedAt !== template.createdAt
   const modified = isModified
-    ? formatLocalLogStyleTimestamp(template.updatedAt, {
-        includeSeconds: false,
-        includeYear: false,
+    ? formatDateParts(template.updatedAt, {
+        timezone,
+        format: 'date-year-time-no-seconds',
       })
     : null
 

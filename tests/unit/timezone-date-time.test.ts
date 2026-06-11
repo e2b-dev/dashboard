@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   createZonedTimeAxisLabelFormatter,
   formatDate,
+  formatDateParts,
   formatTimezoneAbbreviation,
   formatZonedDateRange,
   formatZonedDateTimeInput,
@@ -218,6 +219,61 @@ describe('timezone date-time helpers', () => {
 
       expect(result).toContain('09:05:09.87')
       expect(result?.toLowerCase()).toMatch(/am|pm/)
+    })
+  })
+
+  describe('formatDateParts', () => {
+    it('formats date-time parts in the selected timezone', () => {
+      const result = formatDateParts('2026-06-08T13:05:09.870Z', {
+        timezone: newYork,
+      })
+
+      expect(result).toMatchObject({
+        datePart: expect.stringMatching(/Jun 08/),
+        timePart: expect.stringMatching(/09:05:09/),
+        subsecondPart: null,
+        timezonePart: 'EDT',
+        iso: '2026-06-08T13:05:09.870Z',
+      })
+    })
+
+    it('formats date-time-with-centiseconds parts in the selected timezone', () => {
+      const result = formatDateParts('2026-06-08T13:05:09.870Z', {
+        timezone: newYork,
+        format: 'date-time-with-centiseconds',
+      })
+
+      expect(result).toMatchObject({
+        datePart: expect.stringMatching(/Jun 08/),
+        timePart: expect.stringMatching(/09:05:09/),
+        subsecondPart: '87',
+        timezonePart: 'EDT',
+        iso: '2026-06-08T13:05:09.870Z',
+      })
+    })
+
+    it('formats date-year-time-no-seconds parts in the selected timezone', () => {
+      const result = formatDateParts('2026-06-08T13:05:09.870Z', {
+        timezone: newYork,
+        format: 'date-year-time-no-seconds',
+      })
+
+      expect(result).toMatchObject({
+        datePart: expect.stringMatching(/Jun 08, 2026/),
+        timePart: expect.stringMatching(/09:05/),
+        subsecondPart: null,
+        timezonePart: 'EDT',
+        iso: '2026-06-08T13:05:09.870Z',
+      })
+      expect(result?.timePart).not.toMatch(/09:05:09/)
+    })
+
+    it('returns null for invalid timestamps', () => {
+      expect(
+        formatDateParts('invalid', {
+          timezone: newYork,
+        })
+      ).toBeNull()
     })
   })
 
