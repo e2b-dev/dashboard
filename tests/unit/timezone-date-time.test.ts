@@ -191,9 +191,9 @@ describe('timezone date-time helpers', () => {
       expect(
         formatDate('2026-06-08T13:00:00.000Z', {
           timezone: newYork,
-          format: 'date-padded-day',
+          format: 'date',
         })
-      ).toBe('Jun 08, 2026')
+      ).toBe('Jun 8, 2026')
     })
   })
 
