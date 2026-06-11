@@ -1,6 +1,6 @@
 import { type Sandbox, TimeoutError } from 'e2b'
-import { openTerminalSandboxAction } from '@/core/server/actions/terminal-actions'
 import { createEnvdSandbox } from '@/core/shared/create-envd-sandbox'
+import type { TRPCRouterOutputs } from '@/trpc/client'
 import { TERMINAL_SANDBOX_TIMEOUT_ERROR } from './constants'
 import {
   clearStoredTerminalSession,
@@ -8,9 +8,28 @@ import {
   writeStoredTerminalSession,
 } from './storage'
 
+type TerminalSandboxConnection = TRPCRouterOutputs['sandbox']['openTerminal']
+
+interface OpenTerminalMutationInput {
+  teamSlug: string
+  template: string
+  sandboxId?: string
+  requestTimeoutMs?: number
+}
+
+/**
+ * Performs the `sandbox.openTerminal` tRPC mutation. Injected from the
+ * component (via the vanilla tRPC client) so this orchestration helper stays
+ * usable outside of a React hook.
+ */
+export type OpenTerminalMutation = (
+  input: OpenTerminalMutationInput
+) => Promise<TerminalSandboxConnection>
+
 interface OpenTerminalSandboxOptions {
   forceNewSandbox?: boolean
   onStatus: (message: string) => void
+  openTerminal: OpenTerminalMutation
   requestTimeoutMs?: number
   shouldStoreSession?: boolean
   teamSlug: string
@@ -22,6 +41,7 @@ interface OpenTerminalSandboxOptions {
 export async function openTerminalSandbox({
   forceNewSandbox = false,
   onStatus,
+  openTerminal,
   requestTimeoutMs,
   shouldStoreSession,
   teamSlug,
@@ -31,12 +51,11 @@ export async function openTerminalSandbox({
 }: OpenTerminalSandboxOptions) {
   if (sandboxId) {
     onStatus(`Connecting to terminal sandbox ${sandboxId}...\r\n`)
-    const sandbox = await connectTerminalSandbox({
-      teamSlug,
-      template,
-      sandboxId,
-      requestTimeoutMs,
-    })
+    const sandbox = await acquireTerminalSandbox(
+      openTerminal,
+      { teamSlug, template, sandboxId, requestTimeoutMs },
+      'Failed to connect to terminal sandbox'
+    )
 
     return {
       sandbox,
@@ -55,21 +74,33 @@ export async function openTerminalSandbox({
     )
 
     try {
-      sandbox = await connectTerminalSandbox({
-        teamSlug,
-        template,
-        sandboxId: storedTerminalSession.sandboxId,
-        requestTimeoutMs,
-      })
+      sandbox = await acquireTerminalSandbox(
+        openTerminal,
+        {
+          teamSlug,
+          template,
+          sandboxId: storedTerminalSession.sandboxId,
+          requestTimeoutMs,
+        },
+        'Failed to connect to terminal sandbox'
+      )
     } catch {
       clearStoredTerminalSession(userId)
       onStatus('Stored terminal sandbox is unavailable.\r\n')
       onStatus(`Starting ${template} terminal sandbox...\r\n`)
-      sandbox = await createTerminalSandbox({ teamSlug, template })
+      sandbox = await acquireTerminalSandbox(
+        openTerminal,
+        { teamSlug, template },
+        'Failed to create terminal sandbox'
+      )
     }
   } else {
     onStatus(`Starting ${template} terminal sandbox...\r\n`)
-    sandbox = await createTerminalSandbox({ teamSlug, template })
+    sandbox = await acquireTerminalSandbox(
+      openTerminal,
+      { teamSlug, template },
+      'Failed to create terminal sandbox'
+    )
   }
 
   if (shouldStoreSession ?? true) {
@@ -84,55 +115,31 @@ export async function openTerminalSandbox({
   }
 }
 
-async function connectTerminalSandbox({
-  teamSlug,
-  template,
-  sandboxId,
-  requestTimeoutMs,
-}: {
-  teamSlug: string
-  template: string
-  sandboxId: string
-  requestTimeoutMs?: number
-}): Promise<Sandbox> {
-  const result = await openTerminalSandboxAction({
-    teamSlug,
-    template,
-    sandboxId,
-    requestTimeoutMs,
-  })
-
-  return toEnvdSandbox(result, 'Failed to connect to terminal sandbox')
-}
-
-async function createTerminalSandbox({
-  teamSlug,
-  template,
-}: {
-  teamSlug: string
-  template: string
-}): Promise<Sandbox> {
-  const result = await openTerminalSandboxAction({ teamSlug, template })
-
-  return toEnvdSandbox(result, 'Failed to create terminal sandbox')
-}
-
-function toEnvdSandbox(
-  result: Awaited<ReturnType<typeof openTerminalSandboxAction>>,
+async function acquireTerminalSandbox(
+  openTerminal: OpenTerminalMutation,
+  input: OpenTerminalMutationInput,
   fallbackMessage: string
-): Sandbox {
-  if (!result?.data) {
-    // Preserve TimeoutError across the server-action boundary so the
-    // attach-retry logic can recognize and retry transient connect timeouts.
-    if (result?.serverError === TERMINAL_SANDBOX_TIMEOUT_ERROR) {
+): Promise<Sandbox> {
+  let connection: TerminalSandboxConnection
+
+  try {
+    connection = await openTerminal(input)
+  } catch (error) {
+    // Preserve TimeoutError across the tRPC boundary so the attach-retry
+    // logic can recognize and retry transient connect timeouts.
+    if (
+      error instanceof TimeoutError ||
+      (error instanceof Error &&
+        error.message === TERMINAL_SANDBOX_TIMEOUT_ERROR)
+    ) {
       throw new TimeoutError(fallbackMessage)
     }
 
-    throw new Error(result?.serverError ?? fallbackMessage)
+    throw error instanceof Error ? error : new Error(fallbackMessage)
   }
 
   return createEnvdSandbox({
-    ...result.data,
+    ...connection,
     domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
     sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
   })

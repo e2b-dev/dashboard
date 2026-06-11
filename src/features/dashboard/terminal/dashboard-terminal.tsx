@@ -2,6 +2,7 @@
 
 import { type CommandHandle, type Sandbox, TimeoutError } from 'e2b'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useTRPCClient } from '@/trpc/client'
 import { attachTerminalWithRetry } from './attach-terminal'
 import {
   DEFAULT_CWD,
@@ -52,6 +53,8 @@ export default function DashboardTerminal({
   teamSlug,
   userId,
 }: DashboardTerminalProps) {
+  const trpcClient = useTRPCClient()
+
   const [status, setStatus] = useState<TerminalStatus>('idle')
   const [activeSandboxId, setActiveSandboxId] = useState<string>()
   const [template, setTemplate] = useState(
@@ -332,6 +335,8 @@ export default function DashboardTerminal({
         const terminalSandbox = await openTerminalSandbox({
           forceNewSandbox: options.forceNewSandbox,
           onStatus: appendOutput,
+          openTerminal: (mutationInput) =>
+            trpcClient.sandbox.openTerminal.mutate(mutationInput),
           requestTimeoutMs: requestedSandboxId
             ? TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS
             : undefined,
@@ -436,6 +441,7 @@ export default function DashboardTerminal({
       getSandbox,
       runCommand,
       teamSlug,
+      trpcClient,
       sandboxScoped,
       template,
       onSandboxAttached,

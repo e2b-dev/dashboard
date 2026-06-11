@@ -13,20 +13,18 @@ import {
 } from '@/features/dashboard/terminal/template'
 import { calculateTerminalSize } from '@/features/dashboard/terminal/terminal-size'
 
-const { mockOpenTerminalSandboxAction, mockCreateEnvdSandbox } = vi.hoisted(
-  () => ({
-    mockOpenTerminalSandboxAction: vi.fn(),
-    mockCreateEnvdSandbox: vi.fn(),
-  })
-)
-
-vi.mock('@/core/server/actions/terminal-actions', () => ({
-  openTerminalSandboxAction: mockOpenTerminalSandboxAction,
+const { mockCreateEnvdSandbox } = vi.hoisted(() => ({
+  mockCreateEnvdSandbox: vi.fn(),
 }))
 
 vi.mock('@/core/shared/create-envd-sandbox', () => ({
   createEnvdSandbox: mockCreateEnvdSandbox,
 }))
+
+// The `sandbox.openTerminal` tRPC mutation is injected into
+// openTerminalSandbox, so the test passes this mock directly instead of
+// mocking a module.
+const mockOpenTerminal = vi.fn()
 
 function installLocalStorage() {
   const values = new Map<string, string>()
@@ -54,19 +52,15 @@ describe('dashboard terminal helpers', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     installLocalStorage()
-    // The server action returns sandbox-scoped envd credentials; for an
+    // The tRPC mutation returns sandbox-scoped envd credentials; for an
     // explicit/stored sandbox id it echoes that id back, otherwise it reports
     // the freshly created sandbox id.
-    mockOpenTerminalSandboxAction.mockImplementation(
-      async (input: { sandboxId?: string }) => ({
-        data: {
-          sandboxId: input.sandboxId ?? 'created-sandbox',
-          sandboxDomain: 'sandbox.example.com',
-          envdVersion: '0.2.0',
-          envdAccessToken: 'envd-token',
-        },
-      })
-    )
+    mockOpenTerminal.mockImplementation(async (input: { sandboxId?: string }) => ({
+      sandboxId: input.sandboxId ?? 'created-sandbox',
+      sandboxDomain: 'sandbox.example.com',
+      envdVersion: '0.2.0',
+      envdAccessToken: 'envd-token',
+    }))
     mockCreateEnvdSandbox.mockImplementation(
       (params: { sandboxId: string }) => ({ sandboxId: params.sandboxId })
     )
@@ -349,16 +343,18 @@ describe('dashboard terminal helpers', () => {
 
       await openTerminalSandbox({
         onStatus: (message) => statuses.push(message),
+        openTerminal: mockOpenTerminal,
         teamSlug: 'team-slug',
         userId: 'user-123',
         sandboxId: 'sandbox-from-url',
         template: 'base',
       })
 
-      expect(mockOpenTerminalSandboxAction).toHaveBeenCalledWith({
+      expect(mockOpenTerminal).toHaveBeenCalledWith({
         teamSlug: 'team-slug',
         template: 'base',
         sandboxId: 'sandbox-from-url',
+        requestTimeoutMs: undefined,
       })
       expect(mockCreateEnvdSandbox).toHaveBeenCalledWith({
         sandboxId: 'sandbox-from-url',
@@ -377,12 +373,13 @@ describe('dashboard terminal helpers', () => {
     it('creates and stores a terminal sandbox when no reusable session exists', async () => {
       await openTerminalSandbox({
         onStatus: vi.fn(),
+        openTerminal: mockOpenTerminal,
         teamSlug: 'team-slug',
         userId: 'user-123',
         template: 'base',
       })
 
-      expect(mockOpenTerminalSandboxAction).toHaveBeenCalledWith({
+      expect(mockOpenTerminal).toHaveBeenCalledWith({
         teamSlug: 'team-slug',
         template: 'base',
       })
@@ -400,15 +397,17 @@ describe('dashboard terminal helpers', () => {
 
       await openTerminalSandbox({
         onStatus: vi.fn(),
+        openTerminal: mockOpenTerminal,
         teamSlug: 'team-slug',
         userId: 'user-123',
         template: 'base',
       })
 
-      expect(mockOpenTerminalSandboxAction).toHaveBeenCalledWith({
+      expect(mockOpenTerminal).toHaveBeenCalledWith({
         teamSlug: 'team-slug',
         template: 'base',
         sandboxId: 'stored-sandbox',
+        requestTimeoutMs: undefined,
       })
     })
 
@@ -418,24 +417,26 @@ describe('dashboard terminal helpers', () => {
         template: 'base',
       })
 
-      mockOpenTerminalSandboxAction.mockImplementationOnce(async () => ({
-        serverError: 'Failed to connect to terminal sandbox',
-      }))
+      mockOpenTerminal.mockImplementationOnce(async () => {
+        throw new Error('Failed to connect to terminal sandbox')
+      })
 
       await openTerminalSandbox({
         onStatus: vi.fn(),
+        openTerminal: mockOpenTerminal,
         teamSlug: 'team-slug',
         userId: 'user-123',
         template: 'base',
       })
 
       // First call attempts the stored sandbox, second call creates a new one.
-      expect(mockOpenTerminalSandboxAction).toHaveBeenNthCalledWith(1, {
+      expect(mockOpenTerminal).toHaveBeenNthCalledWith(1, {
         teamSlug: 'team-slug',
         template: 'base',
         sandboxId: 'stored-sandbox',
+        requestTimeoutMs: undefined,
       })
-      expect(mockOpenTerminalSandboxAction).toHaveBeenNthCalledWith(2, {
+      expect(mockOpenTerminal).toHaveBeenNthCalledWith(2, {
         teamSlug: 'team-slug',
         template: 'base',
       })
