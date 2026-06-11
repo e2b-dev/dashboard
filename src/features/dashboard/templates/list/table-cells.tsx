@@ -330,6 +330,17 @@ export function MemoryCell({
   )
 }
 
+export function StorageCell({
+  row,
+}: CellContext<Template | DefaultTemplate, unknown>) {
+  const diskSizeMB = row.getValue('diskSizeMB') as number
+  return (
+    <div className="w-full flex justify-end">
+      <ResourceUsage type="disk" total={diskSizeMB / 1024} mode="simple" />
+    </div>
+  )
+}
+
 export function CreatedAtCell({
   getValue,
 }: CellContext<Template | DefaultTemplate, unknown>) {

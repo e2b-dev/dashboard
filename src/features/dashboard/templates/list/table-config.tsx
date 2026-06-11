@@ -14,6 +14,7 @@ import {
   CreatedAtCell,
   EnvdVersionCell,
   MemoryCell,
+  StorageCell,
   TemplateIdCell,
   TemplateNameCell,
   UpdatedAtCell,
@@ -71,6 +72,14 @@ export const useColumns = (deps: unknown[]) => {
         cell: MemoryCell,
         filterFn: 'equals',
         sortDescFirst: true,
+      },
+      {
+        accessorKey: 'diskSizeMB',
+        header: 'Storage',
+        size: 80,
+        enableResizing: false,
+        cell: StorageCell,
+        enableSorting: false,
       },
       {
         accessorKey: 'createdAt',

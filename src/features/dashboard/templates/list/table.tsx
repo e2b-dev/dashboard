@@ -192,7 +192,9 @@ export default function TemplatesTable() {
                     header={header}
                     sorting={sorting.find((s) => s.id === header.id)?.desc}
                     align={
-                      header.id === 'cpuCount' || header.id === 'memoryMB'
+                      header.id === 'cpuCount' ||
+                      header.id === 'memoryMB' ||
+                      header.id === 'diskSizeMB'
                         ? 'right'
                         : 'left'
                     }
