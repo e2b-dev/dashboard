@@ -294,6 +294,113 @@ const formatDate = (
   )
 }
 
+interface DateTimeParts {
+  datePart: string
+  timePart: string
+  subsecondPart: string | null
+  timezonePart: string
+  iso: string
+}
+
+type DatePartsFormatPreset =
+  | 'date-time'
+  | 'date-time-with-centiseconds'
+  | 'date-year-time-no-seconds'
+
+interface FormatDatePartsOptions {
+  timezone: Timezone
+  format?: DatePartsFormatPreset
+}
+
+const DATE_PARTS_PRESET_OPTIONS: Record<
+  DatePartsFormatPreset,
+  {
+    includeSeconds: boolean
+    includeYear: boolean
+    includeCentiseconds: boolean
+  }
+> = {
+  'date-time': {
+    includeSeconds: true,
+    includeYear: false,
+    includeCentiseconds: false,
+  },
+  'date-time-with-centiseconds': {
+    includeSeconds: true,
+    includeYear: false,
+    includeCentiseconds: true,
+  },
+  'date-year-time-no-seconds': {
+    includeSeconds: false,
+    includeYear: true,
+    includeCentiseconds: false,
+  },
+}
+
+const formatDateParts = (
+  value: string | number | Date,
+  { timezone, format = 'date-time' }: FormatDatePartsOptions
+): DateTimeParts | null => {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+
+  const { includeSeconds, includeYear, includeCentiseconds } =
+    DATE_PARTS_PRESET_OPTIONS[format]
+
+  const dateFormatterOptions: Intl.DateTimeFormatOptions = {
+    timeZone: timezone,
+  }
+  const dateFormatter = new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: '2-digit',
+    ...dateFormatterOptions,
+  })
+  const dateWithYearFormatter = new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: '2-digit',
+    year: 'numeric',
+    ...dateFormatterOptions,
+  })
+  const timeFormatter = new Intl.DateTimeFormat(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+    ...dateFormatterOptions,
+  })
+  const timeNoSecondsFormatter = new Intl.DateTimeFormat(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    ...dateFormatterOptions,
+  })
+  const timezoneFormatter = new Intl.DateTimeFormat(undefined, {
+    timeZoneName: 'short',
+    ...dateFormatterOptions,
+  })
+
+  const timezonePart =
+    timezoneFormatter
+      .formatToParts(date)
+      .find((part) => part.type === 'timeZoneName')?.value ?? timezone
+
+  return {
+    datePart: (includeYear ? dateWithYearFormatter : dateFormatter).format(
+      date
+    ),
+    timePart: (includeSeconds ? timeFormatter : timeNoSecondsFormatter).format(
+      date
+    ),
+    subsecondPart: includeCentiseconds
+      ? Math.floor((date.getMilliseconds() / 10) % 100)
+          .toString()
+          .padStart(2, '0')
+      : null,
+    timezonePart,
+    iso: date.toISOString(),
+  }
+}
+
 const formatZonedExactTimestamp = (
   value: string | number | Date,
   timezone: Timezone
@@ -330,6 +437,7 @@ const formatZonedRelativeDayTime = (
 export {
   createZonedTimeAxisLabelFormatter,
   formatDate,
+  formatDateParts,
   formatTimezoneAbbreviation,
   formatZonedDateRange,
   formatZonedDateTimeInput,
@@ -346,7 +454,10 @@ export {
 }
 export type {
   DateFormatPreset,
+  DatePartsFormatPreset,
+  DateTimeParts,
   FormatDateOptions,
+  FormatDatePartsOptions,
   ZonedDateParts,
   ZonedDateRangeFormatOptions,
   ZonedDateTimeParts,
