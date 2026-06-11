@@ -32,7 +32,7 @@ const zonedInstantToCalendarDate = (
   timezone: Timezone
 ): Date => {
   const { date } = formatZonedDateTimeInput(value, timezone)
-  const [year, month, day] = date.split('/').map(Number)
+  const [year = 0, month = 0, day = 0] = date.split('/').map(Number)
 
   return new Date(year, month - 1, day)
 }
