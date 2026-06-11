@@ -80,6 +80,7 @@ export const clientSchema = z.object({
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),
 
   NEXT_PUBLIC_INFRA_API_URL: z.url().optional(),
+  NEXT_PUBLIC_E2B_SANDBOX_URL: z.url().optional(),
   NEXT_PUBLIC_DASHBOARD_API_URL: z.url().optional(),
 })
 
