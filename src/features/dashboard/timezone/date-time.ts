@@ -197,8 +197,6 @@ const formatZonedDateRange = (
 const DATE_FORMAT_PRESETS = {
   // Jun 8, 2026
   date: 'MMM d, yyyy',
-  // Jun 08, 2026
-  'date-padded-day': 'MMM dd, yyyy',
   // 9:05:12 AM
   time: 'h:mm:ss a',
   // 2026-06-08 09:05:12 EDT

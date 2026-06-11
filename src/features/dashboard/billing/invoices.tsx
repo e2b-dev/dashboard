@@ -96,10 +96,7 @@ export default function BillingInvoicesTable() {
             invoices.map((invoice) => (
               <TableRow key={invoice.url} className="h-11">
                 <TableCell className="py-0">
-                  {formatDate(invoice.date_created, {
-                    timezone,
-                    format: 'date-padded-day',
-                  }) ?? '—'}
+                  {formatDate(invoice.date_created, { timezone }) ?? '—'}
                 </TableCell>
                 <TableCell className="py-0">
                   <Badge variant={invoice.paid ? 'positive' : 'warning'}>
