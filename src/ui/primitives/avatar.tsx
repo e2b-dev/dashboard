@@ -2,7 +2,7 @@
 
 import * as AvatarPrimitive from '@radix-ui/react-avatar'
 import * as React from 'react'
-import { useId } from 'react'
+import { useId, useLayoutEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 
 const Avatar = React.forwardRef<
@@ -69,7 +69,7 @@ const patternCells = Array.from(
       isAccent,
       row,
       x: 8 + col * PATTERN_CELL_SIZE,
-      y: 14 + row * PATTERN_CELL_SIZE,
+      y: 8 + row * PATTERN_CELL_SIZE,
     }
   }
 )
@@ -79,9 +79,30 @@ interface PatternAvatarProps {
   letter: string
 }
 
+const VIEWBOX_CENTER = 72
+
 const PatternAvatar = ({ className, letter }: PatternAvatarProps) => {
   const clipPathId = useId().replaceAll(':', '')
+  const measureId = `${clipPathId}-m`
   const normalizedLetter = letter.trim().charAt(0).toUpperCase() || '?'
+  const textRef = useRef<SVGTextElement>(null)
+  const [offset, setOffset] = useState({ dx: 0, dy: 0 })
+
+  useLayoutEffect(() => {
+    const el = textRef.current
+    if (!el) return
+    try {
+      const bbox = el.getBBox()
+      const visualCX = bbox.x + bbox.width / 2
+      const visualCY = bbox.y + bbox.height / 2
+      setOffset({
+        dx: VIEWBOX_CENTER - visualCX,
+        dy: VIEWBOX_CENTER - visualCY,
+      })
+    } catch {
+      // getBBox can throw if element is not rendered
+    }
+  }, [normalizedLetter])
 
   return (
     <div
@@ -92,20 +113,37 @@ const PatternAvatar = ({ className, letter }: PatternAvatarProps) => {
     >
       <svg
         viewBox="0 0 144 144"
-        className="size-full"
+        className="!size-full"
         preserveAspectRatio="xMidYMid meet"
         aria-hidden="true"
       >
+        {/* Hidden text for bbox measurement (clipPath contents may not support getBBox) */}
+        <text
+          ref={textRef}
+          id={measureId}
+          x={VIEWBOX_CENTER}
+          y={VIEWBOX_CENTER}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontFamily="IBM Plex Sans, sans-serif"
+          fontSize="110"
+          fontWeight="500"
+          visibility="hidden"
+        >
+          {normalizedLetter}
+        </text>
+
         <defs>
           <clipPath id={clipPathId}>
             <text
-              x="72"
-              y="78"
+              x={VIEWBOX_CENTER}
+              y={VIEWBOX_CENTER}
               textAnchor="middle"
-              dominantBaseline="middle"
+              dominantBaseline="central"
               fontFamily="IBM Plex Sans, sans-serif"
               fontSize="110"
               fontWeight="500"
+              transform={`translate(${offset.dx}, ${offset.dy})`}
             >
               {normalizedLetter}
             </text>

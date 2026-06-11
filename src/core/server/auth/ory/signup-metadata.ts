@@ -83,6 +83,23 @@ export async function persistOrySignupMetadataFromCookie(
   }
 }
 
+export async function readOrySignupMetadataCookie(): Promise<OrySignupMetadata | null> {
+  const cookieStore = await cookies()
+  const encoded = cookieStore.get(ORY_SIGNUP_METADATA_COOKIE)?.value
+
+  if (!encoded) return null
+
+  const metadata = decodeSignupMetadata(encoded)
+  if (!metadata) {
+    l.warn(
+      { key: 'auth_provider:ory_signup_metadata:invalid_cookie' },
+      'Ignoring invalid Ory signup metadata cookie'
+    )
+  }
+
+  return metadata
+}
+
 export async function persistOrySignupMetadata(
   identityId: string,
   metadata: OrySignupMetadata
@@ -125,19 +142,9 @@ export async function persistOrySignupMetadata(
 
 async function consumeOrySignupMetadataCookie(): Promise<OrySignupMetadata | null> {
   const cookieStore = await cookies()
-  const encoded = cookieStore.get(ORY_SIGNUP_METADATA_COOKIE)?.value
+  const metadata = await readOrySignupMetadataCookie()
 
   cookieStore.delete(ORY_SIGNUP_METADATA_COOKIE)
-
-  if (!encoded) return null
-
-  const metadata = decodeSignupMetadata(encoded)
-  if (!metadata) {
-    l.warn(
-      { key: 'auth_provider:ory_signup_metadata:invalid_cookie' },
-      'Ignoring invalid Ory signup metadata cookie'
-    )
-  }
 
   return metadata
 }

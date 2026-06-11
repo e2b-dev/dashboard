@@ -24,9 +24,6 @@ export interface TeamsRepository {
   ): Promise<RepoResult<DashboardComponents['schemas']['UpdateTeamResponse']>>
   addTeamMember(email: string): Promise<RepoResult<void>>
   removeTeamMember(userId: string): Promise<RepoResult<void>>
-  updateTeamProfilePictureUrl(
-    profilePictureUrl: string | null
-  ): Promise<RepoResult<DashboardComponents['schemas']['UpdateTeamResponse']>>
 }
 
 function requireTeamId(scope: TeamsRequestScope): RepoResult<string> {
@@ -175,37 +172,6 @@ export function createTeamsRepository(
       }
 
       return ok(undefined)
-    },
-    async updateTeamProfilePictureUrl(
-      profilePictureUrl
-    ): Promise<
-      RepoResult<DashboardComponents['schemas']['UpdateTeamResponse']>
-    > {
-      const teamId = requireTeamId(scope)
-      if (!teamId.ok) {
-        return teamId
-      }
-
-      const { data, error, response } = await deps.apiClient.PATCH(
-        '/teams/{teamID}',
-        {
-          params: { path: { teamID: teamId.data } },
-          headers: deps.authHeaders(scope.accessToken, teamId.data),
-          body: { profilePictureUrl },
-        }
-      )
-
-      if (!response.ok || error || !data) {
-        return err(
-          repoErrorFromHttp(
-            response.status,
-            error?.message ?? 'Failed to update team profile picture',
-            error
-          )
-        )
-      }
-
-      return ok(data)
     },
   }
 }

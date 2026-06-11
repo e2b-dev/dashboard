@@ -1,7 +1,4 @@
-import { TRPCError } from '@trpc/server'
-import { fileTypeFromBuffer } from 'file-type'
 import { revalidatePath } from 'next/cache'
-import { after } from 'next/server'
 import { z } from 'zod'
 import { createKeysRepository } from '@/core/modules/keys/repository.server'
 import { CreateApiKeySchema } from '@/core/modules/keys/schemas'
@@ -23,11 +20,7 @@ import {
   protectedProcedure,
   protectedTeamProcedure,
 } from '@/core/server/trpc/procedures'
-import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
-import { deleteFile, getFiles, uploadFile } from '@/core/shared/clients/storage'
-import { FileSchema } from '@/core/shared/schemas/file'
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024
+import { l } from '@/core/shared/clients/logger/logger'
 
 const userTeamsRepositoryProcedure = protectedProcedure.use(
   withAuthedRequestRepository(
@@ -49,9 +42,6 @@ const keysRepositoryProcedure = protectedTeamProcedure.use(
     keysRepository,
   }))
 )
-
-const getStorageFilePath = (folderPath: string, fileName: string) =>
-  `${folderPath}/${fileName}`
 
 export const teamsRouter = createTRPCRouter({
   list: userTeamsRepositoryProcedure.query(async ({ ctx }) => {
@@ -172,109 +162,5 @@ export const teamsRouter = createTRPCRouter({
       if (!result.ok) throwTRPCErrorFromRepoError(result.error)
 
       revalidatePath(`/dashboard/${input.teamSlug}/members`, 'page')
-    }),
-  removeProfilePicture: teamsRepositoryProcedure.mutation(
-    async ({ ctx, input }) => {
-      const result = await ctx.teamsRepository.updateTeamProfilePictureUrl(null)
-
-      if (!result.ok) throwTRPCErrorFromRepoError(result.error)
-
-      after(async () => {
-        try {
-          const folderPath = `teams/${ctx.teamId}`
-
-          const files = await getFiles(folderPath)
-
-          for (const file of files) {
-            await deleteFile(getStorageFilePath(folderPath, file.name))
-          }
-        } catch (cleanupError) {
-          l.warn({
-            key: 'remove_team_profile_picture_trpc:cleanup_error',
-            error: serializeErrorForLog(cleanupError),
-            team_id: ctx.teamId,
-          })
-        }
-      })
-
-      revalidatePath(`/dashboard/${input.teamSlug}/general`, 'page')
-
-      return result.data
-    }
-  ),
-  uploadProfilePicture: teamsRepositoryProcedure
-    .input(
-      z.object({
-        image: FileSchema,
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const allowedTypes = ['image/jpeg', 'image/png']
-      if (!allowedTypes.includes(input.image.type)) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'File must be JPG or PNG format',
-        })
-      }
-
-      const buffer = Buffer.from(input.image.base64, 'base64')
-      if (buffer.length > MAX_FILE_SIZE) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'File size must be less than 5MB',
-        })
-      }
-
-      const fileType = await fileTypeFromBuffer(buffer)
-      if (!fileType) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Unable to determine file type',
-        })
-      }
-
-      const allowedMimeTypes = ['image/jpeg', 'image/png']
-      if (!allowedMimeTypes.includes(fileType.mime)) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: `Invalid file type. Only JPEG and PNG images are allowed. File appears to be: ${fileType.mime}`,
-        })
-      }
-
-      const fileName = `${Date.now()}.${fileType.ext}`
-      const storagePath = getStorageFilePath(`teams/${ctx.teamId}`, fileName)
-      const publicUrl = await uploadFile(buffer, storagePath, fileType.mime)
-
-      const result =
-        await ctx.teamsRepository.updateTeamProfilePictureUrl(publicUrl)
-      if (!result.ok) throwTRPCErrorFromRepoError(result.error)
-
-      after(async () => {
-        try {
-          const folderPath = `teams/${ctx.teamId}`
-          const currentFilePath = getStorageFilePath(folderPath, fileName)
-          const files = await getFiles(folderPath)
-
-          for (const file of files) {
-            const filePath = getStorageFilePath(folderPath, file.name)
-            if (filePath === currentFilePath) continue
-
-            await deleteFile(filePath)
-          }
-        } catch (cleanupError) {
-          l.warn({
-            key: 'upload_team_profile_picture_trpc:cleanup_error',
-            error: serializeErrorForLog(cleanupError),
-            team_id: ctx.teamId,
-            context: {
-              image: input.image.name,
-            },
-          })
-        }
-      })
-
-      revalidatePath(`/dashboard/${input.teamSlug}/general`, 'page')
-
-      return result.data
     }),
 })

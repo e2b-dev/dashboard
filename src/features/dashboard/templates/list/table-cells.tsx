@@ -5,7 +5,6 @@ import type { CellContext } from '@tanstack/react-table'
 import { useMemo, useState } from 'react'
 import type { DefaultTemplate, Template } from '@/core/modules/templates/models'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
-import { useRouteParams } from '@/lib/hooks/use-route-params'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -56,16 +55,18 @@ export function ActionsCell({
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const template = row.original
   const { team } = useDashboard()
-  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
 
   const { toast } = useToast()
   const trpc = useTRPC()
   const queryClient = useQueryClient()
+  // Path-level key matches the paginated infinite query across every
+  // sort/filter/search variant currently in the cache.
+  const templatesListKey = trpc.templates.getTemplates.pathKey()
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
   const updateTemplateMutation = useMutation(
     trpc.templates.updateTemplate.mutationOptions({
-      onSuccess: async (data, variables) => {
+      onSuccess: (data) => {
         const templateName = template.aliases[0] || template.templateID
 
         toast(
@@ -77,30 +78,6 @@ export function ActionsCell({
             </>
           )
         )
-
-        await queryClient.cancelQueries({
-          queryKey: trpc.templates.getTemplates.queryKey({
-            teamSlug,
-          }),
-        })
-
-        queryClient.setQueryData(
-          trpc.templates.getTemplates.queryKey({
-            teamSlug,
-          }),
-          (old) => {
-            if (!old?.templates) return old
-
-            return {
-              ...old,
-              templates: old.templates.map((t: Template) =>
-                t.templateID === variables.templateId
-                  ? { ...t, public: variables.public }
-                  : t
-              ),
-            }
-          }
-        )
       },
       onError: (error) => {
         const templateName = template.aliases[0] || template.templateID
@@ -111,18 +88,14 @@ export function ActionsCell({
         )
       },
       onSettled: () => {
-        queryClient.invalidateQueries({
-          queryKey: trpc.templates.getTemplates.queryKey({
-            teamSlug,
-          }),
-        })
+        queryClient.invalidateQueries({ queryKey: templatesListKey })
       },
     })
   )
 
   const deleteTemplateMutation = useMutation(
     trpc.templates.deleteTemplate.mutationOptions({
-      onSuccess: async (_, variables) => {
+      onSuccess: () => {
         const templateName = template.aliases[0] || template.templateID
         toast(
           defaultSuccessToast(
@@ -133,32 +106,8 @@ export function ActionsCell({
             </>
           )
         )
-
-        // stop ongoing invlaidations and remove template from state while refetch is going in the background
-
-        await queryClient.cancelQueries({
-          queryKey: trpc.templates.getTemplates.queryKey({
-            teamSlug,
-          }),
-        })
-
-        queryClient.setQueryData(
-          trpc.templates.getTemplates.queryKey({
-            teamSlug,
-          }),
-
-          (old) => {
-            if (!old?.templates) return old
-            return {
-              ...old,
-              templates: old.templates.filter(
-                (t: Template) => t.templateID !== variables.templateId
-              ),
-            }
-          }
-        )
       },
-      onError: (error, _variables) => {
+      onError: (error) => {
         const templateName = template.aliases[0] || template.templateID
         toast(
           defaultErrorToast(
@@ -168,12 +117,7 @@ export function ActionsCell({
       },
       onSettled: () => {
         setIsDeleteDialogOpen(false)
-
-        queryClient.invalidateQueries({
-          queryKey: trpc.templates.getTemplates.queryKey({
-            teamSlug,
-          }),
-        })
+        queryClient.invalidateQueries({ queryKey: templatesListKey })
       },
     })
   )

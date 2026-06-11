@@ -1,11 +1,18 @@
-import { headers } from 'next/headers'
 import { z } from 'zod'
+import { ConfirmEmailInputSchema } from '@/core/modules/auth/models'
 import { auth } from '@/core/server/auth'
+import { verifyOtpAndBuildRedirect } from '@/core/server/auth/verify-otp'
 import { createTRPCRouter } from '@/core/server/trpc/init'
 import { publicProcedure } from '@/core/server/trpc/procedures'
 import { relativeUrlSchema } from '@/core/shared/schemas/url'
 
 export const authRouter = createTRPCRouter({
+  verifyOtp: publicProcedure
+    .input(ConfirmEmailInputSchema)
+    .mutation(({ ctx, input }) =>
+      verifyOtpAndBuildRedirect(input, ctx.requestOrigin)
+    ),
+
   // Returns the URL the client should HARD-navigate to (via window.location)
   // rather than redirect()-ing server-side: a soft RSC navigation re-renders the
   // signed-out dashboard and tears down the "Logging out..." overlay before the
@@ -19,10 +26,9 @@ export const authRouter = createTRPCRouter({
         })
         .optional()
     )
-    .mutation(async ({ input }) => {
-      const origin = (await headers()).get('origin') ?? undefined
+    .mutation(async ({ ctx, input }) => {
       const { redirectTo } = await auth.signOut({
-        origin,
+        origin: ctx.requestOrigin,
         returnTo: input?.returnTo,
       })
 

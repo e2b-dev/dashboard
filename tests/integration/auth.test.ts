@@ -517,7 +517,12 @@ describe('Auth Actions - Integration Tests', () => {
     const createCaller = createCallerFactory(authRouter)
 
     const getCaller = async () =>
-      createCaller(await createTRPCContext({ headers: new Headers() }))
+      createCaller(
+        await createTRPCContext({
+          headers: new Headers(),
+          requestUrl: 'http://localhost:3000/api/trpc',
+        })
+      )
 
     /**
      * AUTHENTICATION TEST: Verifies that sign-out returns the sign-in page url

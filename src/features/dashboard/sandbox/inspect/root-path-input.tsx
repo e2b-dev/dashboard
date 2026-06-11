@@ -2,9 +2,11 @@
 
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, useTransition } from 'react'
+import { COOKIE_KEYS } from '@/configs/cookies'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
 import { cn } from '@/lib/utils'
+import { setBrowserCookie } from '@/lib/utils/browser-cookies'
 import { Button } from '@/ui/primitives/button'
 import { ArrowRightIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
@@ -26,11 +28,7 @@ export default function RootPathInput({
 
   const save = async (newPath: string) => {
     try {
-      await fetch('/api/sandbox/inspect/root-path', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: newPath }),
-      })
+      setBrowserCookie(COOKIE_KEYS.SANDBOX_INSPECT_ROOT_PATH, newPath)
     } catch (error) {
       l.error({
         key: 'sandbox_inspect_root_path_input:save_root_path_failed',
