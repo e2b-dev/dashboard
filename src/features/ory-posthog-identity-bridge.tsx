@@ -129,22 +129,5 @@ export function OryPostHogIdentityBridge() {
     void syncIdentity()
   }, [pathname, syncIdentity])
 
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') void syncIdentity()
-    }
-    const handleOnline = () => void syncIdentity()
-
-    window.addEventListener('focus', handleOnline)
-    window.addEventListener('online', handleOnline)
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-
-    return () => {
-      window.removeEventListener('focus', handleOnline)
-      window.removeEventListener('online', handleOnline)
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-    }
-  }, [syncIdentity])
-
   return null
 }
