@@ -2,8 +2,10 @@ import { flexRender, type Table } from '@tanstack/react-table'
 import type { RefObject } from 'react'
 import type { Template } from '@/core/modules/templates/models'
 import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
+import { cn } from '@/lib/utils'
 import { DataTableBody, DataTableCell, DataTableRow } from '@/ui/data-table'
 import Empty from '@/ui/empty'
+import { LoadMoreButton } from '@/ui/pagination-buttons'
 import { Button } from '@/ui/primitives/button'
 import { CloseIcon, ExternalLinkIcon } from '@/ui/primitives/icons'
 import { useTemplateTableStore } from './stores/table-store'
@@ -16,16 +18,25 @@ interface TemplatesTableBodyProps {
   templates: Template[] | undefined
   table: Table<Template>
   scrollRef: RefObject<HTMLDivElement | null>
+  hasNextPage: boolean
+  isFetchingNextPage: boolean
+  fetchNextPage: () => void
+  isRefetching: boolean
 }
 
 export function TemplatesTableBody({
   templates,
   table,
   scrollRef,
+  hasNextPage,
+  isFetchingNextPage,
+  fetchNextPage,
+  isRefetching,
 }: TemplatesTableBodyProps) {
   'use no memo'
 
-  const resetFilters = useTemplateTableStore((state) => state.resetFilters)
+  const { resetFilters, globalFilter, cpuCount, memoryMB, isPublic } =
+    useTemplateTableStore()
 
   const centerRows = table.getCenterRows()
   const {
@@ -47,9 +58,10 @@ export function TemplatesTableBody({
   const isEmpty = templates && centerRows.length === 0
 
   const hasFilter =
-    Object.values(table.getState().columnFilters).some(
-      (filter) => filter.value !== undefined
-    ) || table.getState().globalFilter !== ''
+    Boolean(globalFilter) ||
+    cpuCount !== undefined ||
+    memoryMB !== undefined ||
+    isPublic !== undefined
 
   if (isEmpty) {
     if (hasFilter) {
@@ -85,21 +97,35 @@ export function TemplatesTableBody({
   }
 
   return (
-    <DataTableBody virtualizedTotalHeight={virtualizedTotalHeight}>
-      {virtualPaddingTop > 0 && <div style={{ height: virtualPaddingTop }} />}
-      {rows.map((row) => (
-        <DataTableRow
-          key={row.id}
-          isSelected={row.getIsSelected()}
-          className="h-8 border-b"
-        >
-          {row.getVisibleCells().map((cell) => (
-            <DataTableCell key={cell.id} cell={cell}>
-              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-            </DataTableCell>
-          ))}
-        </DataTableRow>
-      ))}
-    </DataTableBody>
+    <>
+      <DataTableBody
+        virtualizedTotalHeight={virtualizedTotalHeight}
+        className={cn(isRefetching && 'opacity-70 transition-opacity')}
+      >
+        {virtualPaddingTop > 0 && <div style={{ height: virtualPaddingTop }} />}
+        {rows.map((row) => (
+          <DataTableRow
+            key={row.id}
+            isSelected={row.getIsSelected()}
+            className="h-8 border-b"
+          >
+            {row.getVisibleCells().map((cell) => (
+              <DataTableCell key={cell.id} cell={cell}>
+                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+              </DataTableCell>
+            ))}
+          </DataTableRow>
+        ))}
+      </DataTableBody>
+
+      {hasNextPage && (
+        <div className="flex items-center justify-center py-3 text-fg-tertiary max-md:sticky max-md:left-0 max-md:w-[calc(100svw-1.5rem)]">
+          <LoadMoreButton
+            isLoading={isFetchingNextPage}
+            onLoadMore={fetchNextPage}
+          />
+        </div>
+      )}
+    </>
   )
 }
