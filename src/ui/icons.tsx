@@ -1,7 +1,7 @@
-import { type HTMLAttributes } from 'react'
-import { IconBaseProps } from 'react-icons/lib'
+import type { HTMLAttributes } from 'react'
+import type { IconBaseProps } from 'react-icons/lib'
 import { cn } from '@/lib/utils'
-import { type Icon, TerminalCustomIcon } from '@/ui/primitives/icons'
+import { type Icon, TerminalIcon } from '@/ui/primitives/icons'
 
 export function IconContainer({
   icon: Icon,
@@ -20,7 +20,7 @@ export function IconContainer({
       {Icon ? (
         <Icon className="h-4 w-4" />
       ) : (
-        <TerminalCustomIcon className="h-4 w-4" />
+        <TerminalIcon className="h-4 w-4" />
       )}
     </div>
   )

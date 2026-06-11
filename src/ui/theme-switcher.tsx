@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
 import { IconButton } from '@/ui/primitives/icon-button'
-import { MoonIcon, SunIcon, SystemIcon } from '@/ui/primitives/icons'
+import { LaptopIcon, MoonIcon, SunIcon } from '@/ui/primitives/icons'
 
 interface ThemeSwitcherProps {
   className?: string
@@ -58,7 +58,7 @@ const ThemeSwitcher = ({ className }: ThemeSwitcherProps) => {
             className="flex items-center gap-2"
             value="system"
           >
-            <SystemIcon className="text-fg-tertiary" />
+            <LaptopIcon className="text-fg-tertiary" />
             <span>System</span>
           </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>

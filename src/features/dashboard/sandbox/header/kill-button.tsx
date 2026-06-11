@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { killSandboxAction } from '@/core/server/actions/sandbox-actions'
 import { AlertPopover } from '@/ui/alert-popover'
 import { Button } from '@/ui/primitives/button'
-import { TrashIcon } from '@/ui/primitives/icons'
+import { RemoveIcon } from '@/ui/primitives/icons'
 import { useDashboard } from '../../context'
 import { useSandboxContext } from '../context'
 
@@ -53,7 +53,7 @@ export default function KillButton({ className }: KillButtonProps) {
       confirm="Kill Sandbox"
       trigger={
         <Button variant="error" className={className} disabled={!canKill}>
-          <TrashIcon />
+          <RemoveIcon />
           Kill
         </Button>
       }
