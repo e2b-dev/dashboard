@@ -1,4 +1,4 @@
-import type { Timezone } from '@/features/dashboard/timezone'
+import { getZonedDateParts, type Timezone } from '@/features/dashboard/timezone'
 import { formatCurrency, formatNumber } from '@/lib/utils/formatting'
 import {
   determineSamplingMode,
@@ -12,35 +12,9 @@ import type {
   Timeframe,
 } from './types'
 
-const getZonedYear = (value: number | Date, timezone: Timezone): number => {
-  const year = new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone,
-    year: 'numeric',
-  }).format(value)
-
-  return Number.parseInt(year, 10)
-}
-
 const isThisYearInTimezone = (timestamp: number, timezone: Timezone): boolean =>
-  getZonedYear(timestamp, timezone) === getZonedYear(new Date(), timezone)
-
-const getZonedMonth = (timestamp: number, timezone: Timezone): number => {
-  const month = new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone,
-    month: 'numeric',
-  }).format(timestamp)
-
-  return Number.parseInt(month, 10)
-}
-
-const getZonedDayOfMonth = (timestamp: number, timezone: Timezone): number => {
-  const day = new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone,
-    day: 'numeric',
-  }).format(timestamp)
-
-  return Number.parseInt(day, 10)
-}
+  getZonedDateParts(timestamp, timezone).year ===
+  getZonedDateParts(new Date(), timezone).year
 
 const formatZonedDay = (timestamp: number, timezone: Timezone): string =>
   new Intl.DateTimeFormat('en-US', {
@@ -70,13 +44,10 @@ const formatZonedWeekRange = (
   endTimestamp: number,
   timezone: Timezone
 ): string => {
-  const startYear = getZonedYear(startTimestamp, timezone)
-  const endYear = getZonedYear(endTimestamp, timezone)
-  const sameYear = startYear === endYear
-  const sameMonth =
-    sameYear &&
-    getZonedMonth(startTimestamp, timezone) ===
-      getZonedMonth(endTimestamp, timezone)
+  const startParts = getZonedDateParts(startTimestamp, timezone)
+  const endParts = getZonedDateParts(endTimestamp, timezone)
+  const sameYear = startParts.year === endParts.year
+  const sameMonth = sameYear && startParts.month === endParts.month
 
   const startFormat = new Intl.DateTimeFormat('en-US', {
     timeZone: timezone,
@@ -93,7 +64,7 @@ const formatZonedWeekRange = (
   })
 
   if (sameMonth) {
-    return `${startFormat.format(startTimestamp)} - ${getZonedDayOfMonth(endTimestamp, timezone)}`
+    return `${startFormat.format(startTimestamp)} - ${endParts.day}`
   }
 
   return `${startFormat.format(startTimestamp)} - ${endFormat.format(endTimestamp)}`

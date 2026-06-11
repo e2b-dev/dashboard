@@ -204,7 +204,7 @@ export default function SandboxMonitoringTimeRangeControls({
                 )}
                 endDateTime={toSafeIsoDateTime(pickerTimeframe.end)}
                 bounds={pickerBounds}
-                onApplyTimestamps={handleApply}
+                onApply={({ start, end }) => handleApply(start, end)}
                 className="p-3 w-56 max-md:w-full"
               />
               <Separator

@@ -3,6 +3,7 @@
 import type { SandboxLogModel } from '@/core/modules/sandboxes/models'
 import { LogLevelBadge } from '@/features/dashboard/common/log-cells'
 import { useTimezone } from '@/features/dashboard/timezone'
+import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
 import CopyButtonInline from '@/ui/copy-button-inline'
 
 export const LogLevel = ({ level }: { level: SandboxLogModel['level'] }) => {
@@ -15,31 +16,29 @@ interface TimestampProps {
 
 export const Timestamp = ({ timestampUnix }: TimestampProps) => {
   const { timezone } = useTimezone()
-  const date = new Date(timestampUnix)
+  const formattedTimestamp = formatLocalLogStyleTimestamp(timestampUnix, {
+    includeCentiseconds: true,
+    timeZone: timezone,
+  })
 
-  const centiseconds = Math.floor((date.getMilliseconds() / 10) % 100)
-    .toString()
-    .padStart(2, '0')
-  const localDatePart = new Intl.DateTimeFormat(undefined, {
-    month: 'short',
-    day: '2-digit',
-    timeZone: timezone,
-  }).format(date)
-  const localTimePart = new Intl.DateTimeFormat(undefined, {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-    timeZone: timezone,
-  }).format(date)
+  if (!formattedTimestamp) {
+    return (
+      <CopyButtonInline
+        value=""
+        className="font-mono group prose-table-numeric truncate"
+      >
+        --
+      </CopyButtonInline>
+    )
+  }
 
   return (
     <CopyButtonInline
-      value={date.toISOString()}
+      value={formattedTimestamp.iso}
       className="font-mono group prose-table-numeric truncate"
     >
-      <span className="text-fg-tertiary">{localDatePart}</span> {localTimePart}.
-      {centiseconds}
+      <span className="text-fg-tertiary">{formattedTimestamp.datePart}</span>{' '}
+      {formattedTimestamp.timePart}.{formattedTimestamp.subsecondPart}
     </CopyButtonInline>
   )
 }

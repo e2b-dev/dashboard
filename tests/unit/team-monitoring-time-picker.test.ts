@@ -1,14 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { formatTimeframeValues } from '@/features/dashboard/sandboxes/monitoring/time-picker/utils'
 import { createCustomTimeFormSchema } from '@/features/dashboard/sandboxes/monitoring/time-picker/validation'
-import { parseTimezone, type Timezone } from '@/features/dashboard/timezone'
-
-const requireTimezone = (value: string): Timezone => {
-  const timezone = parseTimezone(value)
-  if (!timezone) throw new Error(`Expected ${value} to be a valid timezone`)
-
-  return timezone
-}
+import { requireTimezone } from './helpers/timezone'
 
 describe('team monitoring time picker', () => {
   const newYork = requireTimezone('America/New_York')

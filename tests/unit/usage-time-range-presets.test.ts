@@ -1,17 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   formatZonedDateTimeInput,
-  parseTimezone,
   type Timezone,
 } from '@/features/dashboard/timezone'
 import { getUsageTimeRangePresets } from '@/features/dashboard/usage/constants'
-
-const requireTimezone = (value: string): Timezone => {
-  const timezone = parseTimezone(value)
-  if (!timezone) throw new Error(`Expected ${value} to be a valid timezone`)
-
-  return timezone
-}
+import { requireTimezone } from './helpers/timezone'
 
 const getPresetRange = (timezone: Timezone, presetId: string) => {
   const preset = getUsageTimeRangePresets(timezone).find(

@@ -1,10 +1,6 @@
 import { startOfDay } from 'date-fns'
 import { describe, expect, it, vi } from 'vitest'
-import {
-  parseTimezone,
-  type Timezone,
-  zonedInstantToCalendarDate,
-} from '@/features/dashboard/timezone'
+import { zonedInstantToCalendarDate } from '@/features/dashboard/timezone'
 import {
   createTimeRangeSchema,
   normalizeTimeRangeValues,
@@ -13,13 +9,7 @@ import {
   type TimeRangeValues,
   validateTimeRangeValues,
 } from '@/ui/time-range-picker.logic'
-
-const requireTimezone = (value: string): Timezone => {
-  const timezone = parseTimezone(value)
-  if (!timezone) throw new Error(`Expected ${value} to be a valid timezone`)
-
-  return timezone
-}
+import { requireTimezone } from './helpers/timezone'
 
 const utc = requireTimezone('UTC')
 const newYork = requireTimezone('America/New_York')

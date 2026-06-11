@@ -1,17 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { parseTimezone, type Timezone } from '@/features/dashboard/timezone'
 import {
   normalizeToEndOfSamplingPeriod,
   normalizeToStartOfSamplingPeriod,
   processUsageData,
 } from '@/features/dashboard/usage/sampling-utils'
-
-const requireTimezone = (value: string): Timezone => {
-  const timezone = parseTimezone(value)
-  if (!timezone) throw new Error(`Expected ${value} to be a valid timezone`)
-
-  return timezone
-}
+import { requireTimezone } from './helpers/timezone'
 
 describe('usage sampling utilities', () => {
   const newYork = requireTimezone('America/New_York')
@@ -83,6 +76,8 @@ describe('usage sampling utilities', () => {
         timestamp: Date.UTC(2026, 5, 10, 7, 0, 0),
         sandboxCount: 2,
         cost: 11,
+        cpuCost: 5,
+        ramCost: 6,
         vcpuHours: 3,
         ramGibHours: 4,
       },
