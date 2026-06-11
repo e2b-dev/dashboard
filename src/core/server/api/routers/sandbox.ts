@@ -18,6 +18,7 @@ import { createTRPCRouter } from '@/core/server/trpc/init'
 import { protectedTeamProcedure } from '@/core/server/trpc/procedures'
 import { SandboxIdSchema } from '@/core/shared/schemas/api'
 import { SANDBOX_MONITORING_METRICS_RETENTION_MS } from '@/features/dashboard/sandbox/monitoring/utils/constants'
+import { TERMINAL_SANDBOX_TIMEOUT_MS } from '@/features/dashboard/terminal/constants'
 
 const sandboxRepositoryProcedure = protectedTeamProcedure.use(
   withTeamAuthedRequestRepository(
@@ -217,7 +218,10 @@ export const sandboxRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const sandbox = await Sandbox.connect(input.sandboxId, {
+        apiUrl: process.env.NEXT_PUBLIC_INFRA_API_URL,
         domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
+        sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
+        timeoutMs: TERMINAL_SANDBOX_TIMEOUT_MS,
         headers: authHeaders(ctx.session.access_token, ctx.teamId),
       })
 

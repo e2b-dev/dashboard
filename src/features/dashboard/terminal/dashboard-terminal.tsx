@@ -29,6 +29,7 @@ import type {
 import { useTerminalInstance } from './use-terminal-instance'
 
 const FLUSH_INPUT_INTERVAL_MS = 10
+const FLUSH_INPUT_RETRY_INTERVAL_MS = 250
 
 interface DashboardTerminalProps {
   autoStart?: boolean
@@ -152,16 +153,30 @@ export default function DashboardTerminal({
     const sandbox = sandboxRef.current
     const inputGeneration = inputGenerationRef.current
     inputFlushInFlightRef.current = true
+    let shouldRetryPendingInput = false
 
     void sandbox.pty
       .sendInput(terminalPid, data)
-      .catch(() => undefined)
+      .catch(() => {
+        if (inputGenerationRef.current !== inputGeneration) return
+        if (pidRef.current !== terminalPid) return
+
+        shouldRetryPendingInput = true
+        pendingInputRef.current = [data, ...pendingInputRef.current]
+      })
       .finally(() => {
         if (inputGenerationRef.current !== inputGeneration) return
 
         inputFlushInFlightRef.current = false
 
         if (pidRef.current === terminalPid && pendingInputRef.current.length) {
+          if (shouldRetryPendingInput) {
+            inputFlushTimerRef.current = window.setTimeout(() => {
+              flushInputToPty(terminalPid)
+            }, FLUSH_INPUT_RETRY_INTERVAL_MS)
+            return
+          }
+
           flushInputToPty(terminalPid)
         }
       })
@@ -547,23 +562,40 @@ export default function DashboardTerminal({
   }, [autoStart, launchTarget, queueTerminalCommand, status])
 
   useEffect(() => {
-    const handlePageHide = () => {
+    const handlePageHide = (event: PageTransitionEvent) => {
+      if (event.persisted) return
+
       startGenerationRef.current += 1
       isStartingRef.current = false
       setStatus('idle')
       void closeTerminal()
     }
 
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (!event.persisted || !ptyRef.current) return
+
+      resizeTerminal()
+      focusTerminal()
+    }
+
     window.addEventListener('pagehide', handlePageHide)
+    window.addEventListener('pageshow', handlePageShow)
 
     return () => {
       window.removeEventListener('pagehide', handlePageHide)
+      window.removeEventListener('pageshow', handlePageShow)
       startGenerationRef.current += 1
       clearAttachRetryTimer()
       clearPendingInput()
       void closeTerminal()
     }
-  }, [clearAttachRetryTimer, clearPendingInput, closeTerminal])
+  }, [
+    clearAttachRetryTimer,
+    clearPendingInput,
+    closeTerminal,
+    focusTerminal,
+    resizeTerminal,
+  ])
 
   return (
     <>

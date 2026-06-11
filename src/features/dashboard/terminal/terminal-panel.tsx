@@ -1,5 +1,7 @@
+import { motion } from 'motion/react'
+import type React from 'react'
 import type { RefObject } from 'react'
-import { SandboxInspectFrame as DashboardPanelFrame } from '@/features/dashboard/shared'
+import { cn } from '@/lib/utils'
 import { IconButton } from '@/ui/primitives/icon-button'
 import {
   CopyIcon,
@@ -18,6 +20,14 @@ interface TerminalPanelProps {
   onRestartTerminal: () => void
 }
 
+type TerminalPanelFrameProps = React.ComponentProps<typeof motion.div> & {
+  header: React.ReactNode
+  classNames?: {
+    frame?: string
+    header?: string
+  }
+}
+
 export default function TerminalPanel({
   sandboxId,
   template,
@@ -29,7 +39,7 @@ export default function TerminalPanel({
   onRestartTerminal,
 }: TerminalPanelProps) {
   return (
-    <DashboardPanelFrame
+    <TerminalPanelFrame
       classNames={{
         frame: 'bg-bg-1',
       }}
@@ -51,7 +61,32 @@ export default function TerminalPanel({
         className="min-h-0 flex-1 cursor-text overflow-hidden bg-black p-3"
         onMouseDown={onFocusTerminal}
       />
-    </DashboardPanelFrame>
+    </TerminalPanelFrame>
+  )
+}
+
+function TerminalPanelFrame({
+  className,
+  classNames,
+  children,
+  header,
+  ...props
+}: TerminalPanelFrameProps) {
+  return (
+    <motion.div
+      transition={{ duration: 0.25, ease: 'easeInOut' }}
+      className={cn(
+        'bg-bg flex h-full min-h-0 flex-1 flex-col overflow-hidden border',
+        classNames?.frame,
+        className
+      )}
+      {...props}
+    >
+      <div className={cn('h-10 w-full border-b', classNames?.header)}>
+        {header}
+      </div>
+      {children as React.ReactNode}
+    </motion.div>
   )
 }
 
