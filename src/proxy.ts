@@ -1,10 +1,12 @@
+import { createOryMiddleware } from '@ory/nextjs/middleware'
 import {
   type NextFetchEvent,
   type NextRequest,
   NextResponse,
 } from 'next/server'
 import { auth as authjsMiddleware } from '@/auth'
-import { isOryAuthEnabled } from './configs/flags'
+import { isOryAuthEnabled, isOryCustomUiEnabled } from './configs/flags'
+import oryConfig from './configs/ory'
 import { getOryAuthRouteRedirect } from './core/server/auth/ory/auth-route-redirect'
 import { isOrySessionAuthenticated } from './core/server/auth/ory/authjs-session-boundary'
 import {
@@ -90,8 +92,44 @@ function proxyWithOryAuth(
   return proxyWithAuth(request, event)
 }
 
+// Path prefixes the @ory/nextjs proxy forwards to the Ory SDK (Kratos public,
+// from NEXT_PUBLIC_ORY_SDK_URL). The custom login UI's flow creation and form
+// submit go through these same-origin paths so Kratos cookies stay first-party;
+// see src/configs/ory.ts and src/app/login/page.tsx. Mirrors the
+// match list inside createOryMiddleware.
+const ORY_SDK_PROXY_PREFIXES = [
+  '/self-service',
+  '/sessions/whoami',
+  '/ui',
+  '/.well-known/ory',
+  '/.ory',
+]
+
+// Created once; the returned closure reads NEXT_PUBLIC_ORY_SDK_URL lazily at
+// request time, so this is inert in Supabase mode where the var is unset.
+//
+// Pass the same `project` config as @ory/elements-react: the middleware's
+// rewriteUrls() uses its built-in Ory-path↔ui_url table to rewrite Kratos
+// redirect Location headers / response bodies (e.g. /login, /registration) onto
+// our own UI URLs. Without it those rewrites are no-ops.
+const oryProxy = createOryMiddleware({ project: oryConfig.project })
+
+function isOrySdkProxyPath(pathname: string): boolean {
+  return ORY_SDK_PROXY_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+}
+
 export async function proxy(request: NextRequest, event: NextFetchEvent) {
   const plan = classifyProxyRequest(request.nextUrl.pathname)
+
+  // Ory SDK traffic (/self-service, /sessions/whoami, …) must be forwarded to
+  // Kratos before anything else. These paths classify as public
+  // (needsOryAuthJsSession: false), so the bypass below would otherwise send
+  // them to proxyCore/Next instead of Kratos — breaking the custom UI's flow
+  // creation and form submits. Only the custom Elements UI needs this
+  // same-origin proxy (gated, so production is unaffected).
+  if (isOryCustomUiEnabled() && isOrySdkProxyPath(request.nextUrl.pathname)) {
+    return oryProxy(request)
+  }
 
   if (!isOryAuthEnabled() || !plan.needsOryAuthJsSession) {
     return proxyCore(request, plan)
