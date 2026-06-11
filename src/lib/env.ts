@@ -82,6 +82,16 @@ export const clientSchema = z.object({
   NEXT_PUBLIC_INFRA_API_URL: z.url().optional(),
   NEXT_PUBLIC_E2B_SANDBOX_URL: z.url().optional(),
   NEXT_PUBLIC_DASHBOARD_API_URL: z.url().optional(),
+
+  // Browser-facing Kratos public URL for the custom @ory/elements-react login
+  // page. Read by @ory/nextjs and src/configs/ory.ts. Required when
+  // AUTH_PROVIDER=ory; unused otherwise.
+  NEXT_PUBLIC_ORY_SDK_URL: z.url().optional(),
+
+  // Opt-in flag ("1") for the custom @ory/elements-react login/registration UI.
+  // Set in non-production envs and by the local harness; unset in production
+  // (which keeps the existing /sign-in flow). See isOryCustomUiEnabled().
+  NEXT_PUBLIC_ORY_CUSTOM_UI: z.string().optional(),
 })
 
 const merged = serverSchema.extend(clientSchema.shape)
