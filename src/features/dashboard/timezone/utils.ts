@@ -16,32 +16,37 @@ const parseTimezone = (
   return result.data
 }
 
+const getUtcTimezone = (): Timezone => {
+  const utcTimezone = TimezoneSchema.safeParse('UTC')
+  if (utcTimezone.success) return utcTimezone.data
+
+  throw new Error('Unable to resolve UTC timezone')
+}
+
 // Returns the browser timezone with a safe fallback; e.g. browser in New York -> "America/New_York".
 const getBrowserTimezone = (): Timezone => {
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
   const parsedTimezone = parseTimezone(timezone)
   if (parsedTimezone) return parsedTimezone
 
-  const utcTimezone = TimezoneSchema.safeParse('UTC')
-  if (utcTimezone.success) return utcTimezone.data
-
-  throw new Error('Unable to resolve browser timezone')
+  return getUtcTimezone()
 }
 
 // Returns supported IANA timezone options; e.g. first option can be "Africa/Abidjan".
 const getTimezones = (): Timezone[] => {
   const browserTimezone = getBrowserTimezone()
+  const utcTimezone = getUtcTimezone()
 
   if (typeof Intl.supportedValuesOf === 'function') {
     const timezones = Intl.supportedValuesOf('timeZone')
     if (timezones.length > 0) {
-      return Array.from(new Set([browserTimezone, ...timezones]))
+      return Array.from(new Set([utcTimezone, browserTimezone, ...timezones]))
         .filter(isValidTimezone)
         .sort()
     }
   }
 
-  return [browserTimezone]
+  return Array.from(new Set([utcTimezone, browserTimezone])).sort()
 }
 
 // Formats a timezone for display; e.g. "America/New_York" -> "America/New York".
