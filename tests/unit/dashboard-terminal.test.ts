@@ -55,12 +55,14 @@ describe('dashboard terminal helpers', () => {
     // The tRPC mutation returns sandbox-scoped envd credentials; for an
     // explicit/stored sandbox id it echoes that id back, otherwise it reports
     // the freshly created sandbox id.
-    mockOpenTerminal.mockImplementation(async (input: { sandboxId?: string }) => ({
-      sandboxId: input.sandboxId ?? 'created-sandbox',
-      sandboxDomain: 'sandbox.example.com',
-      envdVersion: '0.2.0',
-      envdAccessToken: 'envd-token',
-    }))
+    mockOpenTerminal.mockImplementation(
+      async (input: { sandboxId?: string }) => ({
+        sandboxId: input.sandboxId ?? 'created-sandbox',
+        sandboxDomain: 'sandbox.example.com',
+        envdVersion: '0.2.0',
+        envdAccessToken: 'envd-token',
+      })
+    )
     mockCreateEnvdSandbox.mockImplementation(
       (params: { sandboxId: string }) => ({ sandboxId: params.sandboxId })
     )
