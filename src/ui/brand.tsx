@@ -48,8 +48,9 @@ export const E2BWordmark = ({
 )
 
 export const E2BBadge = ({ className, ...props }: BadgeProps) => (
-  <Badge className={className} variant="default" {...props}>
+  <Badge className={cn('gap-1.5', className)} variant="default" {...props}>
     BY
-    <E2BLogo className="size-3" />
+    {/* ! overrides the Badge's [&>svg]:size-3 child rule */}
+    <E2BWordmark className="h-2! w-auto!" />
   </Badge>
 )
