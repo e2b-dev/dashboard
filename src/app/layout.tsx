@@ -14,7 +14,6 @@ import {
 import { isOryAuthEnabled } from '@/configs/flags'
 import ClientProviders from '@/features/client-providers'
 import { GTMHead } from '@/features/google-tag-manager'
-import { OryPostHogIdentityBridge } from '@/features/ory-posthog-identity-bridge'
 import { Toaster } from '@/ui/primitives/toaster'
 import { Body } from './body'
 
@@ -47,7 +46,6 @@ export default function RootLayout({
         <ClientProviders postHogEnabled={postHogEnabled}>
           {children}
           <Suspense>
-            {postHogEnabled && <OryPostHogIdentityBridge />}
             <Toaster />
           </Suspense>
         </ClientProviders>
