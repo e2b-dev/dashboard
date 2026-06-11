@@ -113,7 +113,7 @@ const PatternAvatar = ({ className, letter }: PatternAvatarProps) => {
     >
       <svg
         viewBox="0 0 144 144"
-        className="size-full"
+        className="!size-full"
         preserveAspectRatio="xMidYMid meet"
         aria-hidden="true"
       >
