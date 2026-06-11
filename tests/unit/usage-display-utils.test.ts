@@ -1,0 +1,51 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { parseTimezone, type Timezone } from '@/features/dashboard/timezone'
+import {
+  formatAxisDate,
+  formatHoveredValues,
+} from '@/features/dashboard/usage/display-utils'
+
+const requireTimezone = (value: string): Timezone => {
+  const timezone = parseTimezone(value)
+  if (!timezone) throw new Error(`Expected ${value} to be a valid timezone`)
+
+  return timezone
+}
+
+describe('usage display utilities', () => {
+  const newYork = requireTimezone('America/New_York')
+  const losAngeles = requireTimezone('America/Los_Angeles')
+
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-06-10T16:00:00.000Z'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('formats hourly axis labels in the selected timezone', () => {
+    const timestamp = Date.UTC(2026, 5, 8, 13, 0, 0)
+
+    expect(formatAxisDate(timestamp, 'hourly', newYork)).toContain('9 AM')
+    expect(formatAxisDate(timestamp, 'hourly', losAngeles)).toContain('6 AM')
+  })
+
+  it('formats hover timestamps in the selected timezone', () => {
+    const timestamp = Date.UTC(2026, 5, 8, 13, 0, 0)
+    const timeframe = {
+      start: timestamp,
+      end: timestamp + 60 * 60 * 1000,
+    }
+
+    expect(
+      formatHoveredValues(1, 2, 3, 4, timestamp, timeframe, newYork).sandboxes
+        .timestamp
+    ).toBe('Jun 8, 9am')
+    expect(
+      formatHoveredValues(1, 2, 3, 4, timestamp, timeframe, losAngeles)
+        .sandboxes.timestamp
+    ).toBe('Jun 8, 6am')
+  })
+})

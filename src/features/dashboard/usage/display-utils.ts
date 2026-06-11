@@ -1,10 +1,5 @@
-import {
-  formatCurrency,
-  formatDateRange,
-  formatDay,
-  formatHour,
-  formatNumber,
-} from '@/lib/utils/formatting'
+import type { Timezone } from '@/features/dashboard/timezone'
+import { formatCurrency, formatNumber } from '@/lib/utils/formatting'
 import {
   determineSamplingMode,
   normalizeToEndOfSamplingPeriod,
@@ -17,6 +12,93 @@ import type {
   Timeframe,
 } from './types'
 
+const getZonedYear = (value: number | Date, timezone: Timezone): number => {
+  const year = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    year: 'numeric',
+  }).format(value)
+
+  return Number.parseInt(year, 10)
+}
+
+const isThisYearInTimezone = (timestamp: number, timezone: Timezone): boolean =>
+  getZonedYear(timestamp, timezone) === getZonedYear(new Date(), timezone)
+
+const getZonedMonth = (timestamp: number, timezone: Timezone): number => {
+  const month = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    month: 'numeric',
+  }).format(timestamp)
+
+  return Number.parseInt(month, 10)
+}
+
+const getZonedDayOfMonth = (timestamp: number, timezone: Timezone): number => {
+  const day = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    day: 'numeric',
+  }).format(timestamp)
+
+  return Number.parseInt(day, 10)
+}
+
+const formatZonedDay = (timestamp: number, timezone: Timezone): string =>
+  new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    year: isThisYearInTimezone(timestamp, timezone) ? undefined : 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).format(timestamp)
+
+const formatZonedHour = (timestamp: number, timezone: Timezone): string => {
+  const date = new Date(timestamp)
+  const day = formatZonedDay(timestamp, timezone)
+  const hour = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    hour: 'numeric',
+    hour12: true,
+  })
+    .format(date)
+    .replace(/\s/g, '')
+    .toLowerCase()
+
+  return `${day}, ${hour}`
+}
+
+const formatZonedDateRange = (
+  startTimestamp: number,
+  endTimestamp: number,
+  timezone: Timezone
+): string => {
+  const startYear = getZonedYear(startTimestamp, timezone)
+  const endYear = getZonedYear(endTimestamp, timezone)
+  const sameYear = startYear === endYear
+  const sameMonth =
+    sameYear &&
+    getZonedMonth(startTimestamp, timezone) ===
+      getZonedMonth(endTimestamp, timezone)
+
+  const startFormat = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    month: 'short',
+    day: 'numeric',
+    ...(sameYear ? {} : { year: 'numeric' }),
+  })
+
+  const endFormat = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    month: 'short',
+    day: 'numeric',
+    year: isThisYearInTimezone(endTimestamp, timezone) ? undefined : 'numeric',
+  })
+
+  if (sameMonth) {
+    return `${startFormat.format(startTimestamp)} - ${getZonedDayOfMonth(endTimestamp, timezone)}`
+  }
+
+  return `${startFormat.format(startTimestamp)} - ${endFormat.format(endTimestamp)}`
+}
+
 /**
  * Format a timestamp to a human-readable date using Intl.DateTimeFormat
  * @param timestamp - Unix timestamp in milliseconds
@@ -24,11 +106,13 @@ import type {
  */
 export function formatAxisDate(
   timestamp: number,
-  samplingMode: SamplingMode
+  samplingMode: SamplingMode,
+  timezone: Timezone
 ): string {
   switch (samplingMode) {
     case 'hourly':
       return new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
         month: 'short',
         day: 'numeric',
         hour: 'numeric',
@@ -36,6 +120,7 @@ export function formatAxisDate(
       }).format(new Date(timestamp))
     default:
       return new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
         month: 'short',
         day: 'numeric',
       }).format(new Date(timestamp))
@@ -51,7 +136,8 @@ export function formatHoveredValues(
   vcpuHours: number,
   ramGibHours: number,
   timestamp: number,
-  timeframe: Timeframe
+  timeframe: Timeframe,
+  timezone: Timezone
 ): {
   sandboxes: DisplayValue
   cost: DisplayValue
@@ -77,29 +163,29 @@ export function formatHoveredValues(
 
   switch (samplingMode) {
     case 'hourly':
-      timestampLabel = formatHour(timestamp)
+      timestampLabel = formatZonedHour(timestamp, timezone)
       label = 'at'
       break
 
     case 'daily':
       if (timestampIsAtStartEdge && timestampIsAtEndEdge) {
         // both edges in same bucket - show precise range
-        timestampLabel = `${formatHour(normalizedStartTimestamp)} - ${formatHour(normalizedEndTimestamp)}`
+        timestampLabel = `${formatZonedHour(normalizedStartTimestamp, timezone)} - ${formatZonedHour(normalizedEndTimestamp, timezone)}`
         label = 'during'
       } else if (timestampIsAtStartEdge) {
         // partial day at start - show from start hour to end of day
         const endOfDay = new Date(timestamp)
         endOfDay.setHours(23, 59, 59, 999)
-        timestampLabel = `${formatHour(timestamp)} - end of ${formatDay(timestamp)}`
+        timestampLabel = `${formatZonedHour(timestamp, timezone)} - end of ${formatZonedDay(timestamp, timezone)}`
         label = 'during'
       } else if (timestampIsAtEndEdge) {
         // partial day at end - show from start of day to end hour
         const startOfDay = new Date(timestamp)
         startOfDay.setHours(0, 0, 0, 0)
-        timestampLabel = `${formatDay(timestamp)} - ${formatHour(timestamp)}`
+        timestampLabel = `${formatZonedDay(timestamp, timezone)} - ${formatZonedHour(timestamp, timezone)}`
         label = 'during'
       } else {
-        timestampLabel = formatDay(timestamp)
+        timestampLabel = formatZonedDay(timestamp, timezone)
         label = 'on'
       }
       break
@@ -107,21 +193,21 @@ export function formatHoveredValues(
     case 'weekly':
       if (timestampIsAtStartEdge && timestampIsAtEndEdge) {
         // both edges in same bucket - show precise range
-        timestampLabel = `${formatHour(normalizedStartTimestamp)} - ${formatHour(normalizedEndTimestamp)}`
+        timestampLabel = `${formatZonedHour(normalizedStartTimestamp, timezone)} - ${formatZonedHour(normalizedEndTimestamp, timezone)}`
         label = 'during'
       } else if (timestampIsAtStartEdge) {
         // partial week at start - show from start hour to end of week
         const weekEnd = normalizeToEndOfSamplingPeriod(timestamp, 'weekly')
-        timestampLabel = `${formatHour(timestamp)} - ${formatDay(weekEnd)}`
+        timestampLabel = `${formatZonedHour(timestamp, timezone)} - ${formatZonedDay(weekEnd, timezone)}`
         label = 'during'
       } else if (timestampIsAtEndEdge) {
         // partial week at end - show from start of week to end hour
         const weekStart = normalizeToStartOfSamplingPeriod(timestamp, 'weekly')
-        timestampLabel = `${formatDay(weekStart)} - ${formatHour(timestamp)}`
+        timestampLabel = `${formatZonedDay(weekStart, timezone)} - ${formatZonedHour(timestamp, timezone)}`
         label = 'during'
       } else {
         const weekEnd = normalizeToEndOfSamplingPeriod(timestamp, 'weekly')
-        timestampLabel = formatDateRange(timestamp, weekEnd)
+        timestampLabel = formatZonedDateRange(timestamp, weekEnd, timezone)
         label = 'during week'
       }
       break

@@ -10,6 +10,7 @@ import {
   useState,
 } from 'react'
 import type { UsageResponse } from '@/core/modules/billing/models'
+import { useTimezone } from '@/features/dashboard/timezone'
 import { fillTimeSeriesWithEmptyPoints } from '@/lib/utils/time-series'
 import { INITIAL_TIMEFRAME_FALLBACK_RANGE_MS } from './constants'
 import {
@@ -70,6 +71,7 @@ export function UsageChartsProvider({
   data,
   children,
 }: UsageChartsProviderProps) {
+  const { timezone } = useTimezone()
   // MUTABLE STATE
 
   const [params, setParams] = useQueryStates(timeframeParams, {
@@ -154,23 +156,23 @@ export function UsageChartsProvider({
   const displayedData = useMemo<ComputeUsageSeriesData>(() => {
     return {
       sandboxes: seriesData.sandboxes.map((d) => ({
-        x: formatAxisDate(d.x, samplingMode),
+        x: formatAxisDate(d.x, samplingMode, timezone),
         y: d.y,
       })),
       cost: seriesData.cost.map((d) => ({
-        x: formatAxisDate(d.x, samplingMode),
+        x: formatAxisDate(d.x, samplingMode, timezone),
         y: d.y,
       })),
       vcpu: seriesData.vcpu.map((d) => ({
-        x: formatAxisDate(d.x, samplingMode),
+        x: formatAxisDate(d.x, samplingMode, timezone),
         y: d.y,
       })),
       ram: seriesData.ram.map((d) => ({
-        x: formatAxisDate(d.x, samplingMode),
+        x: formatAxisDate(d.x, samplingMode, timezone),
         y: d.y,
       })),
     }
-  }, [seriesData, samplingMode])
+  }, [seriesData, samplingMode, timezone])
 
   const totals = useMemo<MetricTotals>(
     () => calculateTotals(sampledData),
@@ -178,17 +180,24 @@ export function UsageChartsProvider({
   )
 
   const displayValues = useMemo(() => {
-    if (
-      hoveredIndex !== null &&
-      seriesData.sandboxes[hoveredIndex] !== undefined
-    ) {
+    if (hoveredIndex !== null) {
+      const sandboxPoint = seriesData.sandboxes[hoveredIndex]
+      const costPoint = seriesData.cost[hoveredIndex]
+      const vcpuPoint = seriesData.vcpu[hoveredIndex]
+      const ramPoint = seriesData.ram[hoveredIndex]
+
+      if (!sandboxPoint || !costPoint || !vcpuPoint || !ramPoint) {
+        return formatTotalValues(totals)
+      }
+
       return formatHoveredValues(
-        seriesData.sandboxes[hoveredIndex].y,
-        seriesData.cost[hoveredIndex]!.y,
-        seriesData.vcpu[hoveredIndex]!.y,
-        seriesData.ram[hoveredIndex]!.y,
-        seriesData.sandboxes[hoveredIndex]!.x,
-        timeframe
+        sandboxPoint.y,
+        costPoint.y,
+        vcpuPoint.y,
+        ramPoint.y,
+        sandboxPoint.x,
+        timeframe,
+        timezone
       )
     }
 
@@ -206,6 +215,7 @@ export function UsageChartsProvider({
     seriesData.vcpu,
     seriesData.ram,
     timeframe,
+    timezone,
   ])
 
   const setTimeframe = useCallback(
@@ -217,13 +227,14 @@ export function UsageChartsProvider({
 
   const onBrushEnd = useCallback(
     (startIndex: number, endIndex: number) => {
+      const startPoint = seriesData.sandboxes[startIndex]
+      const endPoint = seriesData.sandboxes[endIndex]
+      if (!startPoint || !endPoint) return
+
       setHoveredIndex(null)
       setTimeframe(
-        seriesData.sandboxes[startIndex]!.x,
-        normalizeToEndOfSamplingPeriod(
-          seriesData.sandboxes[endIndex]!.x,
-          samplingMode
-        )
+        startPoint.x,
+        normalizeToEndOfSamplingPeriod(endPoint.x, samplingMode)
       )
     },
     [seriesData.sandboxes, setTimeframe, samplingMode]
