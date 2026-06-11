@@ -1,5 +1,10 @@
-import { describe, expect, it } from 'vitest'
-import { parseTimezone, type Timezone } from '@/features/dashboard/timezone'
+import { startOfDay } from 'date-fns'
+import { describe, expect, it, vi } from 'vitest'
+import {
+  parseTimezone,
+  type Timezone,
+  zonedInstantToCalendarDate,
+} from '@/features/dashboard/timezone'
 import {
   createTimeRangeSchema,
   normalizeTimeRangeValues,
@@ -212,6 +217,51 @@ describe('time-range-picker logic', () => {
           'End date cannot be after'
         )
       }
+    })
+  })
+
+  describe('calendar boundary dates', () => {
+    it('aligns disabled calendar days with dashboard timezone validation', () => {
+      const minBound = new Date('2023-01-01T00:00:00.000Z')
+      const calendarMin = zonedInstantToCalendarDate(minBound, utc)
+
+      vi.stubEnv('TZ', 'America/Los_Angeles')
+      const browserLocalMin = startOfDay(minBound)
+      vi.unstubAllEnvs()
+
+      expect(browserLocalMin.getDate()).toBe(31)
+      expect(calendarMin.getFullYear()).toBe(2023)
+      expect(calendarMin.getMonth()).toBe(0)
+      expect(calendarMin.getDate()).toBe(1)
+
+      const disabledDay = new Date(2022, 11, 31)
+      const enabledDay = new Date(2023, 0, 1)
+
+      expect(disabledDay < calendarMin).toBe(true)
+      expect(enabledDay < calendarMin).toBe(false)
+
+      const disabledValidation = validateTimeRangeValues(
+        {
+          startDate: '2022/12/31',
+          startTime: '00:00:00',
+          endDate: '2023/01/02',
+          endTime: '23:59:59',
+        },
+        {
+          hideTime: false,
+          timezone: utc,
+          bounds: { min: minBound },
+        }
+      )
+
+      expect(disabledValidation.issues).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: 'startDate',
+            message: expect.stringContaining('Start date cannot be before'),
+          }),
+        ])
+      )
     })
   })
 })

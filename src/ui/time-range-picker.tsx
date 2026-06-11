@@ -1,13 +1,13 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { endOfDay, startOfDay } from 'date-fns'
 import { useCallback, useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 
 import {
   formatZonedDateTimeInput,
   useTimezone,
+  zonedInstantToCalendarDate,
 } from '@/features/dashboard/timezone'
 import { cn } from '@/lib/utils'
 
@@ -69,14 +69,18 @@ export function TimeRangePicker({
 
   const calendarMinDate = useMemo(
     () =>
-      minBoundMs !== undefined ? startOfDay(new Date(minBoundMs)) : undefined,
-    [minBoundMs]
+      minBoundMs !== undefined
+        ? zonedInstantToCalendarDate(minBoundMs, timezone)
+        : undefined,
+    [minBoundMs, timezone]
   )
 
   const calendarMaxDate = useMemo(
     () =>
-      maxBoundMs !== undefined ? endOfDay(new Date(maxBoundMs)) : undefined,
-    [maxBoundMs]
+      maxBoundMs !== undefined
+        ? zonedInstantToCalendarDate(maxBoundMs, timezone)
+        : undefined,
+    [maxBoundMs, timezone]
   )
 
   const schema = useMemo(() => {
