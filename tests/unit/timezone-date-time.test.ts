@@ -11,7 +11,6 @@ import {
   formatZonedRelativeDayTime,
   formatZonedTime,
   formatZonedTimeAxisLabel,
-  getCompactTimestampFormat,
   zonedDateTimePartsToUtcDate,
   zonedDateTimePartsToUtcTimestamp,
   zonedInstantToCalendarDate,
@@ -149,11 +148,13 @@ describe('timezone date-time helpers', () => {
     })
   })
 
-  describe('getCompactTimestampFormat', () => {
+  describe('formatDate compact-timestamp preset', () => {
     it('formats compact timestamps in the selected timezone', () => {
       const timestamp = Date.UTC(2026, 5, 8, 13, 0, 0)
-      const format = getCompactTimestampFormat(timestamp, newYork)
-      const formatted = formatDate(timestamp, { timezone: newYork, format })
+      const formatted = formatDate(timestamp, {
+        timezone: newYork,
+        format: 'compact-timestamp',
+      })
 
       expect(formatted).toContain('Jun 8')
       expect(formatted).toContain('9:00:00')
@@ -190,7 +191,7 @@ describe('timezone date-time helpers', () => {
       expect(
         formatDate('2026-06-08T13:00:00.000Z', {
           timezone: newYork,
-          format: 'MMM dd, yyyy',
+          format: 'date-padded-day',
         })
       ).toBe('Jun 08, 2026')
     })

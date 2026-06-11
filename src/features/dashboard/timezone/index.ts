@@ -1,5 +1,6 @@
 export { TimezoneProvider, useTimezone } from './context'
 export type {
+  DateFormatPreset,
   FormatDateOptions,
   ZonedDateParts,
   ZonedDateRangeFormatOptions,
@@ -16,7 +17,6 @@ export {
   formatZonedRelativeDayTime,
   formatZonedTime,
   formatZonedTimeAxisLabel,
-  getCompactTimestampFormat,
   getZonedDateParts,
   getZonedDateTimeParts,
   shiftCalendarDays,

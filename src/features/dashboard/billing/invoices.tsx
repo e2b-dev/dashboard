@@ -98,7 +98,7 @@ export default function BillingInvoicesTable() {
                 <TableCell className="py-0">
                   {formatDate(invoice.date_created, {
                     timezone,
-                    format: 'MMM dd, yyyy',
+                    format: 'date-padded-day',
                   }) ?? '—'}
                 </TableCell>
                 <TableCell className="py-0">
