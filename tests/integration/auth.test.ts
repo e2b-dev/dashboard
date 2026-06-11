@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { NextRequest } from 'next/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import {
@@ -7,8 +8,6 @@ import {
   signInWithOAuthAction,
   signUpAction,
 } from '@/core/server/actions/auth-actions'
-import { authRouter } from '@/core/server/api/routers/auth'
-import { createCallerFactory, createTRPCContext } from '@/core/server/trpc/init'
 import { encodedRedirect } from '@/lib/utils/auth'
 
 // Create hoisted mock functions that can be used throughout the file
@@ -513,48 +512,26 @@ describe('Auth Actions - Integration Tests', () => {
     })
   })
 
-  describe('Sign Out Flow (trpc auth.signOut)', () => {
-    const createCaller = createCallerFactory(authRouter)
-
-    const getCaller = async () =>
-      createCaller(
-        await createTRPCContext({
-          headers: new Headers(),
-          requestUrl: 'http://localhost:3000/api/trpc',
-        })
-      )
+  describe('Sign Out Flow (GET /api/auth/sign-out)', () => {
+    const callSignOutRoute = async () => {
+      const { GET } = await import('@/app/api/auth/sign-out/route')
+      return GET(new NextRequest('https://app.e2b.dev/api/auth/sign-out'))
+    }
 
     /**
-     * AUTHENTICATION TEST: Verifies that sign-out returns the sign-in page url
+     * AUTHENTICATION TEST: the plain (non-auth()-wrapped) route handler clears
+     * the session via the provider and redirects to the sign-in page. Running
+     * the cookie clear here — rather than inside the auth()-wrapped tRPC route —
+     * is what keeps the deletion from being clobbered by a re-issued JWT cookie.
      */
-    it('should return sign-in page url on sign-out', async () => {
-      // Setup: Mock Supabase client to return successful sign-out
-      mockSupabaseClient.auth.signOut.mockResolvedValue({
-        error: null,
-      })
+    it('clears the session and redirects to the sign-in page', async () => {
+      mockSupabaseClient.auth.signOut.mockResolvedValue({ error: null })
 
-      // Execute and Verify: the mutation returns the URL for the client to hard-navigate to
-      const caller = await getCaller()
-      await expect(caller.signOut()).resolves.toEqual({
-        url: AUTH_URLS.SIGN_IN,
-      })
-    })
+      const response = await callSignOutRoute()
 
-    /**
-     * AUTHENTICATION TEST: Verifies that sign-out returns the sign-in url with returnTo
-     */
-    it('should return sign-in page url with returnTo parameter', async () => {
-      // Setup: Mock Supabase client to return successful sign-out
-      mockSupabaseClient.auth.signOut.mockResolvedValue({
-        error: null,
-      })
-
-      // Execute and Verify: the mutation returns the URL for the client to hard-navigate to
-      const caller = await getCaller()
-      await expect(caller.signOut({ returnTo: '/dashboard' })).resolves.toEqual(
-        {
-          url: `${AUTH_URLS.SIGN_IN}?returnTo=${encodeURIComponent('/dashboard')}`,
-        }
+      expect(mockSupabaseClient.auth.signOut).toHaveBeenCalled()
+      expect(response.headers.get('location')).toBe(
+        `https://app.e2b.dev${AUTH_URLS.SIGN_IN}`
       )
     })
   })

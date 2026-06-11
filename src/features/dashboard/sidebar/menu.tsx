@@ -1,13 +1,11 @@
 'use client'
 
 import { Portal } from '@radix-ui/react-portal'
-import { useMutation } from '@tanstack/react-query'
 import Link from 'next/link'
 import { useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { getTeamDisplayName } from '@/core/modules/teams/utils'
 import { cn } from '@/lib/utils'
-import { useTRPC } from '@/trpc/client'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,31 +29,18 @@ import { TeamAvatar } from './team-avatar'
 
 export default function DashboardSidebarMenu() {
   const { team } = useDashboard()
-  const trpc = useTRPC()
   const [createTeamOpen, setCreateTeamOpen] = useState(false)
-  // explicit state instead of the mutation's isPending: isPending flips back to
-  // false the moment the mutation resolves, which would tear down the overlay a
-  // beat before the hard navigation unloads the page; this stays true until we
-  // navigate away, and only resets if the sign-out fails before that
+  // Stays true until the hard navigation unloads the page; the overlay should
+  // never tear down before then.
   const [isLoggingOut, setIsLoggingOut] = useState(false)
-
-  const signOutMutation = useMutation(
-    trpc.auth.signOut.mutationOptions({
-      onSuccess: ({ url }) => {
-        // Hard navigation (not the Next router): a soft RSC redirect re-renders
-        // the dashboard and tears down this overlay before the browser leaves
-        // the page. window.location keeps the overlay up until unload.
-        window.location.href = url
-      },
-      onError: () => {
-        setIsLoggingOut(false)
-      },
-    })
-  )
 
   const handleLogout = () => {
     setIsLoggingOut(true)
-    signOutMutation.mutate({})
+    // Hard navigation (not the Next router) to a plain route handler that clears
+    // the session cookie server-side: a soft RSC redirect would re-render the
+    // signed-out dashboard and tear down this overlay before the browser leaves
+    // the page. window.location keeps the overlay up until unload.
+    window.location.href = '/api/auth/sign-out'
   }
 
   return (
