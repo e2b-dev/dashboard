@@ -408,13 +408,6 @@ export const forgotPasswordAction = actionClient
     }
   })
 
-export async function signOutAction(returnTo?: string) {
-  const origin = (await headers()).get('origin') ?? undefined
-  const { redirectTo } = await auth.signOut({ origin, returnTo })
-
-  throw redirect(redirectTo)
-}
-
 // Drives the account-settings re-authentication step and returns the URL the
 // client should HARD-navigate to. Supabase signs the user out and bounces
 // through /sign-in (which lands back on the account page with ?reauth=1); Ory

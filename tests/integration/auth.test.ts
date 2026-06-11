@@ -5,9 +5,10 @@ import {
   forgotPasswordAction,
   signInAction,
   signInWithOAuthAction,
-  signOutAction,
   signUpAction,
 } from '@/core/server/actions/auth-actions'
+import { authRouter } from '@/core/server/api/routers/auth'
+import { createCallerFactory, createTRPCContext } from '@/core/server/trpc/init'
 import { encodedRedirect } from '@/lib/utils/auth'
 
 // Create hoisted mock functions that can be used throughout the file
@@ -512,38 +513,48 @@ describe('Auth Actions - Integration Tests', () => {
     })
   })
 
-  describe('Sign Out Flow', () => {
+  describe('Sign Out Flow (trpc auth.signOut)', () => {
+    const createCaller = createCallerFactory(authRouter)
+
+    const getCaller = async () =>
+      createCaller(
+        await createTRPCContext({
+          headers: new Headers(),
+          requestUrl: 'http://localhost:3000/api/trpc',
+        })
+      )
+
     /**
-     * AUTHENTICATION TEST: Verifies that sign-out redirects to sign-in page
+     * AUTHENTICATION TEST: Verifies that sign-out returns the sign-in page url
      */
-    it('should redirect to sign-in page on sign-out', async () => {
+    it('should return sign-in page url on sign-out', async () => {
       // Setup: Mock Supabase client to return successful sign-out
       mockSupabaseClient.auth.signOut.mockResolvedValue({
         error: null,
       })
 
-      // Execute and Verify: Call the sign-out action and expect it to throw redirect
-      await expect(signOutAction()).rejects.toEqual(
-        expect.objectContaining({
-          destination: AUTH_URLS.SIGN_IN,
-        })
-      )
+      // Execute and Verify: the mutation returns the URL for the client to hard-navigate to
+      const caller = await getCaller()
+      await expect(caller.signOut()).resolves.toEqual({
+        url: AUTH_URLS.SIGN_IN,
+      })
     })
 
     /**
-     * AUTHENTICATION TEST: Verifies that sign-out redirects to sign-in page with returnTo
+     * AUTHENTICATION TEST: Verifies that sign-out returns the sign-in url with returnTo
      */
-    it('should redirect to sign-in page with returnTo parameter', async () => {
+    it('should return sign-in page url with returnTo parameter', async () => {
       // Setup: Mock Supabase client to return successful sign-out
       mockSupabaseClient.auth.signOut.mockResolvedValue({
         error: null,
       })
 
-      // Execute and Verify: Call the sign-out action and expect it to throw redirect
-      await expect(signOutAction('/dashboard')).rejects.toEqual(
-        expect.objectContaining({
-          destination: `${AUTH_URLS.SIGN_IN}?returnTo=${encodeURIComponent('/dashboard')}`,
-        })
+      // Execute and Verify: the mutation returns the URL for the client to hard-navigate to
+      const caller = await getCaller()
+      await expect(caller.signOut({ returnTo: '/dashboard' })).resolves.toEqual(
+        {
+          url: `${AUTH_URLS.SIGN_IN}?returnTo=${encodeURIComponent('/dashboard')}`,
+        }
       )
     })
   })
