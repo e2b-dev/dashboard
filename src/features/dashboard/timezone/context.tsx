@@ -9,8 +9,10 @@ import {
   useMemo,
   useState,
 } from 'react'
-import type { Timezone } from './schema'
+import { type Timezone, TimezoneSchema } from './schema'
 import { getBrowserTimezone, parseTimezone } from './utils'
+
+const DEFAULT_TIMEZONE = TimezoneSchema.parse('UTC')
 
 interface TimezoneContextValue {
   timezone: Timezone
@@ -49,7 +51,7 @@ export const TimezoneProvider = ({
     [initialTimezone]
   )
   const [timezone, setTimezoneState] = useState(
-    parsedInitialTimezone ?? getBrowserTimezone()
+    parsedInitialTimezone ?? DEFAULT_TIMEZONE
   )
 
   useEffect(() => {
