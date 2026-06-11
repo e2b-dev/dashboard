@@ -1,11 +1,8 @@
 import 'server-only'
 
 import type { Provider } from '@supabase/supabase-js'
-import { supabaseAdmin } from '@/core/shared/clients/supabase/admin'
+import type { OtpType } from '@/core/modules/auth/models'
 import { createClient } from '@/core/shared/clients/supabase/server'
-
-type SupabaseAuthClient = Awaited<ReturnType<typeof createClient>>['auth']
-type SupabaseAdminAuthClient = typeof supabaseAdmin.auth
 
 type SignInWithOAuthOptions = {
   provider: Extract<Provider, 'github' | 'google'>
@@ -18,6 +15,11 @@ type SignUpOptions = {
   password: string
   emailRedirectTo: string
   data?: Record<string, unknown>
+}
+
+type VerifyTokenHashOtpOptions = {
+  token_hash: string
+  type: OtpType
 }
 
 export const supabaseAuthFlows = {
@@ -56,19 +58,13 @@ export const supabaseAuthFlows = {
     return client.auth.resetPasswordForEmail(email)
   },
 
-  async verifyOtp(...args: Parameters<SupabaseAuthClient['verifyOtp']>) {
+  async verifyOtp(input: VerifyTokenHashOtpOptions) {
     const client = await createClient()
-    return client.auth.verifyOtp(...args)
+    return client.auth.verifyOtp(input)
   },
 
   async exchangeCodeForSession(code: string) {
     const client = await createClient()
     return client.auth.exchangeCodeForSession(code)
-  },
-
-  async updateUserById(
-    ...args: Parameters<SupabaseAdminAuthClient['admin']['updateUserById']>
-  ) {
-    return supabaseAdmin.auth.admin.updateUserById(...args)
   },
 }

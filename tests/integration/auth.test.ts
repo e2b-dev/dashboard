@@ -48,12 +48,6 @@ vi.mock('@/core/shared/clients/supabase/server', () => ({
   createClient: vi.fn(() => mockSupabaseClient),
 }))
 
-vi.mock('@/core/shared/clients/supabase/admin', () => ({
-  supabaseAdmin: {
-    auth: vi.fn(),
-  },
-}))
-
 vi.mock('next/headers', () => ({
   headers: vi.fn(() => ({
     get: vi.fn((key) => {

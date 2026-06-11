@@ -2,10 +2,13 @@
 
 import { Portal } from '@radix-ui/react-portal'
 import Link from 'next/link'
+import { usePostHog } from 'posthog-js/react'
 import { useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { getTeamDisplayName } from '@/core/modules/teams/utils'
 import { signOutAction } from '@/core/server/actions/auth-actions'
+import { resetOryPostHogIdentity } from '@/features/ory-posthog-identity-bridge'
+import { useAppPostHogProvider } from '@/features/posthog-provider'
 import { cn } from '@/lib/utils'
 import {
   DropdownMenu,
@@ -18,7 +21,7 @@ import {
 import {
   AccountSettingsIcon,
   AddIcon,
-  LogoutIcon,
+  LogOutIcon,
   UnpackIcon,
 } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
@@ -30,6 +33,8 @@ import { TeamAvatar } from './team-avatar'
 
 export default function DashboardSidebarMenu() {
   const { team } = useDashboard()
+  const { enabled: postHogEnabled } = useAppPostHogProvider()
+  const posthog = usePostHog()
   const [createTeamOpen, setCreateTeamOpen] = useState(false)
   // explicit state instead of useTransition: a sync transition callback
   // settles immediately, so isPending would flip back to false while the
@@ -39,6 +44,7 @@ export default function DashboardSidebarMenu() {
 
   const handleLogout = () => {
     setIsLoggingOut(true)
+    if (postHogEnabled) resetOryPostHogIdentity(posthog)
     signOutAction().catch(() => {
       setIsLoggingOut(false)
     })
@@ -103,7 +109,7 @@ export default function DashboardSidebarMenu() {
                 disabled={isLoggingOut}
                 onSelect={handleLogout}
               >
-                <LogoutIcon className="ml-0.5" /> Log out
+                <LogOutIcon className="ml-0.5" /> Log out
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>
