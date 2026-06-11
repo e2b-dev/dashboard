@@ -47,7 +47,7 @@ const getZonedDateParts = (
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
-    }).formatToParts(value),
+    }).formatToParts(new Date(value)),
     ['year', 'month', 'day']
   )
 
@@ -72,7 +72,7 @@ const getZonedDateTimeParts = (
       minute: '2-digit',
       second: '2-digit',
       hourCycle: 'h23',
-    }).formatToParts(value),
+    }).formatToParts(new Date(value)),
     ['year', 'month', 'day', 'hour', 'minute', 'second']
   )
 
