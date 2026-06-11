@@ -1416,6 +1416,23 @@ export const PausedIcon = ({ className, ...props }: IconProps) => (
   </svg>
 )
 
+export const PlayIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 12 12"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M3 1.5L10 6L3 10.5V1.5Z"
+      stroke="currentColor"
+      strokeWidth="1.33333"
+      strokeLinejoin="round"
+    />
+  </svg>
+)
+
 export const DotIcon = ({ className, ...props }: IconProps) => (
   <svg
     className={cn(DEFAULT_CLASS_NAMES, className)}
