@@ -1,15 +1,17 @@
+import type { Timezone } from '@/features/dashboard/timezone'
 import {
   SANDBOX_MONITORING_PERCENT_MAX,
   SANDBOX_MONITORING_TIME_LABEL_FORMAT_OPTIONS,
 } from './constants'
 
-const hoverTimestampFormatter = new Intl.DateTimeFormat(
-  undefined,
-  SANDBOX_MONITORING_TIME_LABEL_FORMAT_OPTIONS
-)
-
-export function formatHoverTimestamp(timestampMs: number): string {
-  return hoverTimestampFormatter.format(new Date(timestampMs))
+export function formatHoverTimestamp(
+  timestampMs: number,
+  timezone: Timezone
+): string {
+  return new Intl.DateTimeFormat(undefined, {
+    ...SANDBOX_MONITORING_TIME_LABEL_FORMAT_OPTIONS,
+    timeZone: timezone,
+  }).format(new Date(timestampMs))
 }
 
 export function clampPercent(value: number): number {

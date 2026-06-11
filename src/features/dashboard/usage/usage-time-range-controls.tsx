@@ -111,14 +111,16 @@ export function UsageTimeRangeControls({
     onTimeRangeChange(
       normalizeToStartOfSamplingPeriod(
         timeframe.start - quarterOfRangeDuration,
-        samplingMode
+        samplingMode,
+        timezone
       ),
       normalizeToEndOfSamplingPeriod(
         timeframe.end - quarterOfRangeDuration,
-        samplingMode
+        samplingMode,
+        timezone
       )
     )
-  }, [timeframe, quarterOfRangeDuration, onTimeRangeChange])
+  }, [timeframe, quarterOfRangeDuration, onTimeRangeChange, timezone])
 
   const handleNextRange = useCallback(() => {
     const samplingMode = determineSamplingMode(timeframe)
@@ -126,14 +128,16 @@ export function UsageTimeRangeControls({
     onTimeRangeChange(
       normalizeToStartOfSamplingPeriod(
         timeframe.start + quarterOfRangeDuration,
-        samplingMode
+        samplingMode,
+        timezone
       ),
       normalizeToEndOfSamplingPeriod(
         timeframe.end + quarterOfRangeDuration,
-        samplingMode
+        samplingMode,
+        timezone
       )
     )
-  }, [timeframe, quarterOfRangeDuration, onTimeRangeChange])
+  }, [timeframe, quarterOfRangeDuration, onTimeRangeChange, timezone])
 
   const handleTimeRangeApply = useCallback(
     (start: number, end: number) => {

@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { CellContext } from '@tanstack/react-table'
 import { useMemo, useState } from 'react'
 import type { DefaultTemplate, Template } from '@/core/modules/templates/models'
+import { useTimezone } from '@/features/dashboard/timezone'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import {
@@ -389,14 +390,16 @@ export function MemoryCell({
 export function CreatedAtCell({
   getValue,
 }: CellContext<Template | DefaultTemplate, unknown>) {
+  const { timezone } = useTimezone()
   const dateValue = getValue() as string
 
   const formattedTimestamp = useMemo(() => {
     return formatLocalLogStyleTimestamp(dateValue, {
       includeSeconds: false,
       includeYear: true,
+      timeZone: timezone,
     })
-  }, [dateValue])
+  }, [dateValue, timezone])
 
   return (
     <div
@@ -418,14 +421,16 @@ export function CreatedAtCell({
 export function UpdatedAtCell({
   getValue,
 }: CellContext<Template | DefaultTemplate, unknown>) {
+  const { timezone } = useTimezone()
   const dateValue = getValue() as string
 
   const formattedTimestamp = useMemo(() => {
     return formatLocalLogStyleTimestamp(dateValue, {
       includeSeconds: false,
       includeYear: true,
+      timeZone: timezone,
     })
-  }, [dateValue])
+  }, [dateValue, timezone])
 
   return (
     <div

@@ -1,6 +1,11 @@
 import { useMemo } from 'react'
 import type { TeamMetricsResponse } from '@/app/api/teams/[teamSlug]/metrics/types'
-import { formatCompactDate, formatNumber } from '@/lib/utils/formatting'
+import {
+  formatZonedCompactDate,
+  formatZonedDateRange,
+  useTimezone,
+} from '@/features/dashboard/timezone'
+import { formatNumber } from '@/lib/utils/formatting'
 import { formatTimeframeAsISO8601Interval } from '@/lib/utils/timeframe'
 import { transformMetrics } from '../team-metrics-chart'
 import { calculateAverage } from '../team-metrics-chart/utils'
@@ -30,11 +35,15 @@ export function useDisplayMetric(
   chartData: ReturnType<typeof transformMetrics>,
   hoveredValue: HoveredValue | null
 ) {
+  const { timezone } = useTimezone()
   const centralValue = useMemo(() => calculateAverage(chartData), [chartData])
 
   return useMemo(() => {
     if (hoveredValue?.concurrentSandboxes !== undefined) {
-      const formattedDate = formatCompactDate(hoveredValue.timestamp)
+      const formattedDate = formatZonedCompactDate(
+        hoveredValue.timestamp,
+        timezone
+      )
       return {
         displayValue: formatNumber(hoveredValue.concurrentSandboxes),
         label: 'at',
@@ -46,10 +55,11 @@ export function useDisplayMetric(
       label: 'average',
       timestamp: null,
     }
-  }, [hoveredValue, centralValue])
+  }, [hoveredValue, centralValue, timezone])
 }
 
 export function useTimeRangeDisplay(timeframe: Timeframe) {
+  const { timezone } = useTimezone()
   const currentRange = useMemo(
     () => findMatchingChartRange(timeframe.duration),
     [timeframe.duration]
@@ -68,7 +78,10 @@ export function useTimeRangeDisplay(timeframe: Timeframe) {
 
     // show timestamps for static mode or true custom ranges
     if (!timeframe.isLive || currentRange === 'custom') {
-      return `${formatCompactDate(timeframe.start)} - ${formatCompactDate(timeframe.end)}`
+      return formatZonedDateRange(timeframe.start, timeframe.end, timezone, {
+        includeTime: true,
+        includeTimezone: true,
+      })
     }
 
     return null
@@ -78,6 +91,7 @@ export function useTimeRangeDisplay(timeframe: Timeframe) {
     timeframe.start,
     timeframe.end,
     timeframe.isLive,
+    timezone,
   ])
 
   const customRangeCopyValue = useMemo(() => {

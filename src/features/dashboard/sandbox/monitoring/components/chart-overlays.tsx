@@ -1,3 +1,4 @@
+import type { Timezone } from '@/features/dashboard/timezone'
 import { cn } from '@/lib/utils'
 import {
   AddIcon,
@@ -34,9 +35,11 @@ const SANDBOX_LIFECYCLE_EVENT_ICON_MAP: Record<string, typeof AddIcon> = {
 function LifecycleEventOverlayGroup({
   overlays,
   showEventLabels,
+  timezone,
 }: {
   overlays: LifecycleEventOverlay[]
   showEventLabels: boolean
+  timezone: Timezone
 }) {
   'use no memo'
 
@@ -114,7 +117,10 @@ function LifecycleEventOverlayGroup({
                         {eventOverlay.label}
                       </span>
                       <span className="prose-label-numeric font-mono text-current/60">
-                        {formatHoverTimestamp(eventOverlay.timestampMs)}
+                        {formatHoverTimestamp(
+                          eventOverlay.timestampMs,
+                          timezone
+                        )}
                       </span>
                     </div>
                   </div>
@@ -205,6 +211,7 @@ export function ChartOverlayLayer({
   showEventLabels,
   isMobile,
   axisPointerColor,
+  timezone,
 }: {
   lifecycleEventOverlays: LifecycleEventOverlay[]
   crosshairMarkers: CrosshairMarker[]
@@ -212,6 +219,7 @@ export function ChartOverlayLayer({
   showEventLabels: boolean
   isMobile: boolean
   axisPointerColor: string
+  timezone: Timezone
 }) {
   'use no memo'
 
@@ -229,6 +237,7 @@ export function ChartOverlayLayer({
       <LifecycleEventOverlayGroup
         overlays={lifecycleEventOverlays}
         showEventLabels={showEventLabels}
+        timezone={timezone}
       />
       <CrosshairMarkerGroup markers={crosshairMarkers} isMobile={isMobile} />
       {xAxisHoverBadge ? (

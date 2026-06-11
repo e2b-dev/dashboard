@@ -128,8 +128,9 @@ export function UsageChartsProvider({
   }, [data.hour_usages, timeframe])
 
   const sampledData = useMemo(
-    () => processUsageData(zeroFilledTimeframeFilteredData, timeframe),
-    [zeroFilledTimeframeFilteredData, timeframe]
+    () =>
+      processUsageData(zeroFilledTimeframeFilteredData, timeframe, timezone),
+    [zeroFilledTimeframeFilteredData, timeframe, timezone]
   )
 
   const seriesData = useMemo(() => {
@@ -234,10 +235,10 @@ export function UsageChartsProvider({
       setHoveredIndex(null)
       setTimeframe(
         startPoint.x,
-        normalizeToEndOfSamplingPeriod(endPoint.x, samplingMode)
+        normalizeToEndOfSamplingPeriod(endPoint.x, samplingMode, timezone)
       )
     },
-    [seriesData.sandboxes, setTimeframe, samplingMode]
+    [seriesData.sandboxes, setTimeframe, samplingMode, timezone]
   )
 
   const value = useMemo(
