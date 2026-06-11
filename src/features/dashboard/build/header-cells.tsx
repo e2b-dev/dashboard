@@ -1,11 +1,7 @@
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
-import {
-  formatDate,
-  getCompactTimestampFormat,
-  useTimezone,
-} from '@/features/dashboard/timezone'
+import { formatDate, useTimezone } from '@/features/dashboard/timezone'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import {
   formatDurationCompact,
@@ -84,7 +80,7 @@ export function RanFor({
   const iso = new Date(finishedAt).toISOString()
   const formattedTimestamp = formatDate(finishedAt, {
     timezone,
-    format: getCompactTimestampFormat(finishedAt, timezone),
+    format: 'compact-timestamp',
   })
 
   return (
@@ -104,7 +100,7 @@ export function StartedAt({ timestamp }: { timestamp: number }) {
   const elapsed = Date.now() - timestamp
   const formattedTimestamp = formatDate(timestamp, {
     timezone,
-    format: getCompactTimestampFormat(timestamp, timezone),
+    format: 'compact-timestamp',
   })
 
   return (

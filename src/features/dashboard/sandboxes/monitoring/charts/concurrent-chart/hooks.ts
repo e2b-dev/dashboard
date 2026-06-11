@@ -3,7 +3,6 @@ import type { TeamMetricsResponse } from '@/core/modules/sandboxes/models.client
 import {
   formatDate,
   formatZonedDateRange,
-  getCompactTimestampFormat,
   useTimezone,
 } from '@/features/dashboard/timezone'
 import { formatNumber } from '@/lib/utils/formatting'
@@ -43,7 +42,7 @@ export function useDisplayMetric(
     if (hoveredValue?.concurrentSandboxes !== undefined) {
       const formattedDate = formatDate(hoveredValue.timestamp, {
         timezone,
-        format: getCompactTimestampFormat(hoveredValue.timestamp, timezone),
+        format: 'compact-timestamp',
       })
       return {
         displayValue: formatNumber(hoveredValue.concurrentSandboxes),

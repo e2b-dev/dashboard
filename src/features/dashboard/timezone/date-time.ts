@@ -193,17 +193,38 @@ const formatZonedDateRange = (
   )}`
 }
 
-// Returns a date-fns format string for compact timestamps; e.g. 2026-06-08 -> 'MMM d, h:mm:ss a zzz'.
-const getCompactTimestampFormat = (
-  timestamp: number,
-  timezone: Timezone
+// Static date-fns format strings for known display presets.
+const DATE_FORMAT_PRESETS = {
+  // Jun 8, 2026
+  date: 'MMM d, yyyy',
+  // Jun 08, 2026
+  'date-padded-day': 'MMM dd, yyyy',
+  // 9:05:12 AM
+  time: 'h:mm:ss a',
+  // 2026-06-08 09:05:12 EDT
+  'exact-timestamp': 'yyyy-MM-dd HH:mm:ss zzz',
+} as const
+
+type DateFormatPreset = keyof typeof DATE_FORMAT_PRESETS | 'compact-timestamp'
+
+// Resolves a preset to a date-fns format string; compact-timestamp varies by year.
+// e.g. current year -> 'MMM d, h:mm:ss a zzz' (Jun 8, 9:05:12 AM EDT)
+// e.g. other year -> 'yyyy MMM d, h:mm:ss a zzz' (2025 Jun 8, 9:05:12 AM EST)
+const resolveDateFormatPreset = (
+  value: Date,
+  timezone: Timezone,
+  preset: DateFormatPreset
 ): string => {
-  const timestampYear = formatInTimeZone(timestamp, timezone, 'yyyy')
-  const currentYear = formatInTimeZone(Date.now(), timezone, 'yyyy')
+  if (preset === 'compact-timestamp') {
+    const timestampYear = formatInTimeZone(value, timezone, 'yyyy')
+    const currentYear = formatInTimeZone(Date.now(), timezone, 'yyyy')
 
-  if (timestampYear === currentYear) return 'MMM d, h:mm:ss a zzz'
+    if (timestampYear === currentYear) return 'MMM d, h:mm:ss a zzz'
 
-  return 'yyyy MMM d, h:mm:ss a zzz'
+    return 'yyyy MMM d, h:mm:ss a zzz'
+  }
+
+  return DATE_FORMAT_PRESETS[preset]
 }
 
 const formatZonedTimeAxisLabel = (
@@ -236,17 +257,21 @@ const createZonedTimeAxisLabelFormatter = (
 
 interface FormatDateOptions {
   timezone: Timezone
-  format?: string
+  format?: DateFormatPreset
 }
 
 const formatDate = (
   value: string | number | Date,
-  { timezone, format = 'MMM d, yyyy' }: FormatDateOptions
+  { timezone, format = 'date' }: FormatDateOptions
 ): string | null => {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return null
 
-  return formatInTimeZone(date, timezone, format)
+  return formatInTimeZone(
+    date,
+    timezone,
+    resolveDateFormatPreset(date, timezone, format)
+  )
 }
 
 const formatZonedExactTimestamp = (
@@ -305,7 +330,6 @@ export {
   formatZonedRelativeDayTime,
   formatZonedTime,
   formatZonedTimeAxisLabel,
-  getCompactTimestampFormat,
   getZonedDateParts,
   getZonedDateTimeParts,
   shiftCalendarDays,
@@ -314,6 +338,7 @@ export {
   zonedInstantToCalendarDate,
 }
 export type {
+  DateFormatPreset,
   FormatDateOptions,
   ZonedDateParts,
   ZonedDateRangeFormatOptions,
