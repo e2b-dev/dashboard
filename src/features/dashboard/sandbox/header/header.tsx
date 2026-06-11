@@ -21,7 +21,7 @@ export default function SandboxDetailsHeader() {
 
   const runningLabel = isInitialLoading || isRunning ? 'running for' : 'ran for'
   const timeoutLabel = isKilled
-    ? 'stopped at'
+    ? 'killed at'
     : isPaused
       ? 'paused at'
       : 'timeout in'
