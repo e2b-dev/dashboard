@@ -1,13 +1,12 @@
 'use client'
 
 import { Portal } from '@radix-ui/react-portal'
-import { useMutation } from '@tanstack/react-query'
 import Link from 'next/link'
 import { useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { getTeamDisplayName } from '@/core/modules/teams/utils'
+import { signOutAction } from '@/core/server/actions/auth-actions'
 import { cn } from '@/lib/utils'
-import { useTRPC } from '@/trpc/client'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,31 +30,18 @@ import { TeamAvatar } from './team-avatar'
 
 export default function DashboardSidebarMenu() {
   const { team } = useDashboard()
-  const trpc = useTRPC()
   const [createTeamOpen, setCreateTeamOpen] = useState(false)
-  // explicit state instead of the mutation's isPending: isPending flips back to
-  // false the moment the mutation resolves, which would tear down the overlay a
-  // beat before the hard navigation unloads the page; this stays true until we
-  // navigate away, and only resets if the sign-out fails before that
+  // explicit state instead of useTransition: a sync transition callback
+  // settles immediately, so isPending would flip back to false while the
+  // sign-out action is still in flight; this stays true until the redirect
+  // navigates away, and only resets if the action fails before that
   const [isLoggingOut, setIsLoggingOut] = useState(false)
-
-  const signOutMutation = useMutation(
-    trpc.auth.signOut.mutationOptions({
-      onSuccess: ({ url }) => {
-        // Hard navigation (not the Next router): a soft RSC redirect re-renders
-        // the dashboard and tears down this overlay before the browser leaves
-        // the page. window.location keeps the overlay up until unload.
-        window.location.href = url
-      },
-      onError: () => {
-        setIsLoggingOut(false)
-      },
-    })
-  )
 
   const handleLogout = () => {
     setIsLoggingOut(true)
-    signOutMutation.mutate({})
+    signOutAction().catch(() => {
+      setIsLoggingOut(false)
+    })
   }
 
   return (
