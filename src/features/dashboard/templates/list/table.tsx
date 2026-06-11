@@ -1,22 +1,16 @@
 'use client'
 
+import { useSuspenseQuery } from '@tanstack/react-query'
 import {
-  keepPreviousData,
-  useSuspenseInfiniteQuery,
-} from '@tanstack/react-query'
-import {
+  type ColumnFiltersState,
   type ColumnSizingState,
   flexRender,
   type TableOptions,
   useReactTable,
 } from '@tanstack/react-table'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
-import type {
-  DefaultTemplate,
-  Template,
-  TemplatesSort,
-} from '@/core/modules/templates/models'
+import type { Template } from '@/core/modules/templates/models'
 import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils'
@@ -31,23 +25,10 @@ import {
 import ErrorBoundary from '@/ui/error'
 import HelpTooltip from '@/ui/help-tooltip'
 import { SIDEBAR_TRANSITION_CLASSNAMES } from '@/ui/primitives/sidebar'
-import {
-  TEMPLATES_DEFAULT_SORT_BASE,
-  TEMPLATES_DEFAULT_SORT_DESC,
-  TEMPLATES_PAGE_SIZE,
-} from './constants'
 import TemplatesHeader from './header'
 import { useTemplateTableStore } from './stores/table-store'
 import { TemplatesTableBody as TableBody } from './table-body'
 import { fallbackData, templatesTableConfig, useColumns } from './table-config'
-
-const COLUMN_TO_SORT_BASE: Record<string, string> = {
-  name: 'name',
-  cpuCount: 'cpu_count',
-  memoryMB: 'memory_mb',
-  createdAt: 'created_at',
-  updatedAt: 'updated_at',
-}
 
 export default function TemplatesTable() {
   'use no memo'
@@ -55,68 +36,41 @@ export default function TemplatesTable() {
   const trpc = useTRPC()
   const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
 
-  const { sorting, setSorting, globalFilter, setGlobalFilter } =
-    useTemplateTableStore()
-  const { cpuCount, memoryMB, isPublic } = useTemplateTableStore()
-
-  // Derive the single server sort token from the active sort column + direction.
-  const sortColumn = sorting[0]
-  const sortBase =
-    (sortColumn && COLUMN_TO_SORT_BASE[sortColumn.id]) ??
-    TEMPLATES_DEFAULT_SORT_BASE
-  const isDesc = sortColumn
-    ? sortColumn.desc !== false
-    : TEMPLATES_DEFAULT_SORT_DESC
-  const sort = `${sortBase}_${isDesc ? 'desc' : 'asc'}` as TemplatesSort
-
-  const {
-    data,
-    error: templatesError,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isFetching,
-  } = useSuspenseInfiniteQuery(
-    trpc.templates.getTemplates.infiniteQueryOptions(
+  const { data: templatesData, error: templatesError } = useSuspenseQuery(
+    trpc.templates.getTemplates.queryOptions(
+      { teamSlug },
       {
-        teamSlug,
-        limit: TEMPLATES_PAGE_SIZE,
-        cpuCount,
-        memoryMB,
-        public: isPublic,
-        search: globalFilter || undefined,
-        sort,
-      },
-      {
-        getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-        initialCursor: undefined,
-        placeholderData: keepPreviousData,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
       }
     )
   )
 
-  const templates = useMemo<Array<Template | DefaultTemplate>>(
-    () => data?.pages.flatMap((page) => page.data) ?? [],
-    [data]
+  const { data: defaultTemplatesData } = useSuspenseQuery(
+    trpc.templates.getDefaultTemplatesCached.queryOptions(undefined, {
+      refetchOnMount: false,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+    })
   )
 
-  const { isRefetching, clearRefetching } = useTemplatesRefetchTracking(
-    sort,
-    globalFilter,
-    cpuCount,
-    memoryMB,
-    isPublic
+  const templates = useMemo(
+    () => [
+      ...(defaultTemplatesData?.templates ?? []),
+      ...(templatesData?.templates ?? []),
+    ],
+    [templatesData, defaultTemplatesData]
   )
-
-  useEffect(() => {
-    if (!isFetching && isRefetching) {
-      clearRefetching()
-    }
-  }, [isFetching, isRefetching, clearRefetching])
-
-  const isListDimmed = isRefetching && templates.length > 0
 
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  const { sorting, setSorting, globalFilter, setGlobalFilter } =
+    useTemplateTableStore()
+
+  const { cpuCount, memoryMB, isPublic } = useTemplateTableStore()
+
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
 
   const [columnSizing, setColumnSizing] = useLocalStorage<ColumnSizingState>(
     'templates:columnSizing:v3',
@@ -126,6 +80,37 @@ export default function TemplatesTable() {
       serializer: (value) => JSON.stringify(value),
     }
   )
+
+  // Effect hooks for filters
+  useEffect(() => {
+    let newFilters = [...columnFilters]
+
+    // Handle CPU filter
+    if (!cpuCount) {
+      newFilters = newFilters.filter((f) => f.id !== 'cpuCount')
+    } else {
+      newFilters = newFilters.filter((f) => f.id !== 'cpuCount')
+      newFilters.push({ id: 'cpuCount', value: cpuCount })
+    }
+
+    // Handle memory filter
+    if (!memoryMB) {
+      newFilters = newFilters.filter((f) => f.id !== 'memoryMB')
+    } else {
+      newFilters = newFilters.filter((f) => f.id !== 'memoryMB')
+      newFilters.push({ id: 'memoryMB', value: memoryMB })
+    }
+
+    // Handle public filter
+    if (isPublic === undefined) {
+      newFilters = newFilters.filter((f) => f.id !== 'public')
+    } else {
+      newFilters = newFilters.filter((f) => f.id !== 'public')
+      newFilters.push({ id: 'public', value: isPublic })
+    }
+
+    setColumnFilters(newFilters)
+  }, [cpuCount, memoryMB, isPublic])
 
   const columns = useColumns([])
 
@@ -137,21 +122,27 @@ export default function TemplatesTable() {
       globalFilter,
       sorting,
       columnSizing,
+      columnFilters,
     },
     onGlobalFilterChange: setGlobalFilter,
     onSortingChange: setSorting,
     onColumnSizingChange: setColumnSizing,
+    onColumnFiltersChange: setColumnFilters,
   } as TableOptions<Template>)
 
   const columnSizeVars = useColumnSizeVars(table)
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: scroll reset is triggered by query-input changes
-  useEffect(() => {
+  const resetScroll = () => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = 0
       scrollRef.current.scrollLeft = 0
     }
-  }, [sort, globalFilter, cpuCount, memoryMB, isPublic])
+  }
+
+  // Add effect hook for scrolling to top when sorting or global filter changes
+  useEffect(() => {
+    resetScroll()
+  }, [sorting, globalFilter])
 
   if (templatesError) {
     return (
@@ -221,37 +212,9 @@ export default function TemplatesTable() {
             templates={templates}
             table={table}
             scrollRef={scrollRef}
-            hasNextPage={hasNextPage}
-            isFetchingNextPage={isFetchingNextPage}
-            fetchNextPage={fetchNextPage}
-            isRefetching={isListDimmed}
           />
         </DataTable>
       </div>
     </ClientOnly>
   )
-}
-
-function useTemplatesRefetchTracking(
-  sort: string,
-  globalFilter: string,
-  cpuCount: number | undefined,
-  memoryMB: number | undefined,
-  isPublic: boolean | undefined
-) {
-  const [isRefetching, setIsRefetching] = useState(false)
-  const isFirstRender = useRef(true)
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: these are change triggers, not values read in the effect
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false
-      return
-    }
-    setIsRefetching(true)
-  }, [sort, globalFilter, cpuCount, memoryMB, isPublic])
-
-  const clearRefetching = useCallback(() => setIsRefetching(false), [])
-
-  return { isRefetching, clearRefetching }
 }
