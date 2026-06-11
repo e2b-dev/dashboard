@@ -28,8 +28,9 @@ import type {
 } from './types'
 import { useTerminalInstance } from './use-terminal-instance'
 
-const FLUSH_INPUT_INTERVAL_MS = 10
+const FLUSH_INPUT_INTERVAL_MS = 0
 const FLUSH_INPUT_RETRY_INTERVAL_MS = 250
+const MAX_INPUT_FLUSH_RETRIES = 2
 
 interface DashboardTerminalProps {
   autoStart?: boolean
@@ -66,6 +67,7 @@ export default function DashboardTerminal({
   const pendingInputRef = useRef<Uint8Array[]>([])
   const inputFlushTimerRef = useRef<number | null>(null)
   const inputFlushInFlightRef = useRef(false)
+  const inputFlushRetryCountRef = useRef(0)
   const inputGenerationRef = useRef(0)
   const pendingCommandsRef = useRef<string[]>([])
   const isStartingRef = useRef(false)
@@ -95,6 +97,14 @@ export default function DashboardTerminal({
     []
   )
 
+  const abortCurrentStart = useCallback(() => {
+    startGenerationRef.current += 1
+    isStartingRef.current = false
+    if (!ptyRef.current) {
+      setStatus('idle')
+    }
+  }, [])
+
   const requestPtyKill = useCallback(
     ({ pid, sandboxId }: { pid: number; sandboxId: string }) => {
       void fetch('/api/trpc/sandbox.killTerminalPty?batch=1', {
@@ -122,6 +132,7 @@ export default function DashboardTerminal({
     }
     inputGenerationRef.current += 1
     inputFlushInFlightRef.current = false
+    inputFlushRetryCountRef.current = 0
     pendingInputRef.current = []
   }, [])
 
@@ -157,10 +168,15 @@ export default function DashboardTerminal({
 
     void sandbox.pty
       .sendInput(terminalPid, data)
+      .then(() => {
+        inputFlushRetryCountRef.current = 0
+      })
       .catch(() => {
         if (inputGenerationRef.current !== inputGeneration) return
         if (pidRef.current !== terminalPid) return
+        if (inputFlushRetryCountRef.current >= MAX_INPUT_FLUSH_RETRIES) return
 
+        inputFlushRetryCountRef.current += 1
         shouldRetryPendingInput = true
         pendingInputRef.current = [data, ...pendingInputRef.current]
       })
@@ -565,9 +581,7 @@ export default function DashboardTerminal({
     const handlePageHide = (event: PageTransitionEvent) => {
       if (event.persisted) return
 
-      startGenerationRef.current += 1
-      isStartingRef.current = false
-      setStatus('idle')
+      abortCurrentStart()
       void closeTerminal()
     }
 
@@ -584,12 +598,13 @@ export default function DashboardTerminal({
     return () => {
       window.removeEventListener('pagehide', handlePageHide)
       window.removeEventListener('pageshow', handlePageShow)
-      startGenerationRef.current += 1
+      abortCurrentStart()
       clearAttachRetryTimer()
       clearPendingInput()
       void closeTerminal()
     }
   }, [
+    abortCurrentStart,
     clearAttachRetryTimer,
     clearPendingInput,
     closeTerminal,

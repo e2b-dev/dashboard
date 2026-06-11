@@ -1,7 +1,4 @@
-import { motion } from 'motion/react'
-import type React from 'react'
 import type { RefObject } from 'react'
-import { cn } from '@/lib/utils'
 import { IconButton } from '@/ui/primitives/icon-button'
 import {
   CopyIcon,
@@ -20,14 +17,6 @@ interface TerminalPanelProps {
   onRestartTerminal: () => void
 }
 
-type TerminalPanelFrameProps = React.ComponentProps<typeof motion.div> & {
-  header: React.ReactNode
-  classNames?: {
-    frame?: string
-    header?: string
-  }
-}
-
 export default function TerminalPanel({
   sandboxId,
   template,
@@ -39,11 +28,8 @@ export default function TerminalPanel({
   onRestartTerminal,
 }: TerminalPanelProps) {
   return (
-    <TerminalPanelFrame
-      classNames={{
-        frame: 'bg-bg-1',
-      }}
-      header={
+    <section className="flex h-full min-h-0 flex-1 flex-col overflow-hidden border bg-bg-1">
+      <header className="h-10 w-full border-b">
         <TerminalPanelHeader
           sandboxId={sandboxId}
           template={template}
@@ -52,8 +38,7 @@ export default function TerminalPanel({
           onCopyTerminalText={onCopyTerminalText}
           onRestartTerminal={onRestartTerminal}
         />
-      }
-    >
+      </header>
       <div
         ref={terminalContainerRef}
         role="application"
@@ -61,32 +46,7 @@ export default function TerminalPanel({
         className="min-h-0 flex-1 cursor-text overflow-hidden bg-black p-3"
         onMouseDown={onFocusTerminal}
       />
-    </TerminalPanelFrame>
-  )
-}
-
-function TerminalPanelFrame({
-  className,
-  classNames,
-  children,
-  header,
-  ...props
-}: TerminalPanelFrameProps) {
-  return (
-    <motion.div
-      transition={{ duration: 0.25, ease: 'easeInOut' }}
-      className={cn(
-        'bg-bg flex h-full min-h-0 flex-1 flex-col overflow-hidden border',
-        classNames?.frame,
-        className
-      )}
-      {...props}
-    >
-      <div className={cn('h-10 w-full border-b', classNames?.header)}>
-        {header}
-      </div>
-      {children as React.ReactNode}
-    </motion.div>
+    </section>
   )
 }
 
