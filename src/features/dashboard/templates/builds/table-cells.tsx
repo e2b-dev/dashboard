@@ -1,13 +1,12 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { PROTECTED_URLS } from '@/configs/urls'
 import type {
   BuildStatus,
   ListedBuildModel,
 } from '@/core/modules/builds/models'
-import { useTemplateTableStore } from '@/features/dashboard/templates/list/stores/table-store'
+import { useNow } from '@/lib/hooks/use-now'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils'
 import {
@@ -20,13 +19,17 @@ import { Button } from '@/ui/primitives/button'
 import { CheckIcon, CloseIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
 
-export function BuildId({ id }: { id: string }) {
+export function BuildId({ id, className }: { id: string; className?: string }) {
   return (
     <CopyButtonInline
       value={id}
-      className="w-full text-left text-fg-tertiary font-mono prose-table-numeric"
+      truncate={false}
+      className={cn(
+        'w-full text-left text-fg-secondary font-mono prose-table-numeric',
+        className
+      )}
     >
-      {id.slice(0, 6)}...{id.slice(-6)}
+      {id.slice(0, 7)}...{id.slice(-5)}
     </CopyButtonInline>
   )
 }
@@ -40,23 +43,21 @@ export function Template({
   templateId: string
   className?: string
 }) {
-  const router = useRouter()
   const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
 
   return (
     <Button
+      asChild
       variant="link-table"
       size="none"
       className={cn('max-w-full', className)}
-      onClick={(e) => {
-        e.stopPropagation()
-        e.preventDefault()
-
-        useTemplateTableStore.getState().setGlobalFilter(templateId)
-        router.push(PROTECTED_URLS.TEMPLATES_LIST(teamSlug))
-      }}
     >
-      <p className="truncate">{template}</p>
+      <Link
+        href={PROTECTED_URLS.TEMPLATE_OVERVIEW(teamSlug, templateId)}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <p className="truncate">{template}</p>
+      </Link>
     </Button>
   )
 }
@@ -106,17 +107,7 @@ export function Duration({
   finishedAt: number | null
   isBuilding: boolean
 }) {
-  const [now, setNow] = useState(() => Date.now())
-
-  useEffect(() => {
-    if (!isBuilding) return
-
-    const interval = setInterval(() => {
-      setNow(Date.now())
-    }, 1000)
-
-    return () => clearInterval(interval)
-  }, [isBuilding])
+  const now = useNow(1000, isBuilding)
 
   const duration = isBuilding
     ? now - createdAt

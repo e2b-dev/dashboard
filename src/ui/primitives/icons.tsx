@@ -578,6 +578,32 @@ export const IndicatorDotsIcon = ({ className, ...props }: IconProps) => (
   </svg>
 )
 
+export const MoreActionsIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 16 16"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M2 8.66663L2 7.33329L3.33333 7.33329L3.33333 8.66663L2 8.66663Z"
+      stroke="currentColor"
+      strokeWidth="1.33333"
+    />
+    <path
+      d="M7.33398 7.33329L7.33398 8.66663L8.66732 8.66663L8.66732 7.33329L7.33398 7.33329Z"
+      stroke="currentColor"
+      strokeWidth="1.33333"
+    />
+    <path
+      d="M12.667 8.66663L12.667 7.33329L14.0003 7.33329L14.0003 8.66663L12.667 8.66663Z"
+      stroke="currentColor"
+      strokeWidth="1.33333"
+    />
+  </svg>
+)
+
 export const UnhealthyIcon = ({ className, ...props }: IconProps) => (
   <svg
     className={cn(DEFAULT_CLASS_NAMES, className)}
@@ -815,6 +841,23 @@ export const ChevronLeftIcon = ({ className, ...props }: IconProps) => (
   </svg>
 )
 
+export const TriangleIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="currentColor"
+    viewBox="0 0 16 16"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M7 5.5L7 10.82L10.55 8.16L7 5.5Z"
+      stroke="currentColor"
+      strokeWidth="1.77333"
+      strokeLinejoin="round"
+    />
+  </svg>
+)
+
 export const TrashIcon = ({ className, ...props }: IconProps) => (
   <svg
     className={cn(DEFAULT_CLASS_NAMES, className)}
@@ -959,6 +1002,29 @@ export const BuildIcon = ({ className, ...props }: IconProps) => (
     />
     <path
       d="M6.3335 8.33337L11.6668 13.6667L13.6668 11.6667L8.3335 6.33337"
+      stroke="currentColor"
+      strokeLinecap="square"
+      strokeWidth="1.33333"
+    />
+  </svg>
+)
+
+export const UndoIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 16 16"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M4.6665 3.33301L1.99984 5.99967L4.6665 8.66634"
+      stroke="currentColor"
+      strokeLinecap="square"
+      strokeWidth="1.33333"
+    />
+    <path
+      d="M2.6665 6H13.9998V11.9997H7.99984"
       stroke="currentColor"
       strokeLinecap="square"
       strokeWidth="1.33333"
@@ -2107,5 +2173,34 @@ export const WebhookIcon = ({ className, ...props }: IconProps) => (
         <rect width="16" height="16" fill="currentColor" />
       </clipPath>
     </defs>
+  </svg>
+)
+
+export const TagIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 16 16"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M2 8V2H8L14 8L8 14L2 8Z"
+      stroke="currentColor"
+      strokeLinecap="square"
+      strokeWidth="1.33333"
+    />
+    <path
+      d="M5.33366 4.99996C5.33366 5.18405 5.18442 5.33329 5.00033 5.33329C4.81623 5.33329 4.66699 5.18405 4.66699 4.99996C4.66699 4.81587 4.81623 4.66663 5.00033 4.66663C5.18442 4.66663 5.33366 4.81587 5.33366 4.99996Z"
+      stroke="currentColor"
+      strokeLinecap="square"
+      strokeWidth="1.33333"
+    />
+    <path
+      d="M4.93262 5H5.06595"
+      stroke="currentColor"
+      strokeLinecap="square"
+      strokeWidth="1.33333"
+    />
   </svg>
 )

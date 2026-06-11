@@ -12,16 +12,23 @@
     @apply bg-bg text-fg prose-body antialiased;
   }
 
+  /* Inline heading styles to allow utility overrides. */
   h1,
   h2,
   h3 {
-    @apply prose-headline uppercase;
+    font-size: 1.25rem;
+    line-height: 1.25rem;
+    font-weight: 700;
+    text-transform: uppercase;
   }
 
   h4,
   h5,
   h6 {
-    @apply prose-headline-small uppercase;
+    font-size: 1rem;
+    line-height: 1.25rem;
+    font-weight: 700;
+    text-transform: uppercase;
   }
 
   .font-mono {
@@ -480,6 +487,10 @@
   --animate-shiny-text: shiny-text 0.5s linear infinite;
   --animate-loader-slash: loader-slash 0.4s linear infinite;
   --animate-loader-square: loader-square 0.4s linear infinite;
+
+  /* Easings (kept in sync with src/lib/utils/ui.ts) */
+  --ease-out-quint: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-quint: cubic-bezier(0.83, 0, 0.17, 1);
 }
 
 /* Container */

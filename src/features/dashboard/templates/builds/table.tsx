@@ -7,12 +7,14 @@ import {
   useQueryClient,
 } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import type {
+  BuildStatus,
   ListedBuildModel,
   RunningBuildStatusModel,
 } from '@/core/modules/builds/models'
+import { useFilterChangeTracking } from '@/lib/hooks/use-filter-change-tracking'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils/ui'
 import { useTRPC } from '@/trpc/client'
@@ -37,34 +39,48 @@ import {
   Status,
   Template,
 } from './table-cells'
-import useFilters from './use-filters'
 
 const BUILDS_REFETCH_INTERVAL_MS = 15_000
 const RUNNING_BUILD_POLL_INTERVAL_MS = 3_000
 const MAX_CACHED_PAGES = 3
 
 const COLUMN_WIDTHS = {
-  id: 152,
+  id: 168,
   status: 96,
   template: 192,
   started: 126,
   duration: 96,
 } as const
 
-const BuildsTable = () => {
+interface BuildsTableProps {
+  filters: {
+    statuses: BuildStatus[]
+    buildIdOrTemplate?: string
+  }
+  // Optional client-side row filter applied after fetch + live-status merge.
+  postFilter?: (build: ListedBuildModel) => boolean
+  showTemplateColumn?: boolean
+  disabled?: boolean
+}
+
+const BuildsTable = ({
+  filters,
+  postFilter,
+  showTemplateColumn = true,
+  disabled = false,
+}: BuildsTableProps) => {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const router = useRouter()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
-  const { statuses, buildIdOrTemplate } = useFilters()
+
+  const { statuses, buildIdOrTemplate } = filters
   const { isFilterRefetching, clearFilterRefetching } = useFilterChangeTracking(
-    statuses,
-    buildIdOrTemplate
+    [statuses, buildIdOrTemplate]
   )
 
-  // Builds list query
   const {
     data: paginatedBuilds,
     fetchNextPage,
@@ -83,6 +99,7 @@ const BuildsTable = () => {
         refetchInterval: BUILDS_REFETCH_INTERVAL_MS,
         refetchIntervalInBackground: false,
         maxPages: MAX_CACHED_PAGES,
+        enabled: !disabled,
       }
     )
   )
@@ -101,7 +118,10 @@ const BuildsTable = () => {
     }
   }, [isFetchingBuilds, isFilterRefetching, clearFilterRefetching])
 
-  // Running builds status polling
+  useEffect(() => {
+    if (disabled) clearFilterRefetching()
+  }, [disabled, clearFilterRefetching])
+
   const runningBuildIds = useMemo(
     () => builds.filter((b) => b.status === 'building').map((b) => b.id),
     [builds]
@@ -130,7 +150,11 @@ const BuildsTable = () => {
     [builds, runningStatusesData]
   )
 
-  // Handlers
+  const visibleBuilds = useMemo(() => {
+    if (!postFilter) return buildsWithLiveStatus
+    return buildsWithLiveStatus.filter(postFilter)
+  }, [buildsWithLiveStatus, postFilter])
+
   const buildsQueryKey = trpc.builds.list.infiniteQueryOptions({
     teamSlug,
     statuses,
@@ -148,11 +172,13 @@ const BuildsTable = () => {
     }
   }, [queryClient, buildsQueryKey])
 
-  // Derived UI state
-  const hasData = buildsWithLiveStatus.length > 0
-  const showLoader = isInitialLoad && !hasData
-  const showEmpty = !isInitialLoad && !isFetchingBuilds && !hasData
+  const hasData = !disabled && visibleBuilds.length > 0
+  const showLoader = !disabled && isInitialLoad && !hasData
+  const showEmpty =
+    disabled || (!isInitialLoad && !isFetchingBuilds && !hasData)
   const showFilterRefetchingOverlay = isFilterRefetching && hasData
+
+  const visibleColumnCount = showTemplateColumn ? 6 : 5
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden relative">
@@ -163,17 +189,21 @@ const BuildsTable = () => {
         <Table suppressHydrationWarning>
           <colgroup>
             <col style={colStyle(COLUMN_WIDTHS.status)} />
-            <col style={colStyle(COLUMN_WIDTHS.template)} />
+            {!showTemplateColumn && <col style={colStyle(COLUMN_WIDTHS.id)} />}
+            {showTemplateColumn && (
+              <col style={colStyle(COLUMN_WIDTHS.template)} />
+            )}
             <col style={colStyle(COLUMN_WIDTHS.started)} />
             <col style={colStyle(COLUMN_WIDTHS.duration)} />
-            <col style={colStyle(COLUMN_WIDTHS.id)} />
+            {showTemplateColumn && <col style={colStyle(COLUMN_WIDTHS.id)} />}
             <col className="max-lg:min-w-[500px]" />
           </colgroup>
 
           <TableHeader className="sticky top-0 z-10 bg-bg">
             <TableRow>
               <TableHead>Status</TableHead>
-              <TableHead>Template</TableHead>
+              {!showTemplateColumn && <TableHead>ID</TableHead>}
+              {showTemplateColumn && <TableHead>Template</TableHead>}
               <TableHead>
                 <span className="inline-flex items-center gap-1 text-fg">
                   Started
@@ -181,7 +211,7 @@ const BuildsTable = () => {
                 </span>
               </TableHead>
               <TableHead className="text-end">Duration</TableHead>
-              <TableHead>ID</TableHead>
+              {showTemplateColumn && <TableHead>ID</TableHead>}
               <th />
             </TableRow>
           </TableHeader>
@@ -193,7 +223,7 @@ const BuildsTable = () => {
           >
             {showLoader && (
               <TableRow>
-                <TableCell colSpan={6}>
+                <TableCell colSpan={visibleColumnCount}>
                   <div className="h-[35svh] w-full flex justify-center items-center">
                     <Loader variant="slash" size="lg" />
                   </div>
@@ -203,7 +233,7 @@ const BuildsTable = () => {
 
             {showEmpty && (
               <TableRow>
-                <TableCell colSpan={6}>
+                <TableCell colSpan={visibleColumnCount}>
                   <BuildsEmpty error={buildsError?.message} />
                 </TableCell>
               </TableRow>
@@ -214,7 +244,7 @@ const BuildsTable = () => {
                 {hasScrolledPastInitialPages && (
                   <TableRow>
                     <TableCell
-                      colSpan={6}
+                      colSpan={visibleColumnCount}
                       className="text-center max-lg:text-start text-fg-tertiary"
                     >
                       <BackToTopButton onBackToTop={handleBackToTop} />
@@ -222,8 +252,22 @@ const BuildsTable = () => {
                   </TableRow>
                 )}
 
-                {buildsWithLiveStatus.map((build) => {
+                {visibleBuilds.map((build) => {
                   const isBuilding = build.status === 'building'
+
+                  const idCell = (
+                    <TableCell
+                      className="py-1.5 overflow-hidden"
+                      style={{ maxWidth: COLUMN_WIDTHS.id }}
+                    >
+                      <BuildId
+                        id={build.id}
+                        className={
+                          showTemplateColumn ? 'text-fg-tertiary' : undefined
+                        }
+                      />
+                    </TableCell>
+                  )
 
                   return (
                     <TableRow
@@ -250,15 +294,18 @@ const BuildsTable = () => {
                       >
                         <Status status={build.status} />
                       </TableCell>
-                      <TableCell
-                        className="py-1.5 overflow-hidden"
-                        style={{ maxWidth: COLUMN_WIDTHS.template }}
-                      >
-                        <Template
-                          template={build.template}
-                          templateId={build.templateId}
-                        />
-                      </TableCell>
+                      {!showTemplateColumn && idCell}
+                      {showTemplateColumn && (
+                        <TableCell
+                          className="py-1.5 overflow-hidden"
+                          style={{ maxWidth: COLUMN_WIDTHS.template }}
+                        >
+                          <Template
+                            template={build.template}
+                            templateId={build.templateId}
+                          />
+                        </TableCell>
+                      )}
                       <TableCell className="py-1.5">
                         <StartedAt timestamp={build.createdAt} />
                       </TableCell>
@@ -269,12 +316,7 @@ const BuildsTable = () => {
                           isBuilding={isBuilding}
                         />
                       </TableCell>
-                      <TableCell
-                        className="py-1.5 overflow-hidden"
-                        style={{ maxWidth: COLUMN_WIDTHS.id }}
-                      >
-                        <BuildId id={build.id} />
-                      </TableCell>
+                      {showTemplateColumn && idCell}
                       <TableCell className="py-1.5 w-full">
                         <Reason statusMessage={build.statusMessage} />
                       </TableCell>
@@ -285,7 +327,7 @@ const BuildsTable = () => {
                 {hasNextPage && (
                   <TableRow>
                     <TableCell
-                      colSpan={6}
+                      colSpan={visibleColumnCount}
                       className="text-center max-lg:text-start text-fg-tertiary"
                     >
                       <LoadMoreButton
@@ -308,28 +350,6 @@ export default BuildsTable
 
 function colStyle(width: number) {
   return { width, minWidth: width, maxWidth: width }
-}
-
-function useFilterChangeTracking(
-  statuses: string[],
-  buildIdOrTemplate: string | undefined
-) {
-  const [isFilterRefetching, setIsFilterRefetching] = useState(false)
-  const isFirstRender = useRef(true)
-
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false
-      return
-    }
-    setIsFilterRefetching(true)
-  }, [statuses, buildIdOrTemplate])
-
-  const clearFilterRefetching = useCallback(() => {
-    setIsFilterRefetching(false)
-  }, [])
-
-  return { isFilterRefetching, clearFilterRefetching }
 }
 
 function mergeBuildsWithLiveStatuses(
