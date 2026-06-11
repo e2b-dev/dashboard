@@ -2109,3 +2109,42 @@ export const WebhookIcon = ({ className, ...props }: IconProps) => (
     </defs>
   </svg>
 )
+
+export const VaultIcon = ({ className, ...props }: IconProps) => (
+  <svg
+    className={cn(DEFAULT_CLASS_NAMES, className)}
+    fill="none"
+    viewBox="0 0 20 20"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M16.6673 3.33325H3.33398V16.6666H16.6673V3.33325Z"
+      stroke="currentColor"
+      strokeWidth="1.66667"
+    />
+    <path
+      d="M2.5 6.66675H4.16667"
+      stroke="currentColor"
+      strokeLinecap="square"
+      strokeWidth="1.66667"
+    />
+    <path
+      d="M2.5 13.3333H4.16667"
+      stroke="currentColor"
+      strokeLinecap="square"
+      strokeWidth="1.66667"
+    />
+    <path
+      d="M10.2083 12.0834C11.3589 12.0834 12.2917 11.1507 12.2917 10.0001C12.2917 8.84949 11.3589 7.91675 10.2083 7.91675C9.05774 7.91675 8.125 8.84949 8.125 10.0001C8.125 11.1507 9.05774 12.0834 10.2083 12.0834Z"
+      stroke="currentColor"
+      strokeWidth="1.66667"
+    />
+    <path
+      d="M8.54102 8.33325L7.29102 7.08325M11.8743 8.33325L13.1243 7.08325M11.8743 11.6666L13.1243 12.9166M8.54102 11.6666L7.29102 12.9166"
+      stroke="currentColor"
+      strokeLinecap="square"
+      strokeWidth="1.66667"
+    />
+  </svg>
+)
