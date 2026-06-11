@@ -1,6 +1,9 @@
 import type { UsageResponse } from '@/core/modules/billing/models'
 import {
+  getZonedDateTimeParts,
+  shiftCalendarDays,
   type Timezone,
+  type ZonedDateTimeParts,
   zonedDateTimePartsToUtcTimestamp,
 } from '@/features/dashboard/timezone'
 import {
@@ -8,81 +11,6 @@ import {
   WEEKLY_SAMPLING_THRESHOLD_DAYS,
 } from './constants'
 import type { SampledDataPoint, SamplingMode, Timeframe } from './types'
-
-interface ZonedDateTimeParts {
-  year: number
-  month: number
-  day: number
-  hours: number
-  minutes: number
-  seconds: number
-}
-
-const getZonedDateTimeParts = (
-  timestamp: number,
-  timezone: Timezone
-): ZonedDateTimeParts => {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hourCycle: 'h23',
-  })
-    .formatToParts(timestamp)
-    .reduce<Record<string, string>>((result, part) => {
-      if (
-        part.type === 'year' ||
-        part.type === 'month' ||
-        part.type === 'day' ||
-        part.type === 'hour' ||
-        part.type === 'minute' ||
-        part.type === 'second'
-      ) {
-        result[part.type] = part.value
-      }
-
-      return result
-    }, {})
-
-  const year = Number.parseInt(parts.year ?? '', 10)
-  const month = Number.parseInt(parts.month ?? '', 10)
-  const day = Number.parseInt(parts.day ?? '', 10)
-  const hours = Number.parseInt(parts.hour ?? '', 10)
-  const minutes = Number.parseInt(parts.minute ?? '', 10)
-  const seconds = Number.parseInt(parts.second ?? '', 10)
-
-  if (
-    Number.isNaN(year) ||
-    Number.isNaN(month) ||
-    Number.isNaN(day) ||
-    Number.isNaN(hours) ||
-    Number.isNaN(minutes) ||
-    Number.isNaN(seconds)
-  ) {
-    throw new Error('Unable to format usage sampling timestamp')
-  }
-
-  return { year, month, day, hours, minutes, seconds }
-}
-
-// Shifts a selected-zone calendar date without applying browser timezone rules; e.g. Tuesday + -1 -> Monday.
-const shiftCalendarDays = (
-  parts: Pick<ZonedDateTimeParts, 'year' | 'month' | 'day'>,
-  days: number
-): Pick<ZonedDateTimeParts, 'year' | 'month' | 'day'> => {
-  const date = new Date(Date.UTC(parts.year, parts.month - 1, parts.day))
-  date.setUTCDate(date.getUTCDate() + days)
-
-  return {
-    year: date.getUTCFullYear(),
-    month: date.getUTCMonth() + 1,
-    day: date.getUTCDate(),
-  }
-}
 
 const getIsoWeekStartParts = (
   parts: Pick<ZonedDateTimeParts, 'year' | 'month' | 'day'>

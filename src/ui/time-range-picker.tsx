@@ -31,12 +31,17 @@ import {
 
 export type { TimeRangeValues } from './time-range-picker.logic'
 
+export interface TimeRangeApplyResult {
+  values: TimeRangeValues
+  start: number
+  end: number
+}
+
 interface TimeRangePickerProps {
   startDateTime: string
   endDateTime: string
   bounds?: TimeRangePickerBounds
-  onApply?: (values: TimeRangeValues) => void
-  onApplyTimestamps?: (start: number, end: number) => void
+  onApply?: (result: TimeRangeApplyResult) => void
   onChange?: (values: TimeRangeValues) => void
   className?: string
   hideTime?: boolean
@@ -47,7 +52,6 @@ export function TimeRangePicker({
   endDateTime,
   bounds,
   onApply,
-  onApplyTimestamps,
   onChange,
   className,
   hideTime = false,
@@ -139,17 +143,16 @@ export function TimeRangePicker({
   const handleSubmit = useCallback(
     (values: TimeRangeValues) => {
       const normalizedValues = normalizeTimeRangeValues(values)
-      onApply?.(normalizedValues)
       const timestamps = parseTimeRangeValuesToTimestamps(
         normalizedValues,
         timezone
       )
       if (timestamps) {
-        onApplyTimestamps?.(timestamps.start, timestamps.end)
+        onApply?.({ values: normalizedValues, ...timestamps })
       }
       form.reset(normalizedValues)
     },
-    [form, onApply, onApplyTimestamps, timezone]
+    [form, onApply, timezone]
   )
 
   const shouldValidateOnChange = form.formState.submitCount > 0

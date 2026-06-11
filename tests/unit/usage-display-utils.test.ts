@@ -1,16 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { parseTimezone, type Timezone } from '@/features/dashboard/timezone'
 import {
   formatAxisDate,
   formatHoveredValues,
 } from '@/features/dashboard/usage/display-utils'
-
-const requireTimezone = (value: string): Timezone => {
-  const timezone = parseTimezone(value)
-  if (!timezone) throw new Error(`Expected ${value} to be a valid timezone`)
-
-  return timezone
-}
+import { requireTimezone } from './helpers/timezone'
 
 describe('usage display utilities', () => {
   const newYork = requireTimezone('America/New_York')

@@ -1,4 +1,6 @@
 import {
+  getZonedDateParts,
+  shiftCalendarDays,
   type Timezone,
   zonedDateTimePartsToUtcTimestamp,
 } from '@/features/dashboard/timezone'
@@ -21,62 +23,8 @@ export const INITIAL_TIMEFRAME_FALLBACK_RANGE_MS = 30 * 24 * 60 * 60 * 1000
 export const HOURLY_SAMPLING_THRESHOLD_DAYS = 3
 export const WEEKLY_SAMPLING_THRESHOLD_DAYS = 60
 
-interface CalendarDateParts {
-  year: number
-  month: number
-  day: number
-}
+type CalendarDateParts = ReturnType<typeof getZonedDateParts>
 
-const getZonedDateParts = (
-  value: Date,
-  timezone: Timezone
-): CalendarDateParts => {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  })
-    .formatToParts(value)
-    .reduce<Record<string, string>>((result, part) => {
-      if (
-        part.type === 'year' ||
-        part.type === 'month' ||
-        part.type === 'day'
-      ) {
-        result[part.type] = part.value
-      }
-
-      return result
-    }, {})
-
-  const year = Number.parseInt(parts.year ?? '', 10)
-  const month = Number.parseInt(parts.month ?? '', 10)
-  const day = Number.parseInt(parts.day ?? '', 10)
-
-  if (Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) {
-    throw new Error('Unable to format usage preset date')
-  }
-
-  return { year, month, day }
-}
-
-// Shifts a calendar date without applying local timezone rules; e.g. 2026-06-10 + -89 -> 2026-03-13.
-const shiftCalendarDays = (
-  parts: CalendarDateParts,
-  days: number
-): CalendarDateParts => {
-  const date = new Date(Date.UTC(parts.year, parts.month - 1, parts.day))
-  date.setUTCDate(date.getUTCDate() + days)
-
-  return {
-    year: date.getUTCFullYear(),
-    month: date.getUTCMonth() + 1,
-    day: date.getUTCDate(),
-  }
-}
-
-// Shifts to the first day of another calendar month; e.g. 2026-06-10 + -1 -> 2026-05-01.
 const shiftToMonthStart = (
   parts: CalendarDateParts,
   monthOffset: number
@@ -90,7 +38,6 @@ const shiftToMonthStart = (
   }
 }
 
-// Returns the last calendar date in a month; e.g. 2026-02 -> 2026-02-28.
 const getMonthEnd = (year: number, month: number): CalendarDateParts => {
   const date = new Date(Date.UTC(year, month, 0))
 
@@ -101,7 +48,6 @@ const getMonthEnd = (year: number, month: number): CalendarDateParts => {
   }
 }
 
-// Converts selected-zone day boundaries to UTC milliseconds; e.g. 2026-06-10 in America/New_York -> 04:00Z to 03:59:59.999Z.
 const getZonedDayBoundaryTimestamps = (
   startParts: CalendarDateParts,
   endParts: CalendarDateParts,
@@ -128,7 +74,6 @@ const getZonedDayBoundaryTimestamps = (
     ) + 999,
 })
 
-// Returns usage presets bound to selected-zone calendar days; e.g. Last 7 days in America/New_York starts at New York midnight.
 const getUsageTimeRangePresets = (timezone: Timezone): TimeRangePreset[] => [
   {
     id: 'last-7-days',

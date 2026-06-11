@@ -1,10 +1,8 @@
 import { type Timezone, TimezoneSchema } from './schema'
 
-// Returns true when an IANA timezone is valid; e.g. "America/New_York" -> true.
 const isValidTimezone = (timezone: string): timezone is Timezone =>
   TimezoneSchema.safeParse(timezone).success
 
-// Parses a timezone preference safely; e.g. "Europe/Berlin" -> "Europe/Berlin".
 const parseTimezone = (
   timezone: string | null | undefined
 ): Timezone | null => {
@@ -23,7 +21,6 @@ const getUtcTimezone = (): Timezone => {
   throw new Error('Unable to resolve UTC timezone')
 }
 
-// Returns the browser timezone with a safe fallback; e.g. browser in New York -> "America/New_York".
 const getBrowserTimezone = (): Timezone => {
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
   const parsedTimezone = parseTimezone(timezone)
@@ -32,7 +29,6 @@ const getBrowserTimezone = (): Timezone => {
   return getUtcTimezone()
 }
 
-// Returns supported IANA timezone options; e.g. first option can be "Africa/Abidjan".
 const getTimezones = (): Timezone[] => {
   const browserTimezone = getBrowserTimezone()
   const utcTimezone = getUtcTimezone()
@@ -49,11 +45,9 @@ const getTimezones = (): Timezone[] => {
   return Array.from(new Set([utcTimezone, browserTimezone])).sort()
 }
 
-// Formats a timezone for display; e.g. "America/New_York" -> "America/New York".
 const formatTimezoneDisplayName = (timezone: Timezone): string =>
   timezone.replaceAll('_', ' ')
 
-// Formats a timezone label with its current short name; e.g. "America/New_York" -> "America/New York (EST)".
 const formatTimezoneLabel = (timezone: Timezone): string => {
   const formatter = new Intl.DateTimeFormat('en-US', {
     timeZone: timezone,

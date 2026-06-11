@@ -1,13 +1,104 @@
 import { formatInTimeZone, fromZonedTime } from 'date-fns-tz'
 import type { Timezone } from './schema'
 
-interface ZonedDateTimeParts {
+interface ZonedDateParts {
   year: number
   month: number
   day: number
+}
+
+interface ZonedDateTimeParts extends ZonedDateParts {
   hours: number
   minutes: number
   seconds: number
+}
+
+const parseZonedFormatParts = (
+  parts: Intl.DateTimeFormatPart[],
+  fields: readonly Intl.DateTimeFormatPartTypes[]
+): Record<string, string> =>
+  parts.reduce<Record<string, string>>((result, part) => {
+    if (fields.includes(part.type)) {
+      result[part.type] = part.value
+    }
+
+    return result
+  }, {})
+
+const parseRequiredInt = (
+  value: string | undefined,
+  fieldName: string
+): number => {
+  const parsed = Number.parseInt(value ?? '', 10)
+  if (Number.isNaN(parsed)) {
+    throw new Error(`Unable to parse zoned ${fieldName}`)
+  }
+
+  return parsed
+}
+
+const getZonedDateParts = (
+  value: string | number | Date,
+  timezone: Timezone
+): ZonedDateParts => {
+  const parts = parseZonedFormatParts(
+    new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(value),
+    ['year', 'month', 'day']
+  )
+
+  return {
+    year: parseRequiredInt(parts.year, 'year'),
+    month: parseRequiredInt(parts.month, 'month'),
+    day: parseRequiredInt(parts.day, 'day'),
+  }
+}
+
+const getZonedDateTimeParts = (
+  value: string | number | Date,
+  timezone: Timezone
+): ZonedDateTimeParts => {
+  const parts = parseZonedFormatParts(
+    new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(value),
+    ['year', 'month', 'day', 'hour', 'minute', 'second']
+  )
+
+  return {
+    year: parseRequiredInt(parts.year, 'year'),
+    month: parseRequiredInt(parts.month, 'month'),
+    day: parseRequiredInt(parts.day, 'day'),
+    hours: parseRequiredInt(parts.hour, 'hour'),
+    minutes: parseRequiredInt(parts.minute, 'minute'),
+    seconds: parseRequiredInt(parts.second, 'second'),
+  }
+}
+
+// Shifts a calendar date without applying local timezone rules; e.g. 2026-06-10 + -89 -> 2026-03-13.
+const shiftCalendarDays = (
+  parts: ZonedDateParts,
+  days: number
+): ZonedDateParts => {
+  const date = new Date(Date.UTC(parts.year, parts.month - 1, parts.day))
+  date.setUTCDate(date.getUTCDate() + days)
+
+  return {
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth() + 1,
+    day: date.getUTCDate(),
+  }
 }
 
 interface ZonedDateRangeFormatOptions {
@@ -17,7 +108,6 @@ interface ZonedDateRangeFormatOptions {
 
 const pad = (value: number): string => String(value).padStart(2, '0')
 
-// Formats a timestamp for picker inputs; e.g. 2026-06-08T13:05:09Z in America/New_York -> { date: "2026/06/08", time: "09:05:09" }.
 const formatZonedDateTimeInput = (
   value: string | number | Date,
   timezone: Timezone
@@ -26,7 +116,6 @@ const formatZonedDateTimeInput = (
   time: formatInTimeZone(value, timezone, 'HH:mm:ss'),
 })
 
-// Maps an instant to a browser-local calendar Date from dashboard wall-clock date parts; e.g. 2023-01-01T00:00:00Z in UTC -> new Date(2023, 0, 1).
 const zonedInstantToCalendarDate = (
   value: string | number | Date,
   timezone: Timezone
@@ -50,13 +139,11 @@ const zonedDateTimePartsToUtcDate = (
   return fromZonedTime(wallClockValue, timezone)
 }
 
-// Converts timezone wall-clock parts to a UTC timestamp; e.g. 2026-06-08 09:00:00 in America/New_York -> 1780923600000.
 const zonedDateTimePartsToUtcTimestamp = (
   parts: ZonedDateTimeParts,
   timezone: Timezone
 ): number => zonedDateTimePartsToUtcDate(parts, timezone).getTime()
 
-// Formats the short timezone abbreviation; e.g. 2026-06-08T13:00:00Z in America/New_York -> "EDT".
 const formatTimezoneAbbreviation = (
   value: string | number | Date,
   timezone: Timezone
@@ -71,7 +158,6 @@ const formatTimezoneAbbreviation = (
   return abbreviation ?? timezone
 }
 
-// Formats a compact timezone-aware date range; e.g. UTC start/end in America/New_York -> "Jun 8, 2026 - Jun 9, 2026, EDT".
 const formatZonedDateRange = (
   start: string | number | Date,
   end: string | number | Date,
@@ -107,7 +193,6 @@ const formatZonedDateRange = (
   )}`
 }
 
-// Formats a compact chart/tooltip timestamp; e.g. 2026-06-08T13:00:00Z in America/New_York -> "Jun 8, 9:00:00 AM EDT".
 const formatZonedCompactDate = (
   timestamp: number,
   timezone: Timezone
@@ -122,7 +207,6 @@ const formatZonedCompactDate = (
   return formatInTimeZone(timestamp, timezone, 'yyyy MMM d, h:mm:ss a zzz')
 }
 
-// Formats a chart x-axis time label; e.g. 2026-06-08T13:05:09Z in America/New_York -> "09:05" or "09:05:09".
 const formatZonedTimeAxisLabel = (
   timestamp: number,
   timezone: Timezone,
@@ -137,7 +221,6 @@ const formatZonedTimeAxisLabel = (
   )
 }
 
-// Picks an ECharts-style time axis label format based on visible range duration.
 const createZonedTimeAxisLabelFormatter = (
   timezone: Timezone,
   rangeMs: number
@@ -152,7 +235,6 @@ const createZonedTimeAxisLabelFormatter = (
   return (value: number) => formatInTimeZone(value, timezone, format)
 }
 
-// Formats a date-only label in the selected timezone; e.g. 2026-06-08T13:00:00Z in America/New_York -> "Jun 8, 2026".
 const formatZonedDate = (
   value: string | number | Date,
   timezone: Timezone,
@@ -164,13 +246,11 @@ const formatZonedDate = (
   return formatInTimeZone(date, timezone, formatStr)
 }
 
-// Formats an exact timestamp for tooltips in the selected timezone; e.g. 2026-06-08T13:00:00Z in America/New_York -> "2026-06-08 09:00:00 EDT".
 const formatZonedExactTimestamp = (
   value: string | number | Date,
   timezone: Timezone
 ): string => formatInTimeZone(value, timezone, 'yyyy-MM-dd HH:mm:ss zzz')
 
-// Formats build-log style time with centiseconds in the selected timezone; e.g. 2026-06-08T13:05:09.870Z in America/New_York -> "09:05:09.87 AM".
 const formatZonedBuildLogTime = (
   value: string | number | Date,
   timezone: Timezone
@@ -183,13 +263,11 @@ const formatZonedBuildLogTime = (
   return `${formatInTimeZone(value, timezone, 'hh:mm:ss')}.${centiseconds} ${formatInTimeZone(value, timezone, 'a')}`
 }
 
-// Formats a localized time label in the selected timezone; e.g. 2026-06-08T13:05:09Z in America/New_York -> "9:05:09 AM".
 const formatZonedTime = (
   value: string | number | Date,
   timezone: Timezone
 ): string => formatInTimeZone(value, timezone, 'h:mm:ss a')
 
-// Formats a relative day prefix and time in the selected timezone; e.g. today in America/New_York -> { prefix: "Today", time: "9:00:00 AM" }.
 const formatZonedRelativeDayTime = (
   value: string | number | Date,
   timezone: Timezone
@@ -225,8 +303,11 @@ export {
   formatZonedRelativeDayTime,
   formatZonedTime,
   formatZonedTimeAxisLabel,
+  getZonedDateParts,
+  getZonedDateTimeParts,
+  shiftCalendarDays,
   zonedDateTimePartsToUtcDate,
   zonedDateTimePartsToUtcTimestamp,
   zonedInstantToCalendarDate,
 }
-export type { ZonedDateRangeFormatOptions, ZonedDateTimeParts }
+export type { ZonedDateParts, ZonedDateRangeFormatOptions, ZonedDateTimeParts }

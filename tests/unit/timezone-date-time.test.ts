@@ -12,19 +12,11 @@ import {
   formatZonedRelativeDayTime,
   formatZonedTime,
   formatZonedTimeAxisLabel,
-  parseTimezone,
-  type Timezone,
   zonedDateTimePartsToUtcDate,
   zonedDateTimePartsToUtcTimestamp,
   zonedInstantToCalendarDate,
 } from '@/features/dashboard/timezone'
-
-const requireTimezone = (value: string): Timezone => {
-  const timezone = parseTimezone(value)
-  if (!timezone) throw new Error(`Expected ${value} to be a valid timezone`)
-
-  return timezone
-}
+import { requireTimezone } from './helpers/timezone'
 
 describe('timezone date-time helpers', () => {
   const newYork = requireTimezone('America/New_York')

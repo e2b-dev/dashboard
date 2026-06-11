@@ -162,7 +162,7 @@ export function UsageTimeRangeControls({
               startDateTime={new Date(timeframe.start).toISOString()}
               endDateTime={new Date(timeframe.end).toISOString()}
               bounds={USAGE_TIME_RANGE_BOUNDS}
-              onApplyTimestamps={handleTimeRangeApply}
+              onApply={({ start, end }) => handleTimeRangeApply(start, end)}
               className="p-3 w-56 max-md:w-full"
             />
             <Separator
