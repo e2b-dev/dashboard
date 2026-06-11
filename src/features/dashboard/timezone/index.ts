@@ -4,9 +4,13 @@ export type {
   ZonedDateTimeParts,
 } from './date-time'
 export {
+  createZonedTimeAxisLabelFormatter,
   formatTimezoneAbbreviation,
+  formatZonedCompactDate,
   formatZonedDateRange,
   formatZonedDateTimeInput,
+  formatZonedRelativeDayTime,
+  formatZonedTimeAxisLabel,
   zonedDateTimePartsToUtcDate,
   zonedDateTimePartsToUtcTimestamp,
 } from './date-time'

@@ -1,8 +1,12 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
+  createZonedTimeAxisLabelFormatter,
   formatTimezoneAbbreviation,
+  formatZonedCompactDate,
   formatZonedDateRange,
   formatZonedDateTimeInput,
+  formatZonedRelativeDayTime,
+  formatZonedTimeAxisLabel,
   parseTimezone,
   type Timezone,
   zonedDateTimePartsToUtcDate,
@@ -103,6 +107,55 @@ describe('timezone date-time helpers', () => {
       expect(result).toContain('Jun 8, 2026')
       expect(result).toContain('Jun 9, 2026')
       expect(result).toContain('EDT')
+    })
+  })
+
+  describe('formatZonedCompactDate', () => {
+    it('formats compact timestamps in the selected timezone', () => {
+      expect(
+        formatZonedCompactDate(Date.UTC(2026, 5, 8, 13, 0, 0), newYork)
+      ).toContain('Jun 8')
+      expect(
+        formatZonedCompactDate(Date.UTC(2026, 5, 8, 13, 0, 0), newYork)
+      ).toContain('9:00:00')
+    })
+  })
+
+  describe('formatZonedTimeAxisLabel', () => {
+    it('formats axis labels in the selected timezone', () => {
+      expect(
+        formatZonedTimeAxisLabel(Date.UTC(2026, 5, 8, 13, 5, 9), newYork)
+      ).toBe('09:05')
+      expect(
+        formatZonedTimeAxisLabel(Date.UTC(2026, 5, 8, 13, 5, 9), newYork, true)
+      ).toBe('09:05:09')
+    })
+  })
+
+  describe('createZonedTimeAxisLabelFormatter', () => {
+    it('uses hour labels for short ranges', () => {
+      const formatter = createZonedTimeAxisLabelFormatter(
+        newYork,
+        60 * 60 * 1000
+      )
+
+      expect(formatter(Date.UTC(2026, 5, 8, 13, 0, 0))).toBe('09:00')
+    })
+  })
+
+  describe('formatZonedRelativeDayTime', () => {
+    it('labels today and yesterday in the selected timezone', () => {
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date('2026-06-10T16:00:00.000Z'))
+
+      expect(
+        formatZonedRelativeDayTime('2026-06-10T16:00:00.000Z', newYork).prefix
+      ).toBe('Today')
+      expect(
+        formatZonedRelativeDayTime('2026-06-09T16:00:00.000Z', newYork).prefix
+      ).toBe('Yesterday')
+
+      vi.useRealTimers()
     })
   })
 })

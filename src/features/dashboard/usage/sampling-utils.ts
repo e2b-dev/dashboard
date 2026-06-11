@@ -1,10 +1,96 @@
-import { startOfISOWeek } from 'date-fns'
 import type { UsageResponse } from '@/core/modules/billing/models'
+import {
+  type Timezone,
+  zonedDateTimePartsToUtcTimestamp,
+} from '@/features/dashboard/timezone'
 import {
   HOURLY_SAMPLING_THRESHOLD_DAYS,
   WEEKLY_SAMPLING_THRESHOLD_DAYS,
 } from './constants'
 import type { SampledDataPoint, SamplingMode, Timeframe } from './types'
+
+interface ZonedDateTimeParts {
+  year: number
+  month: number
+  day: number
+  hours: number
+  minutes: number
+  seconds: number
+}
+
+const getZonedDateTimeParts = (
+  timestamp: number,
+  timezone: Timezone
+): ZonedDateTimeParts => {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  })
+    .formatToParts(timestamp)
+    .reduce<Record<string, string>>((result, part) => {
+      if (
+        part.type === 'year' ||
+        part.type === 'month' ||
+        part.type === 'day' ||
+        part.type === 'hour' ||
+        part.type === 'minute' ||
+        part.type === 'second'
+      ) {
+        result[part.type] = part.value
+      }
+
+      return result
+    }, {})
+
+  const year = Number.parseInt(parts.year ?? '', 10)
+  const month = Number.parseInt(parts.month ?? '', 10)
+  const day = Number.parseInt(parts.day ?? '', 10)
+  const hours = Number.parseInt(parts.hour ?? '', 10)
+  const minutes = Number.parseInt(parts.minute ?? '', 10)
+  const seconds = Number.parseInt(parts.second ?? '', 10)
+
+  if (
+    Number.isNaN(year) ||
+    Number.isNaN(month) ||
+    Number.isNaN(day) ||
+    Number.isNaN(hours) ||
+    Number.isNaN(minutes) ||
+    Number.isNaN(seconds)
+  ) {
+    throw new Error('Unable to format usage sampling timestamp')
+  }
+
+  return { year, month, day, hours, minutes, seconds }
+}
+
+// Shifts a selected-zone calendar date without applying browser timezone rules; e.g. Tuesday + -1 -> Monday.
+const shiftCalendarDays = (
+  parts: Pick<ZonedDateTimeParts, 'year' | 'month' | 'day'>,
+  days: number
+): Pick<ZonedDateTimeParts, 'year' | 'month' | 'day'> => {
+  const date = new Date(Date.UTC(parts.year, parts.month - 1, parts.day))
+  date.setUTCDate(date.getUTCDate() + days)
+
+  return {
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth() + 1,
+    day: date.getUTCDate(),
+  }
+}
+
+const getIsoWeekStartParts = (
+  parts: Pick<ZonedDateTimeParts, 'year' | 'month' | 'day'>
+): Pick<ZonedDateTimeParts, 'year' | 'month' | 'day'> => {
+  const date = new Date(Date.UTC(parts.year, parts.month - 1, parts.day))
+  const daysSinceMonday = (date.getUTCDay() + 6) % 7
+  return shiftCalendarDays(parts, -daysSinceMonday)
+}
 
 export function determineSamplingMode(timeframe: Timeframe): SamplingMode {
   const rangeDays = (timeframe.end - timeframe.start) / (24 * 60 * 60 * 1000)
@@ -33,57 +119,91 @@ export function getSamplingModeStepMs(samplingMode: SamplingMode): number {
 
 export function processUsageData(
   hourlyData: UsageResponse['hour_usages'],
-  timeframe: Timeframe
+  timeframe: Timeframe,
+  timezone: Timezone
 ): SampledDataPoint[] {
   if (!hourlyData || hourlyData.length === 0) {
     return []
   }
 
-  return aggregateHours(hourlyData, timeframe)
+  return aggregateHours(hourlyData, timeframe, timezone)
 }
 
 export function normalizeToStartOfSamplingPeriod(
   timestamp: number,
-  mode: SamplingMode
+  mode: SamplingMode,
+  timezone: Timezone
 ): number {
-  const date = new Date(timestamp)
+  const parts = getZonedDateTimeParts(timestamp, timezone)
 
   switch (mode) {
     case 'hourly':
-      return date.setMinutes(0, 0, 0)
+      return zonedDateTimePartsToUtcTimestamp(
+        { ...parts, minutes: 0, seconds: 0 },
+        timezone
+      )
 
     case 'daily':
-      date.setMinutes(0, 0, 0)
-      return date.setHours(0, 0, 0, 0)
+      return zonedDateTimePartsToUtcTimestamp(
+        { ...parts, hours: 0, minutes: 0, seconds: 0 },
+        timezone
+      )
 
-    case 'weekly':
-      date.setMinutes(0, 0, 0)
-      date.setHours(0, 0, 0, 0)
+    case 'weekly': {
+      const weekStart = getIsoWeekStartParts(parts)
 
-      return startOfISOWeek(date).getTime()
+      return zonedDateTimePartsToUtcTimestamp(
+        {
+          ...weekStart,
+          hours: 0,
+          minutes: 0,
+          seconds: 0,
+        },
+        timezone
+      )
+    }
   }
 }
 
 export function normalizeToEndOfSamplingPeriod(
   timestamp: number,
-  mode: SamplingMode
+  mode: SamplingMode,
+  timezone: Timezone
 ): number {
-  const date = new Date(timestamp)
+  const parts = getZonedDateTimeParts(timestamp, timezone)
 
   switch (mode) {
     case 'hourly':
-      date.setMinutes(59, 59, 999)
-      return date.getTime()
+      return (
+        zonedDateTimePartsToUtcTimestamp(
+          { ...parts, minutes: 59, seconds: 59 },
+          timezone
+        ) + 999
+      )
 
     case 'daily':
-      date.setHours(23, 59, 59, 999)
-      return date.getTime()
+      return (
+        zonedDateTimePartsToUtcTimestamp(
+          { ...parts, hours: 23, minutes: 59, seconds: 59 },
+          timezone
+        ) + 999
+      )
 
     case 'weekly': {
-      const weekStart = startOfISOWeek(date)
-      weekStart.setDate(weekStart.getDate() + 6)
-      weekStart.setHours(23, 59, 59, 999)
-      return weekStart.getTime()
+      const weekStart = getIsoWeekStartParts(parts)
+      const weekEnd = shiftCalendarDays(weekStart, 6)
+
+      return (
+        zonedDateTimePartsToUtcTimestamp(
+          {
+            ...weekEnd,
+            hours: 23,
+            minutes: 59,
+            seconds: 59,
+          },
+          timezone
+        ) + 999
+      )
     }
   }
 }
@@ -95,7 +215,8 @@ export function normalizeToEndOfSamplingPeriod(
  */
 function aggregateHours(
   hourlyData: UsageResponse['hour_usages'],
-  timeframe: Timeframe
+  timeframe: Timeframe,
+  timezone: Timezone
 ): SampledDataPoint[] {
   const samplingMode = determineSamplingMode(timeframe)
 
@@ -112,34 +233,8 @@ function aggregateHours(
     }))
   }
 
-  // pre-calculate sampling period boundaries for edge bucket detection
-  const timeframeStartPeriod = normalizeToStartOfSamplingPeriod(
-    timeframe.start,
-    samplingMode
-  )
-  const timeframeEndPeriod = normalizeToStartOfSamplingPeriod(
-    timeframe.end,
-    samplingMode
-  )
-
   function createBucketKey(timestamp: number): number {
-    const timestampPeriodStart = normalizeToStartOfSamplingPeriod(
-      timestamp,
-      samplingMode
-    )
-
-    // // check if timestamp is in the same sampling period as timeframe.start
-    // if (timestampPeriodStart === timeframeStartPeriod) {
-    //   return normalizeToStartOfSamplingPeriod(timeframe.start, 'hourly')
-    // }
-
-    // // check if timestamp is in the same sampling period as timeframe.end
-    // if (timestampPeriodStart === timeframeEndPeriod) {
-    //   return normalizeToStartOfSamplingPeriod(timeframe.end, 'hourly')
-    // }
-
-    // middle bucket: use full sampling period
-    return timestampPeriodStart
+    return normalizeToStartOfSamplingPeriod(timestamp, samplingMode, timezone)
   }
 
   // group data by timestamp buckets

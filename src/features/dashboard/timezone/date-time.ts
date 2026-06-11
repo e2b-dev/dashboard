@@ -95,10 +95,83 @@ const formatZonedDateRange = (
   )}`
 }
 
+// Formats a compact chart/tooltip timestamp; e.g. 2026-06-08T13:00:00Z in America/New_York -> "Jun 8, 9:00:00 AM EDT".
+const formatZonedCompactDate = (
+  timestamp: number,
+  timezone: Timezone
+): string => {
+  const timestampYear = formatInTimeZone(timestamp, timezone, 'yyyy')
+  const currentYear = formatInTimeZone(Date.now(), timezone, 'yyyy')
+
+  if (timestampYear === currentYear) {
+    return formatInTimeZone(timestamp, timezone, 'MMM d, h:mm:ss a zzz')
+  }
+
+  return formatInTimeZone(timestamp, timezone, 'yyyy MMM d, h:mm:ss a zzz')
+}
+
+// Formats a chart x-axis time label; e.g. 2026-06-08T13:05:09Z in America/New_York -> "09:05" or "09:05:09".
+const formatZonedTimeAxisLabel = (
+  timestamp: number,
+  timezone: Timezone,
+  includeSeconds = false
+): string => {
+  if (Number.isNaN(timestamp)) return ''
+
+  return formatInTimeZone(
+    timestamp,
+    timezone,
+    includeSeconds ? 'HH:mm:ss' : 'HH:mm'
+  )
+}
+
+// Picks an ECharts-style time axis label format based on visible range duration.
+const createZonedTimeAxisLabelFormatter = (
+  timezone: Timezone,
+  rangeMs: number
+): ((value: number) => string) => {
+  const format =
+    rangeMs > 365 * 24 * 60 * 60 * 1000
+      ? 'yyyy'
+      : rangeMs > 2 * 24 * 60 * 60 * 1000
+        ? 'MMM d'
+        : 'HH:mm'
+
+  return (value: number) => formatInTimeZone(value, timezone, format)
+}
+
+// Formats a relative day prefix and time in the selected timezone; e.g. today in America/New_York -> { prefix: "Today", time: "9:00:00 AM" }.
+const formatZonedRelativeDayTime = (
+  value: string | number | Date,
+  timezone: Timezone
+): { prefix: string; time: string } => {
+  const valueKey = formatInTimeZone(value, timezone, 'yyyy-MM-dd')
+  const todayKey = formatInTimeZone(Date.now(), timezone, 'yyyy-MM-dd')
+  const yesterdayKey = formatInTimeZone(
+    Date.now() - 24 * 60 * 60 * 1000,
+    timezone,
+    'yyyy-MM-dd'
+  )
+
+  let prefix: string
+  if (valueKey === todayKey) prefix = 'Today'
+  else if (valueKey === yesterdayKey) prefix = 'Yesterday'
+  else prefix = formatInTimeZone(value, timezone, 'PP')
+
+  return {
+    prefix,
+    time: formatInTimeZone(value, timezone, 'h:mm:ss a'),
+  }
+}
+
 export {
+  createZonedTimeAxisLabelFormatter,
   formatTimezoneAbbreviation,
+  formatZonedCompactDate,
   formatZonedDateRange,
   formatZonedDateTimeInput,
+  formatZonedRelativeDayTime,
+  formatZonedTimeAxisLabel,
   zonedDateTimePartsToUtcDate,
   zonedDateTimePartsToUtcTimestamp,
 }

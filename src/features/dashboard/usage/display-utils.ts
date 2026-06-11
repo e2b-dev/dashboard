@@ -134,18 +134,20 @@ export function formatAxisDate(
  */
 export function formatBucketLabel(
   timestamp: number,
-  samplingMode: SamplingMode
+  samplingMode: SamplingMode,
+  timezone: Timezone
 ): string {
   switch (samplingMode) {
     case 'hourly':
-      return formatHour(timestamp)
+      return formatZonedHour(timestamp, timezone)
     case 'weekly':
-      return formatDateRange(
+      return formatZonedDateRange(
         timestamp,
-        normalizeToEndOfSamplingPeriod(timestamp, 'weekly')
+        normalizeToEndOfSamplingPeriod(timestamp, 'weekly', timezone),
+        timezone
       )
     default:
-      return formatDay(timestamp)
+      return formatZonedDay(timestamp, timezone)
   }
 }
 
@@ -173,11 +175,13 @@ export function formatHoveredValues(
   // edge bucket keys match the hour containing the timeframe boundary
   const normalizedStartTimestamp = normalizeToStartOfSamplingPeriod(
     timeframe.start,
-    'hourly'
+    'hourly',
+    timezone
   )
   const normalizedEndTimestamp = normalizeToStartOfSamplingPeriod(
     timeframe.end,
-    'hourly'
+    'hourly',
+    timezone
   )
 
   const timestampIsAtStartEdge = timestamp === normalizedStartTimestamp
@@ -195,15 +199,9 @@ export function formatHoveredValues(
         timestampLabel = `${formatZonedHour(normalizedStartTimestamp, timezone)} - ${formatZonedHour(normalizedEndTimestamp, timezone)}`
         label = 'during'
       } else if (timestampIsAtStartEdge) {
-        // partial day at start - show from start hour to end of day
-        const endOfDay = new Date(timestamp)
-        endOfDay.setHours(23, 59, 59, 999)
         timestampLabel = `${formatZonedHour(timestamp, timezone)} - end of ${formatZonedDay(timestamp, timezone)}`
         label = 'during'
       } else if (timestampIsAtEndEdge) {
-        // partial day at end - show from start of day to end hour
-        const startOfDay = new Date(timestamp)
-        startOfDay.setHours(0, 0, 0, 0)
         timestampLabel = `${formatZonedDay(timestamp, timezone)} - ${formatZonedHour(timestamp, timezone)}`
         label = 'during'
       } else {
@@ -219,16 +217,28 @@ export function formatHoveredValues(
         label = 'during'
       } else if (timestampIsAtStartEdge) {
         // partial week at start - show from start hour to end of week
-        const weekEnd = normalizeToEndOfSamplingPeriod(timestamp, 'weekly')
+        const weekEnd = normalizeToEndOfSamplingPeriod(
+          timestamp,
+          'weekly',
+          timezone
+        )
         timestampLabel = `${formatZonedHour(timestamp, timezone)} - ${formatZonedDay(weekEnd, timezone)}`
         label = 'during'
       } else if (timestampIsAtEndEdge) {
         // partial week at end - show from start of week to end hour
-        const weekStart = normalizeToStartOfSamplingPeriod(timestamp, 'weekly')
+        const weekStart = normalizeToStartOfSamplingPeriod(
+          timestamp,
+          'weekly',
+          timezone
+        )
         timestampLabel = `${formatZonedDay(weekStart, timezone)} - ${formatZonedHour(timestamp, timezone)}`
         label = 'during'
       } else {
-        const weekEnd = normalizeToEndOfSamplingPeriod(timestamp, 'weekly')
+        const weekEnd = normalizeToEndOfSamplingPeriod(
+          timestamp,
+          'weekly',
+          timezone
+        )
         timestampLabel = formatZonedDateRange(timestamp, weekEnd, timezone)
         label = 'during week'
       }

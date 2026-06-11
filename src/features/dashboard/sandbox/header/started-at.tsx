@@ -1,21 +1,30 @@
 'use client'
 
-import { Timestamp } from '@/features/dashboard/shared'
+import {
+  formatZonedRelativeDayTime,
+  useTimezone,
+} from '@/features/dashboard/timezone'
 import CopyButton from '@/ui/copy-button'
 import { useSandboxContext } from '../context'
 
-const StartedAt = () => {
+export default function StartedAt() {
   const { sandboxLifecycle } = useSandboxContext()
+  const { timezone } = useTimezone()
 
   const startedAt = sandboxLifecycle?.createdAt
   if (!startedAt) return null
 
+  const { prefix, time: timeStr } = formatZonedRelativeDayTime(
+    startedAt,
+    timezone
+  )
+
   return (
     <div className="flex items-center gap-1">
-      <Timestamp value={startedAt} />
+      <p>
+        {prefix}, {timeStr}
+      </p>
       <CopyButton aria-label="Copy started timestamp" value={startedAt} />
     </div>
   )
 }
-
-export default StartedAt

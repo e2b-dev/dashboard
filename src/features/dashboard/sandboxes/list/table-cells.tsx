@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useMemo } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import ResourceUsage from '@/features/dashboard/common/resource-usage'
+import { useTimezone } from '@/features/dashboard/timezone'
 import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
 import { JsonPopover } from '@/ui/json-popover'
 import { Badge } from '@/ui/primitives/badge'
@@ -233,11 +234,12 @@ export function MetadataCell({
 export function StartedAtCell({
   getValue,
 }: CellContext<SandboxListRow, unknown>) {
+  const { timezone } = useTimezone()
   const dateValue = (getValue() as string | undefined) ?? ''
 
   const formattedTimestamp = useMemo(() => {
-    return formatLocalLogStyleTimestamp(dateValue, { includeTimezone: true })
-  }, [dateValue])
+    return formatLocalLogStyleTimestamp(dateValue, { timeZone: timezone })
+  }, [dateValue, timezone])
 
   return (
     <div className={`h-full ${TIMESTAMP_TEXT_CLASSNAME}`}>
