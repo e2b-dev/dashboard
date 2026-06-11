@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/ui/primitives/dialog'
-import { TrashIcon } from '@/ui/primitives/icons'
+import { RemoveIcon } from '@/ui/primitives/icons'
 
 interface DeleteApiKeyDialogProps {
   apiKey: TeamAPIKey | null
@@ -111,7 +111,7 @@ export const DeleteApiKeyDialog: FC<DeleteApiKeyDialogProps> = ({
                 })
               }}
             >
-              <TrashIcon className="size-4" aria-hidden />
+              <RemoveIcon className="size-4" aria-hidden />
               Delete
             </Button>
           </div>

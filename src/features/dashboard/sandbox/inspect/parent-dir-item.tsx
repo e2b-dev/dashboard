@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import { setBrowserCookie } from '@/lib/utils/browser-cookies'
 import { getParentPath } from '@/lib/utils/filesystem'
 import { DataTableRow } from '@/ui/data-table'
-import { FolderUpIcon } from '@/ui/primitives/icons'
+import { FolderUploadIcon } from '@/ui/primitives/icons'
 
 interface SandboxInspectParentDirItemProps {
   rootPath: string
@@ -53,7 +53,7 @@ export default function SandboxInspectParentDirItem({
         }
       }}
     >
-      <FolderUpIcon className="size-3.5 [color:var(--color-fg-tertiary)]" />
+      <FolderUploadIcon className="size-3.5 [color:var(--color-fg-tertiary)]" />
       <span className="truncate">..</span>
     </DataTableRow>
   )

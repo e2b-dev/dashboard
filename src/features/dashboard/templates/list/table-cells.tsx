@@ -29,7 +29,7 @@ import {
 } from '@/ui/primitives/dropdown-menu'
 import { IconButton } from '@/ui/primitives/icon-button'
 import {
-  CheckIcon,
+  CheckmarkIcon,
   CopyIcon,
   IndicatorDotsIcon,
   PrivateIcon,
@@ -298,7 +298,7 @@ export function TemplateNameCell({
           aria-hidden="true"
         >
           {wasCopied ? (
-            <CheckIcon className="size-3 text-icon" />
+            <CheckmarkIcon className="size-3 text-icon" />
           ) : (
             <CopyIcon className="size-3 text-icon-secondary" />
           )}

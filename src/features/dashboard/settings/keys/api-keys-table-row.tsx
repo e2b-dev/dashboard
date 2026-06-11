@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils'
 import { formatDate, formatUTCTimestamp } from '@/lib/utils/formatting'
 import { E2BLogo } from '@/ui/brand'
 import { Button } from '@/ui/primitives/button'
-import { KeyIcon, TrashIcon } from '@/ui/primitives/icons'
+import { KeyIcon, RemoveIcon } from '@/ui/primitives/icons'
 import { TableCell, TableRow } from '@/ui/primitives/table'
 import {
   Tooltip,
@@ -122,7 +122,7 @@ export const ApiKeysTableRow = ({ apiKey, onDelete }: ApiKeysTableRowProps) => {
               aria-label={`Delete ${apiKey.name ?? 'API key'}`}
               onClick={onDelete}
             >
-              <TrashIcon className="size-4" />
+              <RemoveIcon className="size-4" />
             </Button>
           </div>
         </div>

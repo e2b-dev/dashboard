@@ -1,11 +1,11 @@
 'use client'
 
 import { AnimatePresence, motion } from 'motion/react'
-import { FC } from 'react'
+import type { FC } from 'react'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { EASE_APPEAR } from '@/lib/utils/ui'
-import { IconButton, IconButtonProps } from '@/ui/primitives/icon-button'
-import { CheckIcon, CopyIcon } from '@/ui/primitives/icons'
+import { IconButton, type IconButtonProps } from '@/ui/primitives/icon-button'
+import { CheckmarkIcon, CopyIcon } from '@/ui/primitives/icons'
 
 interface CopyButtonProps extends IconButtonProps {
   value: string
@@ -32,7 +32,7 @@ const CopyButton: FC<CopyButtonProps> = ({ value, onCopy, ...props }) => {
             exit={{ opacity: 0.2, scale: 0.97, filter: 'blur(1px)' }}
             transition={{ duration: 0.1, ease: EASE_APPEAR }}
           >
-            <CheckIcon />
+            <CheckmarkIcon />
           </motion.div>
         ) : (
           <motion.div

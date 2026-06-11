@@ -2,7 +2,7 @@ import type { Cell, Header } from '@tanstack/react-table'
 import * as React from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
-import { SortAscIcon, SortDescIcon } from '@/ui/primitives/icons'
+import { SortDownIcon, SortUpIcon } from '@/ui/primitives/icons'
 import {
   Select,
   SelectContent,
@@ -69,14 +69,14 @@ function DataTableHead<TData, TValue>({
             {sorting === undefined ? (
               // Show the arrow for the next state based on sortDescFirst
               header.column.columnDef.sortDescFirst ? (
-                <SortDescIcon className="size-3" />
+                <SortDownIcon className="size-3" />
               ) : (
-                <SortAscIcon className="size-3" />
+                <SortUpIcon className="size-3" />
               )
             ) : sorting ? (
-              <SortDescIcon className="size-3" />
+              <SortDownIcon className="size-3" />
             ) : (
-              <SortAscIcon className="size-3" />
+              <SortUpIcon className="size-3" />
             )}
           </div>
         )}

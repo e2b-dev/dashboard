@@ -6,7 +6,7 @@ import { defaultErrorToast, useToast } from '@/lib/hooks/use-toast'
 import { useTRPC } from '@/trpc/client'
 import CopyButton from '@/ui/copy-button'
 import { IconButton } from '@/ui/primitives/icon-button'
-import { EyeIcon, EyeOffIcon } from '@/ui/primitives/icons'
+import { EyeClosedIcon, EyeOpenIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { Loader } from '@/ui/primitives/loader'
 
@@ -60,12 +60,12 @@ export default function UserAccessToken({ className }: UserAccessTokenProps) {
             <Loader variant="square" size="lg" />
           ) : token ? (
             isVisible ? (
-              <EyeOffIcon />
+              <EyeClosedIcon />
             ) : (
-              <EyeIcon />
+              <EyeOpenIcon />
             )
           ) : (
-            <EyeIcon />
+            <EyeOpenIcon />
           )}
         </IconButton>
         <CopyButton variant="secondary" value={token ?? ''} disabled={!token} />
