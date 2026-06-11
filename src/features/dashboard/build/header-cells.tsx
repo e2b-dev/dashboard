@@ -2,7 +2,8 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import {
-  formatZonedCompactDate,
+  formatDate,
+  getCompactTimestampFormat,
   useTimezone,
 } from '@/features/dashboard/timezone'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
@@ -78,7 +79,10 @@ export function RanFor({
   }
 
   const iso = new Date(finishedAt).toISOString()
-  const formattedTimestamp = formatZonedCompactDate(finishedAt, timezone)
+  const formattedTimestamp = formatDate(finishedAt, {
+    timezone,
+    format: getCompactTimestampFormat(finishedAt, timezone),
+  })
 
   return (
     <CopyButtonInline
@@ -95,7 +99,10 @@ export function StartedAt({ timestamp }: { timestamp: number }) {
   const { timezone } = useTimezone()
   const iso = new Date(timestamp).toISOString()
   const elapsed = Date.now() - timestamp
-  const formattedTimestamp = formatZonedCompactDate(timestamp, timezone)
+  const formattedTimestamp = formatDate(timestamp, {
+    timezone,
+    format: getCompactTimestampFormat(timestamp, timezone),
+  })
 
   return (
     <CopyButtonInline

@@ -10,7 +10,7 @@ import { PROTECTED_URLS } from '@/configs/urls'
 import type { TeamMember } from '@/core/modules/teams/models'
 import { getTeamDisplayName } from '@/core/modules/teams/utils'
 import { UserAvatar } from '@/features/dashboard/shared'
-import { formatZonedDate, useTimezone } from '@/features/dashboard/timezone'
+import { formatDate, useTimezone } from '@/features/dashboard/timezone'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -110,7 +110,7 @@ export const MemberTableRow = ({ member, addedByMember }: TableRowProps) => {
   const isCurrentUser = member.info.id === user?.id
   const showRemove = shouldShowRemoveMemberAction(member, user?.id)
   const dateStr = member.info.createdAt
-    ? formatZonedDate(member.info.createdAt, timezone)
+    ? formatDate(member.info.createdAt, { timezone })
     : null
   const addedBySystem = wasAddedBySystem(member, addedByMember)
 

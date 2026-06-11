@@ -1,8 +1,9 @@
 import { useMemo } from 'react'
 import type { TeamMetricsResponse } from '@/core/modules/sandboxes/models.client'
 import {
-  formatZonedCompactDate,
+  formatDate,
   formatZonedDateRange,
+  getCompactTimestampFormat,
   useTimezone,
 } from '@/features/dashboard/timezone'
 import { formatNumber } from '@/lib/utils/formatting'
@@ -40,10 +41,10 @@ export function useDisplayMetric(
 
   return useMemo(() => {
     if (hoveredValue?.concurrentSandboxes !== undefined) {
-      const formattedDate = formatZonedCompactDate(
-        hoveredValue.timestamp,
-        timezone
-      )
+      const formattedDate = formatDate(hoveredValue.timestamp, {
+        timezone,
+        format: getCompactTimestampFormat(hoveredValue.timestamp, timezone),
+      })
       return {
         displayValue: formatNumber(hoveredValue.concurrentSandboxes),
         label: 'at',

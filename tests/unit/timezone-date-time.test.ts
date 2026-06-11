@@ -2,16 +2,16 @@ import { startOfDay } from 'date-fns'
 import { describe, expect, it, vi } from 'vitest'
 import {
   createZonedTimeAxisLabelFormatter,
+  formatDate,
   formatTimezoneAbbreviation,
   formatZonedBuildLogTime,
-  formatZonedCompactDate,
-  formatZonedDate,
   formatZonedDateRange,
   formatZonedDateTimeInput,
   formatZonedExactTimestamp,
   formatZonedRelativeDayTime,
   formatZonedTime,
   formatZonedTimeAxisLabel,
+  getCompactTimestampFormat,
   zonedDateTimePartsToUtcDate,
   zonedDateTimePartsToUtcTimestamp,
   zonedInstantToCalendarDate,
@@ -149,14 +149,14 @@ describe('timezone date-time helpers', () => {
     })
   })
 
-  describe('formatZonedCompactDate', () => {
+  describe('getCompactTimestampFormat', () => {
     it('formats compact timestamps in the selected timezone', () => {
-      expect(
-        formatZonedCompactDate(Date.UTC(2026, 5, 8, 13, 0, 0), newYork)
-      ).toContain('Jun 8')
-      expect(
-        formatZonedCompactDate(Date.UTC(2026, 5, 8, 13, 0, 0), newYork)
-      ).toContain('9:00:00')
+      const timestamp = Date.UTC(2026, 5, 8, 13, 0, 0)
+      const format = getCompactTimestampFormat(timestamp, newYork)
+      const formatted = formatDate(timestamp, { timezone: newYork, format })
+
+      expect(formatted).toContain('Jun 8')
+      expect(formatted).toContain('9:00:00')
     })
   })
 
@@ -182,13 +182,16 @@ describe('timezone date-time helpers', () => {
     })
   })
 
-  describe('formatZonedDate', () => {
+  describe('formatDate', () => {
     it('formats date-only labels in the selected timezone', () => {
-      expect(formatZonedDate('2026-06-08T13:00:00.000Z', newYork)).toBe(
-        'Jun 8, 2026'
-      )
       expect(
-        formatZonedDate('2026-06-08T13:00:00.000Z', newYork, 'MMM dd, yyyy')
+        formatDate('2026-06-08T13:00:00.000Z', { timezone: newYork })
+      ).toBe('Jun 8, 2026')
+      expect(
+        formatDate('2026-06-08T13:00:00.000Z', {
+          timezone: newYork,
+          format: 'MMM dd, yyyy',
+        })
       ).toBe('Jun 08, 2026')
     })
   })
