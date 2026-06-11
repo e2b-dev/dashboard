@@ -1,3 +1,7 @@
+import type {
+  components as DashboardComponents,
+  paths as DashboardPaths,
+} from '@/contracts/dashboard-api'
 import type { components as InfraComponents } from '@/contracts/infra-api'
 
 export type Template = Pick<
@@ -24,27 +28,11 @@ export type DefaultTemplate = Template & {
   defaultDescription?: string
 }
 
-export type TemplatesSort =
-  | 'name_asc'
-  | 'name_desc'
-  | 'cpu_count_asc'
-  | 'cpu_count_desc'
-  | 'memory_mb_asc'
-  | 'memory_mb_desc'
-  | 'created_at_asc'
-  | 'created_at_desc'
-  | 'updated_at_asc'
-  | 'updated_at_desc'
+export type TemplatesSort = DashboardComponents['parameters']['templates_sort']
 
-export interface ListTeamTemplatesOptions {
-  cursor?: string
-  limit?: number
-  cpuCount?: number
-  memoryMB?: number
-  public?: boolean
-  search?: string
-  sort?: TemplatesSort
-}
+export type ListTeamTemplatesOptions = NonNullable<
+  DashboardPaths['/templates']['get']['parameters']['query']
+>
 
 export interface ListTeamTemplatesResult {
   data: Array<Template | DefaultTemplate>
