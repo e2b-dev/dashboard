@@ -141,7 +141,7 @@ export function formatBucketLabel(
     case 'hourly':
       return formatZonedHour(timestamp, timezone)
     case 'weekly':
-      return formatZonedDateRange(
+      return formatZonedWeekRange(
         timestamp,
         normalizeToEndOfSamplingPeriod(timestamp, 'weekly', timezone),
         timezone

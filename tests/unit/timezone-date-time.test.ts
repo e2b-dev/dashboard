@@ -2,10 +2,14 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   createZonedTimeAxisLabelFormatter,
   formatTimezoneAbbreviation,
+  formatZonedBuildLogTime,
   formatZonedCompactDate,
+  formatZonedDate,
   formatZonedDateRange,
   formatZonedDateTimeInput,
+  formatZonedExactTimestamp,
   formatZonedRelativeDayTime,
+  formatZonedTime,
   formatZonedTimeAxisLabel,
   parseTimezone,
   type Timezone,
@@ -140,6 +144,50 @@ describe('timezone date-time helpers', () => {
       )
 
       expect(formatter(Date.UTC(2026, 5, 8, 13, 0, 0))).toBe('09:00')
+    })
+  })
+
+  describe('formatZonedDate', () => {
+    it('formats date-only labels in the selected timezone', () => {
+      expect(formatZonedDate('2026-06-08T13:00:00.000Z', newYork)).toBe(
+        'Jun 8, 2026'
+      )
+      expect(
+        formatZonedDate('2026-06-08T13:00:00.000Z', newYork, 'MMM dd, yyyy')
+      ).toBe('Jun 08, 2026')
+    })
+  })
+
+  describe('formatZonedExactTimestamp', () => {
+    it('formats exact tooltip timestamps in the selected timezone', () => {
+      const result = formatZonedExactTimestamp(
+        '2026-06-08T13:00:00.000Z',
+        newYork
+      )
+
+      expect(result).toContain('2026-06-08')
+      expect(result).toContain('09:00:00')
+      expect(result).toContain('EDT')
+    })
+  })
+
+  describe('formatZonedBuildLogTime', () => {
+    it('formats build log times with centiseconds in the selected timezone', () => {
+      const result = formatZonedBuildLogTime(
+        '2026-06-08T13:05:09.870Z',
+        newYork
+      )
+
+      expect(result).toContain('09:05:09.87')
+      expect(result.toLowerCase()).toMatch(/am|pm/)
+    })
+  })
+
+  describe('formatZonedTime', () => {
+    it('formats localized time labels in the selected timezone', () => {
+      expect(formatZonedTime('2026-06-08T13:05:09.000Z', newYork)).toBe(
+        '9:05:09 AM'
+      )
     })
   })
 

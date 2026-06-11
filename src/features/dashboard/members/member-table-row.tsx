@@ -10,12 +10,12 @@ import { PROTECTED_URLS } from '@/configs/urls'
 import type { TeamMember } from '@/core/modules/teams/models'
 import { getTeamDisplayName } from '@/core/modules/teams/utils'
 import { UserAvatar } from '@/features/dashboard/shared'
+import { formatZonedDate, useTimezone } from '@/features/dashboard/timezone'
 import {
   defaultErrorToast,
   defaultSuccessToast,
   useToast,
 } from '@/lib/hooks/use-toast'
-import { formatDate } from '@/lib/utils/formatting'
 import { useTRPC } from '@/trpc/client'
 import { E2BSquareBadge } from '@/ui/brand'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
@@ -66,6 +66,7 @@ export const MemberTableRow = ({ member, addedByMember }: TableRowProps) => {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const { team, user } = useDashboard()
+  const { timezone } = useTimezone()
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false)
 
   const removeMemberMutation = useMutation(
@@ -109,7 +110,7 @@ export const MemberTableRow = ({ member, addedByMember }: TableRowProps) => {
   const isCurrentUser = member.info.id === user?.id
   const showRemove = shouldShowRemoveMemberAction(member, user?.id)
   const dateStr = member.info.createdAt
-    ? formatDate(new Date(member.info.createdAt), 'MMM d, yyyy')
+    ? formatZonedDate(member.info.createdAt, timezone)
     : null
   const addedBySystem = wasAddedBySystem(member, addedByMember)
 

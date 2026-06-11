@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers'
 import { z } from 'zod'
 import { COOKIE_KEYS, COOKIE_OPTIONS } from '@/configs/cookies'
-import { auth } from '@/core/server/auth'
+import { getAuthContext } from '@/core/server/auth'
 import { TimezoneSchema } from '@/features/dashboard/timezone/schema'
 
 const TimezoneStateSchema = z.object({
@@ -10,7 +10,7 @@ const TimezoneStateSchema = z.object({
 
 export const POST = async (request: Request) => {
   try {
-    const authContext = await auth.getAuthContext()
+    const authContext = await getAuthContext()
     if (!authContext) {
       return Response.json({ error: 'Unauthenticated' }, { status: 401 })
     }

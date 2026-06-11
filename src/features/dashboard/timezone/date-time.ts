@@ -141,6 +141,43 @@ const createZonedTimeAxisLabelFormatter = (
   return (value: number) => formatInTimeZone(value, timezone, format)
 }
 
+// Formats a date-only label in the selected timezone; e.g. 2026-06-08T13:00:00Z in America/New_York -> "Jun 8, 2026".
+const formatZonedDate = (
+  value: string | number | Date,
+  timezone: Timezone,
+  formatStr = 'MMM d, yyyy'
+): string | null => {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+
+  return formatInTimeZone(date, timezone, formatStr)
+}
+
+// Formats an exact timestamp for tooltips in the selected timezone; e.g. 2026-06-08T13:00:00Z in America/New_York -> "2026-06-08 09:00:00 EDT".
+const formatZonedExactTimestamp = (
+  value: string | number | Date,
+  timezone: Timezone
+): string => formatInTimeZone(value, timezone, 'yyyy-MM-dd HH:mm:ss zzz')
+
+// Formats build-log style time with centiseconds in the selected timezone; e.g. 2026-06-08T13:05:09.870Z in America/New_York -> "09:05:09.87 AM".
+const formatZonedBuildLogTime = (
+  value: string | number | Date,
+  timezone: Timezone
+): string => {
+  const date = new Date(value)
+  const centiseconds = Math.floor((date.getMilliseconds() / 10) % 100)
+    .toString()
+    .padStart(2, '0')
+
+  return `${formatInTimeZone(value, timezone, 'hh:mm:ss')}.${centiseconds} ${formatInTimeZone(value, timezone, 'a')}`
+}
+
+// Formats a localized time label in the selected timezone; e.g. 2026-06-08T13:05:09Z in America/New_York -> "9:05:09 AM".
+const formatZonedTime = (
+  value: string | number | Date,
+  timezone: Timezone
+): string => formatInTimeZone(value, timezone, 'h:mm:ss a')
+
 // Formats a relative day prefix and time in the selected timezone; e.g. today in America/New_York -> { prefix: "Today", time: "9:00:00 AM" }.
 const formatZonedRelativeDayTime = (
   value: string | number | Date,
@@ -168,10 +205,14 @@ const formatZonedRelativeDayTime = (
 export {
   createZonedTimeAxisLabelFormatter,
   formatTimezoneAbbreviation,
+  formatZonedBuildLogTime,
   formatZonedCompactDate,
+  formatZonedDate,
   formatZonedDateRange,
   formatZonedDateTimeInput,
+  formatZonedExactTimestamp,
   formatZonedRelativeDayTime,
+  formatZonedTime,
   formatZonedTimeAxisLabel,
   zonedDateTimePartsToUtcDate,
   zonedDateTimePartsToUtcTimestamp,

@@ -1,10 +1,12 @@
-import { format } from 'date-fns'
-import { enUS } from 'date-fns/locale/en-US'
 import type { BuildLogModel } from '@/core/modules/builds/models'
 import {
   LogLevelBadge,
   LogMessage,
 } from '@/features/dashboard/common/log-cells'
+import {
+  formatZonedBuildLogTime,
+  useTimezone,
+} from '@/features/dashboard/timezone'
 import { formatDurationCompact } from '@/lib/utils/formatting'
 import CopyButtonInline from '@/ui/copy-button-inline'
 
@@ -21,6 +23,7 @@ export const Timestamp = ({
   timestampUnix,
   millisAfterStart,
 }: TimestampProps) => {
+  const { timezone } = useTimezone()
   const date = new Date(timestampUnix)
 
   return (
@@ -33,9 +36,7 @@ export const Timestamp = ({
         {formatDurationCompact(millisAfterStart, true, true)}
       </span>
       <span className="ml-2 whitespace-nowrap group-hover:text-current transition-colors text-fg-tertiary">
-        {format(date, 'hh:mm:ss.SS a', {
-          locale: enUS,
-        })}
+        {formatZonedBuildLogTime(timestampUnix, timezone)}
       </span>
     </CopyButtonInline>
   )
