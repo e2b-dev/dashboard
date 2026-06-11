@@ -3,6 +3,7 @@ import 'server-only'
 import { ADMIN_AUTH_HEADERS } from '@/configs/api'
 import { api } from '@/core/shared/clients/api'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
+import type { components as DashboardApiComponents } from '@/core/shared/contracts/dashboard-api.types'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import { decodeJwtClaims, readStringClaim, tokenFormat } from './jwt-claims'
 import { readOrySignupMetadataCookie } from './signup-metadata'
@@ -27,15 +28,6 @@ type OryTokenClaims = {
   name?: unknown
   given_name?: unknown
   preferred_username?: unknown
-}
-
-type DashboardBootstrapBody = {
-  oidc_issuer: string
-  oidc_user_id: string
-  oidc_user_email: string
-  oidc_user_name: string | null
-  signup_ip?: string
-  signup_user_agent?: string
 }
 
 export async function ensureOryUserBootstrapped(
@@ -120,16 +112,18 @@ async function bootstrapOryUserWithClaims(
     }
 
     const signupMetadata = await readOrySignupMetadataCookie()
-    const body: DashboardBootstrapBody = {
+    const body = {
       oidc_issuer: claims.oidcIssuer,
       oidc_user_id: claims.oidcUserId,
       oidc_user_email: claims.oidcUserEmail,
       oidc_user_name: claims.oidcUserName,
-    }
-    if (signupMetadata?.signup_ip) body.signup_ip = signupMetadata.signup_ip
-    if (signupMetadata?.signup_user_agent) {
-      body.signup_user_agent = signupMetadata.signup_user_agent
-    }
+      ...(signupMetadata?.signup_ip
+        ? { signup_ip: signupMetadata.signup_ip }
+        : {}),
+      ...(signupMetadata?.signup_user_agent
+        ? { signup_user_agent: signupMetadata.signup_user_agent }
+        : {}),
+    } satisfies DashboardApiComponents['schemas']['AdminAuthProviderUserBootstrapRequest']
 
     const { error, response } = await api.POST('/admin/users/bootstrap', {
       body,
