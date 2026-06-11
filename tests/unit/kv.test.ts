@@ -1,53 +1,202 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { ping } = vi.hoisted(() => ({
-  ping: vi.fn(),
-}))
-
-vi.mock('@vercel/kv', () => ({
-  kv: {
-    ping,
-  },
-}))
-
-import { pingKv } from '@/core/shared/clients/kv'
-
-const originalKvEnv = {
-  KV_REST_API_TOKEN: process.env.KV_REST_API_TOKEN,
-  KV_REST_API_URL: process.env.KV_REST_API_URL,
-}
-
-function resetKvEnv() {
-  if (originalKvEnv.KV_REST_API_TOKEN === undefined) {
-    delete process.env.KV_REST_API_TOKEN
-  } else {
-    process.env.KV_REST_API_TOKEN = originalKvEnv.KV_REST_API_TOKEN
+const { createClient, redisClient } = vi.hoisted(() => {
+  const client = {
+    on: vi.fn(() => client),
+    connect: vi.fn(async () => client),
+    destroy: vi.fn(),
+    ping: vi.fn(),
+    get: vi.fn(),
+    set: vi.fn(),
   }
 
-  if (originalKvEnv.KV_REST_API_URL === undefined) {
-    delete process.env.KV_REST_API_URL
+  return {
+    createClient: vi.fn(() => client),
+    redisClient: client,
+  }
+})
+
+vi.mock('redis', () => ({
+  createClient,
+}))
+
+vi.mock('@/core/shared/clients/logger/logger', () => ({
+  l: {
+    error: vi.fn(),
+  },
+  serializeErrorForLog: vi.fn((error) => error),
+}))
+
+const originalRedisUrl = process.env.REDIS_URL
+
+async function loadKvClient() {
+  vi.resetModules()
+  return import('@/core/shared/clients/kv')
+}
+
+function resetRedisEnv() {
+  if (originalRedisUrl === undefined) {
+    delete process.env.REDIS_URL
   } else {
-    process.env.KV_REST_API_URL = originalKvEnv.KV_REST_API_URL
+    process.env.REDIS_URL = originalRedisUrl
   }
 }
 
 describe('optional KV client', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    delete process.env.KV_REST_API_TOKEN
-    delete process.env.KV_REST_API_URL
+    // clearAllMocks wipes call data but not implementations, so restore the
+    // default connect after any test that overrode it with a rejection.
+    redisClient.connect.mockImplementation(async () => redisClient)
+    delete process.env.REDIS_URL
   })
 
   afterEach(() => {
-    resetKvEnv()
+    resetRedisEnv()
   })
 
-  it('reports KV as not configured when both env values are omitted', async () => {
+  it('reports KV as not configured when REDIS_URL is omitted', async () => {
+    const { pingKv } = await loadKvClient()
+
     await expect(pingKv()).resolves.toEqual({
       configured: false,
       available: false,
       status: 'not_configured',
     })
-    expect(ping).not.toHaveBeenCalled()
+    expect(createClient).not.toHaveBeenCalled()
+  })
+
+  it('reports KV as misconfigured when REDIS_URL is not a Redis URL', async () => {
+    process.env.REDIS_URL = 'https://example.com'
+    const { pingKv } = await loadKvClient()
+
+    await expect(pingKv()).resolves.toEqual({
+      configured: false,
+      available: false,
+      status: 'misconfigured',
+    })
+    expect(createClient).not.toHaveBeenCalled()
+  })
+
+  it('reports KV as healthy when Redis ping succeeds', async () => {
+    process.env.REDIS_URL = 'redis://localhost:6379'
+    redisClient.ping.mockResolvedValue('PONG')
+    const { pingKv } = await loadKvClient()
+
+    await expect(pingKv()).resolves.toEqual({
+      configured: true,
+      available: true,
+      status: 'ok',
+    })
+    expect(createClient).toHaveBeenCalledWith({
+      url: 'redis://localhost:6379',
+      disableOfflineQueue: true,
+      socket: {
+        socketTimeout: 10_000,
+      },
+    })
+    expect(redisClient.on).toHaveBeenCalledWith('error', expect.any(Function))
+    expect(redisClient.connect).toHaveBeenCalledTimes(1)
+    expect(redisClient.ping).toHaveBeenCalledTimes(1)
+    expect(redisClient.destroy).toHaveBeenCalledTimes(1)
+  })
+
+  it('opens and tears down a dedicated connection per operation', async () => {
+    process.env.REDIS_URL = 'redis://localhost:6379'
+    redisClient.ping.mockResolvedValue('PONG')
+    redisClient.get.mockResolvedValue('true')
+    const { getKvValue, pingKv } = await loadKvClient()
+
+    await pingKv()
+    await getKvValue<boolean>('warned-alternate-email:user@example.com')
+
+    // No singleton: each operation connects and closes its own client.
+    expect(createClient).toHaveBeenCalledTimes(2)
+    expect(redisClient.connect).toHaveBeenCalledTimes(2)
+    expect(redisClient.destroy).toHaveBeenCalledTimes(2)
+  })
+
+  it('reports an error and still tears down when a command fails', async () => {
+    process.env.REDIS_URL = 'redis://localhost:6379'
+    const commandError = new Error(
+      "Socket timeout. Expecting data, but didn't receive any in 10000ms."
+    )
+    redisClient.ping.mockRejectedValueOnce(commandError)
+    const { pingKv } = await loadKvClient()
+
+    await expect(pingKv()).resolves.toEqual({
+      configured: true,
+      available: false,
+      status: 'error',
+      error: commandError,
+    })
+    expect(redisClient.destroy).toHaveBeenCalledTimes(1)
+  })
+
+  it('reports an error and still tears down when the connection fails', async () => {
+    process.env.REDIS_URL = 'redis://localhost:6379'
+    const error = new Error('redis unavailable')
+    redisClient.connect.mockRejectedValue(error)
+    const { pingKv } = await loadKvClient()
+
+    await expect(pingKv()).resolves.toEqual({
+      configured: true,
+      available: false,
+      status: 'error',
+      error,
+    })
+    // finally runs even when connect throws, releasing the socket.
+    expect(redisClient.destroy).toHaveBeenCalledTimes(1)
+  })
+
+  it('serializes values as JSON when setting KV values', async () => {
+    process.env.REDIS_URL = 'redis://localhost:6379'
+    redisClient.set.mockResolvedValue('OK')
+    const { setKvValue } = await loadKvClient()
+
+    await expect(setKvValue('flag', true)).resolves.toEqual({
+      ok: true,
+      configured: true,
+      value: 'OK',
+    })
+    expect(redisClient.set).toHaveBeenCalledWith('flag', 'true')
+  })
+
+  it('parses JSON values when getting KV values', async () => {
+    process.env.REDIS_URL = 'redis://localhost:6379'
+    redisClient.get.mockResolvedValue('{"enabled":true}')
+    const { getKvValue } = await loadKvClient()
+
+    await expect(getKvValue<{ enabled: boolean }>('settings')).resolves.toEqual(
+      {
+        ok: true,
+        configured: true,
+        value: { enabled: true },
+      }
+    )
+  })
+
+  it('returns null when getting a missing KV value', async () => {
+    process.env.REDIS_URL = 'redis://localhost:6379'
+    redisClient.get.mockResolvedValue(null)
+    const { getKvValue } = await loadKvClient()
+
+    await expect(getKvValue<boolean>('missing')).resolves.toEqual({
+      ok: true,
+      configured: true,
+      value: null,
+    })
+  })
+
+  it('reports KV errors when stored JSON cannot be parsed', async () => {
+    process.env.REDIS_URL = 'redis://localhost:6379'
+    redisClient.get.mockResolvedValue('not-json')
+    const { getKvValue } = await loadKvClient()
+
+    await expect(getKvValue<boolean>('invalid')).resolves.toMatchObject({
+      ok: false,
+      configured: true,
+      reason: 'error',
+    })
   })
 })

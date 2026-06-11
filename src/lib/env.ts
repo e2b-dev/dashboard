@@ -2,8 +2,13 @@ import { z } from 'zod'
 
 export const serverSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
-  KV_REST_API_TOKEN: z.string().min(1).optional(),
-  KV_REST_API_URL: z.url().optional(),
+  REDIS_URL: z
+    .url()
+    .refine(
+      (url) => url.startsWith('redis://') || url.startsWith('rediss://'),
+      'REDIS_URL must use redis:// or rediss://'
+    )
+    .optional(),
 
   ENABLE_USER_BOOTSTRAP: z.string().optional(),
   DASHBOARD_API_ADMIN_TOKEN: z.string().min(1).optional(),
