@@ -90,12 +90,18 @@ const parseAgentTemplates = (
   }
 }
 
-const configuredAgentTemplates = parseAgentTemplates(
-  process.env.NEXT_PUBLIC_AGENT_TEMPLATES
-)
+const getConfiguredAgentTemplates = () =>
+  parseAgentTemplates(
+    process.env.AGENT_TEMPLATES ?? process.env.NEXT_PUBLIC_AGENT_TEMPLATES
+  )
+
+const configuredAgentTemplates = getConfiguredAgentTemplates()
 
 export const AGENT_TEMPLATES: AgentTemplateConfig[] =
   configuredAgentTemplates ?? DEFAULT_AGENT_TEMPLATES
+
+export const getAgentTemplates = () =>
+  getConfiguredAgentTemplates() ?? DEFAULT_AGENT_TEMPLATES
 
 export const AGENT_TEMPLATE_BY_ID = Object.fromEntries(
   AGENT_TEMPLATES.map((template) => [template.id, template])

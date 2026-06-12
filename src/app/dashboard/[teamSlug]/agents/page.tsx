@@ -1,9 +1,8 @@
 import { notFound } from 'next/navigation'
-import { AGENT_TEMPLATES } from '@/configs/agents'
 import { INCLUDE_AGENTS_IN_DASHBOARD } from '@/configs/flags'
 import { AgentsDashboard } from '@/features/dashboard/agents/agents-dashboard'
 import { Page } from '@/features/dashboard/layouts/page'
-import { HydrateClient, prefetch, trpc } from '@/trpc/server'
+import { HydrateClient, prefetch, trpc, trpcCaller } from '@/trpc/server'
 
 export default async function AgentsPage({
   params,
@@ -13,6 +12,7 @@ export default async function AgentsPage({
   }
 
   const { teamSlug } = await params
+  const { templates } = await trpcCaller.agents.getTemplates({ teamSlug })
 
   prefetch(
     trpc.sandboxes.getSandboxes.queryOptions({
@@ -30,7 +30,7 @@ export default async function AgentsPage({
           </p>
         </div>
 
-        <AgentsDashboard templates={AGENT_TEMPLATES} teamSlug={teamSlug} />
+        <AgentsDashboard templates={templates} teamSlug={teamSlug} />
       </Page>
     </HydrateClient>
   )
