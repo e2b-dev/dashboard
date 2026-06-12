@@ -329,7 +329,7 @@ export function AgentsDashboard({ templates, teamSlug }: AgentsDashboardProps) {
 
         return (
           <section className="divide-stroke divide-y" key={template.id}>
-            <div className="grid gap-4 px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+            <div className="grid gap-4 px-4 py-3 md:grid-cols-[minmax(0,1fr)_14rem] md:items-center">
               <div className="flex min-w-0 flex-col gap-1">
                 <h3 className="prose-body-highlight text-fg">
                   {template.name}
@@ -339,14 +339,20 @@ export function AgentsDashboard({ templates, teamSlug }: AgentsDashboardProps) {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Button asChild size="default" variant="primary">
+              <div className="grid grid-cols-2 gap-2 md:w-56">
+                <Button
+                  asChild
+                  className="w-full"
+                  size="default"
+                  variant="primary"
+                >
                   <Link href={getTerminalUrl(template)}>
                     Start
                     <ExternalLinkIcon />
                   </Link>
                 </Button>
                 <Button
+                  className="w-full"
                   size="default"
                   variant="secondary"
                   onClick={() =>
