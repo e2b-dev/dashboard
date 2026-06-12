@@ -7,7 +7,6 @@ import {
   formatTimezoneAbbreviation,
   formatZonedDateRange,
   formatZonedDateTimeInput,
-  formatZonedTimeAxisLabel,
   getRelativeDay,
   zonedDateTimePartsToUtcDate,
   zonedDateTimePartsToUtcTimestamp,
@@ -159,17 +158,6 @@ describe('timezone date-time helpers', () => {
     })
   })
 
-  describe('formatZonedTimeAxisLabel', () => {
-    it('formats axis labels in the selected timezone', () => {
-      expect(
-        formatZonedTimeAxisLabel(Date.UTC(2026, 5, 8, 13, 5, 9), newYork)
-      ).toBe('09:05')
-      expect(
-        formatZonedTimeAxisLabel(Date.UTC(2026, 5, 8, 13, 5, 9), newYork, true)
-      ).toBe('09:05:09')
-    })
-  })
-
   describe('createZonedTimeAxisLabelFormatter', () => {
     it('uses hour labels for short ranges', () => {
       const formatter = createZonedTimeAxisLabelFormatter(
@@ -204,6 +192,12 @@ describe('timezone date-time helpers', () => {
     })
 
     it('formats 24-hour time labels in the selected timezone', () => {
+      expect(
+        formatDate('2026-06-08T13:05:09.000Z', {
+          timezone: newYork,
+          format: 'time-24h-no-seconds',
+        })
+      ).toBe('09:05')
       expect(
         formatDate('2026-06-08T13:05:09.000Z', {
           timezone: newYork,

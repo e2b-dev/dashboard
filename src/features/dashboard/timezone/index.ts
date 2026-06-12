@@ -16,7 +16,6 @@ export {
   formatTimezoneAbbreviation,
   formatZonedDateRange,
   formatZonedDateTimeInput,
-  formatZonedTimeAxisLabel,
   getRelativeDay,
   getZonedDateParts,
   getZonedDateTimeParts,
