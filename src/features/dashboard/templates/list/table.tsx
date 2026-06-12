@@ -193,9 +193,7 @@ export default function TemplatesTable() {
                       activeSorting.find((s) => s.id === header.id)?.desc
                     }
                     align={
-                      header.id === 'cpuCount' ||
-                      header.id === 'memoryMB' ||
-                      header.id === 'diskSizeMB'
+                      header.id === 'cpuCount' || header.id === 'memoryMB'
                         ? 'right'
                         : 'left'
                     }
