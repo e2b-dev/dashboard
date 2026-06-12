@@ -42,7 +42,7 @@ export default function DashboardSidebarToggle() {
             exit="hidden"
           >
             <ClientOnly className="flex items-center">
-              <E2BLogo className="size-6" />
+              <E2BLogo className="h-3.5" />
             </ClientOnly>
           </motion.span>
         )}
