@@ -1,6 +1,7 @@
 import 'server-only'
 
-import { authAdmin } from '@/core/server/auth'
+import { ADMIN_AUTH_HEADERS } from '@/configs/api'
+import { api } from '@/core/shared/clients/api'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 
 export type AuthUserEmailResolver = (
@@ -10,7 +11,43 @@ export type AuthUserEmailResolver = (
 export async function getAuthUserEmailsById(
   userIds: string[]
 ): Promise<Map<string, string | null>> {
-  return authAdmin.getEmailsByIds(userIds)
+  const uniqueIds = [...new Set(userIds.filter(Boolean))]
+  if (uniqueIds.length === 0) {
+    return new Map<string, string | null>()
+  }
+
+  const adminToken = process.env.DASHBOARD_API_ADMIN_TOKEN
+  if (!adminToken) {
+    throw new Error('DASHBOARD_API_ADMIN_TOKEN is not configured')
+  }
+
+  const { data, error, response } = await api.POST(
+    '/admin/user-profiles/resolve',
+    {
+      headers: ADMIN_AUTH_HEADERS(adminToken),
+      body: { userIds: uniqueIds },
+    }
+  )
+
+  if (!response.ok || error) {
+    l.error(
+      {
+        key: 'auth_user_emails:dashboard_api_error',
+        error: serializeErrorForLog(error),
+        context: {
+          userCount: uniqueIds.length,
+          status: response.status,
+        },
+      },
+      'Failed to resolve creator emails from dashboard-api'
+    )
+
+    throw error ?? new Error('Failed to resolve creator emails')
+  }
+
+  return new Map(
+    (data?.profiles ?? []).map((profile) => [profile.userId, profile.email])
+  )
 }
 
 export async function resolveCreatorEmails<
@@ -43,7 +80,7 @@ export async function resolveCreatorEmails<
           userCount: new Set(creatorUserIds).size,
         },
       },
-      'Failed to resolve creator emails from auth provider'
+      'Failed to resolve creator emails from dashboard-api'
     )
 
     return items
