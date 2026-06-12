@@ -34,9 +34,11 @@ export default async function AgentsPage() {
                   <h3 className="prose-body-highlight text-fg">
                     {template.name}
                   </h3>
-                  <code className="prose-code text-fg-tertiary">
-                    {template.command}
-                  </code>
+                  {template.command ? (
+                    <code className="prose-code text-fg-tertiary">
+                      {template.command}
+                    </code>
+                  ) : null}
                 </div>
                 <Badge variant="info">Template</Badge>
               </div>
@@ -47,9 +49,11 @@ export default async function AgentsPage() {
             </div>
 
             <div className="border-stroke mt-4 flex items-center justify-between gap-2 border-t pt-3">
-              <span className="text-fg-tertiary prose-label uppercase">
-                {template.base}
-              </span>
+              {template.base ? (
+                <span className="text-fg-tertiary prose-label uppercase">
+                  {template.base}
+                </span>
+              ) : null}
               <code className="prose-code text-fg-tertiary">
                 {template.template}
               </code>

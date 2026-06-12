@@ -1,59 +1,20 @@
-export type AgentId = 'codex' | 'claude' | 'opencode'
+export type AgentId = string
 
 export type AgentTemplateConfig = {
   id: AgentId
   name: string
-  command: string
+  command?: string
   template: string
-  base: string
+  base?: string
   description: string
 }
 
-const DEFAULT_AGENT_TEMPLATES = {
-  codex: 'codex',
-  claude: 'claude',
-  opencode: 'opencode',
-} satisfies Record<AgentId, string>
-
-const AGENT_IDS = Object.keys(DEFAULT_AGENT_TEMPLATES) as AgentId[]
-
-const parseAgentTemplates = (
-  value: string | undefined
-): Partial<Record<AgentId, string>> => {
-  if (!value) return {}
-
-  try {
-    const parsed = JSON.parse(value) as unknown
-
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      return {}
-    }
-
-    return AGENT_IDS.reduce<Partial<Record<AgentId, string>>>((acc, id) => {
-      const template = (parsed as Record<string, unknown>)[id]
-
-      if (typeof template === 'string' && template.trim()) {
-        acc[id] = template
-      }
-
-      return acc
-    }, {})
-  } catch {
-    return {}
-  }
-}
-
-const AGENT_TEMPLATES_BY_AGENT = {
-  ...DEFAULT_AGENT_TEMPLATES,
-  ...parseAgentTemplates(process.env.NEXT_PUBLIC_AGENT_TEMPLATES),
-} satisfies Record<AgentId, string>
-
-export const AGENT_TEMPLATES: AgentTemplateConfig[] = [
+const DEFAULT_AGENT_TEMPLATES = [
   {
     id: 'codex',
     name: 'Codex',
     command: 'codex',
-    template: AGENT_TEMPLATES_BY_AGENT.codex,
+    template: 'codex',
     base: 'Ubuntu',
     description: 'Ubuntu template with Codex installed for coding sessions.',
   },
@@ -61,7 +22,7 @@ export const AGENT_TEMPLATES: AgentTemplateConfig[] = [
     id: 'claude',
     name: 'Claude',
     command: 'claude',
-    template: AGENT_TEMPLATES_BY_AGENT.claude,
+    template: 'claude',
     base: 'Ubuntu',
     description:
       'Ubuntu template with Claude Code installed for coding sessions.',
@@ -70,12 +31,73 @@ export const AGENT_TEMPLATES: AgentTemplateConfig[] = [
     id: 'opencode',
     name: 'OpenCode',
     command: 'opencode',
-    template: AGENT_TEMPLATES_BY_AGENT.opencode,
+    template: 'opencode',
     base: 'Ubuntu',
     description: 'Ubuntu template with OpenCode installed for coding sessions.',
   },
-]
+] satisfies AgentTemplateConfig[]
+
+const getString = (source: Record<string, unknown>, key: string) => {
+  const value = source[key]
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined
+}
+
+const toAgentTemplateConfig = (
+  value: unknown
+): AgentTemplateConfig | undefined => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return undefined
+  }
+
+  const source = value as Record<string, unknown>
+  const name = getString(source, 'name')
+  const template =
+    getString(source, 'template') ?? getString(source, 'templateId')
+  const description = getString(source, 'description')
+
+  if (!name || !template || !description) {
+    return undefined
+  }
+
+  return {
+    id: getString(source, 'id') ?? name.toLowerCase().replace(/\s+/g, '-'),
+    name,
+    command: getString(source, 'command'),
+    template,
+    base: getString(source, 'base'),
+    description,
+  }
+}
+
+const parseAgentTemplates = (
+  value: string | undefined
+): AgentTemplateConfig[] | undefined => {
+  if (!value) return undefined
+
+  try {
+    const parsed = JSON.parse(value) as unknown
+
+    if (!Array.isArray(parsed)) {
+      return undefined
+    }
+
+    const templates = parsed
+      .map(toAgentTemplateConfig)
+      .filter((template): template is AgentTemplateConfig => Boolean(template))
+
+    return templates.length ? templates : undefined
+  } catch {
+    return undefined
+  }
+}
+
+const configuredAgentTemplates = parseAgentTemplates(
+  process.env.NEXT_PUBLIC_AGENT_TEMPLATES
+)
+
+export const AGENT_TEMPLATES: AgentTemplateConfig[] =
+  configuredAgentTemplates ?? DEFAULT_AGENT_TEMPLATES
 
 export const AGENT_TEMPLATE_BY_ID = Object.fromEntries(
   AGENT_TEMPLATES.map((template) => [template.id, template])
-) as Record<AgentId, AgentTemplateConfig>
+) as Record<string, AgentTemplateConfig>
