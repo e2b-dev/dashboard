@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from 'motion/react'
 import useKeydown from '@/lib/hooks/use-keydown'
 import { cn } from '@/lib/utils'
-import { E2BLogo } from '@/ui/brand'
+import { E2BLogoSmall } from '@/ui/brand'
 import ClientOnly from '@/ui/client-only'
 import { IconButton } from '@/ui/primitives/icon-button'
 import { CollapseLeftIcon, ExpandRightIcon } from '@/ui/primitives/icons'
@@ -42,7 +42,7 @@ export default function DashboardSidebarToggle() {
             exit="hidden"
           >
             <ClientOnly className="flex items-center">
-              <E2BLogo className="h-3.5" />
+              <E2BLogoSmall className="h-3.5" />
             </ClientOnly>
           </motion.span>
         )}
