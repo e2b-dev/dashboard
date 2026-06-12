@@ -1,13 +1,13 @@
 import type { ClientTeamMetric } from '@/core/modules/sandboxes/models.client'
 import {
-  type DateFormatPreset,
+  type DateFormat,
   formatDate,
   type Timezone,
 } from '@/features/dashboard/timezone'
 import { formatAxisNumber } from '@/lib/utils/formatting'
 import type { TeamMetricDataPoint } from './types'
 
-const resolveTimeAxisLabelFormat = (rangeMs: number): DateFormatPreset => {
+const resolveTimeAxisLabelFormat = (rangeMs: number): DateFormat => {
   if (rangeMs > 365 * 24 * 60 * 60 * 1000) return 'year'
   if (rangeMs > 2 * 24 * 60 * 60 * 1000) return 'month-day'
 

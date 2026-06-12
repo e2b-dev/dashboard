@@ -1,6 +1,6 @@
 export { TimezoneProvider, useTimezone } from './context'
 export type {
-  DateFormatPreset,
+  DateFormat,
   DatePartsFormatPreset,
   DateTimeParts,
   FormatDateOptions,
