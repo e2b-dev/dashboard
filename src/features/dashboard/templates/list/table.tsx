@@ -43,8 +43,6 @@ import { fallbackData, templatesTableConfig, useColumns } from './table-config'
 
 const COLUMN_TO_SORT_BASE: Record<string, string> = {
   name: 'name',
-  cpuCount: 'cpu_count',
-  memoryMB: 'memory_mb',
   createdAt: 'created_at',
   updatedAt: 'updated_at',
 }
@@ -59,8 +57,14 @@ export default function TemplatesTable() {
     useTemplateTableStore()
   const { cpuCount, memoryMB, isPublic } = useTemplateTableStore()
 
+  // Persisted state (URL hash) may still reference columns that are no longer sortable.
+  const activeSorting = useMemo(
+    () => sorting.filter((s) => s.id in COLUMN_TO_SORT_BASE),
+    [sorting]
+  )
+
   // Derive the single server sort token from the active sort column + direction.
-  const sortColumn = sorting[0]
+  const sortColumn = activeSorting[0]
   const sortBase =
     (sortColumn && COLUMN_TO_SORT_BASE[sortColumn.id]) ??
     TEMPLATES_DEFAULT_SORT_BASE
@@ -135,7 +139,7 @@ export default function TemplatesTable() {
     columns: columns ?? fallbackData,
     state: {
       globalFilter,
-      sorting,
+      sorting: activeSorting,
       columnSizing,
     },
     onGlobalFilterChange: setGlobalFilter,
@@ -190,7 +194,9 @@ export default function TemplatesTable() {
                   <DataTableHead
                     key={header.id}
                     header={header}
-                    sorting={sorting.find((s) => s.id === header.id)?.desc}
+                    sorting={
+                      activeSorting.find((s) => s.id === header.id)?.desc
+                    }
                     align={
                       header.id === 'cpuCount' ||
                       header.id === 'memoryMB' ||

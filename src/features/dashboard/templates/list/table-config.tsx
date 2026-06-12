@@ -62,7 +62,7 @@ export const useColumns = (deps: unknown[]) => {
         enableResizing: false,
         cell: CpuCell,
         filterFn: 'equals',
-        sortDescFirst: true,
+        enableSorting: false,
       },
       {
         accessorKey: 'memoryMB',
@@ -71,7 +71,7 @@ export const useColumns = (deps: unknown[]) => {
         enableResizing: false,
         cell: MemoryCell,
         filterFn: 'equals',
-        sortDescFirst: true,
+        enableSorting: false,
       },
       {
         accessorKey: 'diskSizeMB',

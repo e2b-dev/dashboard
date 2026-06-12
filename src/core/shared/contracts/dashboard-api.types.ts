@@ -1244,10 +1244,6 @@ export interface components {
     templates_sort:
       | 'name_asc'
       | 'name_desc'
-      | 'cpu_count_asc'
-      | 'cpu_count_desc'
-      | 'memory_mb_asc'
-      | 'memory_mb_desc'
       | 'created_at_asc'
       | 'created_at_desc'
       | 'updated_at_asc'
