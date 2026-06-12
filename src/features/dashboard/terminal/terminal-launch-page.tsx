@@ -19,6 +19,7 @@ import { normalizeTerminalTemplate } from './template'
 interface TerminalLaunchPageProps {
   command?: string
   embedded?: boolean
+  forceNewSandbox?: boolean
   returnToPath?: string
   sandboxId?: string
   teamSlug?: string
@@ -28,6 +29,7 @@ interface TerminalLaunchPageProps {
 export async function TerminalLaunchPage({
   command = '',
   embedded = false,
+  forceNewSandbox = false,
   returnToPath = '/dashboard/terminal',
   sandboxId,
   teamSlug,
@@ -138,6 +140,7 @@ export async function TerminalLaunchPage({
     >
       <DashboardTerminal
         autoStart
+        forceNewSandbox={forceNewSandbox}
         launchTarget={{
           command,
           sandboxId: terminalSandboxId,

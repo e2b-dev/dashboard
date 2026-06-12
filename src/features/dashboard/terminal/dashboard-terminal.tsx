@@ -34,6 +34,7 @@ const MAX_INPUT_FLUSH_RETRIES = 2
 
 interface DashboardTerminalProps {
   autoStart?: boolean
+  forceNewSandbox?: boolean
   getSandbox?: TerminalSandboxResolver
   launchTarget?: TerminalLaunchTarget
   onSandboxAttached?: (sandboxId: string) => void
@@ -45,6 +46,7 @@ interface DashboardTerminalProps {
 
 export default function DashboardTerminal({
   autoStart = false,
+  forceNewSandbox = false,
   getSandbox,
   launchTarget,
   onSandboxAttached,
@@ -568,6 +570,7 @@ export default function DashboardTerminal({
       if (isStartingRef.current || ptyRef.current) return
 
       queueTerminalCommand(launchTarget?.command ?? '', {
+        forceNewSandbox,
         target: launchTarget,
       })
     }, TERMINAL_AUTOSTART_DEBOUNCE_MS)
@@ -575,7 +578,7 @@ export default function DashboardTerminal({
     return () => {
       window.clearTimeout(autoStartTimer)
     }
-  }, [autoStart, launchTarget, queueTerminalCommand, status])
+  }, [autoStart, forceNewSandbox, launchTarget, queueTerminalCommand, status])
 
   useEffect(() => {
     const handlePageHide = (event: PageTransitionEvent) => {

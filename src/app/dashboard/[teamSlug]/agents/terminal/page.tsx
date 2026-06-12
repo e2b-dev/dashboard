@@ -11,12 +11,13 @@ export default async function AgentTerminalPage({
   }
 
   const { teamSlug } = await params
-  const { command, sandboxId, template } = await searchParams
+  const { command, new: forceNew, sandboxId, template } = await searchParams
 
   return (
     <TerminalLaunchPage
       command={getQueryValue(command) ?? ''}
       embedded
+      forceNewSandbox={getQueryValue(forceNew) === '1'}
       returnToPath={`/dashboard/${teamSlug}/agents/terminal`}
       sandboxId={getQueryValue(sandboxId)}
       teamSlug={teamSlug}

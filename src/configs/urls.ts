@@ -24,11 +24,22 @@ export const PROTECTED_URLS = {
   KEYS: (teamSlug: string) => `/dashboard/${teamSlug}/keys`,
   MEMBERS: (teamSlug: string) => `/dashboard/${teamSlug}/members`,
   AGENTS: (teamSlug: string) => `/dashboard/${teamSlug}/agents`,
-  AGENT_TERMINAL: (teamSlug: string, template: string, sandboxId?: string) => {
+  AGENT_TERMINAL: (
+    teamSlug: string,
+    template: string,
+    options: {
+      forceNew?: boolean
+      sandboxId?: string
+    } = {}
+  ) => {
     const params = new URLSearchParams({ template })
 
-    if (sandboxId) {
-      params.set('sandboxId', sandboxId)
+    if (options.sandboxId) {
+      params.set('sandboxId', options.sandboxId)
+    }
+
+    if (options.forceNew) {
+      params.set('new', '1')
     }
 
     return `/dashboard/${teamSlug}/agents/terminal?${params.toString()}`
