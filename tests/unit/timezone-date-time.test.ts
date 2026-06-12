@@ -8,7 +8,6 @@ import {
   formatZonedDateRange,
   formatZonedDateTimeInput,
   formatZonedExactTimestamp,
-  formatZonedTime,
   formatZonedTimeAxisLabel,
   getRelativeDay,
   zonedDateTimePartsToUtcDate,
@@ -195,6 +194,15 @@ describe('timezone date-time helpers', () => {
         })
       ).toBe('Jun 8, 2026')
     })
+
+    it('formats time labels in the selected timezone', () => {
+      expect(
+        formatDate('2026-06-08T13:05:09.000Z', {
+          timezone: newYork,
+          format: 'time',
+        })
+      ).toBe('9:05:09 AM')
+    })
   })
 
   describe('formatZonedExactTimestamp', () => {
@@ -274,14 +282,6 @@ describe('timezone date-time helpers', () => {
           timezone: newYork,
         })
       ).toBeNull()
-    })
-  })
-
-  describe('formatZonedTime', () => {
-    it('formats localized time labels in the selected timezone', () => {
-      expect(formatZonedTime('2026-06-08T13:05:09.000Z', newYork)).toBe(
-        '9:05:09 AM'
-      )
     })
   })
 

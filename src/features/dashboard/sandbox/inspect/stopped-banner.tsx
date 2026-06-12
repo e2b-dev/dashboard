@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from 'motion/react'
 import { useMemo } from 'react'
-import { formatZonedTime, useTimezone } from '@/features/dashboard/timezone'
+import { formatDate, useTimezone } from '@/features/dashboard/timezone'
 import { cn } from '@/lib/utils'
 import {
   CardDescription,
@@ -67,7 +67,10 @@ export function StoppedBanner({ rootNodeCount }: StoppedBannerProps) {
               <span className="text-fg-tertiary">
                 {' '}
                 Last updated:{' '}
-                {lastUpdated ? formatZonedTime(lastUpdated, timezone) : '—'}
+                {lastUpdated
+                  ? (formatDate(lastUpdated, { timezone, format: 'time' }) ??
+                    '—')
+                  : '—'}
               </span>
             </CardDescription>
           </CardHeader>
