@@ -1,6 +1,6 @@
 import { startOfDay } from 'date-fns'
 import { describe, expect, it, vi } from 'vitest'
-import { zonedInstantToCalendarDate } from '@/features/dashboard/timezone'
+import { instantToCalendarDate } from '@/features/dashboard/timezone'
 import {
   createTimeRangeSchema,
   normalizeTimeRangeValues,
@@ -213,7 +213,7 @@ describe('time-range-picker logic', () => {
   describe('calendar boundary dates', () => {
     it('aligns disabled calendar days with dashboard timezone validation', () => {
       const minBound = new Date('2023-01-01T00:00:00.000Z')
-      const calendarMin = zonedInstantToCalendarDate(minBound, utc)
+      const calendarMin = instantToCalendarDate(minBound, utc)
 
       vi.stubEnv('TZ', 'America/Los_Angeles')
       const browserLocalMin = startOfDay(minBound)

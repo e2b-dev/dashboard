@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-  formatZonedDateTimeInput,
+  formatDateTimeInput,
   type Timezone,
 } from '@/features/dashboard/timezone'
 import { getUsageTimeRangePresets } from '@/features/dashboard/usage/constants'
@@ -32,22 +32,22 @@ describe('usage time range presets', () => {
     const newYorkRange = getPresetRange(newYork, 'last-90-days')
     const losAngelesRange = getPresetRange(losAngeles, 'last-90-days')
 
-    expect(formatZonedDateTimeInput(newYorkRange.start, newYork)).toEqual({
+    expect(formatDateTimeInput(newYorkRange.start, newYork)).toEqual({
       date: '2026/03/13',
       time: '00:00:00',
     })
-    expect(formatZonedDateTimeInput(newYorkRange.end, newYork)).toEqual({
+    expect(formatDateTimeInput(newYorkRange.end, newYork)).toEqual({
       date: '2026/06/10',
       time: '23:59:59',
     })
 
-    expect(formatZonedDateTimeInput(losAngelesRange.start, losAngeles)).toEqual(
+    expect(formatDateTimeInput(losAngelesRange.start, losAngeles)).toEqual(
       {
         date: '2026/03/13',
         time: '00:00:00',
       }
     )
-    expect(formatZonedDateTimeInput(losAngelesRange.end, losAngeles)).toEqual({
+    expect(formatDateTimeInput(losAngelesRange.end, losAngeles)).toEqual({
       date: '2026/06/10',
       time: '23:59:59',
     })

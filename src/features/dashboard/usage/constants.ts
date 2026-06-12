@@ -1,8 +1,8 @@
 import {
-  getZonedDateParts,
+  getDateParts,
   shiftCalendarDays,
   type Timezone,
-  zonedDateTimePartsToUtcTimestamp,
+  dateTimePartsToUtcTimestamp,
 } from '@/features/dashboard/timezone'
 import { formatAxisNumber } from '@/lib/utils/formatting'
 import type { TimeRangePreset } from '@/ui/time-range-presets'
@@ -23,7 +23,7 @@ export const INITIAL_TIMEFRAME_FALLBACK_RANGE_MS = 30 * 24 * 60 * 60 * 1000
 export const HOURLY_SAMPLING_THRESHOLD_DAYS = 3
 export const WEEKLY_SAMPLING_THRESHOLD_DAYS = 60
 
-type CalendarDateParts = ReturnType<typeof getZonedDateParts>
+type CalendarDateParts = ReturnType<typeof getDateParts>
 
 const shiftToMonthStart = (
   parts: CalendarDateParts,
@@ -53,7 +53,7 @@ const getZonedDayBoundaryTimestamps = (
   endParts: CalendarDateParts,
   timezone: Timezone
 ): { start: number; end: number } => ({
-  start: zonedDateTimePartsToUtcTimestamp(
+  start: dateTimePartsToUtcTimestamp(
     {
       ...startParts,
       hours: 0,
@@ -63,7 +63,7 @@ const getZonedDayBoundaryTimestamps = (
     timezone
   ),
   end:
-    zonedDateTimePartsToUtcTimestamp(
+    dateTimePartsToUtcTimestamp(
       {
         ...endParts,
         hours: 23,
@@ -80,7 +80,7 @@ const getUsageTimeRangePresets = (timezone: Timezone): TimeRangePreset[] => [
     label: 'Last 7 days',
     shortcut: '7D',
     getValue: () => {
-      const today = getZonedDateParts(new Date(), timezone)
+      const today = getDateParts(new Date(), timezone)
       return getZonedDayBoundaryTimestamps(
         shiftCalendarDays(today, -6),
         today,
@@ -93,7 +93,7 @@ const getUsageTimeRangePresets = (timezone: Timezone): TimeRangePreset[] => [
     label: 'Last 14 days',
     shortcut: '14D',
     getValue: () => {
-      const today = getZonedDateParts(new Date(), timezone)
+      const today = getDateParts(new Date(), timezone)
       return getZonedDayBoundaryTimestamps(
         shiftCalendarDays(today, -13),
         today,
@@ -106,7 +106,7 @@ const getUsageTimeRangePresets = (timezone: Timezone): TimeRangePreset[] => [
     label: 'Last 30 days',
     shortcut: '30D',
     getValue: () => {
-      const today = getZonedDateParts(new Date(), timezone)
+      const today = getDateParts(new Date(), timezone)
       return getZonedDayBoundaryTimestamps(
         shiftCalendarDays(today, -29),
         today,
@@ -119,7 +119,7 @@ const getUsageTimeRangePresets = (timezone: Timezone): TimeRangePreset[] => [
     label: 'Last 90 days',
     shortcut: '90D',
     getValue: () => {
-      const today = getZonedDateParts(new Date(), timezone)
+      const today = getDateParts(new Date(), timezone)
       return getZonedDayBoundaryTimestamps(
         shiftCalendarDays(today, -89),
         today,
@@ -131,7 +131,7 @@ const getUsageTimeRangePresets = (timezone: Timezone): TimeRangePreset[] => [
     id: 'this-month',
     label: 'This month',
     getValue: () => {
-      const today = getZonedDateParts(new Date(), timezone)
+      const today = getDateParts(new Date(), timezone)
       const start = { year: today.year, month: today.month, day: 1 }
       return getZonedDayBoundaryTimestamps(
         start,
@@ -144,7 +144,7 @@ const getUsageTimeRangePresets = (timezone: Timezone): TimeRangePreset[] => [
     id: 'last-month',
     label: 'Last month',
     getValue: () => {
-      const today = getZonedDateParts(new Date(), timezone)
+      const today = getDateParts(new Date(), timezone)
       const start = shiftToMonthStart(today, -1)
       return getZonedDayBoundaryTimestamps(
         start,
@@ -157,7 +157,7 @@ const getUsageTimeRangePresets = (timezone: Timezone): TimeRangePreset[] => [
     id: 'this-year',
     label: 'This year',
     getValue: () => {
-      const today = getZonedDateParts(new Date(), timezone)
+      const today = getDateParts(new Date(), timezone)
       return getZonedDayBoundaryTimestamps(
         { year: today.year, month: 1, day: 1 },
         { year: today.year, month: 12, day: 31 },
@@ -169,7 +169,7 @@ const getUsageTimeRangePresets = (timezone: Timezone): TimeRangePreset[] => [
     id: 'last-year',
     label: 'Last year',
     getValue: () => {
-      const today = getZonedDateParts(new Date(), timezone)
+      const today = getDateParts(new Date(), timezone)
       const year = today.year - 1
       return getZonedDayBoundaryTimestamps(
         { year, month: 1, day: 1 },

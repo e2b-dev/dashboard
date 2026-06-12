@@ -5,9 +5,9 @@ import { useCallback, useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 
 import {
-  formatZonedDateTimeInput,
+  formatDateTimeInput,
   useTimezone,
-  zonedInstantToCalendarDate,
+  instantToCalendarDate,
 } from '@/features/dashboard/timezone'
 import { cn } from '@/lib/utils'
 
@@ -63,18 +63,18 @@ export function TimeRangePicker({
   const maxBoundMs = bounds?.max?.getTime()
 
   const startParts = useMemo(
-    () => formatZonedDateTimeInput(startDateTime, timezone),
+    () => formatDateTimeInput(startDateTime, timezone),
     [startDateTime, timezone]
   )
   const endParts = useMemo(
-    () => formatZonedDateTimeInput(endDateTime, timezone),
+    () => formatDateTimeInput(endDateTime, timezone),
     [endDateTime, timezone]
   )
 
   const calendarMinDate = useMemo(
     () =>
       minBoundMs !== undefined
-        ? zonedInstantToCalendarDate(minBoundMs, timezone)
+        ? instantToCalendarDate(minBoundMs, timezone)
         : undefined,
     [minBoundMs, timezone]
   )
@@ -82,7 +82,7 @@ export function TimeRangePicker({
   const calendarMaxDate = useMemo(
     () =>
       maxBoundMs !== undefined
-        ? zonedInstantToCalendarDate(maxBoundMs, timezone)
+        ? instantToCalendarDate(maxBoundMs, timezone)
         : undefined,
     [maxBoundMs, timezone]
   )

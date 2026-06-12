@@ -5,11 +5,11 @@ import {
   formatDateParts,
   formatDateRange,
   formatTimezoneAbbreviation,
-  formatZonedDateTimeInput,
+  formatDateTimeInput,
   getRelativeDay,
-  zonedDateTimePartsToUtcDate,
-  zonedDateTimePartsToUtcTimestamp,
-  zonedInstantToCalendarDate,
+  dateTimePartsToUtcDate,
+  dateTimePartsToUtcTimestamp,
+  instantToCalendarDate,
 } from '@/features/dashboard/timezone'
 import { requireTimezone } from './helpers/timezone'
 
@@ -18,9 +18,9 @@ describe('timezone date-time helpers', () => {
   const berlin = requireTimezone('Europe/Berlin')
   const utc = requireTimezone('UTC')
 
-  describe('formatZonedDateTimeInput', () => {
+  describe('formatDateTimeInput', () => {
     it('formats a UTC timestamp into New York picker parts', () => {
-      const result = formatZonedDateTimeInput(
+      const result = formatDateTimeInput(
         '2026-06-08T13:05:09.000Z',
         newYork
       )
@@ -32,7 +32,7 @@ describe('timezone date-time helpers', () => {
     })
 
     it('formats a UTC timestamp into Berlin picker parts', () => {
-      const result = formatZonedDateTimeInput(
+      const result = formatDateTimeInput(
         '2026-06-08T13:05:09.000Z',
         berlin
       )
@@ -44,9 +44,9 @@ describe('timezone date-time helpers', () => {
     })
   })
 
-  describe('zonedInstantToCalendarDate', () => {
+  describe('instantToCalendarDate', () => {
     it('maps an instant to a local calendar date from dashboard wall-clock parts', () => {
-      const calendarDate = zonedInstantToCalendarDate(
+      const calendarDate = instantToCalendarDate(
         '2023-01-01T00:00:00.000Z',
         utc
       )
@@ -58,7 +58,7 @@ describe('timezone date-time helpers', () => {
 
     it('uses the dashboard timezone instead of browser-local day boundaries', () => {
       const minBound = new Date('2023-01-01T00:00:00.000Z')
-      const calendarMin = zonedInstantToCalendarDate(minBound, utc)
+      const calendarMin = instantToCalendarDate(minBound, utc)
 
       vi.stubEnv('TZ', 'America/Los_Angeles')
       const browserLocalMin = startOfDay(minBound)
@@ -74,7 +74,7 @@ describe('timezone date-time helpers', () => {
     })
 
     it('maps max-bound instants to the dashboard wall-clock calendar day', () => {
-      const calendarMax = zonedInstantToCalendarDate(
+      const calendarMax = instantToCalendarDate(
         '2026-02-24T18:17:41.000Z',
         utc
       )
@@ -85,9 +85,9 @@ describe('timezone date-time helpers', () => {
     })
   })
 
-  describe('zonedDateTimePartsToUtcDate', () => {
+  describe('dateTimePartsToUtcDate', () => {
     it('converts New York wall-clock parts to UTC', () => {
-      const result = zonedDateTimePartsToUtcDate(
+      const result = dateTimePartsToUtcDate(
         {
           year: 2026,
           month: 6,
@@ -103,7 +103,7 @@ describe('timezone date-time helpers', () => {
     })
 
     it('converts UTC wall-clock parts without offset changes', () => {
-      const result = zonedDateTimePartsToUtcTimestamp(
+      const result = dateTimePartsToUtcTimestamp(
         {
           year: 2026,
           month: 6,

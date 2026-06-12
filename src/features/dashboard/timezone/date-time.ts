@@ -1,13 +1,13 @@
 import { formatInTimeZone, fromZonedTime } from 'date-fns-tz'
 import type { Timezone } from './schema'
 
-interface ZonedDateParts {
+interface CalendarDateParts {
   year: number
   month: number
   day: number
 }
 
-interface ZonedDateTimeParts extends ZonedDateParts {
+interface CalendarDateTimeParts extends CalendarDateParts {
   hours: number
   minutes: number
   seconds: number
@@ -37,10 +37,10 @@ const parseRequiredInt = (
   return parsed
 }
 
-const getZonedDateParts = (
+const getDateParts = (
   value: string | number | Date,
   timezone: Timezone
-): ZonedDateParts => {
+): CalendarDateParts => {
   const parts = parseZonedFormatParts(
     new Intl.DateTimeFormat('en-US', {
       timeZone: timezone,
@@ -58,10 +58,10 @@ const getZonedDateParts = (
   }
 }
 
-const getZonedDateTimeParts = (
+const getDateTimeParts = (
   value: string | number | Date,
   timezone: Timezone
-): ZonedDateTimeParts => {
+): CalendarDateTimeParts => {
   const parts = parseZonedFormatParts(
     new Intl.DateTimeFormat('en-US', {
       timeZone: timezone,
@@ -88,9 +88,9 @@ const getZonedDateTimeParts = (
 
 // Shifts a calendar date without applying local timezone rules; e.g. 2026-06-10 + -89 -> 2026-03-13.
 const shiftCalendarDays = (
-  parts: ZonedDateParts,
+  parts: CalendarDateParts,
   days: number
-): ZonedDateParts => {
+): CalendarDateParts => {
   const date = new Date(Date.UTC(parts.year, parts.month - 1, parts.day))
   date.setUTCDate(date.getUTCDate() + days)
 
@@ -103,7 +103,7 @@ const shiftCalendarDays = (
 
 const pad = (value: number): string => String(value).padStart(2, '0')
 
-const formatZonedDateTimeInput = (
+const formatDateTimeInput = (
   value: string | number | Date,
   timezone: Timezone
 ): { date: string; time: string } => ({
@@ -111,11 +111,11 @@ const formatZonedDateTimeInput = (
   time: formatInTimeZone(value, timezone, 'HH:mm:ss'),
 })
 
-const zonedInstantToCalendarDate = (
+const instantToCalendarDate = (
   value: string | number | Date,
   timezone: Timezone
 ): Date => {
-  const { date } = formatZonedDateTimeInput(value, timezone)
+  const { date } = formatDateTimeInput(value, timezone)
   const [year = 0, month = 0, day = 0] = date.split('/').map(Number)
 
   return new Date(year, month - 1, day)
@@ -123,8 +123,8 @@ const zonedInstantToCalendarDate = (
 
 // Converts timezone wall-clock parts to UTC; e.g. 2026-06-08 09:00:00 in America/New_York -> 2026-06-08T13:00:00.000Z.
 // DST gaps/overlaps are resolved by date-fns-tz consistently instead of rejected.
-const zonedDateTimePartsToUtcDate = (
-  parts: ZonedDateTimeParts,
+const dateTimePartsToUtcDate = (
+  parts: CalendarDateTimeParts,
   timezone: Timezone
 ): Date => {
   const wallClockValue = `${parts.year}-${pad(parts.month)}-${pad(
@@ -134,10 +134,10 @@ const zonedDateTimePartsToUtcDate = (
   return fromZonedTime(wallClockValue, timezone)
 }
 
-const zonedDateTimePartsToUtcTimestamp = (
-  parts: ZonedDateTimeParts,
+const dateTimePartsToUtcTimestamp = (
+  parts: CalendarDateTimeParts,
   timezone: Timezone
-): number => zonedDateTimePartsToUtcDate(parts, timezone).getTime()
+): number => dateTimePartsToUtcDate(parts, timezone).getTime()
 
 const formatTimezoneAbbreviation = (
   value: string | number | Date,
@@ -390,13 +390,13 @@ export {
   formatDateParts,
   formatDateRange,
   formatTimezoneAbbreviation,
-  formatZonedDateTimeInput,
+  formatDateTimeInput,
   getRelativeDay,
-  getZonedDateParts,
-  getZonedDateTimeParts,
+  getDateParts,
+  getDateTimeParts,
   shiftCalendarDays,
-  zonedDateTimePartsToUtcDate,
-  zonedDateTimePartsToUtcTimestamp,
-  zonedInstantToCalendarDate,
+  dateTimePartsToUtcDate,
+  dateTimePartsToUtcTimestamp,
+  instantToCalendarDate,
 }
-export type { DateFormat, ZonedDateTimeParts }
+export type { DateFormat, CalendarDateTimeParts }

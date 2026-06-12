@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { zonedDateTimePartsToUtcDate } from '@/features/dashboard/timezone/date-time'
+import { dateTimePartsToUtcDate } from '@/features/dashboard/timezone/date-time'
 import type { Timezone } from '@/features/dashboard/timezone/schema'
 import { getBrowserTimezone } from '@/features/dashboard/timezone/utils'
 
@@ -186,7 +186,7 @@ export function parsePickerDateTime(
     return null
   }
 
-  return zonedDateTimePartsToUtcDate(
+  return dateTimePartsToUtcDate(
     {
       year: parsedDate.getUTCFullYear(),
       month: parsedDate.getUTCMonth() + 1,

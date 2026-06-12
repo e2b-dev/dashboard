@@ -1,10 +1,10 @@
 import type { UsageResponse } from '@/core/modules/billing/models'
 import {
-  getZonedDateTimeParts,
+  getDateTimeParts,
   shiftCalendarDays,
   type Timezone,
-  type ZonedDateTimeParts,
-  zonedDateTimePartsToUtcTimestamp,
+  type CalendarDateTimeParts,
+  dateTimePartsToUtcTimestamp,
 } from '@/features/dashboard/timezone'
 import {
   HOURLY_SAMPLING_THRESHOLD_DAYS,
@@ -13,8 +13,8 @@ import {
 import type { SampledDataPoint, SamplingMode, Timeframe } from './types'
 
 const getIsoWeekStartParts = (
-  parts: Pick<ZonedDateTimeParts, 'year' | 'month' | 'day'>
-): Pick<ZonedDateTimeParts, 'year' | 'month' | 'day'> => {
+  parts: Pick<CalendarDateTimeParts, 'year' | 'month' | 'day'>
+): Pick<CalendarDateTimeParts, 'year' | 'month' | 'day'> => {
   const date = new Date(Date.UTC(parts.year, parts.month - 1, parts.day))
   const daysSinceMonday = (date.getUTCDay() + 6) % 7
   return shiftCalendarDays(parts, -daysSinceMonday)
@@ -62,17 +62,17 @@ export function normalizeToStartOfSamplingPeriod(
   mode: SamplingMode,
   timezone: Timezone
 ): number {
-  const parts = getZonedDateTimeParts(timestamp, timezone)
+  const parts = getDateTimeParts(timestamp, timezone)
 
   switch (mode) {
     case 'hourly':
-      return zonedDateTimePartsToUtcTimestamp(
+      return dateTimePartsToUtcTimestamp(
         { ...parts, minutes: 0, seconds: 0 },
         timezone
       )
 
     case 'daily':
-      return zonedDateTimePartsToUtcTimestamp(
+      return dateTimePartsToUtcTimestamp(
         { ...parts, hours: 0, minutes: 0, seconds: 0 },
         timezone
       )
@@ -80,7 +80,7 @@ export function normalizeToStartOfSamplingPeriod(
     case 'weekly': {
       const weekStart = getIsoWeekStartParts(parts)
 
-      return zonedDateTimePartsToUtcTimestamp(
+      return dateTimePartsToUtcTimestamp(
         {
           ...weekStart,
           hours: 0,
@@ -98,12 +98,12 @@ export function normalizeToEndOfSamplingPeriod(
   mode: SamplingMode,
   timezone: Timezone
 ): number {
-  const parts = getZonedDateTimeParts(timestamp, timezone)
+  const parts = getDateTimeParts(timestamp, timezone)
 
   switch (mode) {
     case 'hourly':
       return (
-        zonedDateTimePartsToUtcTimestamp(
+        dateTimePartsToUtcTimestamp(
           { ...parts, minutes: 59, seconds: 59 },
           timezone
         ) + 999
@@ -111,7 +111,7 @@ export function normalizeToEndOfSamplingPeriod(
 
     case 'daily':
       return (
-        zonedDateTimePartsToUtcTimestamp(
+        dateTimePartsToUtcTimestamp(
           { ...parts, hours: 23, minutes: 59, seconds: 59 },
           timezone
         ) + 999
@@ -122,7 +122,7 @@ export function normalizeToEndOfSamplingPeriod(
       const weekEnd = shiftCalendarDays(weekStart, 6)
 
       return (
-        zonedDateTimePartsToUtcTimestamp(
+        dateTimePartsToUtcTimestamp(
           {
             ...weekEnd,
             hours: 23,

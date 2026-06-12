@@ -1,6 +1,6 @@
 import { calculateStepForDuration } from '@/features/dashboard/sandboxes/monitoring/utils'
 import {
-  formatZonedDateTimeInput,
+  formatDateTimeInput,
   type Timezone,
 } from '@/features/dashboard/timezone'
 import type { TimeframeState } from '@/lib/utils/timeframe'
@@ -14,7 +14,7 @@ const formatZonedDateTimeString = (
   timestamp: number,
   timezone: Timezone
 ): string => {
-  const parts = formatZonedDateTimeInput(timestamp, timezone)
+  const parts = formatDateTimeInput(timestamp, timezone)
   return `${parts.date} ${parts.time}`
 }
 
