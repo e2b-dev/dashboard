@@ -49,8 +49,5 @@ export async function completeOrySignOut(origin = BASE_URL): Promise<string> {
     identityId ? revokeKratosSessionsForIdentity(identityId) : null,
   ])
 
-  // The admin revocations above already terminate the Kratos + Hydra sessions
-  // server-side, so we skip the Ory RP-initiated logout round-trip and redirect
-  // straight to the post-logout page — one redirect, no cross-origin hop.
   return new URL(ORY_POST_LOGOUT_PATH, origin).toString()
 }
