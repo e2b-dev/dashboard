@@ -32,3 +32,29 @@ export const relativeUrlSchema = z
       message: 'Must be a relative URL starting with /',
     }
   )
+
+const LOOPBACK_HOSTNAMES = new Set(['localhost', '127.0.0.1', '[::1]'])
+
+/**
+ * True only when `value` is an http(s) URL whose host is an actual loopback
+ * address. Parses with the URL constructor instead of prefix-matching, so
+ * hosts like `localhost.evil.com` or `localhost@evil.com` are rejected.
+ */
+export function isLoopbackUrl(value: string): boolean {
+  let url: URL
+  try {
+    url = new URL(value)
+  } catch {
+    return false
+  }
+
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    return false
+  }
+
+  return LOOPBACK_HOSTNAMES.has(url.hostname)
+}
+
+export const loopbackUrlSchema = z.string().refine(isLoopbackUrl, {
+  message: 'Must be an http(s) URL pointing at localhost',
+})
