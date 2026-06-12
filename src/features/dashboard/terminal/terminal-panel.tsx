@@ -1,8 +1,15 @@
+import Link from 'next/link'
 import type { RefObject } from 'react'
 import { IconButton } from '@/ui/primitives/icon-button'
-import { CopyIcon, RefreshIcon, TerminalIcon } from '@/ui/primitives/icons'
+import {
+  ArrowLeftIcon,
+  CopyIcon,
+  RefreshIcon,
+  TerminalIcon,
+} from '@/ui/primitives/icons'
 
 interface TerminalPanelProps {
+  backHref?: string
   sandboxId?: string
   template?: string
   restartDisabled: boolean
@@ -14,6 +21,7 @@ interface TerminalPanelProps {
 }
 
 export default function TerminalPanel({
+  backHref,
   sandboxId,
   template,
   restartDisabled,
@@ -27,6 +35,7 @@ export default function TerminalPanel({
     <section className="flex h-full min-h-0 flex-1 flex-col overflow-hidden border bg-bg-1">
       <header className="h-10 w-full border-b">
         <TerminalPanelHeader
+          backHref={backHref}
           sandboxId={sandboxId}
           template={template}
           restartDisabled={restartDisabled}
@@ -47,6 +56,7 @@ export default function TerminalPanel({
 }
 
 function TerminalPanelHeader({
+  backHref,
   sandboxId,
   template,
   restartDisabled,
@@ -55,6 +65,7 @@ function TerminalPanelHeader({
   onRestartTerminal,
 }: Pick<
   TerminalPanelProps,
+  | 'backHref'
   | 'sandboxId'
   | 'template'
   | 'restartDisabled'
@@ -65,10 +76,23 @@ function TerminalPanelHeader({
   return (
     <div className="flex h-full items-center justify-between px-3">
       <div className="flex min-w-0 items-center gap-2">
+        {backHref ? (
+          <Link
+            className="text-fg-secondary hover:text-fg flex shrink-0 items-center gap-1 transition-colors"
+            href={backHref}
+          >
+            <ArrowLeftIcon className="size-4" />
+            <span className="prose-label-highlight uppercase">Agents</span>
+          </Link>
+        ) : (
+          <>
+            <TerminalIcon className="text-icon-tertiary size-4" />
+            <span className="prose-label-highlight shrink-0 uppercase">
+              Terminal
+            </span>
+          </>
+        )}
         <TerminalIcon className="text-icon-tertiary size-4" />
-        <span className="prose-label-highlight shrink-0 uppercase">
-          Terminal
-        </span>
         {template ? (
           <span className="text-fg-tertiary shrink-0 font-mono text-xs">
             {template}

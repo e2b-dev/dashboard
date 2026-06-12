@@ -34,6 +34,7 @@ const MAX_INPUT_FLUSH_RETRIES = 2
 
 interface DashboardTerminalProps {
   autoStart?: boolean
+  backHref?: string
   forceNewSandbox?: boolean
   getSandbox?: TerminalSandboxResolver
   launchTarget?: TerminalLaunchTarget
@@ -46,6 +47,7 @@ interface DashboardTerminalProps {
 
 export default function DashboardTerminal({
   autoStart = false,
+  backHref,
   forceNewSandbox = false,
   getSandbox,
   launchTarget,
@@ -618,6 +620,7 @@ export default function DashboardTerminal({
   return (
     <>
       <TerminalPanel
+        backHref={backHref}
         sandboxId={activeSandboxId}
         restartDisabled={restartDisabled}
         restartLabel={restartLabel}

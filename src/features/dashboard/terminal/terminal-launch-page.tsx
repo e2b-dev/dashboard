@@ -17,6 +17,7 @@ import DashboardTerminal from './dashboard-terminal'
 import { normalizeTerminalTemplate } from './template'
 
 interface TerminalLaunchPageProps {
+  backHref?: string
   command?: string
   embedded?: boolean
   forceNewSandbox?: boolean
@@ -27,6 +28,7 @@ interface TerminalLaunchPageProps {
 }
 
 export async function TerminalLaunchPage({
+  backHref,
   command = '',
   embedded = false,
   forceNewSandbox = false,
@@ -140,6 +142,7 @@ export async function TerminalLaunchPage({
     >
       <DashboardTerminal
         autoStart
+        backHref={backHref}
         forceNewSandbox={forceNewSandbox}
         launchTarget={{
           command,
