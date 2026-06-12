@@ -36,7 +36,6 @@ import {
   SANDBOX_MONITORING_CHART_FG_VAR,
   SANDBOX_MONITORING_CHART_LINE_WIDTH,
   SANDBOX_MONITORING_CHART_STROKE_VAR,
-  SANDBOX_MONITORING_LIVE_DATA_THRESHOLD_MS,
 } from '../utils/constants'
 import { ChartOverlayLayer } from './chart-overlays'
 import { useChartOverlays } from './use-chart-overlays'
@@ -60,7 +59,6 @@ const CHART_CONNECTOR_LINE_OPACITY = 0.8
 const CHART_OUT_OF_BRUSH_ALPHA = 0.25
 const CHART_AXIS_LABEL_FONT_SIZE = 12
 const CHART_Y_AXIS_SCALE_FACTOR = 1.5
-const CHART_LIVE_WINDOW_STEPS = 2
 const CHART_LIVE_OUTER_DOT_SIZE = 16
 const CHART_LIVE_MIDDLE_DOT_SIZE = 10
 const CHART_LIVE_INNER_DOT_SIZE = 6
@@ -306,10 +304,10 @@ function SandboxMetricsChart({
     [isMobile]
   )
 
-  const liveWindowMs = useMemo(() => {
+  const liveMetricThresholdMs = useMemo(() => {
     const duration =
       xAxisMax !== undefined && xAxisMin !== undefined ? xAxisMax - xAxisMin : 0
-    return CHART_LIVE_WINDOW_STEPS * calculateStepForDuration(duration)
+    return calculateStepForDuration(duration)
   }, [xAxisMax, xAxisMin])
 
   const option = useMemo<EChartsOption>(() => {
@@ -370,12 +368,8 @@ function SandboxMetricsChart({
       const livePoint =
         isPolling &&
         latestPointTimestampMs !== null &&
-        Date.now() - latestPointTimestampMs <=
-          Math.max(liveWindowMs, SANDBOX_MONITORING_LIVE_DATA_THRESHOLD_MS)
-          ? findLivePoint(
-              line.data,
-              Math.max(liveWindowMs, SANDBOX_MONITORING_LIVE_DATA_THRESHOLD_MS)
-            )
+        Date.now() - latestPointTimestampMs <= liveMetricThresholdMs
+          ? findLivePoint(line.data, liveMetricThresholdMs)
           : null
 
       const regularSeriesItems = renderableSegments.map(
@@ -546,7 +540,7 @@ function SandboxMetricsChart({
     grid,
     isMobile,
     isPolling,
-    liveWindowMs,
+    liveMetricThresholdMs,
     series,
     showXAxisLabels,
     stroke,

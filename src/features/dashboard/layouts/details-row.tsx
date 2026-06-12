@@ -16,10 +16,15 @@ export function DetailsItem({ label, children, ...props }: DetailItemProps) {
 
 interface DetailsRowProps {
   children: ReactNode
+  className?: string
 }
 
-export function DetailsRow({ children }: DetailsRowProps) {
+export function DetailsRow({ children, className }: DetailsRowProps) {
   return (
-    <div className="flex flex-wrap items-center gap-5 md:gap-7">{children}</div>
+    <div
+      className={cn('flex flex-wrap items-center gap-5 md:gap-7', className)}
+    >
+      {children}
+    </div>
   )
 }
