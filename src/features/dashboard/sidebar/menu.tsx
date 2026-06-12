@@ -6,7 +6,6 @@ import { usePostHog } from 'posthog-js/react'
 import { useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { getTeamDisplayName } from '@/core/modules/teams/utils'
-import { signOutAction } from '@/core/server/actions/auth-actions'
 import { resetOryPostHogIdentity } from '@/features/ory-posthog-identity-bridge'
 import { useAppPostHogProvider } from '@/features/posthog-provider'
 import { cn } from '@/lib/utils'
@@ -36,18 +35,18 @@ export default function DashboardSidebarMenu() {
   const { enabled: postHogEnabled } = useAppPostHogProvider()
   const posthog = usePostHog()
   const [createTeamOpen, setCreateTeamOpen] = useState(false)
-  // explicit state instead of useTransition: a sync transition callback
-  // settles immediately, so isPending would flip back to false while the
-  // sign-out action is still in flight; this stays true until the redirect
-  // navigates away, and only resets if the action fails before that
+  // Stays true until the hard navigation unloads the page; the overlay should
+  // never tear down before then.
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const handleLogout = () => {
     setIsLoggingOut(true)
     if (postHogEnabled) resetOryPostHogIdentity(posthog)
-    signOutAction().catch(() => {
-      setIsLoggingOut(false)
-    })
+    // Hard navigation (not the Next router) to a plain route handler that clears
+    // the session cookie server-side: a soft RSC redirect would re-render the
+    // signed-out dashboard and tear down this overlay before the browser leaves
+    // the page. window.location keeps the overlay up until unload.
+    window.location.href = '/api/auth/sign-out'
   }
 
   return (
