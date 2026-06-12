@@ -16,7 +16,7 @@ const DEFAULT_TIMEZONE = TimezoneSchema.parse('UTC')
 
 interface TimezoneContextValue {
   timezone: Timezone
-  setTimezone: (timezone: string) => Promise<boolean>
+  setTimezone: (timezone: Timezone) => Promise<boolean>
 }
 
 interface TimezoneProviderProps {
@@ -63,14 +63,11 @@ export const TimezoneProvider = ({
   }, [parsedInitialTimezone])
 
   const setTimezone = useCallback(
-    async (nextTimezone: string) => {
-      const parsedTimezone = parseTimezone(nextTimezone)
-      if (!parsedTimezone) return false
-
+    async (nextTimezone: Timezone) => {
       const previousTimezone = timezone
-      setTimezoneState(parsedTimezone)
+      setTimezoneState(nextTimezone)
 
-      const didPersist = await persistTimezone(parsedTimezone)
+      const didPersist = await persistTimezone(nextTimezone)
       if (!didPersist) {
         setTimezoneState(previousTimezone)
         return false
