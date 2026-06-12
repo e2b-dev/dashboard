@@ -1,18 +1,18 @@
 export { TimezoneProvider, useTimezone } from './context'
-export type { DateFormat, CalendarDateTimeParts } from './date-time'
+export type { CalendarDateTimeParts, DateFormat } from './date-time'
 export {
+  dateTimePartsToUtcDate,
+  dateTimePartsToUtcTimestamp,
   formatDate,
   formatDateParts,
   formatDateRange,
-  formatTimezoneAbbreviation,
   formatDateTimeInput,
-  getRelativeDay,
+  formatTimezoneAbbreviation,
   getDateParts,
   getDateTimeParts,
-  shiftCalendarDays,
-  dateTimePartsToUtcDate,
-  dateTimePartsToUtcTimestamp,
+  getRelativeDay,
   instantToCalendarDate,
+  shiftCalendarDays,
 } from './date-time'
 export type { Timezone } from './schema'
 export { TimezoneSchema } from './schema'
