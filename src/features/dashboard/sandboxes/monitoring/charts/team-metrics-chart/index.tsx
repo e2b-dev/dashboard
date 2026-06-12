@@ -19,10 +19,7 @@ import { CanvasRenderer } from 'echarts/renderers'
 import ReactEChartsCore from 'echarts-for-react/lib/core'
 import { useTheme } from 'next-themes'
 import { memo, useCallback, useMemo, useRef } from 'react'
-import {
-  createZonedTimeAxisLabelFormatter,
-  useTimezone,
-} from '@/features/dashboard/timezone'
+import { useTimezone } from '@/features/dashboard/timezone'
 import { useCssVars } from '@/lib/hooks/use-css-vars'
 import { calculateAxisMax } from '@/lib/utils/chart'
 import { CHART_CONFIGS, LIVE_PADDING_MULTIPLIER } from './constants'
@@ -33,6 +30,7 @@ import {
   createLiveIndicators,
   createSplitLineInterval,
   createYAxisLabelFormatter,
+  createZonedTimeAxisLabelFormatter,
   hasLiveData,
   transformMetrics,
 } from './utils'

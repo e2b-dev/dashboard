@@ -1,7 +1,6 @@
 import { startOfDay } from 'date-fns'
 import { describe, expect, it, vi } from 'vitest'
 import {
-  createZonedTimeAxisLabelFormatter,
   formatDate,
   formatDateParts,
   formatDateRange,
@@ -165,17 +164,6 @@ describe('timezone date-time helpers', () => {
 
       expect(formatted).toContain('Jun 8')
       expect(formatted).toContain('9:00:00')
-    })
-  })
-
-  describe('createZonedTimeAxisLabelFormatter', () => {
-    it('uses hour labels for short ranges', () => {
-      const formatter = createZonedTimeAxisLabelFormatter(
-        newYork,
-        60 * 60 * 1000
-      )
-
-      expect(formatter(Date.UTC(2026, 5, 8, 13, 0, 0))).toBe('09:00')
     })
   })
 

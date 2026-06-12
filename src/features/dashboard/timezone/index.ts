@@ -10,7 +10,6 @@ export type {
   ZonedDateTimeParts,
 } from './date-time'
 export {
-  createZonedTimeAxisLabelFormatter,
   formatDate,
   formatDateParts,
   formatDateRange,

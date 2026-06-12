@@ -161,6 +161,10 @@ const DATE_FORMAT_PRESETS = {
   time: 'h:mm:ss a',
   // Jun 8, 2026 at 09:05:12 AM
   'date-time-padded-hour': "MMM d, yyyy 'at' hh:mm:ss a",
+  // Jun 8
+  'month-day': 'MMM d',
+  // 2026
+  year: 'yyyy',
   // 09:05
   'time-24h-no-seconds': 'HH:mm',
   // 09:05:12
@@ -197,20 +201,6 @@ const resolveDateFormatPreset = (
   }
 
   return DATE_FORMAT_PRESETS[preset]
-}
-
-const createZonedTimeAxisLabelFormatter = (
-  timezone: Timezone,
-  rangeMs: number
-): ((value: number) => string) => {
-  const format =
-    rangeMs > 365 * 24 * 60 * 60 * 1000
-      ? 'yyyy'
-      : rangeMs > 2 * 24 * 60 * 60 * 1000
-        ? 'MMM d'
-        : 'HH:mm'
-
-  return (value: number) => formatInTimeZone(value, timezone, format)
 }
 
 interface FormatDateOptions {
@@ -396,7 +386,6 @@ const getRelativeDay = (
 }
 
 export {
-  createZonedTimeAxisLabelFormatter,
   formatDate,
   formatDateParts,
   formatDateRange,
