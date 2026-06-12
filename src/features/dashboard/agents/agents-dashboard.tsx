@@ -331,22 +331,9 @@ export function AgentsDashboard({ templates, teamSlug }: AgentsDashboardProps) {
           <section className="divide-stroke divide-y" key={template.id}>
             <div className="grid gap-4 px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
               <div className="flex min-w-0 flex-col gap-1">
-                <div className="flex min-w-0 flex-wrap items-center gap-2">
-                  <h3 className="prose-body-highlight text-fg">
-                    {template.name}
-                  </h3>
-                  {template.command ? (
-                    <code className="prose-code text-fg-tertiary">
-                      {template.command}
-                    </code>
-                  ) : null}
-                  <Badge variant="code">{template.template}</Badge>
-                  {template.base ? (
-                    <span className="text-fg-tertiary prose-label uppercase">
-                      {template.base}
-                    </span>
-                  ) : null}
-                </div>
+                <h3 className="prose-body-highlight text-fg">
+                  {template.name}
+                </h3>
                 <p className="prose-body text-fg-tertiary truncate">
                   {template.description}
                 </p>
