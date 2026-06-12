@@ -15,7 +15,9 @@ export interface DashboardLayoutConfig {
   type: 'default' | 'custom'
   copyValue?: string
   custom?: {
-    includeHeaderBottomStyles: boolean
+    hideFooter?: boolean
+    hideHeader?: boolean
+    includeHeaderBottomStyles?: boolean
   }
 }
 
@@ -92,6 +94,14 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
   '/dashboard/*/agents': () => ({
     title: 'Agents',
     type: 'default',
+  }),
+  '/dashboard/*/agents/terminal': () => ({
+    title: 'Agents',
+    type: 'custom',
+    custom: {
+      hideFooter: true,
+      hideHeader: true,
+    },
   }),
 
   // integrations

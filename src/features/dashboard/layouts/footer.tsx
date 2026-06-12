@@ -20,6 +20,10 @@ export default function DashboardLayoutFooter({
       ? config.title
       : config.title.map((segment) => segment.label).join('/')
 
+  if (config.custom?.hideFooter) {
+    return null
+  }
+
   return (
     <footer className="flex h-protected-footer min-h-protected-footer shrink-0 items-center gap-2 border-t bg-bg px-3 md:px-6">
       <span className="min-w-0 flex-1 truncate pr-2 font-mono text-xs text-fg-tertiary uppercase md:pr-4 md:prose-label">

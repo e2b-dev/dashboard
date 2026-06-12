@@ -23,6 +23,10 @@ export default function DashboardLayoutHeader({
   const config = getDashboardLayoutConfig(pathname)
   const copyableValue = config.copyValue ?? null
 
+  if (config.custom?.hideHeader) {
+    return null
+  }
+
   return (
     <div
       className={cn(

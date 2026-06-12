@@ -133,9 +133,7 @@ export async function TerminalLaunchPage({
   return (
     <main
       className={
-        embedded
-          ? 'h-full min-h-[520px] bg-bg p-3'
-          : 'h-dvh min-h-[360px] bg-bg p-3'
+        embedded ? 'h-full min-h-0 bg-bg' : 'h-dvh min-h-[360px] bg-bg p-3'
       }
     >
       <DashboardTerminal
@@ -369,7 +367,7 @@ function TerminalSignIn({
     <main
       className={
         embedded
-          ? 'flex h-full min-h-[520px] items-center justify-center bg-bg p-6'
+          ? 'flex h-full min-h-0 items-center justify-center bg-bg p-6'
           : 'flex h-dvh min-h-[360px] items-center justify-center bg-bg p-6'
       }
     >
@@ -401,7 +399,7 @@ function TerminalUnavailable({
     <main
       className={
         embedded
-          ? 'flex h-full min-h-[520px] items-center justify-center bg-bg p-6'
+          ? 'flex h-full min-h-0 items-center justify-center bg-bg p-6'
           : 'flex h-dvh min-h-[360px] items-center justify-center bg-bg p-6'
       }
     >
