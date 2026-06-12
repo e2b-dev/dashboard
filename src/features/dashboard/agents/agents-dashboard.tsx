@@ -27,6 +27,7 @@ import {
 import { Loader } from '@/ui/primitives/loader'
 
 const RECENT_SESSION_LIMIT = 3
+const LOCAL_INFRA_HOSTNAMES = new Set(['localhost', '127.0.0.1', '[::1]'])
 
 interface AgentsDashboardProps {
   templates: AgentTemplateConfig[]
@@ -101,6 +102,22 @@ const getTerminalUrl = (template: AgentTemplateConfig, sandboxId?: string) => {
 const canReopenTerminal = (sandbox: Sandbox) =>
   sandbox.state === 'running' || sandbox.state === 'paused'
 
+const canPauseSandboxes = () => {
+  const infraApiUrl = process.env.NEXT_PUBLIC_INFRA_API_URL
+
+  if (!infraApiUrl) {
+    return true
+  }
+
+  try {
+    const url = new URL(infraApiUrl)
+
+    return !(LOCAL_INFRA_HOSTNAMES.has(url.hostname) && url.port === '3001')
+  } catch {
+    return true
+  }
+}
+
 function KillAgentSandboxButton({
   sandboxId,
   teamSlug,
@@ -148,10 +165,12 @@ function KillAgentSandboxButton({
 }
 
 function PauseAgentSandboxButton({
+  disabled,
   sandboxId,
   teamSlug,
   onPaused,
 }: {
+  disabled?: boolean
   sandboxId: string
   teamSlug: string
   onPaused: () => void
@@ -170,11 +189,20 @@ function PauseAgentSandboxButton({
 
   return (
     <Button
-      disabled={isExecuting}
+      disabled={disabled || isExecuting}
       loading={isExecuting ? 'Pausing...' : undefined}
       size="none"
+      title={
+        disabled ? 'Pause is not supported by the local harness' : undefined
+      }
       variant="tertiary"
-      onClick={() => execute({ teamSlug, sandboxId })}
+      onClick={() => {
+        if (disabled) {
+          return
+        }
+
+        execute({ teamSlug, sandboxId })
+      }}
     >
       <PausedIcon />
       Pause
@@ -183,12 +211,14 @@ function PauseAgentSandboxButton({
 }
 
 function AgentSessionList({
+  canPause,
   onKilled,
   onPaused,
   sessions,
   teamSlug,
   template,
 }: {
+  canPause: boolean
   onKilled: () => void
   onPaused: () => void
   sessions: Sandbox[]
@@ -230,6 +260,7 @@ function AgentSessionList({
               </Button>
               {sandbox.state === 'running' ? (
                 <PauseAgentSandboxButton
+                  disabled={!canPause}
                   onPaused={onPaused}
                   sandboxId={sandbox.sandboxID}
                   teamSlug={teamSlug}
@@ -264,6 +295,7 @@ function AgentSessionList({
 export function AgentsDashboard({ templates, teamSlug }: AgentsDashboardProps) {
   const trpc = useTRPC()
   const [expandedAgentId, setExpandedAgentId] = useState<string | null>(null)
+  const pauseSupported = canPauseSandboxes()
 
   const { data, error, isPending, refetch } = useQuery(
     trpc.sandboxes.getSandboxes.queryOptions(
@@ -357,6 +389,7 @@ export function AgentsDashboard({ templates, teamSlug }: AgentsDashboardProps) {
                 </div>
               ) : (
                 <AgentSessionList
+                  canPause={pauseSupported}
                   onKilled={() => {
                     void refetch()
                   }}

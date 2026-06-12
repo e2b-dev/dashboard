@@ -105,6 +105,16 @@ export const pauseSandboxAction = authActionClient
         return returnServerError('Sandbox not found')
       }
 
+      const message = res.error.message.toLowerCase()
+
+      if (
+        status === 501 ||
+        message.includes('unimplemented') ||
+        message.includes('not supported')
+      ) {
+        return returnServerError('Pause is not supported in this environment')
+      }
+
       if (status === 409) {
         return returnServerError('Sandbox cannot be paused')
       }
