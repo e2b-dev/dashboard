@@ -1,11 +1,15 @@
 'use client'
 
+import posthog from 'posthog-js'
 import { useEffect } from 'react'
 import { ErrorBoundary as ReactErrorBoundary } from 'react-error-boundary'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { cn } from '@/lib/utils'
 import { ErrorIndicator } from './error-indicator'
 import Frame from './frame'
+
+const GENERIC_ERROR_MESSAGE =
+  "We're aware of the issue and are working to fix it as soon as possible."
 
 export default function ErrorBoundary({
   error,
@@ -28,6 +32,10 @@ export default function ErrorBoundary({
       },
       `${error.message}`
     )
+
+    if (process.env.NEXT_PUBLIC_POSTHOG_KEY) {
+      posthog.captureException(error)
+    }
   }, [error])
 
   return (
@@ -40,7 +48,7 @@ export default function ErrorBoundary({
       {hideFrame ? (
         <ErrorIndicator
           description={description}
-          message={error.message}
+          message={GENERIC_ERROR_MESSAGE}
           className="border-none"
           onRetry={onRetry}
         />
