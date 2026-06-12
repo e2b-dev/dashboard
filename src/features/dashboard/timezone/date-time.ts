@@ -411,10 +411,11 @@ const formatZonedTime = (
   timezone: Timezone
 ): string => formatInTimeZone(value, timezone, 'h:mm:ss a')
 
-const formatZonedRelativeDayTime = (
+// Returns a relative day label for a timestamp; e.g. today in NY -> "Today", prior day -> "Yesterday", else "Jun 9, 2026".
+const getRelativeDay = (
   value: string | number | Date,
   timezone: Timezone
-): { prefix: string; time: string } => {
+): string => {
   const valueKey = formatInTimeZone(value, timezone, 'yyyy-MM-dd')
   const todayKey = formatInTimeZone(Date.now(), timezone, 'yyyy-MM-dd')
   const yesterdayKey = formatInTimeZone(
@@ -423,15 +424,10 @@ const formatZonedRelativeDayTime = (
     'yyyy-MM-dd'
   )
 
-  let prefix: string
-  if (valueKey === todayKey) prefix = 'Today'
-  else if (valueKey === yesterdayKey) prefix = 'Yesterday'
-  else prefix = formatInTimeZone(value, timezone, 'PP')
+  if (valueKey === todayKey) return 'Today'
+  if (valueKey === yesterdayKey) return 'Yesterday'
 
-  return {
-    prefix,
-    time: formatInTimeZone(value, timezone, 'h:mm:ss a'),
-  }
+  return formatInTimeZone(value, timezone, 'PP')
 }
 
 export {
@@ -442,8 +438,8 @@ export {
   formatZonedDateRange,
   formatZonedDateTimeInput,
   formatZonedExactTimestamp,
-  formatZonedRelativeDayTime,
   formatZonedTime,
+  getRelativeDay,
   formatZonedTimeAxisLabel,
   getZonedDateParts,
   getZonedDateTimeParts,
