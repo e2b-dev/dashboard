@@ -469,6 +469,9 @@ export default function DashboardTerminal({
 
         const pendingCommands = pendingCommandsRef.current
         pendingCommandsRef.current = []
+        if (pendingCommands.length === 0) {
+          sendInputToPty('\r', pty.pid)
+        }
         for (const command of pendingCommands) {
           runCommand(command, pty.pid)
         }
@@ -493,6 +496,7 @@ export default function DashboardTerminal({
       closeTerminal,
       resizeTerminal,
       resetTerminal,
+      sendInputToPty,
       focusTerminal,
       getSandbox,
       runCommand,
