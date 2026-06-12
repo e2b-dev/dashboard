@@ -198,12 +198,24 @@ function AgentSessionList({
           )}
         </div>
       ))}
+      <div className="px-4 py-2">
+        <Button asChild size="none" variant="tertiary">
+          <Link
+            href={PROTECTED_URLS.SANDBOXES_LIST(teamSlug)}
+            onClick={() => applySandboxHistoryFilter(template)}
+          >
+            View all
+            <ExternalLinkIcon />
+          </Link>
+        </Button>
+      </div>
     </div>
   )
 }
 
 export function AgentsDashboard({ templates, teamSlug }: AgentsDashboardProps) {
   const trpc = useTRPC()
+  const [expandedAgentId, setExpandedAgentId] = useState<string | null>(null)
 
   const { data, error, isPending, refetch } = useQuery(
     trpc.sandboxes.getSandboxes.queryOptions(
@@ -233,6 +245,7 @@ export function AgentsDashboard({ templates, teamSlug }: AgentsDashboardProps) {
       {templates.map((template) => {
         const sessions = sandboxesByAgentId[template.id] ?? []
         const recentSessions = sessions.slice(0, RECENT_SESSION_LIMIT)
+        const isExpanded = expandedAgentId === template.id
 
         return (
           <section className="divide-stroke divide-y" key={template.id}>
@@ -266,37 +279,45 @@ export function AgentsDashboard({ templates, teamSlug }: AgentsDashboardProps) {
                     <ExternalLinkIcon />
                   </Link>
                 </Button>
-                <Button asChild size="default" variant="secondary">
-                  <Link
-                    href={PROTECTED_URLS.SANDBOXES_LIST(teamSlug)}
-                    onClick={() => applySandboxHistoryFilter(template)}
-                  >
-                    <HistoryIcon />
-                    History
-                  </Link>
+                <Button
+                  size="default"
+                  variant="secondary"
+                  onClick={() =>
+                    setExpandedAgentId((currentAgentId) =>
+                      currentAgentId === template.id ? null : template.id
+                    )
+                  }
+                >
+                  <HistoryIcon />
+                  History
+                  {sessions.length > 0 ? (
+                    <span className="text-fg-tertiary">{sessions.length}</span>
+                  ) : null}
                 </Button>
               </div>
             </div>
 
-            {isPending ? (
-              <div className="prose-body text-fg-tertiary flex items-center gap-2 px-4 py-3">
-                <Loader size="sm" variant="slash" />
-                Loading sessions
-              </div>
-            ) : error ? (
-              <div className="prose-body text-accent-error-highlight px-4 py-3">
-                Failed to load sessions
-              </div>
-            ) : (
-              <AgentSessionList
-                onKilled={() => {
-                  void refetch()
-                }}
-                sessions={recentSessions}
-                teamSlug={teamSlug}
-                template={template}
-              />
-            )}
+            {isExpanded ? (
+              isPending ? (
+                <div className="prose-body text-fg-tertiary flex items-center gap-2 px-4 py-3">
+                  <Loader size="sm" variant="slash" />
+                  Loading sessions
+                </div>
+              ) : error ? (
+                <div className="prose-body text-accent-error-highlight px-4 py-3">
+                  Failed to load sessions
+                </div>
+              ) : (
+                <AgentSessionList
+                  onKilled={() => {
+                    void refetch()
+                  }}
+                  sessions={recentSessions}
+                  teamSlug={teamSlug}
+                  template={template}
+                />
+              )
+            ) : null}
           </section>
         )
       })}
