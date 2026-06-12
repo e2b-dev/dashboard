@@ -17,7 +17,7 @@ import {
 } from '@/lib/hooks/use-toast'
 import { formatDate } from '@/lib/utils/formatting'
 import { useTRPC } from '@/trpc/client'
-import { E2BLogo } from '@/ui/brand'
+import { E2BSquareBadge } from '@/ui/brand'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import { Badge } from '@/ui/primitives/badge'
 import { IconButton } from '@/ui/primitives/icon-button'
@@ -252,7 +252,7 @@ const AddedCell = ({
       </span>
       {addedBySystem ? (
         <div className="flex size-5 shrink-0 items-center justify-center">
-          <E2BLogo className="text-fg-tertiary size-5" />
+          <E2BSquareBadge />
         </div>
       ) : (
         <UserAvatar
