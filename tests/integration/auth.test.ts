@@ -515,8 +515,8 @@ describe('Auth Actions - Integration Tests', () => {
     /**
      * AUTHENTICATION TEST: the plain (non-auth()-wrapped) route handler clears
      * the session via the provider and redirects to the sign-in page. Running
-     * the cookie clear here — rather than inside the auth()-wrapped tRPC route —
-     * is what keeps the deletion from being clobbered by a re-issued JWT cookie.
+     * the cookie clear here — rather than inside an auth()-wrapped request — is
+     * what keeps the deletion from being clobbered by a re-issued JWT cookie.
      */
     it('clears the session and redirects to the sign-in page', async () => {
       mockSupabaseClient.auth.signOut.mockResolvedValue({ error: null })
