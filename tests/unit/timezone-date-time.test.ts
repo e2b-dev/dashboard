@@ -146,7 +146,7 @@ describe('timezone date-time helpers', () => {
       const result = formatDateRange(
         '2026-06-08T13:00:00.000Z',
         '2026-06-09T13:00:00.000Z',
-        { timezone: newYork, includeTime: true, includeTimezone: true }
+        { timezone: newYork, format: 'date-time-padded-hour' }
       )
 
       expect(result).toBe(
