@@ -3,9 +3,14 @@ import { l } from '@/core/shared/clients/logger/logger'
 import { ADDON_500_SANDBOXES_ID, TIER_BASE_ID, TIER_PRO_ID } from './constants'
 import type { BillingAddonData, BillingTierData } from './types'
 
+export function isEnterpriseTier(tierIdOrName: string): boolean {
+  return tierIdOrName.toLowerCase().includes('enterprise')
+}
+
 export function formatTierDisplayName(name: string): string {
   if (name.toLowerCase().includes('base')) return 'Hobby'
   if (name.toLowerCase().includes('pro')) return 'Professional'
+  if (isEnterpriseTier(name)) return 'Enterprise'
   return name
 }
 

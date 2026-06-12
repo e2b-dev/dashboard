@@ -27,7 +27,12 @@ import { useDashboard } from '../context'
 import { useBillingItems } from './hooks'
 import { TierAvatarBorder } from './tier-avatar-border'
 import type { BillingTierData } from './types'
-import { formatHours, formatMibToGb, formatTierDisplayName } from './utils'
+import {
+  formatHours,
+  formatMibToGb,
+  formatTierDisplayName,
+  isEnterpriseTier,
+} from './utils'
 
 function formatCpu(vcpu: number): string {
   return `${vcpu} vCPU`
@@ -88,6 +93,7 @@ function PlanDetails({
   isLoading,
 }: PlanDetailsProps) {
   const isBaseTier = !selectedTier || selectedTier.id.includes('base')
+  const isEnterprise = selectedTier ? isEnterpriseTier(selectedTier.id) : false
   const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/billing'>()
   const pathname = usePathname()
   const router = useRouter()
@@ -116,44 +122,50 @@ function PlanDetails({
   return (
     <div className="flex flex-col pt-2 pr-2 pb-1 w-full">
       <div className="flex items-start justify-between gap-4 max-lg:flex-col">
-        <PlanTitle selectedTier={selectedTier} isLoading={isLoading} />
+        <PlanTitle
+          selectedTier={selectedTier}
+          isLoading={isLoading}
+          isEnterprise={isEnterprise}
+        />
 
-        <div className="flex items-center gap-1 flex-wrap">
-          {isOnPlanPage ? (
-            <Button variant="secondary" asChild>
-              <Link href={PROTECTED_URLS.BILLING_PLAN_SELECT(teamSlug)}>
-                Change Plan
-              </Link>
-            </Button>
-          ) : isLoading ? (
-            <Skeleton className="h-8 w-36" />
-          ) : (
-            <>
-              {isBaseTier ? (
-                <Button asChild>
-                  <Link href={PROTECTED_URLS.BILLING_PLAN_SELECT(teamSlug)}>
-                    <UpgradeIcon className="size-4" />
-                    Upgrade for higher concurrency
-                  </Link>
-                </Button>
-              ) : (
-                <Button variant="secondary" asChild>
-                  <Link href={PROTECTED_URLS.BILLING_PLAN(teamSlug)}>
-                    Manage plan & add-ons
-                  </Link>
-                </Button>
-              )}
-              <Button
-                variant="secondary"
-                onClick={handleManagePayment}
-                loading={isPortalLoading ? 'Loading...' : undefined}
-                disabled={isPortalLoading}
-              >
-                Manage payment
+        {!isEnterprise && (
+          <div className="flex items-center gap-1 flex-wrap">
+            {isOnPlanPage ? (
+              <Button variant="secondary" asChild>
+                <Link href={PROTECTED_URLS.BILLING_PLAN_SELECT(teamSlug)}>
+                  Change Plan
+                </Link>
               </Button>
-            </>
-          )}
-        </div>
+            ) : isLoading ? (
+              <Skeleton className="h-8 w-36" />
+            ) : (
+              <>
+                {isBaseTier ? (
+                  <Button asChild>
+                    <Link href={PROTECTED_URLS.BILLING_PLAN_SELECT(teamSlug)}>
+                      <UpgradeIcon className="size-4" />
+                      Upgrade for higher concurrency
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button variant="secondary" asChild>
+                    <Link href={PROTECTED_URLS.BILLING_PLAN(teamSlug)}>
+                      Manage plan & add-ons
+                    </Link>
+                  </Button>
+                )}
+                <Button
+                  variant="secondary"
+                  onClick={handleManagePayment}
+                  loading={isPortalLoading ? 'Loading...' : undefined}
+                  disabled={isPortalLoading}
+                >
+                  Manage payment
+                </Button>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       <Separator className="my-4" />
@@ -166,9 +178,10 @@ function PlanDetails({
 interface PlanTitleProps {
   selectedTier: BillingTierData['selected']
   isLoading: boolean
+  isEnterprise?: boolean
 }
 
-function PlanTitle({ selectedTier, isLoading }: PlanTitleProps) {
+function PlanTitle({ selectedTier, isLoading, isEnterprise }: PlanTitleProps) {
   return (
     <div className="flex flex-col gap-2">
       <Label className="text-fg-tertiary prose-label">Plan</Label>
@@ -179,11 +192,13 @@ function PlanTitle({ selectedTier, isLoading }: PlanTitleProps) {
           <span className="prose-value-big uppercase text-fg">
             {selectedTier ? formatTierDisplayName(selectedTier.name) : null}
           </span>
-          <Badge className="uppercase translate-y-1">
-            {selectedTier?.price_cents
-              ? `${formatCurrency(selectedTier.price_cents / 100)}/mo`
-              : 'FREE'}
-          </Badge>
+          {!isEnterprise && (
+            <Badge className="uppercase translate-y-1">
+              {selectedTier?.price_cents
+                ? `${formatCurrency(selectedTier.price_cents / 100)}/mo`
+                : 'FREE'}
+            </Badge>
+          )}
         </div>
       )}
     </div>
