@@ -29,8 +29,8 @@ import {
   createLimitLine,
   createLiveIndicators,
   createSplitLineInterval,
+  createTimeAxisLabelFormatter,
   createYAxisLabelFormatter,
-  createZonedTimeAxisLabelFormatter,
   hasLiveData,
   transformMetrics,
 } from './utils'
@@ -178,10 +178,7 @@ function TeamMetricsChart({
 
   const xAxisLabelFormatter = useMemo(
     () =>
-      createZonedTimeAxisLabelFormatter(
-        timezone,
-        timeframe.end - timeframe.start
-      ),
+      createTimeAxisLabelFormatter(timezone, timeframe.end - timeframe.start),
     [timeframe.end, timeframe.start, timezone]
   )
 

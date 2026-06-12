@@ -18,7 +18,7 @@ const resolveTimeAxisLabelFormat = (rangeMs: number): DateFormatPreset => {
  * Picks an axis-label shape from the chart range and formats timestamps in the selected timezone.
  * e.g. 1h range -> '09:00', 7d range -> 'Jun 8', 2y range -> '2026'
  */
-export const createZonedTimeAxisLabelFormatter = (
+export const createTimeAxisLabelFormatter = (
   timezone: Timezone,
   rangeMs: number
 ): ((value: number) => string) => {
