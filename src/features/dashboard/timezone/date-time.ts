@@ -178,7 +178,7 @@ type StaticDateFormatPreset = keyof typeof DATE_FORMAT_PRESETS
 // Special presets resolved outside DATE_FORMAT_PRESETS:
 // compact-timestamp: Jun 8, 9:05:12 AM EDT (current year) / 2025 Jun 8, 9:05:12 AM EST
 // time-with-centiseconds: 09:05:09.87 AM
-type DateFormatPreset =
+type DateFormat =
   | StaticDateFormatPreset
   | 'compact-timestamp'
   | 'time-with-centiseconds'
@@ -205,7 +205,7 @@ const resolveDateFormatPreset = (
 
 interface FormatDateOptions {
   timezone: Timezone
-  format?: DateFormatPreset
+  format?: DateFormat
 }
 
 const formatTimeWithCentiseconds = (
@@ -238,10 +238,10 @@ const formatDate = (
 
 interface FormatDateRangeOptions {
   timezone: Timezone
-  format?: DateFormatPreset
+  format?: DateFormat
 }
 
-const TIMEZONE_INCLUSIVE_DATE_FORMAT_PRESETS: ReadonlySet<DateFormatPreset> =
+const TIMEZONE_INCLUSIVE_DATE_FORMAT_PRESETS: ReadonlySet<DateFormat> =
   new Set(['compact-timestamp', 'exact-timestamp'])
 
 const formatDateRange = (
@@ -400,7 +400,7 @@ export {
   zonedInstantToCalendarDate,
 }
 export type {
-  DateFormatPreset,
+  DateFormat,
   DatePartsFormatPreset,
   DateTimeParts,
   FormatDateOptions,
