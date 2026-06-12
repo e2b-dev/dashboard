@@ -61,7 +61,6 @@ export const useColumns = (deps: unknown[]) => {
         size: 64,
         enableResizing: false,
         cell: CpuCell,
-        filterFn: 'equals',
         enableSorting: false,
       },
       {
@@ -70,7 +69,6 @@ export const useColumns = (deps: unknown[]) => {
         size: 80,
         enableResizing: false,
         cell: MemoryCell,
-        filterFn: 'equals',
         enableSorting: false,
       },
       {

@@ -55,7 +55,7 @@ export default function TemplatesTable() {
 
   const { sorting, setSorting, globalFilter, setGlobalFilter } =
     useTemplateTableStore()
-  const { cpuCount, memoryMB, isPublic } = useTemplateTableStore()
+  const { isPublic } = useTemplateTableStore()
 
   // Persisted state (URL hash) may still reference columns that are no longer sortable.
   const activeSorting = useMemo(
@@ -85,8 +85,6 @@ export default function TemplatesTable() {
       {
         teamSlug,
         limit: TEMPLATES_PAGE_SIZE,
-        cpuCount,
-        memoryMB,
         public: isPublic,
         search: globalFilter || undefined,
         sort,
@@ -107,8 +105,6 @@ export default function TemplatesTable() {
   const { isRefetching, clearRefetching } = useTemplatesRefetchTracking(
     sort,
     globalFilter,
-    cpuCount,
-    memoryMB,
     isPublic
   )
 
@@ -155,7 +151,7 @@ export default function TemplatesTable() {
       scrollRef.current.scrollTop = 0
       scrollRef.current.scrollLeft = 0
     }
-  }, [sort, globalFilter, cpuCount, memoryMB, isPublic])
+  }, [sort, globalFilter, isPublic])
 
   if (templatesError) {
     return (
@@ -243,8 +239,6 @@ export default function TemplatesTable() {
 function useTemplatesRefetchTracking(
   sort: string,
   globalFilter: string,
-  cpuCount: number | undefined,
-  memoryMB: number | undefined,
   isPublic: boolean | undefined
 ) {
   const [isRefetching, setIsRefetching] = useState(false)
@@ -257,7 +251,7 @@ function useTemplatesRefetchTracking(
       return
     }
     setIsRefetching(true)
-  }, [sort, globalFilter, cpuCount, memoryMB, isPublic])
+  }, [sort, globalFilter, isPublic])
 
   const clearRefetching = useCallback(() => setIsRefetching(false), [])
 

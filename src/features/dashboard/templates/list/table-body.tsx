@@ -35,8 +35,7 @@ export function TemplatesTableBody({
 }: TemplatesTableBodyProps) {
   'use no memo'
 
-  const { resetFilters, globalFilter, cpuCount, memoryMB, isPublic } =
-    useTemplateTableStore()
+  const { resetFilters, globalFilter, isPublic } = useTemplateTableStore()
 
   const centerRows = table.getCenterRows()
   const {
@@ -57,11 +56,7 @@ export function TemplatesTableBody({
 
   const isEmpty = templates && centerRows.length === 0
 
-  const hasFilter =
-    Boolean(globalFilter) ||
-    cpuCount !== undefined ||
-    memoryMB !== undefined ||
-    isPublic !== undefined
+  const hasFilter = Boolean(globalFilter) || isPublic !== undefined
 
   if (isEmpty) {
     if (hasFilter) {

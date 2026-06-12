@@ -12,12 +12,8 @@ interface TemplatesHeaderProps {
 export default function TemplatesHeader({ table }: TemplatesHeaderProps) {
   'use no memo'
 
-  const { globalFilter, cpuCount, memoryMB, isPublic } = useTemplateTableStore()
-  const isFiltered =
-    Boolean(globalFilter) ||
-    cpuCount !== undefined ||
-    memoryMB !== undefined ||
-    isPublic !== undefined
+  const { globalFilter, isPublic } = useTemplateTableStore()
+  const isFiltered = Boolean(globalFilter) || isPublic !== undefined
 
   // With server-side pagination we only know how many rows are currently
   // loaded, not the grand total.

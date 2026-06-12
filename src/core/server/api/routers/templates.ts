@@ -41,8 +41,6 @@ export const templatesRouter = createTRPCRouter({
       z.object({
         cursor: z.string().optional(),
         limit: z.number().int().min(1).max(100).default(50),
-        cpuCount: z.number().int().positive().optional(),
-        memoryMB: z.number().int().positive().optional(),
         public: z.boolean().optional(),
         search: z.string().optional(),
         sort: z
@@ -61,8 +59,6 @@ export const templatesRouter = createTRPCRouter({
       const result = await ctx.templatesRepository.listTeamTemplates({
         cursor: input.cursor,
         limit: input.limit,
-        cpuCount: input.cpuCount,
-        memoryMB: input.memoryMB,
         public: input.public,
         search: input.search,
         sort: input.sort,

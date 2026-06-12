@@ -767,10 +767,6 @@ export interface paths {
     get: {
       parameters: {
         query?: {
-          /** @description Filter templates by exact vCPU count. */
-          cpuCount?: components['parameters']['templates_cpu_count']
-          /** @description Filter templates by exact memory size in MB. */
-          memoryMB?: components['parameters']['templates_memory_mb']
           /** @description Filter templates by visibility (true = public, false = internal). */
           public?: components['parameters']['templates_public']
           /** @description Case-insensitive substring match on template names, aliases, and template id. */
@@ -1232,10 +1228,6 @@ export interface components {
     templates_limit: number
     /** @description Cursor returned by the previous list response in `{sort}|{value}|{templateID}` format. Rejected if its sort does not match the request. */
     templates_cursor: string
-    /** @description Filter templates by exact vCPU count. */
-    templates_cpu_count: number
-    /** @description Filter templates by exact memory size in MB. */
-    templates_memory_mb: number
     /** @description Filter templates by visibility (true = public, false = internal). */
     templates_public: boolean
     /** @description Case-insensitive substring match on template names, aliases, and template id. */
