@@ -69,11 +69,3 @@ export const SANDBOX_LIFECYCLE_EVENT_CREATED = 'sandbox.lifecycle.created'
 export const SANDBOX_LIFECYCLE_EVENT_PAUSED = 'sandbox.lifecycle.paused'
 export const SANDBOX_LIFECYCLE_EVENT_RESUMED = 'sandbox.lifecycle.resumed'
 export const SANDBOX_LIFECYCLE_EVENT_KILLED = 'sandbox.lifecycle.killed'
-
-export const SANDBOX_MONITORING_TIME_LABEL_FORMAT_OPTIONS: Intl.DateTimeFormatOptions =
-  {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  }

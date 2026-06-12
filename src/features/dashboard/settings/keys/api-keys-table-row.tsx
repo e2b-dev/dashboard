@@ -4,11 +4,7 @@ import { usePostHog } from 'posthog-js/react'
 import { CLI_GENERATED_KEY_NAME } from '@/configs/api'
 import type { TeamAPIKey } from '@/core/modules/keys/models'
 import { IdBadge, UserAvatar } from '@/features/dashboard/shared'
-import {
-  formatDate,
-  formatZonedExactTimestamp,
-  useTimezone,
-} from '@/features/dashboard/timezone'
+import { formatDate, useTimezone } from '@/features/dashboard/timezone'
 import { defaultSuccessToast, useToast } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { E2BLogo } from '@/ui/brand'
@@ -83,7 +79,10 @@ export const ApiKeysTableRow = ({ apiKey, onDelete }: ApiKeysTableRowProps) => {
               <span className="cursor-default">{lastUsedLabel}</span>
             </TooltipTrigger>
             <TooltipContent side="top" className="font-mono text-xs">
-              {formatZonedExactTimestamp(lastUsedAt, timezone)}
+              {formatDate(lastUsedAt, {
+                timezone,
+                format: 'exact-timestamp',
+              })}
             </TooltipContent>
           </Tooltip>
         ) : (

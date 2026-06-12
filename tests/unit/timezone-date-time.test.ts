@@ -7,7 +7,6 @@ import {
   formatTimezoneAbbreviation,
   formatZonedDateRange,
   formatZonedDateTimeInput,
-  formatZonedExactTimestamp,
   formatZonedTimeAxisLabel,
   getRelativeDay,
   zonedDateTimePartsToUtcDate,
@@ -203,14 +202,21 @@ describe('timezone date-time helpers', () => {
         })
       ).toBe('9:05:09 AM')
     })
-  })
 
-  describe('formatZonedExactTimestamp', () => {
+    it('formats 24-hour time labels in the selected timezone', () => {
+      expect(
+        formatDate('2026-06-08T13:05:09.000Z', {
+          timezone: newYork,
+          format: 'time-24h',
+        })
+      ).toBe('09:05:09')
+    })
+
     it('formats exact tooltip timestamps in the selected timezone', () => {
-      const result = formatZonedExactTimestamp(
-        '2026-06-08T13:00:00.000Z',
-        newYork
-      )
+      const result = formatDate('2026-06-08T13:00:00.000Z', {
+        timezone: newYork,
+        format: 'exact-timestamp',
+      })
 
       expect(result).toContain('2026-06-08')
       expect(result).toContain('09:00:00')

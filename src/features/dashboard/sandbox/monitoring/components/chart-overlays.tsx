@@ -1,4 +1,4 @@
-import type { Timezone } from '@/features/dashboard/timezone'
+import { formatDate, type Timezone } from '@/features/dashboard/timezone'
 import { cn } from '@/lib/utils'
 import {
   AddIcon,
@@ -22,8 +22,6 @@ import {
 const EVENT_LINE_BASE_OPACITY = 0.35
 const MARKER_BG_OPACITY = 0.1
 const MARKER_BORDER_OPACITY = 0.12
-
-import { formatHoverTimestamp } from '../utils/formatters'
 
 const SANDBOX_LIFECYCLE_EVENT_ICON_MAP: Record<string, typeof AddIcon> = {
   [SANDBOX_LIFECYCLE_EVENT_CREATED]: AddIcon,
@@ -117,10 +115,10 @@ function LifecycleEventOverlayGroup({
                         {eventOverlay.label}
                       </span>
                       <span className="prose-label-numeric font-mono text-current/60">
-                        {formatHoverTimestamp(
-                          eventOverlay.timestampMs,
-                          timezone
-                        )}
+                        {formatDate(eventOverlay.timestampMs, {
+                          timezone,
+                          format: 'time-24h',
+                        })}
                       </span>
                     </div>
                   </div>

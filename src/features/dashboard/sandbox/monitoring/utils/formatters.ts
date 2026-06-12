@@ -1,18 +1,4 @@
-import type { Timezone } from '@/features/dashboard/timezone'
-import {
-  SANDBOX_MONITORING_PERCENT_MAX,
-  SANDBOX_MONITORING_TIME_LABEL_FORMAT_OPTIONS,
-} from './constants'
-
-export function formatHoverTimestamp(
-  timestampMs: number,
-  timezone: Timezone
-): string {
-  return new Intl.DateTimeFormat(undefined, {
-    ...SANDBOX_MONITORING_TIME_LABEL_FORMAT_OPTIONS,
-    timeZone: timezone,
-  }).format(new Date(timestampMs))
-}
+import { SANDBOX_MONITORING_PERCENT_MAX } from './constants'
 
 export function clampPercent(value: number): number {
   if (!Number.isFinite(value)) {
