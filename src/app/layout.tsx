@@ -11,8 +11,8 @@ import {
   FAVICON_SIZE,
   getFaviconHref,
 } from '@/configs/favicon'
+import { isOryAuthEnabled } from '@/configs/flags'
 import ClientProviders from '@/features/client-providers'
-import { GeneralAnalyticsCollector } from '@/features/general-analytics-collector'
 import { GTMHead } from '@/features/google-tag-manager'
 import { Toaster } from '@/ui/primitives/toaster'
 import { Body } from './body'
@@ -34,16 +34,18 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const postHogEnabled =
+    isOryAuthEnabled() && !!process.env.NEXT_PUBLIC_POSTHOG_KEY
+
   return (
     <html lang="en" suppressHydrationWarning>
       <Head>
         <GTMHead />
       </Head>
       <Body>
-        <ClientProviders>
+        <ClientProviders postHogEnabled={postHogEnabled}>
           {children}
           <Suspense>
-            <GeneralAnalyticsCollector />
             <Toaster />
           </Suspense>
         </ClientProviders>

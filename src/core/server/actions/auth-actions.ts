@@ -236,10 +236,6 @@ export const signUpAction = actionClient
         throw new Error('Origin not found')
       }
 
-      const userAgent = headerStore.get('user-agent') ?? undefined
-      const ip =
-        headerStore.get('x-forwarded-for')?.split(',')[0]?.trim() ?? undefined
-
       if (isGoogleEmail(email)) {
         return returnServerError(USER_MESSAGES.signUpGoogleEmail.message)
       }
@@ -267,7 +263,7 @@ export const signUpAction = actionClient
         }
       }
 
-      const { data: signUpData, error } = await supabaseAuthFlows.signUp({
+      const { error } = await supabaseAuthFlows.signUp({
         email,
         password,
         emailRedirectTo: `${origin}${AUTH_URLS.CALLBACK}${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`,
@@ -284,26 +280,6 @@ export const signUpAction = actionClient
             return returnServerError(USER_MESSAGES.passwordWeak.message)
           default:
             throw error
-        }
-      }
-
-      if (
-        signUpData.user &&
-        signUpData.user.identities?.length !== 0 &&
-        (ip || userAgent)
-      ) {
-        try {
-          await supabaseAuthFlows.updateUserById(signUpData.user.id, {
-            app_metadata: {
-              signup_ip: ip,
-              signup_user_agent: userAgent,
-            },
-          })
-        } catch (metaError) {
-          l.error(
-            { key: 'sign_up_action:metadata_update_error', error: metaError },
-            'sign_up_action: failed to write signup metadata to app_metadata'
-          )
         }
       }
     }
@@ -407,6 +383,13 @@ export const forgotPasswordAction = actionClient
       throw error
     }
   })
+
+export async function signOutAction(returnTo?: string) {
+  const origin = (await headers()).get('origin') ?? undefined
+  const { redirectTo } = await auth.signOut({ origin, returnTo })
+
+  throw redirect(redirectTo)
+}
 
 // Drives the account-settings re-authentication step and returns the URL the
 // client should HARD-navigate to. Supabase signs the user out and bounces

@@ -10,13 +10,17 @@ import { PostHogProvider } from './posthog-provider'
 
 interface ClientProvidersProps {
   children: React.ReactNode
+  postHogEnabled: boolean
 }
 
-export default function ClientProviders({ children }: ClientProvidersProps) {
+export default function ClientProviders({
+  children,
+  postHogEnabled,
+}: ClientProvidersProps) {
   return (
     <TRPCReactProvider>
       <NuqsAdapter>
-        <PostHogProvider>
+        <PostHogProvider enabled={postHogEnabled}>
           <ThemeProvider
             attribute="class"
             defaultTheme="system"

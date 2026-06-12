@@ -3,6 +3,7 @@ import { PostHogProvider as PHProvider } from 'posthog-js/react'
 import { createContext, useContext, useEffect, useState } from 'react'
 
 interface AppPostHogContextValue {
+  enabled: boolean
   isInitialized: boolean
   dashboardFeedbackSurvey: Survey | null
 }
@@ -23,13 +24,19 @@ export function useAppPostHogProvider() {
   return ctx
 }
 
-export function PostHogProvider({ children }: { children: React.ReactNode }) {
+export function PostHogProvider({
+  children,
+  enabled,
+}: {
+  children: React.ReactNode
+  enabled: boolean
+}) {
   const [dashboardFeedbackSurvey, setDashboardFeedbackSurvey] =
     useState<Survey | null>(null)
   const [isInitialized, setIsInitialized] = useState(false)
 
   useEffect(() => {
-    if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) {
+    if (!enabled || !process.env.NEXT_PUBLIC_POSTHOG_KEY) {
       return
     }
 
@@ -60,11 +67,11 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       }
       setIsInitialized(true)
     })
-  }, [])
+  }, [enabled])
 
   return (
     <AppPostHogContext.Provider
-      value={{ dashboardFeedbackSurvey, isInitialized }}
+      value={{ enabled, dashboardFeedbackSurvey, isInitialized }}
     >
       <PHProvider client={posthog}>{children}</PHProvider>
     </AppPostHogContext.Provider>
