@@ -48,11 +48,14 @@ export default function TemplatesTable() {
   )
 
   const { data: defaultTemplatesData } = useSuspenseQuery(
-    trpc.templates.getDefaultTemplatesCached.queryOptions(undefined, {
-      refetchOnMount: false,
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: false,
-    })
+    trpc.templates.getDefaultTemplatesCached.queryOptions(
+      { teamSlug },
+      {
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
+      }
+    )
   )
 
   const templates = useMemo(

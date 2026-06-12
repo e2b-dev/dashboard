@@ -5,18 +5,12 @@ import {
   createTemplatesRepository,
 } from '@/core/modules/templates/repository.server'
 import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/errors'
-import {
-  withAuthedRequestRepository,
-  withTeamAuthedRequestRepository,
-} from '@/core/server/api/middlewares/repository'
+import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
 import { createTRPCRouter } from '@/core/server/trpc/init'
-import {
-  protectedProcedure,
-  protectedTeamProcedure,
-} from '@/core/server/trpc/procedures'
+import { protectedTeamProcedure } from '@/core/server/trpc/procedures'
 
-const templatesRepositoryProcedure = protectedProcedure.use(
-  withAuthedRequestRepository(
+const templatesRepositoryProcedure = protectedTeamProcedure.use(
+  withTeamAuthedRequestRepository(
     createDefaultTemplatesRepository,
     (templatesRepository) => ({
       templatesRepository,

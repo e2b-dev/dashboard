@@ -222,6 +222,7 @@ async function isTerminalTemplateAvailable({
 
   const defaultTemplatesRepository = createDefaultTemplatesRepository({
     accessToken,
+    teamId,
   })
   const teamTemplatesRepository = createTemplatesRepository({
     accessToken,
