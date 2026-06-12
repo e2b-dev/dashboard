@@ -1,5 +1,6 @@
+import { TRPCError } from '@trpc/server'
 import { millisecondsInDay } from 'date-fns/constants'
-import { Sandbox } from 'e2b'
+import { Sandbox, TimeoutError } from 'e2b'
 import { z } from 'zod'
 import { authHeaders } from '@/configs/api'
 import {
@@ -18,7 +19,11 @@ import { createTRPCRouter } from '@/core/server/trpc/init'
 import { protectedTeamProcedure } from '@/core/server/trpc/procedures'
 import { SandboxIdSchema } from '@/core/shared/schemas/api'
 import { SANDBOX_MONITORING_METRICS_RETENTION_MS } from '@/features/dashboard/sandbox/monitoring/utils/constants'
-import { TERMINAL_SANDBOX_TIMEOUT_MS } from '@/features/dashboard/terminal/constants'
+import {
+  TERMINAL_SANDBOX_TIMEOUT_ERROR,
+  TERMINAL_SANDBOX_TIMEOUT_MS,
+} from '@/features/dashboard/terminal/constants'
+import { normalizeTerminalTemplate } from '@/features/dashboard/terminal/template'
 
 const sandboxRepositoryProcedure = protectedTeamProcedure.use(
   withTeamAuthedRequestRepository(
@@ -208,6 +213,101 @@ export const sandboxRouter = createTRPCRouter({
     }),
 
   // MUTATIONS
+
+  // Runs the control-plane create/connect server-side so the user's
+  // account-level access token never reaches the browser. Returns only the
+  // sandbox-scoped envd credentials the client needs for PTY access.
+  openTerminal: protectedTeamProcedure
+    .input(
+      z.object({
+        template: z.string().min(1, 'Template is required'),
+        sandboxId: SandboxIdSchema.optional(),
+        requestTimeoutMs: z.number().int().positive().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { sandboxId, template, requestTimeoutMs } = input
+      const { session, teamId } = ctx
+
+      const normalizedTemplate = normalizeTerminalTemplate(template)
+      if (!normalizedTemplate) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Invalid terminal template',
+        })
+      }
+
+      const connectionOpts = {
+        apiUrl: process.env.NEXT_PUBLIC_INFRA_API_URL,
+        domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
+        sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
+        headers: authHeaders(session.access_token, teamId),
+      }
+
+      let resolvedSandboxId: string
+      try {
+        if (sandboxId) {
+          const sandbox = await Sandbox.connect(sandboxId, {
+            ...connectionOpts,
+            timeoutMs: TERMINAL_SANDBOX_TIMEOUT_MS,
+            requestTimeoutMs,
+          })
+          resolvedSandboxId = sandbox.sandboxId
+        } else {
+          const sandbox = await Sandbox.create(normalizedTemplate, {
+            ...connectionOpts,
+            timeoutMs: TERMINAL_SANDBOX_TIMEOUT_MS,
+            lifecycle: {
+              onTimeout: 'pause',
+              autoResume: true,
+            },
+            metadata: {
+              source: 'dashboard-terminal',
+              template: normalizedTemplate,
+              userId: session.user.id,
+            },
+          })
+          resolvedSandboxId = sandbox.sandboxId
+        }
+      } catch (error) {
+        // Surface timeouts with a stable sentinel so the client can rethrow a
+        // TimeoutError and let the attach-retry logic recognize them.
+        if (error instanceof TimeoutError) {
+          throw new TRPCError({
+            code: 'TIMEOUT',
+            message: TERMINAL_SANDBOX_TIMEOUT_ERROR,
+            cause: error,
+          })
+        }
+
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: sandboxId
+            ? 'Failed to connect to terminal sandbox'
+            : 'Failed to create terminal sandbox',
+          cause: error,
+        })
+      }
+
+      // `Sandbox.create`/`connect` build a full SDK instance but only expose
+      // the sandbox id/domain publicly; fetch the envd credentials via the
+      // public info endpoint rather than reading the SDK's internal fields.
+      const info = await Sandbox.getFullInfo(resolvedSandboxId, connectionOpts)
+
+      if (!info.envdAccessToken) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Sandbox is not ready for terminal access',
+        })
+      }
+
+      return {
+        sandboxId: resolvedSandboxId,
+        sandboxDomain: info.sandboxDomain,
+        envdVersion: info.envdVersion,
+        envdAccessToken: info.envdAccessToken,
+      }
+    }),
 
   killTerminalPty: protectedTeamProcedure
     .input(

@@ -2,7 +2,7 @@
 
 import { type CommandHandle, type Sandbox, TimeoutError } from 'e2b'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { SandboxManagementAuth } from '@/core/shared/sandbox-management-auth'
+import { useTRPCClient } from '@/trpc/client'
 import { attachTerminalWithRetry } from './attach-terminal'
 import {
   DEFAULT_CWD,
@@ -38,9 +38,9 @@ interface DashboardTerminalProps {
   launchTarget?: TerminalLaunchTarget
   onSandboxAttached?: (sandboxId: string) => void
   onSandboxAttachFailed?: (target: TerminalLaunchTarget | undefined) => void
-  sandboxManagementAuth: SandboxManagementAuth
   sandboxScoped?: boolean
   teamSlug: string
+  userId: string
 }
 
 export default function DashboardTerminal({
@@ -49,10 +49,12 @@ export default function DashboardTerminal({
   launchTarget,
   onSandboxAttached,
   onSandboxAttachFailed,
-  sandboxManagementAuth,
   sandboxScoped = false,
   teamSlug,
+  userId,
 }: DashboardTerminalProps) {
+  const trpcClient = useTRPCClient()
+
   const [status, setStatus] = useState<TerminalStatus>('idle')
   const [activeSandboxId, setActiveSandboxId] = useState<string>()
   const [template, setTemplate] = useState(
@@ -333,11 +335,14 @@ export default function DashboardTerminal({
         const terminalSandbox = await openTerminalSandbox({
           forceNewSandbox: options.forceNewSandbox,
           onStatus: appendOutput,
+          openTerminal: (mutationInput) =>
+            trpcClient.sandbox.openTerminal.mutate(mutationInput),
           requestTimeoutMs: requestedSandboxId
             ? TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS
             : undefined,
-          sandboxManagementAuth,
           shouldStoreSession: !sandboxScoped,
+          teamSlug,
+          userId,
           sandboxId: requestedSandboxId,
           template: nextTemplate,
         })
@@ -435,12 +440,14 @@ export default function DashboardTerminal({
       focusTerminal,
       getSandbox,
       runCommand,
-      sandboxManagementAuth,
+      teamSlug,
+      trpcClient,
       sandboxScoped,
       template,
       onSandboxAttached,
       onSandboxAttachFailed,
       updateTerminalUrl,
+      userId,
       waitForAttachRetry,
     ]
   )

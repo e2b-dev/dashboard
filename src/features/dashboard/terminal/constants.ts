@@ -10,3 +10,7 @@ export const TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS = 15_000
 export const TERMINAL_ATTACH_MAX_RETRIES = 3
 export const TERMINAL_ATTACH_RETRY_BASE_DELAY_MS = 1500
 export const TERMINAL_ATTACH_RETRY_MAX_DELAY_MS = 5000
+// Sentinel error message returned by the sandbox.openTerminal tRPC mutation
+// when the server-side control-plane connect times out, so the client can
+// rethrow a TimeoutError and let the attach-retry logic recognize it.
+export const TERMINAL_SANDBOX_TIMEOUT_ERROR = 'terminal-sandbox-timeout'
