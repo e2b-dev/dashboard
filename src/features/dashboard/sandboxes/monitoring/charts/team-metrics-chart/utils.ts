@@ -1,6 +1,31 @@
 import type { ClientTeamMetric } from '@/core/modules/sandboxes/models.client'
+import {
+  type DateFormatPreset,
+  formatDate,
+  type Timezone,
+} from '@/features/dashboard/timezone'
 import { formatAxisNumber } from '@/lib/utils/formatting'
 import type { TeamMetricDataPoint } from './types'
+
+const resolveTimeAxisLabelFormat = (rangeMs: number): DateFormatPreset => {
+  if (rangeMs > 365 * 24 * 60 * 60 * 1000) return 'year'
+  if (rangeMs > 2 * 24 * 60 * 60 * 1000) return 'month-day'
+
+  return 'time-24h-no-seconds'
+}
+
+/**
+ * Picks an axis-label shape from the chart range and formats timestamps in the selected timezone.
+ * e.g. 1h range -> '09:00', 7d range -> 'Jun 8', 2y range -> '2026'
+ */
+export const createZonedTimeAxisLabelFormatter = (
+  timezone: Timezone,
+  rangeMs: number
+): ((value: number) => string) => {
+  const format = resolveTimeAxisLabelFormat(rangeMs)
+
+  return (value: number) => formatDate(value, { timezone, format }) ?? ''
+}
 
 /**
  * Transform metrics array to chart data points
