@@ -1,7 +1,4 @@
-import {
-  formatZonedTimeAxisLabel,
-  type Timezone,
-} from '@/features/dashboard/timezone'
+import { formatDate, type Timezone } from '@/features/dashboard/timezone'
 import type { SandboxMetricsDataPoint } from '../types/sandbox-metrics-chart'
 
 export function toNumericValue(value: unknown): number {
@@ -22,7 +19,12 @@ export function formatXAxisLabel(
   includeSeconds: boolean = false
 ): string {
   const timestamp = Number(value)
-  return formatZonedTimeAxisLabel(timestamp, timezone, includeSeconds)
+  return (
+    formatDate(timestamp, {
+      timezone,
+      format: includeSeconds ? 'time-24h' : 'time-24h-no-seconds',
+    }) ?? ''
+  )
 }
 
 export function findLivePoint(

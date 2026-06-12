@@ -199,6 +199,8 @@ const DATE_FORMAT_PRESETS = {
   date: 'MMM d, yyyy',
   // 9:05:12 AM
   time: 'h:mm:ss a',
+  // 09:05
+  'time-24h-no-seconds': 'HH:mm',
   // 09:05:12
   'time-24h': 'HH:mm:ss',
   // 2026-06-08 09:05:12 EDT
@@ -233,20 +235,6 @@ const resolveDateFormatPreset = (
   }
 
   return DATE_FORMAT_PRESETS[preset]
-}
-
-const formatZonedTimeAxisLabel = (
-  timestamp: number,
-  timezone: Timezone,
-  includeSeconds = false
-): string => {
-  if (Number.isNaN(timestamp)) return ''
-
-  return formatInTimeZone(
-    timestamp,
-    timezone,
-    includeSeconds ? 'HH:mm:ss' : 'HH:mm'
-  )
 }
 
 const createZonedTimeAxisLabelFormatter = (
@@ -430,7 +418,6 @@ export {
   formatZonedDateRange,
   formatZonedDateTimeInput,
   getRelativeDay,
-  formatZonedTimeAxisLabel,
   getZonedDateParts,
   getZonedDateTimeParts,
   shiftCalendarDays,
