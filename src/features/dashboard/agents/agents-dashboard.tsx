@@ -8,7 +8,10 @@ import { toast } from 'sonner'
 import type { AgentTemplateConfig } from '@/configs/agents'
 import { PROTECTED_URLS } from '@/configs/urls'
 import type { Sandbox } from '@/core/modules/sandboxes/models'
-import { killSandboxAction } from '@/core/server/actions/sandbox-actions'
+import {
+  killSandboxAction,
+  pauseSandboxAction,
+} from '@/core/server/actions/sandbox-actions'
 import { useSandboxListTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
 import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
 import { useTRPC } from '@/trpc/client'
@@ -18,6 +21,7 @@ import { Button } from '@/ui/primitives/button'
 import {
   ExternalLinkIcon,
   HistoryIcon,
+  PausedIcon,
   RemoveIcon,
 } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
@@ -143,13 +147,50 @@ function KillAgentSandboxButton({
   )
 }
 
+function PauseAgentSandboxButton({
+  sandboxId,
+  teamSlug,
+  onPaused,
+}: {
+  sandboxId: string
+  teamSlug: string
+  onPaused: () => void
+}) {
+  const { execute, isExecuting } = useAction(pauseSandboxAction, {
+    onSuccess: () => {
+      toast.success('Sandbox paused successfully')
+      onPaused()
+    },
+    onError: ({ error }) => {
+      toast.error(
+        error.serverError || 'Failed to pause sandbox. Please try again.'
+      )
+    },
+  })
+
+  return (
+    <Button
+      disabled={isExecuting}
+      loading={isExecuting ? 'Pausing...' : undefined}
+      size="none"
+      variant="tertiary"
+      onClick={() => execute({ teamSlug, sandboxId })}
+    >
+      <PausedIcon />
+      Pause
+    </Button>
+  )
+}
+
 function AgentSessionList({
   onKilled,
+  onPaused,
   sessions,
   teamSlug,
   template,
 }: {
   onKilled: () => void
+  onPaused: () => void
   sessions: Sandbox[]
   teamSlug: string
   template: AgentTemplateConfig
@@ -187,6 +228,13 @@ function AgentSessionList({
                   <ExternalLinkIcon />
                 </Link>
               </Button>
+              {sandbox.state === 'running' ? (
+                <PauseAgentSandboxButton
+                  onPaused={onPaused}
+                  sandboxId={sandbox.sandboxID}
+                  teamSlug={teamSlug}
+                />
+              ) : null}
               <KillAgentSandboxButton
                 onKilled={onKilled}
                 sandboxId={sandbox.sandboxID}
@@ -310,6 +358,9 @@ export function AgentsDashboard({ templates, teamSlug }: AgentsDashboardProps) {
               ) : (
                 <AgentSessionList
                   onKilled={() => {
+                    void refetch()
+                  }}
+                  onPaused={() => {
                     void refetch()
                   }}
                   sessions={recentSessions}
