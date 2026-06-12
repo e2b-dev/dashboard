@@ -17,18 +17,6 @@ describe('environment favicon', () => {
         sizes: '32x32',
         media: '(prefers-color-scheme: dark)',
       },
-      {
-        url: '/favicon.svg',
-        type: 'image/svg+xml',
-        sizes: 'any',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/favicon-dark.svg',
-        type: 'image/svg+xml',
-        sizes: 'any',
-        media: '(prefers-color-scheme: dark)',
-      },
     ])
   })
 
@@ -36,7 +24,6 @@ describe('environment favicon', () => {
     expect(getFaviconEnvironment('preview')).toBe('preview')
     expect(getFaviconIcons('preview')).toEqual([
       { url: '/favicon-preview.ico', type: 'image/x-icon', sizes: '32x32' },
-      { url: '/favicon-preview.svg', type: 'image/svg+xml', sizes: 'any' },
     ])
   })
 
@@ -44,7 +31,6 @@ describe('environment favicon', () => {
     expect(getFaviconEnvironment('development')).toBe('development')
     expect(getFaviconIcons('development')).toEqual([
       { url: '/favicon-development.ico', type: 'image/x-icon', sizes: '32x32' },
-      { url: '/favicon-development.svg', type: 'image/svg+xml', sizes: 'any' },
     ])
   })
 
