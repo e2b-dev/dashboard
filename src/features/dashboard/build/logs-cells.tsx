@@ -1,13 +1,11 @@
-import { format } from 'date-fns'
-import { enUS } from 'date-fns/locale/en-US'
 import type { BuildLogModel } from '@/core/modules/builds/models'
 import {
   LogLevelBadge,
   LogMessage,
 } from '@/features/dashboard/common/log-cells'
+import { formatDate, useTimezone } from '@/features/dashboard/timezone'
 import { formatDurationCompact } from '@/lib/utils/formatting'
 import CopyButtonInline from '@/ui/copy-button-inline'
-import { Badge, type BadgeProps } from '@/ui/primitives/badge'
 
 export const LogLevel = ({ level }: { level: BuildLogModel['level'] }) => {
   return <LogLevelBadge level={level} />
@@ -22,6 +20,7 @@ export const Timestamp = ({
   timestampUnix,
   millisAfterStart,
 }: TimestampProps) => {
+  const { timezone } = useTimezone()
   const date = new Date(timestampUnix)
 
   return (
@@ -31,8 +30,9 @@ export const Timestamp = ({
     >
       {formatDurationCompact(millisAfterStart, true)}{' '}
       <span className="group-hover:text-current transition-colors text-fg-tertiary">
-        {format(date, 'hh:mm:ss.SS a', {
-          locale: enUS,
+        {formatDate(timestampUnix, {
+          timezone,
+          format: 'time-with-centiseconds',
         })}
       </span>
     </CopyButtonInline>

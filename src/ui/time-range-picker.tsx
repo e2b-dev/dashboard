@@ -1,12 +1,15 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { endOfDay, startOfDay } from 'date-fns'
 import { useCallback, useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 
+import {
+  formatDateTimeInput,
+  instantToCalendarDate,
+  useTimezone,
+} from '@/features/dashboard/timezone'
 import { cn } from '@/lib/utils'
-import { parseDateTimeComponents } from '@/lib/utils/formatting'
 
 import { Button } from './primitives/button'
 import {
@@ -21,17 +24,24 @@ import { TimeInput } from './time-input'
 import {
   createTimeRangeSchema,
   normalizeTimeRangeValues,
+  parseTimeRangeValuesToTimestamps,
   type TimeRangePickerBounds,
   type TimeRangeValues,
 } from './time-range-picker.logic'
 
 export type { TimeRangeValues } from './time-range-picker.logic'
 
+export interface TimeRangeApplyResult {
+  values: TimeRangeValues
+  start: number
+  end: number
+}
+
 interface TimeRangePickerProps {
   startDateTime: string
   endDateTime: string
   bounds?: TimeRangePickerBounds
-  onApply?: (values: TimeRangeValues) => void
+  onApply?: (result: TimeRangeApplyResult) => void
   onChange?: (values: TimeRangeValues) => void
   className?: string
   hideTime?: boolean
@@ -48,28 +58,33 @@ export function TimeRangePicker({
 }: TimeRangePickerProps) {
   'use no memo'
 
+  const { timezone } = useTimezone()
   const minBoundMs = bounds?.min?.getTime()
   const maxBoundMs = bounds?.max?.getTime()
 
   const startParts = useMemo(
-    () => parseDateTimeComponents(startDateTime),
-    [startDateTime]
+    () => formatDateTimeInput(startDateTime, timezone),
+    [startDateTime, timezone]
   )
   const endParts = useMemo(
-    () => parseDateTimeComponents(endDateTime),
-    [endDateTime]
+    () => formatDateTimeInput(endDateTime, timezone),
+    [endDateTime, timezone]
   )
 
   const calendarMinDate = useMemo(
     () =>
-      minBoundMs !== undefined ? startOfDay(new Date(minBoundMs)) : undefined,
-    [minBoundMs]
+      minBoundMs !== undefined
+        ? instantToCalendarDate(minBoundMs, timezone)
+        : undefined,
+    [minBoundMs, timezone]
   )
 
   const calendarMaxDate = useMemo(
     () =>
-      maxBoundMs !== undefined ? endOfDay(new Date(maxBoundMs)) : undefined,
-    [maxBoundMs]
+      maxBoundMs !== undefined
+        ? instantToCalendarDate(maxBoundMs, timezone)
+        : undefined,
+    [maxBoundMs, timezone]
   )
 
   const schema = useMemo(() => {
@@ -79,8 +94,9 @@ export function TimeRangePicker({
         min: minBoundMs !== undefined ? new Date(minBoundMs) : undefined,
         max: maxBoundMs !== undefined ? new Date(maxBoundMs) : undefined,
       },
+      timezone,
     })
-  }, [hideTime, maxBoundMs, minBoundMs])
+  }, [hideTime, maxBoundMs, minBoundMs, timezone])
 
   const defaultValues = useMemo(
     () => ({
@@ -127,10 +143,16 @@ export function TimeRangePicker({
   const handleSubmit = useCallback(
     (values: TimeRangeValues) => {
       const normalizedValues = normalizeTimeRangeValues(values)
-      onApply?.(normalizedValues)
+      const timestamps = parseTimeRangeValuesToTimestamps(
+        normalizedValues,
+        timezone
+      )
+      if (timestamps) {
+        onApply?.({ values: normalizedValues, ...timestamps })
+      }
       form.reset(normalizedValues)
     },
-    [form, onApply]
+    [form, onApply, timezone]
   )
 
   const shouldValidateOnChange = form.formState.submitCount > 0

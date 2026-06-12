@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { formatDate, useTimezone } from '@/features/dashboard/timezone'
 import { cn } from '@/lib/utils'
 import { formatCurrency } from '@/lib/utils/formatting'
 import { Badge } from '@/ui/primitives/badge'
@@ -30,14 +31,6 @@ function colStyle(width: number) {
   return { width, minWidth: width, maxWidth: width }
 }
 
-function formatDate(dateString: string) {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  })
-}
-
 interface InvoicesEmptyProps {
   error?: string
 }
@@ -59,6 +52,7 @@ function InvoicesEmpty({ error }: InvoicesEmptyProps) {
 }
 
 export default function BillingInvoicesTable() {
+  const { timezone } = useTimezone()
   const { invoices, isLoading, error } = useInvoices()
 
   const hasData = invoices && invoices.length > 0
@@ -102,7 +96,7 @@ export default function BillingInvoicesTable() {
             invoices.map((invoice) => (
               <TableRow key={invoice.url} className="h-11">
                 <TableCell className="py-0">
-                  {formatDate(invoice.date_created)}
+                  {formatDate(invoice.date_created, { timezone }) ?? '—'}
                 </TableCell>
                 <TableCell className="py-0">
                   <Badge variant={invoice.paid ? 'positive' : 'warning'}>

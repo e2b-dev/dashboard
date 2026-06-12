@@ -18,6 +18,7 @@ import ReactEChartsCore from 'echarts-for-react/lib/core'
 import { useTheme } from 'next-themes'
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { calculateStepForDuration } from '@/features/dashboard/sandboxes/monitoring/utils'
+import { useTimezone } from '@/features/dashboard/timezone'
 import { useCssVars } from '@/lib/hooks/use-css-vars'
 import { cn } from '@/lib/utils'
 import { calculateAxisMax } from '@/lib/utils/chart'
@@ -156,6 +157,7 @@ function SandboxMetricsChart({
   const chartInstanceRef = useRef<echarts.ECharts | null>(null)
   const [chartRevision, setChartRevision] = useState(0)
   const { resolvedTheme } = useTheme()
+  const { timezone } = useTimezone()
 
   const computedYAxisMax = useMemo(() => {
     const values = series.flatMap((line) =>
@@ -497,7 +499,8 @@ function SandboxMetricsChart({
           fontFamily: fontMono,
           fontSize: CHART_AXIS_LABEL_FONT_SIZE,
           hideOverlap: true,
-          formatter: (value: number | string) => formatXAxisLabel(value),
+          formatter: (value: number | string) =>
+            formatXAxisLabel(value, timezone),
         },
         axisPointer: {
           show: true,
@@ -553,6 +556,7 @@ function SandboxMetricsChart({
     xAxisMax,
     xAxisMin,
     yAxisFormatter,
+    timezone,
   ])
 
   // echarts-for-react uses merge mode (notMerge: false) by default, which
@@ -594,6 +598,7 @@ function SandboxMetricsChart({
       computedYAxisMax,
       cssVars,
       yAxisFormatter,
+      timezone,
     })
 
   return (
@@ -614,6 +619,7 @@ function SandboxMetricsChart({
         showEventLabels={showEventLabels}
         isMobile={isMobile}
         axisPointerColor={axisPointerColor}
+        timezone={timezone}
       />
     </div>
   )

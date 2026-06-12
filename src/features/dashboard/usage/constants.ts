@@ -1,3 +1,9 @@
+import {
+  dateTimePartsToUtcTimestamp,
+  getDateParts,
+  shiftCalendarDays,
+  type Timezone,
+} from '@/features/dashboard/timezone'
 import { formatAxisNumber } from '@/lib/utils/formatting'
 import type { TimeRangePreset } from '@/ui/time-range-presets'
 import type {
@@ -17,18 +23,69 @@ export const INITIAL_TIMEFRAME_FALLBACK_RANGE_MS = 30 * 24 * 60 * 60 * 1000
 export const HOURLY_SAMPLING_THRESHOLD_DAYS = 3
 export const WEEKLY_SAMPLING_THRESHOLD_DAYS = 60
 
-export const TIME_RANGE_PRESETS: TimeRangePreset[] = [
+type CalendarDateParts = ReturnType<typeof getDateParts>
+
+const shiftToMonthStart = (
+  parts: CalendarDateParts,
+  monthOffset: number
+): CalendarDateParts => {
+  const date = new Date(Date.UTC(parts.year, parts.month - 1 + monthOffset, 1))
+
+  return {
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth() + 1,
+    day: 1,
+  }
+}
+
+const getMonthEnd = (year: number, month: number): CalendarDateParts => {
+  const date = new Date(Date.UTC(year, month, 0))
+
+  return {
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth() + 1,
+    day: date.getUTCDate(),
+  }
+}
+
+const getZonedDayBoundaryTimestamps = (
+  startParts: CalendarDateParts,
+  endParts: CalendarDateParts,
+  timezone: Timezone
+): { start: number; end: number } => ({
+  start: dateTimePartsToUtcTimestamp(
+    {
+      ...startParts,
+      hours: 0,
+      minutes: 0,
+      seconds: 0,
+    },
+    timezone
+  ),
+  end:
+    dateTimePartsToUtcTimestamp(
+      {
+        ...endParts,
+        hours: 23,
+        minutes: 59,
+        seconds: 59,
+      },
+      timezone
+    ) + 999,
+})
+
+const getUsageTimeRangePresets = (timezone: Timezone): TimeRangePreset[] => [
   {
     id: 'last-7-days',
     label: 'Last 7 days',
     shortcut: '7D',
     getValue: () => {
-      const end = new Date()
-      end.setHours(23, 59, 59, 999)
-      const start = new Date(end)
-      start.setDate(start.getDate() - 6)
-      start.setHours(0, 0, 0, 0)
-      return { start: start.getTime(), end: end.getTime() }
+      const today = getDateParts(new Date(), timezone)
+      return getZonedDayBoundaryTimestamps(
+        shiftCalendarDays(today, -6),
+        today,
+        timezone
+      )
     },
   },
   {
@@ -36,12 +93,12 @@ export const TIME_RANGE_PRESETS: TimeRangePreset[] = [
     label: 'Last 14 days',
     shortcut: '14D',
     getValue: () => {
-      const end = new Date()
-      end.setHours(23, 59, 59, 999)
-      const start = new Date(end)
-      start.setDate(start.getDate() - 13)
-      start.setHours(0, 0, 0, 0)
-      return { start: start.getTime(), end: end.getTime() }
+      const today = getDateParts(new Date(), timezone)
+      return getZonedDayBoundaryTimestamps(
+        shiftCalendarDays(today, -13),
+        today,
+        timezone
+      )
     },
   },
   {
@@ -49,12 +106,12 @@ export const TIME_RANGE_PRESETS: TimeRangePreset[] = [
     label: 'Last 30 days',
     shortcut: '30D',
     getValue: () => {
-      const end = new Date()
-      end.setHours(23, 59, 59, 999)
-      const start = new Date(end)
-      start.setDate(start.getDate() - 29)
-      start.setHours(0, 0, 0, 0)
-      return { start: start.getTime(), end: end.getTime() }
+      const today = getDateParts(new Date(), timezone)
+      return getZonedDayBoundaryTimestamps(
+        shiftCalendarDays(today, -29),
+        today,
+        timezone
+      )
     },
   },
   {
@@ -62,76 +119,63 @@ export const TIME_RANGE_PRESETS: TimeRangePreset[] = [
     label: 'Last 90 days',
     shortcut: '90D',
     getValue: () => {
-      const end = new Date()
-      end.setHours(23, 59, 59, 999)
-      const start = new Date(end)
-      start.setDate(start.getDate() - 89)
-      start.setHours(0, 0, 0, 0)
-      return { start: start.getTime(), end: end.getTime() }
+      const today = getDateParts(new Date(), timezone)
+      return getZonedDayBoundaryTimestamps(
+        shiftCalendarDays(today, -89),
+        today,
+        timezone
+      )
     },
   },
   {
     id: 'this-month',
     label: 'This month',
     getValue: () => {
-      const now = new Date()
-      const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0)
-      const end = new Date(
-        now.getFullYear(),
-        now.getMonth() + 1,
-        0,
-        23,
-        59,
-        59,
-        999
+      const today = getDateParts(new Date(), timezone)
+      const start = { year: today.year, month: today.month, day: 1 }
+      return getZonedDayBoundaryTimestamps(
+        start,
+        getMonthEnd(today.year, today.month),
+        timezone
       )
-      return { start: start.getTime(), end: end.getTime() }
     },
   },
   {
     id: 'last-month',
     label: 'Last month',
     getValue: () => {
-      const now = new Date()
-      const start = new Date(
-        now.getFullYear(),
-        now.getMonth() - 1,
-        1,
-        0,
-        0,
-        0,
-        0
+      const today = getDateParts(new Date(), timezone)
+      const start = shiftToMonthStart(today, -1)
+      return getZonedDayBoundaryTimestamps(
+        start,
+        getMonthEnd(start.year, start.month),
+        timezone
       )
-      const end = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        0,
-        23,
-        59,
-        59,
-        999
-      )
-      return { start: start.getTime(), end: end.getTime() }
     },
   },
   {
     id: 'this-year',
     label: 'This year',
     getValue: () => {
-      const now = new Date()
-      const start = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0)
-      const end = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999)
-      return { start: start.getTime(), end: end.getTime() }
+      const today = getDateParts(new Date(), timezone)
+      return getZonedDayBoundaryTimestamps(
+        { year: today.year, month: 1, day: 1 },
+        { year: today.year, month: 12, day: 31 },
+        timezone
+      )
     },
   },
   {
     id: 'last-year',
     label: 'Last year',
     getValue: () => {
-      const now = new Date()
-      const start = new Date(now.getFullYear() - 1, 0, 1, 0, 0, 0, 0)
-      const end = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999)
-      return { start: start.getTime(), end: end.getTime() }
+      const today = getDateParts(new Date(), timezone)
+      const year = today.year - 1
+      return getZonedDayBoundaryTimestamps(
+        { year, month: 1, day: 1 },
+        { year, month: 12, day: 31 },
+        timezone
+      )
     },
   },
 ]
@@ -173,3 +217,5 @@ export const COMPUTE_CHART_CONFIGS: Record<
     yAxisFormatter: formatAxisNumber,
   },
 }
+
+export { getUsageTimeRangePresets }

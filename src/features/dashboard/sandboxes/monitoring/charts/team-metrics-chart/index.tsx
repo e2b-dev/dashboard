@@ -19,6 +19,7 @@ import { CanvasRenderer } from 'echarts/renderers'
 import ReactEChartsCore from 'echarts-for-react/lib/core'
 import { useTheme } from 'next-themes'
 import { memo, useCallback, useMemo, useRef } from 'react'
+import { useTimezone } from '@/features/dashboard/timezone'
 import { useCssVars } from '@/lib/hooks/use-css-vars'
 import { calculateAxisMax } from '@/lib/utils/chart'
 import { CHART_CONFIGS, LIVE_PADDING_MULTIPLIER } from './constants'
@@ -28,6 +29,7 @@ import {
   createLimitLine,
   createLiveIndicators,
   createSplitLineInterval,
+  createTimeAxisLabelFormatter,
   createYAxisLabelFormatter,
   hasLiveData,
   transformMetrics,
@@ -63,6 +65,7 @@ function TeamMetricsChart({
   const chartRef = useRef<ReactEChartsCore | null>(null)
   const chartInstanceRef = useRef<echarts.ECharts | null>(null)
   const { resolvedTheme } = useTheme()
+  const { timezone } = useTimezone()
 
   // use refs for callbacks to avoid re-creating chart options
   const onTooltipValueChangeRef = useRef(onTooltipValueChange)
@@ -172,6 +175,12 @@ function TeamMetricsChart({
       onHoverEndRef.current()
     }
   }, [])
+
+  const xAxisLabelFormatter = useMemo(
+    () =>
+      createTimeAxisLabelFormatter(timezone, timeframe.end - timeframe.start),
+    [timeframe.end, timeframe.start, timezone]
+  )
 
   // build complete echarts option once
   const option = useMemo<EChartsOption>(() => {
@@ -305,14 +314,7 @@ function TeamMetricsChart({
           fontSize: 12,
           hideOverlap: true,
           rotate: 0,
-          formatter: {
-            year: '{yyyy}',
-            month: '{MMM} {d}',
-            day: '{MMM} {d}',
-            hour: '{HH}:{mm}',
-            minute: '{HH}:{mm}',
-            second: '{HH}:{mm}:{ss}',
-          },
+          formatter: xAxisLabelFormatter,
         },
         axisPointer: {
           show: true,
@@ -378,6 +380,7 @@ function TeamMetricsChart({
     errorHighlight,
     errorBg,
     bg1,
+    xAxisLabelFormatter,
   ])
 
   return (

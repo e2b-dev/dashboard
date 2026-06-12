@@ -1,7 +1,7 @@
 'use client'
 
 import { useDashboard } from '@/features/dashboard/context'
-import { formatDate } from '@/lib/utils/formatting'
+import { formatDate, useTimezone } from '@/features/dashboard/timezone'
 import CopyButtonInline from '@/ui/copy-button-inline'
 
 const InfoRow = ({ label, value }: { label: string; value: string }) => (
@@ -22,7 +22,8 @@ const InfoRow = ({ label, value }: { label: string; value: string }) => (
 
 export const TeamInfo = () => {
   const { team } = useDashboard()
-  const createdAt = formatDate(new Date(team.createdAt), 'MMM d, yyyy') ?? '--'
+  const { timezone } = useTimezone()
+  const createdAt = formatDate(team.createdAt, { timezone }) ?? '--'
 
   return (
     <div className="flex flex-col gap-1.5">

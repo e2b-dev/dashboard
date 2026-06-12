@@ -4,9 +4,9 @@ import { usePostHog } from 'posthog-js/react'
 import { CLI_GENERATED_KEY_NAME } from '@/configs/api'
 import type { TeamAPIKey } from '@/core/modules/keys/models'
 import { IdBadge, UserAvatar } from '@/features/dashboard/shared'
+import { formatDate, useTimezone } from '@/features/dashboard/timezone'
 import { defaultSuccessToast, useToast } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
-import { formatDate, formatUTCTimestamp } from '@/lib/utils/formatting'
 import { E2BLogo } from '@/ui/brand'
 import { Button } from '@/ui/primitives/button'
 import { KeyIcon, RemoveIcon } from '@/ui/primitives/icons'
@@ -28,9 +28,10 @@ interface ApiKeysTableRowProps {
 export const ApiKeysTableRow = ({ apiKey, onDelete }: ApiKeysTableRowProps) => {
   const posthog = usePostHog()
   const { toast } = useToast()
+  const { timezone } = useTimezone()
 
   const addedDate = apiKey.createdAt
-    ? (formatDate(new Date(apiKey.createdAt), 'MMM d, yyyy') ?? '—')
+    ? (formatDate(apiKey.createdAt, { timezone }) ?? '—')
     : '—'
 
   const maskedKey = formatMaskedApiKey(apiKey)
@@ -78,7 +79,10 @@ export const ApiKeysTableRow = ({ apiKey, onDelete }: ApiKeysTableRowProps) => {
               <span className="cursor-default">{lastUsedLabel}</span>
             </TooltipTrigger>
             <TooltipContent side="top" className="font-mono text-xs">
-              {formatUTCTimestamp(new Date(lastUsedAt))}
+              {formatDate(lastUsedAt, {
+                timezone,
+                format: 'exact-timestamp',
+              })}
             </TooltipContent>
           </Tooltip>
         ) : (

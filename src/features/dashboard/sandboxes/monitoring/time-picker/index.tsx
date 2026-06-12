@@ -2,8 +2,8 @@
 
 import { AnimatePresence, motion } from 'motion/react'
 import { memo, type ReactNode, useCallback, useEffect, useRef } from 'react'
+import { useTimezone } from '@/features/dashboard/timezone'
 import { cn } from '@/lib/utils'
-import { tryParseDatetime } from '@/lib/utils/formatting'
 import type { TimeframeState } from '@/lib/utils/timeframe'
 import { cardVariants } from '@/ui/primitives/card'
 import {
@@ -15,7 +15,7 @@ import {
 } from '@/ui/primitives/dropdown-menu'
 import { ChevronRightIcon } from '@/ui/primitives/icons'
 import { RadioGroup, RadioGroupItem } from '@/ui/primitives/radio-group'
-
+import { parsePickerDateTime } from '@/ui/time-range-picker.logic'
 import { MAX_DAYS_AGO, TIME_OPTIONS } from './constants'
 import {
   useDateTimeState,
@@ -39,6 +39,7 @@ export const TimePicker = memo(function TimePicker({
   disabled = false,
   children,
 }: TimePickerProps) {
+  const { timezone } = useTimezone()
   const { timeOptionsValue, setTimeOptionsValue } =
     useTimeOptionSelection(value)
 
@@ -49,7 +50,7 @@ export const TimePicker = memo(function TimePicker({
     setEndDateTime,
     endEnabled,
     setEndEnabled,
-  } = useDateTimeState(value)
+  } = useDateTimeState(value, timezone)
 
   const {
     open,
@@ -118,13 +119,26 @@ export const TimePicker = memo(function TimePicker({
   const handleCustomSubmit = useCallback(
     (values: CustomTimeFormValues) => {
       const startDateTimeStr = `${values.startDate} ${values.startTime}`
-      const startDate = tryParseDatetime(startDateTimeStr)
+      const startDate = parsePickerDateTime(
+        values.startDate,
+        values.startTime,
+        '00:00:00',
+        timezone
+      )
 
       const endDateTimeStr =
         values.endEnabled && values.endDate && values.endTime
           ? `${values.endDate} ${values.endTime}`
           : null
-      const endDate = endDateTimeStr ? tryParseDatetime(endDateTimeStr) : null
+      const endDate =
+        values.endEnabled && values.endDate && values.endTime
+          ? parsePickerDateTime(
+              values.endDate,
+              values.endTime,
+              '23:59:59',
+              timezone
+            )
+          : null
 
       if (!startDate) return
 
@@ -140,7 +154,7 @@ export const TimePicker = memo(function TimePicker({
         })
         setTimeOptionsValue('custom')
       } else {
-        const now = new Date().getTime()
+        const now = Date.now()
         const range = now - startDate.getTime()
 
         // ensure range is within acceptable bounds for live mode
@@ -173,6 +187,7 @@ export const TimePicker = memo(function TimePicker({
       setEndDateTime,
       setEndEnabled,
       setTimeOptionsValue,
+      timezone,
     ]
   )
 
