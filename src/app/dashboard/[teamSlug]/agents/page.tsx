@@ -26,8 +26,7 @@ export default async function AgentsPage({
         <div className="flex flex-col gap-1">
           <h2 className="prose-title text-fg">Agent templates</h2>
           <p className="prose-body text-fg-tertiary max-w-2xl">
-            Sandbox templates for running AI coding agents in Ubuntu
-            environments.
+            Launch and reconnect coding-agent sandbox sessions.
           </p>
         </div>
 

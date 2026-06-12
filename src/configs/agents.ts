@@ -16,7 +16,7 @@ const DEFAULT_AGENT_TEMPLATES = [
     command: 'codex',
     template: 'codex',
     base: 'Ubuntu',
-    description: 'Ubuntu template with Codex installed for coding sessions.',
+    description: 'Codex CLI for coding sessions.',
   },
   {
     id: 'claude',
@@ -24,8 +24,7 @@ const DEFAULT_AGENT_TEMPLATES = [
     command: 'claude',
     template: 'claude',
     base: 'Ubuntu',
-    description:
-      'Ubuntu template with Claude Code installed for coding sessions.',
+    description: 'Claude Code for coding sessions.',
   },
   {
     id: 'opencode',
@@ -33,7 +32,7 @@ const DEFAULT_AGENT_TEMPLATES = [
     command: 'opencode',
     template: 'opencode',
     base: 'Ubuntu',
-    description: 'Ubuntu template with OpenCode installed for coding sessions.',
+    description: 'OpenCode for coding sessions.',
   },
 ] satisfies AgentTemplateConfig[]
 
