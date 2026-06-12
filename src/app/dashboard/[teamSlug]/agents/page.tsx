@@ -1,6 +1,8 @@
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { AGENT_TEMPLATES } from '@/configs/agents'
 import { INCLUDE_AGENTS_IN_DASHBOARD } from '@/configs/flags'
+import { PROTECTED_URLS } from '@/configs/urls'
 import { Page } from '@/features/dashboard/layouts/page'
 import { Badge } from '@/ui/primitives/badge'
 
@@ -20,8 +22,10 @@ export default async function AgentsPage() {
 
       <div className="grid gap-3 md:grid-cols-3">
         {AGENT_TEMPLATES.map((template) => (
-          <div
-            className="border-stroke bg-bg-1 flex min-h-44 flex-col justify-between rounded-lg border p-4"
+          <Link
+            aria-label={`Open ${template.name} terminal`}
+            className="border-stroke bg-bg-1 hover:border-stroke-active flex min-h-44 flex-col justify-between rounded-lg border p-4 transition-colors"
+            href={PROTECTED_URLS.TERMINAL_TEMPLATE(template.templateId)}
             key={template.name}
           >
             <div className="flex flex-col gap-3">
@@ -50,7 +54,7 @@ export default async function AgentsPage() {
                 {template.templateId}
               </code>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 

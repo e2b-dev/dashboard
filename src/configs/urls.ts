@@ -9,6 +9,9 @@ export const AUTH_URLS = {
 
 export const PROTECTED_URLS = {
   DASHBOARD: '/dashboard',
+  TERMINAL: '/dashboard/terminal',
+  TERMINAL_TEMPLATE: (template: string) =>
+    `/dashboard/terminal?${new URLSearchParams({ template }).toString()}`,
   ACCOUNT_SETTINGS: '/dashboard/account',
   RESET_PASSWORD: '/dashboard/account',
   NEW_TEAM: '/dashboard/teams/new',
