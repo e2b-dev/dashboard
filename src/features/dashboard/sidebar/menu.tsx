@@ -2,9 +2,12 @@
 
 import { Portal } from '@radix-ui/react-portal'
 import Link from 'next/link'
+import { usePostHog } from 'posthog-js/react'
 import { useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { getTeamDisplayName } from '@/core/modules/teams/utils'
+import { resetOryPostHogIdentity } from '@/features/ory-posthog-identity-bridge'
+import { useAppPostHogProvider } from '@/features/posthog-provider'
 import { cn } from '@/lib/utils'
 import {
   DropdownMenu,
@@ -29,6 +32,8 @@ import { TeamAvatar } from './team-avatar'
 
 export default function DashboardSidebarMenu() {
   const { team } = useDashboard()
+  const { enabled: postHogEnabled } = useAppPostHogProvider()
+  const posthog = usePostHog()
   const [createTeamOpen, setCreateTeamOpen] = useState(false)
   // Stays true until the hard navigation unloads the page; the overlay should
   // never tear down before then.
@@ -36,6 +41,7 @@ export default function DashboardSidebarMenu() {
 
   const handleLogout = () => {
     setIsLoggingOut(true)
+    if (postHogEnabled) resetOryPostHogIdentity(posthog)
     // Hard navigation (not the Next router) to a plain route handler that clears
     // the session cookie server-side: a soft RSC redirect would re-render the
     // signed-out dashboard and tear down this overlay before the browser leaves
