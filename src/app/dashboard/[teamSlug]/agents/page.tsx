@@ -25,7 +25,7 @@ export default async function AgentsPage() {
           <Link
             aria-label={`Open ${template.name} terminal`}
             className="border-stroke bg-bg-1 hover:border-stroke-active flex min-h-44 flex-col justify-between rounded-lg border p-4 transition-colors"
-            href={PROTECTED_URLS.TERMINAL_TEMPLATE(template.templateId)}
+            href={PROTECTED_URLS.TERMINAL_TEMPLATE(template.template)}
             key={template.name}
           >
             <div className="flex flex-col gap-3">
@@ -51,7 +51,7 @@ export default async function AgentsPage() {
                 {template.base}
               </span>
               <code className="prose-code text-fg-tertiary">
-                {template.templateId}
+                {template.template}
               </code>
             </div>
           </Link>

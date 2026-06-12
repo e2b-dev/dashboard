@@ -4,20 +4,20 @@ export type AgentTemplateConfig = {
   id: AgentId
   name: string
   command: string
-  templateId: string
+  template: string
   base: string
   description: string
 }
 
-const DEFAULT_AGENT_TEMPLATE_IDS = {
+const DEFAULT_AGENT_TEMPLATES = {
   codex: 'codex',
   claude: 'claude',
   opencode: 'opencode',
 } satisfies Record<AgentId, string>
 
-const AGENT_IDS = Object.keys(DEFAULT_AGENT_TEMPLATE_IDS) as AgentId[]
+const AGENT_IDS = Object.keys(DEFAULT_AGENT_TEMPLATES) as AgentId[]
 
-const parseAgentTemplateIds = (
+const parseAgentTemplates = (
   value: string | undefined
 ): Partial<Record<AgentId, string>> => {
   if (!value) return {}
@@ -30,10 +30,10 @@ const parseAgentTemplateIds = (
     }
 
     return AGENT_IDS.reduce<Partial<Record<AgentId, string>>>((acc, id) => {
-      const templateId = (parsed as Record<string, unknown>)[id]
+      const template = (parsed as Record<string, unknown>)[id]
 
-      if (typeof templateId === 'string' && templateId.trim()) {
-        acc[id] = templateId
+      if (typeof template === 'string' && template.trim()) {
+        acc[id] = template
       }
 
       return acc
@@ -43,9 +43,9 @@ const parseAgentTemplateIds = (
   }
 }
 
-const AGENT_TEMPLATE_IDS = {
-  ...DEFAULT_AGENT_TEMPLATE_IDS,
-  ...parseAgentTemplateIds(process.env.NEXT_PUBLIC_AGENT_TEMPLATE_IDS),
+const AGENT_TEMPLATES_BY_AGENT = {
+  ...DEFAULT_AGENT_TEMPLATES,
+  ...parseAgentTemplates(process.env.NEXT_PUBLIC_AGENT_TEMPLATES),
 } satisfies Record<AgentId, string>
 
 export const AGENT_TEMPLATES: AgentTemplateConfig[] = [
@@ -53,7 +53,7 @@ export const AGENT_TEMPLATES: AgentTemplateConfig[] = [
     id: 'codex',
     name: 'Codex',
     command: 'codex',
-    templateId: AGENT_TEMPLATE_IDS.codex,
+    template: AGENT_TEMPLATES_BY_AGENT.codex,
     base: 'Ubuntu',
     description: 'Ubuntu template with Codex installed for coding sessions.',
   },
@@ -61,7 +61,7 @@ export const AGENT_TEMPLATES: AgentTemplateConfig[] = [
     id: 'claude',
     name: 'Claude',
     command: 'claude',
-    templateId: AGENT_TEMPLATE_IDS.claude,
+    template: AGENT_TEMPLATES_BY_AGENT.claude,
     base: 'Ubuntu',
     description:
       'Ubuntu template with Claude Code installed for coding sessions.',
@@ -70,7 +70,7 @@ export const AGENT_TEMPLATES: AgentTemplateConfig[] = [
     id: 'opencode',
     name: 'OpenCode',
     command: 'opencode',
-    templateId: AGENT_TEMPLATE_IDS.opencode,
+    template: AGENT_TEMPLATES_BY_AGENT.opencode,
     base: 'Ubuntu',
     description: 'Ubuntu template with OpenCode installed for coding sessions.',
   },
