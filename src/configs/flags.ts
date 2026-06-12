@@ -1,3 +1,5 @@
+import type { z } from 'zod'
+
 export const ALLOW_SEO_INDEXING = process.env.ALLOW_SEO_INDEXING === '1'
 export const VERBOSE = process.env.NEXT_PUBLIC_VERBOSE === '1'
 export const ENABLE_USER_BOOTSTRAP = process.env.ENABLE_USER_BOOTSTRAP === '1'
@@ -38,3 +40,18 @@ export function isAuthMigrationInProgress() {
 }
 
 export const AUTH_MIGRATION_IN_PROGRESS = isAuthMigrationInProgress()
+
+export type BooleanFeatureFlagDefinition = {
+  kind: 'boolean'
+  key: string
+  defaultValue: boolean
+}
+
+export type JsonFeatureFlagDefinition<T> = {
+  kind: 'json'
+  key: string
+  defaultValue: T
+  schema: z.ZodType<T>
+}
+
+export const FEATURE_FLAGS = {} as const

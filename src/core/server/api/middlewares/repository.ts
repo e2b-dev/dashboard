@@ -46,7 +46,7 @@ export function withTeamAuthedRequestRepository<
   createRepository: (scope: TeamRequestScope) => TRepository,
   extendContext: (repository: TRepository) => TContextExtension
 ) {
-  return t.middleware(({ ctx, next }) => {
+  return t.middleware(({ ctx, next, input }) => {
     if (!ctx.session) {
       throw unauthorizedUserError()
     }
@@ -59,9 +59,18 @@ export function withTeamAuthedRequestRepository<
       throw forbiddenTeamAccessError()
     }
 
+    const teamSlug =
+      input &&
+      typeof input === 'object' &&
+      'teamSlug' in input &&
+      typeof input.teamSlug === 'string'
+        ? input.teamSlug
+        : undefined
+
     const repository = createRepository({
       accessToken: ctx.session.access_token,
       teamId: ctx.teamId,
+      teamSlug,
     })
 
     return next({
