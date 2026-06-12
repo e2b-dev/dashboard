@@ -5,16 +5,16 @@ export type {
   DateTimeParts,
   FormatDateOptions,
   FormatDatePartsOptions,
+  FormatDateRangeOptions,
   ZonedDateParts,
-  ZonedDateRangeFormatOptions,
   ZonedDateTimeParts,
 } from './date-time'
 export {
   createZonedTimeAxisLabelFormatter,
   formatDate,
   formatDateParts,
+  formatDateRange,
   formatTimezoneAbbreviation,
-  formatZonedDateRange,
   formatZonedDateTimeInput,
   getRelativeDay,
   getZonedDateParts,

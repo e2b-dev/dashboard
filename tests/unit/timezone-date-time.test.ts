@@ -4,8 +4,8 @@ import {
   createZonedTimeAxisLabelFormatter,
   formatDate,
   formatDateParts,
+  formatDateRange,
   formatTimezoneAbbreviation,
-  formatZonedDateRange,
   formatZonedDateTimeInput,
   getRelativeDay,
   zonedDateTimePartsToUtcDate,
@@ -131,17 +131,27 @@ describe('timezone date-time helpers', () => {
     })
   })
 
-  describe('formatZonedDateRange', () => {
-    it('formats a range in the selected timezone', () => {
-      const result = formatZonedDateRange(
+  describe('formatDateRange', () => {
+    it('formats a date-only range in the selected timezone', () => {
+      const result = formatDateRange(
         '2026-06-08T13:00:00.000Z',
         '2026-06-09T13:00:00.000Z',
-        newYork
+        { timezone: newYork }
       )
 
-      expect(result).toContain('Jun 8, 2026')
-      expect(result).toContain('Jun 9, 2026')
-      expect(result).toContain('EDT')
+      expect(result).toBe('Jun 8, 2026 - Jun 9, 2026 EDT')
+    })
+
+    it('formats a timestamp range in the selected timezone', () => {
+      const result = formatDateRange(
+        '2026-06-08T13:00:00.000Z',
+        '2026-06-09T13:00:00.000Z',
+        { timezone: newYork, includeTime: true, includeTimezone: true }
+      )
+
+      expect(result).toBe(
+        'Jun 8, 2026 at 09:00:00 AM - Jun 9, 2026 at 09:00:00 AM EDT'
+      )
     })
   })
 
