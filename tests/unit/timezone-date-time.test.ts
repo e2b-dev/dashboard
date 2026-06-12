@@ -1,14 +1,14 @@
 import { startOfDay } from 'date-fns'
 import { describe, expect, it, vi } from 'vitest'
 import {
+  dateTimePartsToUtcDate,
+  dateTimePartsToUtcTimestamp,
   formatDate,
   formatDateParts,
   formatDateRange,
-  formatTimezoneAbbreviation,
   formatDateTimeInput,
+  formatTimezoneAbbreviation,
   getRelativeDay,
-  dateTimePartsToUtcDate,
-  dateTimePartsToUtcTimestamp,
   instantToCalendarDate,
 } from '@/features/dashboard/timezone'
 import { requireTimezone } from './helpers/timezone'
@@ -20,10 +20,7 @@ describe('timezone date-time helpers', () => {
 
   describe('formatDateTimeInput', () => {
     it('formats a UTC timestamp into New York picker parts', () => {
-      const result = formatDateTimeInput(
-        '2026-06-08T13:05:09.000Z',
-        newYork
-      )
+      const result = formatDateTimeInput('2026-06-08T13:05:09.000Z', newYork)
 
       expect(result).toEqual({
         date: '2026/06/08',
@@ -32,10 +29,7 @@ describe('timezone date-time helpers', () => {
     })
 
     it('formats a UTC timestamp into Berlin picker parts', () => {
-      const result = formatDateTimeInput(
-        '2026-06-08T13:05:09.000Z',
-        berlin
-      )
+      const result = formatDateTimeInput('2026-06-08T13:05:09.000Z', berlin)
 
       expect(result).toEqual({
         date: '2026/06/08',
@@ -74,10 +68,7 @@ describe('timezone date-time helpers', () => {
     })
 
     it('maps max-bound instants to the dashboard wall-clock calendar day', () => {
-      const calendarMax = instantToCalendarDate(
-        '2026-02-24T18:17:41.000Z',
-        utc
-      )
+      const calendarMax = instantToCalendarDate('2026-02-24T18:17:41.000Z', utc)
 
       expect(calendarMax.getFullYear()).toBe(2026)
       expect(calendarMax.getMonth()).toBe(1)

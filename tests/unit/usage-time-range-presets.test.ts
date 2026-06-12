@@ -41,12 +41,10 @@ describe('usage time range presets', () => {
       time: '23:59:59',
     })
 
-    expect(formatDateTimeInput(losAngelesRange.start, losAngeles)).toEqual(
-      {
-        date: '2026/03/13',
-        time: '00:00:00',
-      }
-    )
+    expect(formatDateTimeInput(losAngelesRange.start, losAngeles)).toEqual({
+      date: '2026/03/13',
+      time: '00:00:00',
+    })
     expect(formatDateTimeInput(losAngelesRange.end, losAngeles)).toEqual({
       date: '2026/06/10',
       time: '23:59:59',

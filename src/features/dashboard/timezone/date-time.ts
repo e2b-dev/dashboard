@@ -241,8 +241,9 @@ interface FormatDateRangeOptions {
   format?: DateFormat
 }
 
-const TIMEZONE_INCLUSIVE_DATE_FORMAT_PRESETS: ReadonlySet<DateFormat> =
-  new Set(['compact-timestamp', 'exact-timestamp'])
+const TIMEZONE_INCLUSIVE_DATE_FORMAT_PRESETS: ReadonlySet<DateFormat> = new Set(
+  ['compact-timestamp', 'exact-timestamp']
+)
 
 const formatDateRange = (
   start: string | number | Date,
