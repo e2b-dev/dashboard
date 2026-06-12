@@ -78,11 +78,12 @@ function TerminalPanelHeader({
       <div className="flex min-w-0 items-center gap-2">
         {backHref ? (
           <Link
-            className="text-fg-secondary hover:text-fg flex shrink-0 items-center gap-1 transition-colors"
+            className="text-fg-secondary hover:text-fg flex shrink-0 items-center transition-colors"
             href={backHref}
+            aria-label="Back to agents"
+            title="Back to agents"
           >
             <ArrowLeftIcon className="size-4" />
-            <span className="prose-label-highlight uppercase">Agents</span>
           </Link>
         ) : (
           <>
