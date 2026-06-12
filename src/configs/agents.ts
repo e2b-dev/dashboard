@@ -9,10 +9,43 @@ export type AgentTemplateConfig = {
   description: string
 }
 
+const DEFAULT_AGENT_TEMPLATE_IDS = {
+  codex: 'codex',
+  claude: 'claude',
+  opencode: 'opencode',
+} satisfies Record<AgentId, string>
+
+const AGENT_IDS = Object.keys(DEFAULT_AGENT_TEMPLATE_IDS) as AgentId[]
+
+const parseAgentTemplateIds = (
+  value: string | undefined
+): Partial<Record<AgentId, string>> => {
+  if (!value) return {}
+
+  try {
+    const parsed = JSON.parse(value) as unknown
+
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return {}
+    }
+
+    return AGENT_IDS.reduce<Partial<Record<AgentId, string>>>((acc, id) => {
+      const templateId = (parsed as Record<string, unknown>)[id]
+
+      if (typeof templateId === 'string' && templateId.trim()) {
+        acc[id] = templateId
+      }
+
+      return acc
+    }, {})
+  } catch {
+    return {}
+  }
+}
+
 const AGENT_TEMPLATE_IDS = {
-  codex: process.env.NEXT_PUBLIC_CODEX_AGENT_TEMPLATE_ID ?? 'codex',
-  claude: process.env.NEXT_PUBLIC_CLAUDE_AGENT_TEMPLATE_ID ?? 'claude',
-  opencode: process.env.NEXT_PUBLIC_OPENCODE_AGENT_TEMPLATE_ID ?? 'opencode',
+  ...DEFAULT_AGENT_TEMPLATE_IDS,
+  ...parseAgentTemplateIds(process.env.NEXT_PUBLIC_AGENT_TEMPLATE_IDS),
 } satisfies Record<AgentId, string>
 
 export const AGENT_TEMPLATES: AgentTemplateConfig[] = [
