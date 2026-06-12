@@ -89,6 +89,10 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
       },
     }
   },
+  '/dashboard/*/agents': () => ({
+    title: 'Agents',
+    type: 'default',
+  }),
 
   // integrations
   '/dashboard/*/webhooks': () => ({
