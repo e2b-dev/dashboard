@@ -2,11 +2,33 @@ import { describe, expect, it } from 'vitest'
 import { getFaviconEnvironment, getFaviconIcons } from '@/configs/favicon'
 
 describe('environment favicon', () => {
-  it('uses the original favicon appearance in production', () => {
+  it('uses light/dark scheme variants in production', () => {
     expect(getFaviconEnvironment('production')).toBe('production')
     expect(getFaviconIcons('production')).toEqual([
-      { url: '/favicon.ico', type: 'image/x-icon', sizes: '32x32' },
-      { url: '/favicon.svg', type: 'image/svg+xml', sizes: 'any' },
+      {
+        url: '/favicon.ico',
+        type: 'image/x-icon',
+        sizes: '32x32',
+        media: '(prefers-color-scheme: light)',
+      },
+      {
+        url: '/favicon-dark.ico',
+        type: 'image/x-icon',
+        sizes: '32x32',
+        media: '(prefers-color-scheme: dark)',
+      },
+      {
+        url: '/favicon.svg',
+        type: 'image/svg+xml',
+        sizes: 'any',
+        media: '(prefers-color-scheme: light)',
+      },
+      {
+        url: '/favicon-dark.svg',
+        type: 'image/svg+xml',
+        sizes: 'any',
+        media: '(prefers-color-scheme: dark)',
+      },
     ])
   })
 

@@ -8,20 +8,54 @@ export const FAVICON_SIZE = {
 export const FAVICON_ICO_CONTENT_TYPE = 'image/x-icon'
 export const FAVICON_SVG_CONTENT_TYPE = 'image/svg+xml'
 
-const FAVICON_ICO_HREFS = {
-  production: '/favicon.ico',
-  preview: '/favicon-preview.ico',
-  development: '/favicon-development.ico',
-} as const satisfies Record<FaviconEnvironment, string>
+type SchemeHrefs = { light: string; dark: string }
 
-// SVG favicons embed a prefers-color-scheme media query so the icon adapts
-// to the system theme; the ICO entries are fallbacks for browsers without
-// SVG favicon support (e.g. Safari).
-const FAVICON_SVG_HREFS = {
-  production: '/favicon.svg',
-  preview: '/favicon-preview.svg',
-  development: '/favicon-development.svg',
-} as const satisfies Record<FaviconEnvironment, string>
+// Production ships light/dark variants selected via the media attribute on
+// the icon links; preview and development keep static environment colors.
+// ICO entries come first so browsers without SVG favicon support (e.g.
+// Safari, legacy browsers) still resolve a raster icon.
+const FAVICON_HREFS = {
+  production: {
+    ico: { light: '/favicon.ico', dark: '/favicon-dark.ico' },
+    svg: { light: '/favicon.svg', dark: '/favicon-dark.svg' },
+  },
+  preview: {
+    ico: '/favicon-preview.ico',
+    svg: '/favicon-preview.svg',
+  },
+  development: {
+    ico: '/favicon-development.ico',
+    svg: '/favicon-development.svg',
+  },
+} as const satisfies Record<
+  FaviconEnvironment,
+  {
+    ico: string | SchemeHrefs
+    svg: string | SchemeHrefs
+  }
+>
+
+interface FaviconIcon {
+  url: string
+  type: string
+  sizes: string
+  media?: string
+}
+
+function toIconEntries(
+  href: string | SchemeHrefs,
+  type: string,
+  sizes: string
+): FaviconIcon[] {
+  if (typeof href === 'string') {
+    return [{ url: href, type, sizes }]
+  }
+
+  return [
+    { url: href.light, type, sizes, media: '(prefers-color-scheme: light)' },
+    { url: href.dark, type, sizes, media: '(prefers-color-scheme: dark)' },
+  ]
+}
 
 export function getFaviconEnvironment(vercelEnv?: string): FaviconEnvironment {
   if (vercelEnv === 'production' || vercelEnv === 'preview') {
@@ -31,19 +65,12 @@ export function getFaviconEnvironment(vercelEnv?: string): FaviconEnvironment {
   return 'development'
 }
 
-export function getFaviconIcons(vercelEnv?: string) {
-  const environment = getFaviconEnvironment(vercelEnv)
+export function getFaviconIcons(vercelEnv?: string): FaviconIcon[] {
+  const { ico, svg } = FAVICON_HREFS[getFaviconEnvironment(vercelEnv)]
+  const icoSizes = `${FAVICON_SIZE.width}x${FAVICON_SIZE.height}`
 
   return [
-    {
-      url: FAVICON_ICO_HREFS[environment],
-      type: FAVICON_ICO_CONTENT_TYPE,
-      sizes: `${FAVICON_SIZE.width}x${FAVICON_SIZE.height}`,
-    },
-    {
-      url: FAVICON_SVG_HREFS[environment],
-      type: FAVICON_SVG_CONTENT_TYPE,
-      sizes: 'any',
-    },
+    ...toIconEntries(ico, FAVICON_ICO_CONTENT_TYPE, icoSizes),
+    ...toIconEntries(svg, FAVICON_SVG_CONTENT_TYPE, 'any'),
   ]
 }
