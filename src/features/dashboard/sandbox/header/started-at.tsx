@@ -1,7 +1,8 @@
 'use client'
 
 import {
-  formatZonedRelativeDayTime,
+  formatDate,
+  getRelativeDay,
   useTimezone,
 } from '@/features/dashboard/timezone'
 import CopyButton from '@/ui/copy-button'
@@ -14,15 +15,13 @@ export default function StartedAt() {
   const startedAt = sandboxLifecycle?.createdAt
   if (!startedAt) return null
 
-  const { prefix, time: timeStr } = formatZonedRelativeDayTime(
-    startedAt,
-    timezone
-  )
+  const relativeDay = getRelativeDay(startedAt, timezone)
+  const timeStr = formatDate(startedAt, { timezone, format: 'time' })
 
   return (
     <div className="flex items-center gap-1">
       <p>
-        {prefix}, {timeStr}
+        {relativeDay}, {timeStr}
       </p>
       <CopyButton aria-label="Copy started timestamp" value={startedAt} />
     </div>

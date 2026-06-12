@@ -8,9 +8,9 @@ import {
   formatZonedDateRange,
   formatZonedDateTimeInput,
   formatZonedExactTimestamp,
-  formatZonedRelativeDayTime,
   formatZonedTime,
   formatZonedTimeAxisLabel,
+  getRelativeDay,
   zonedDateTimePartsToUtcDate,
   zonedDateTimePartsToUtcTimestamp,
   zonedInstantToCalendarDate,
@@ -285,17 +285,15 @@ describe('timezone date-time helpers', () => {
     })
   })
 
-  describe('formatZonedRelativeDayTime', () => {
+  describe('getRelativeDay', () => {
     it('labels today and yesterday in the selected timezone', () => {
       vi.useFakeTimers()
       vi.setSystemTime(new Date('2026-06-10T16:00:00.000Z'))
 
-      expect(
-        formatZonedRelativeDayTime('2026-06-10T16:00:00.000Z', newYork).prefix
-      ).toBe('Today')
-      expect(
-        formatZonedRelativeDayTime('2026-06-09T16:00:00.000Z', newYork).prefix
-      ).toBe('Yesterday')
+      expect(getRelativeDay('2026-06-10T16:00:00.000Z', newYork)).toBe('Today')
+      expect(getRelativeDay('2026-06-09T16:00:00.000Z', newYork)).toBe(
+        'Yesterday'
+      )
 
       vi.useRealTimers()
     })

@@ -1,7 +1,8 @@
 'use client'
 
 import {
-  formatZonedRelativeDayTime,
+  formatDate,
+  getRelativeDay,
   useTimezone,
 } from '@/features/dashboard/timezone'
 import CopyButton from '@/ui/copy-button'
@@ -24,15 +25,13 @@ export default function EndedAt() {
 
   if (!endedAt) return <p>N/A</p>
 
-  const { prefix, time: timeStr } = formatZonedRelativeDayTime(
-    endedAt,
-    timezone
-  )
+  const relativeDay = getRelativeDay(endedAt, timezone)
+  const timeStr = formatDate(endedAt, { timezone, format: 'time' })
 
   return (
     <div className="flex items-center gap-3">
       <p>
-        {prefix}, {timeStr}
+        {relativeDay}, {timeStr}
       </p>
       <CopyButton
         aria-label="Copy ended timestamp"
