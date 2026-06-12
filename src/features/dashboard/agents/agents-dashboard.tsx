@@ -89,15 +89,11 @@ const applySandboxHistoryFilter = (template: AgentTemplateConfig) => {
   tableStore.setTemplateFilters([template.template])
 }
 
-const getTerminalUrl = (template: AgentTemplateConfig, sandboxId?: string) => {
-  const params = new URLSearchParams({ template: template.template })
-
-  if (sandboxId) {
-    params.set('sandboxId', sandboxId)
-  }
-
-  return `${PROTECTED_URLS.TERMINAL}?${params.toString()}`
-}
+const getTerminalUrl = (
+  teamSlug: string,
+  template: AgentTemplateConfig,
+  sandboxId?: string
+) => PROTECTED_URLS.AGENT_TERMINAL(teamSlug, template.template, sandboxId)
 
 const canReopenTerminal = (sandbox: Sandbox) =>
   sandbox.state === 'running' || sandbox.state === 'paused'
@@ -253,7 +249,9 @@ function AgentSessionList({
           {canReopenTerminal(sandbox) ? (
             <div className="flex items-center gap-3">
               <Button asChild size="none" variant="tertiary">
-                <Link href={getTerminalUrl(template, sandbox.sandboxID)}>
+                <Link
+                  href={getTerminalUrl(teamSlug, template, sandbox.sandboxID)}
+                >
                   Open
                   <ExternalLinkIcon />
                 </Link>
@@ -346,7 +344,7 @@ export function AgentsDashboard({ templates, teamSlug }: AgentsDashboardProps) {
                   size="default"
                   variant="primary"
                 >
-                  <Link href={getTerminalUrl(template)}>
+                  <Link href={getTerminalUrl(teamSlug, template)}>
                     Start
                     <ExternalLinkIcon />
                   </Link>

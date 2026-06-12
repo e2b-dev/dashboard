@@ -24,6 +24,15 @@ export const PROTECTED_URLS = {
   KEYS: (teamSlug: string) => `/dashboard/${teamSlug}/keys`,
   MEMBERS: (teamSlug: string) => `/dashboard/${teamSlug}/members`,
   AGENTS: (teamSlug: string) => `/dashboard/${teamSlug}/agents`,
+  AGENT_TERMINAL: (teamSlug: string, template: string, sandboxId?: string) => {
+    const params = new URLSearchParams({ template })
+
+    if (sandboxId) {
+      params.set('sandboxId', sandboxId)
+    }
+
+    return `/dashboard/${teamSlug}/agents/terminal?${params.toString()}`
+  },
 
   SANDBOXES: (teamSlug: string) =>
     `/dashboard/${teamSlug}/sandboxes/monitoring`,
