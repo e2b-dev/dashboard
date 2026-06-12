@@ -406,11 +406,6 @@ const formatZonedExactTimestamp = (
   timezone: Timezone
 ): string => formatInTimeZone(value, timezone, 'yyyy-MM-dd HH:mm:ss zzz')
 
-const formatZonedTime = (
-  value: string | number | Date,
-  timezone: Timezone
-): string => formatInTimeZone(value, timezone, 'h:mm:ss a')
-
 // Returns a relative day label for a timestamp; e.g. today in NY -> "Today", prior day -> "Yesterday", else "Jun 9, 2026".
 const getRelativeDay = (
   value: string | number | Date,
@@ -438,7 +433,6 @@ export {
   formatZonedDateRange,
   formatZonedDateTimeInput,
   formatZonedExactTimestamp,
-  formatZonedTime,
   getRelativeDay,
   formatZonedTimeAxisLabel,
   getZonedDateParts,

@@ -17,7 +17,6 @@ export {
   formatZonedDateRange,
   formatZonedDateTimeInput,
   formatZonedExactTimestamp,
-  formatZonedTime,
   formatZonedTimeAxisLabel,
   getRelativeDay,
   getZonedDateParts,
