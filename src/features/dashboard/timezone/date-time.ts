@@ -399,13 +399,4 @@ export {
   zonedDateTimePartsToUtcTimestamp,
   zonedInstantToCalendarDate,
 }
-export type {
-  DateFormat,
-  DatePartsFormatPreset,
-  DateTimeParts,
-  FormatDateOptions,
-  FormatDatePartsOptions,
-  FormatDateRangeOptions,
-  ZonedDateParts,
-  ZonedDateTimeParts,
-}
+export type { DateFormat, ZonedDateTimeParts }
