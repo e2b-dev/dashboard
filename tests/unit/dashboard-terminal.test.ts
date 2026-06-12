@@ -2,6 +2,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { SUPABASE_TEAM_HEADER, SUPABASE_TOKEN_HEADER } from '@/configs/api'
 import { attachTerminalWithRetry } from '@/features/dashboard/terminal/attach-terminal'
 import { TERMINAL_SESSION_STORAGE_PREFIX } from '@/features/dashboard/terminal/constants'
+import {
+  mergeTerminalEnvVarNames,
+  parseTerminalEnvVarEntry,
+} from '@/features/dashboard/terminal/env-vars'
+import {
+  getTerminalEnvVars,
+  setTerminalEnvVar,
+} from '@/features/dashboard/terminal/env-vars.server'
 import { openTerminalSandbox } from '@/features/dashboard/terminal/sandbox-session'
 import {
   clearStoredTerminalSession,
@@ -92,6 +100,49 @@ describe('dashboard terminal helpers', () => {
     it('normalizes explicit overrides', () => {
       expect(resolveTerminalTemplateOverride('  ', 'python')).toBe('base')
       expect(resolveTerminalTemplateOverride('../base', 'python')).toBeNull()
+    })
+  })
+
+  describe('terminal environment variables', () => {
+    it('parses key/value entries and normalizes keys', () => {
+      expect(parseTerminalEnvVarEntry('openai_api_key=value')).toEqual({
+        name: 'OPENAI_API_KEY',
+        value: 'value',
+      })
+      expect(
+        parseTerminalEnvVarEntry('ANTHROPIC_API_KEY:secret:value')
+      ).toEqual({
+        name: 'ANTHROPIC_API_KEY',
+        value: 'secret:value',
+      })
+      expect(parseTerminalEnvVarEntry('NO_VALUE=')).toBeNull()
+      expect(parseTerminalEnvVarEntry('INVALID-KEY=value')).toBeNull()
+    })
+
+    it('dedupes env var names and stores values by sandbox', () => {
+      expect(
+        mergeTerminalEnvVarNames(['openai_api_key'], ['OPENAI_API_KEY'])
+      ).toEqual(['OPENAI_API_KEY'])
+
+      expect(
+        setTerminalEnvVar({
+          sandboxId: 'sandbox-one',
+          name: 'openai_api_key',
+          value: 'one',
+        })
+      ).toBe('OPENAI_API_KEY')
+      setTerminalEnvVar({
+        sandboxId: 'sandbox-two',
+        name: 'OPENAI_API_KEY',
+        value: 'two',
+      })
+
+      expect(getTerminalEnvVars('sandbox-one')).toEqual({
+        OPENAI_API_KEY: 'one',
+      })
+      expect(getTerminalEnvVars('sandbox-two')).toEqual({
+        OPENAI_API_KEY: 'two',
+      })
     })
   })
 

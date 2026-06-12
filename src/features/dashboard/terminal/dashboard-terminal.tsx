@@ -1,11 +1,12 @@
 'use client'
 
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { type CommandHandle, type Sandbox, TimeoutError } from 'e2b'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SandboxManagementAuth } from '@/core/shared/sandbox-management-auth'
+import { useTRPC } from '@/trpc/client'
 import { attachTerminalWithRetry } from './attach-terminal'
 import {
-  DEFAULT_CWD,
   TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS,
   TERMINAL_ATTACH_MAX_RETRIES,
   TERMINAL_ATTACH_RETRY_BASE_DELAY_MS,
@@ -13,6 +14,7 @@ import {
   TERMINAL_AUTOSTART_DEBOUNCE_MS,
 } from './constants'
 import DashboardTerminalCommandDialog from './dashboard-terminal-command-dialog'
+import { getDefaultTerminalEnvVarNames } from './env-vars'
 import { openTerminalSandbox } from './sandbox-session'
 import {
   normalizeTerminalTemplate,
@@ -43,6 +45,37 @@ interface DashboardTerminalProps {
   teamSlug: string
 }
 
+async function connectCreatedTerminalPty({
+  appendOutput,
+  pid,
+  requestPtyKill,
+  sandbox,
+}: {
+  appendOutput: (text: string | Uint8Array) => void
+  pid: number
+  requestPtyKill: ({
+    pid,
+    sandboxId,
+  }: {
+    pid: number
+    sandboxId: string
+  }) => void
+  sandbox: Sandbox
+}) {
+  try {
+    return await sandbox.pty.connect(pid, {
+      timeoutMs: 0,
+      requestTimeoutMs: TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS,
+      onData: (data) => {
+        appendOutput(data)
+      },
+    })
+  } catch (error) {
+    requestPtyKill({ pid, sandboxId: sandbox.sandboxId })
+    throw error
+  }
+}
+
 export default function DashboardTerminal({
   autoStart = false,
   getSandbox,
@@ -60,6 +93,25 @@ export default function DashboardTerminal({
   )
   const [pendingLaunch, setPendingLaunch] =
     useState<PendingTerminalLaunch | null>(null)
+  const trpc = useTRPC()
+  const { mutateAsync: createTerminalPty } = useMutation(
+    trpc.sandbox.createTerminalPty.mutationOptions()
+  )
+  const { mutateAsync: setTerminalEnvVar } = useMutation(
+    trpc.sandbox.setTerminalEnvVar.mutationOptions()
+  )
+  const { data: terminalEnvVars } = useQuery(
+    trpc.sandbox.terminalEnvVars.queryOptions(
+      {
+        sandboxId: activeSandboxId,
+        teamSlug,
+        template,
+      },
+      {
+        refetchOnWindowFocus: false,
+      }
+    )
+  )
 
   const sandboxRef = useRef<Sandbox | null>(null)
   const ptyRef = useRef<CommandHandle | null>(null)
@@ -371,15 +423,24 @@ export default function DashboardTerminal({
         appendOutput(`Sandbox ${sandbox.sandboxId} is running.\r\n`)
         appendOutput('Opening PTY...\r\n')
         const terminalSize = resizeTerminal()
-        const pty = await sandbox.pty.create({
+        const { pid } = await createTerminalPty({
+          sandboxId: sandbox.sandboxId,
+          template: nextTemplate,
           cols: terminalSize.cols,
           rows: terminalSize.rows,
-          timeoutMs: 0,
-          requestTimeoutMs: TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS,
-          cwd: DEFAULT_CWD,
-          onData: (data) => {
-            appendOutput(data)
-          },
+          teamSlug,
+        })
+
+        if (!isCurrentStart()) {
+          requestPtyKill({ pid, sandboxId: sandbox.sandboxId })
+          return
+        }
+
+        const pty = await connectCreatedTerminalPty({
+          appendOutput,
+          pid,
+          requestPtyKill,
+          sandbox,
         })
 
         if (!isCurrentStart()) {
@@ -435,8 +496,11 @@ export default function DashboardTerminal({
       focusTerminal,
       getSandbox,
       runCommand,
+      createTerminalPty,
+      requestPtyKill,
       sandboxManagementAuth,
       sandboxScoped,
+      teamSlug,
       template,
       onSandboxAttached,
       onSandboxAttachFailed,
@@ -561,6 +625,38 @@ export default function DashboardTerminal({
     startTerminal,
   ])
 
+  const handleSetEnvVar = useCallback(
+    async ({ name, value }: { name: string; value: string }) => {
+      if (!activeSandboxId) {
+        throw new Error('Open a terminal before setting environment variables.')
+      }
+
+      await setTerminalEnvVar({
+        sandboxId: activeSandboxId,
+        name,
+        value,
+        teamSlug,
+      })
+
+      if (status === 'ready') {
+        void startTerminal({
+          target: {
+            sandboxId: activeSandboxId,
+            template,
+          },
+        })
+      }
+    },
+    [
+      activeSandboxId,
+      setTerminalEnvVar,
+      startTerminal,
+      status,
+      teamSlug,
+      template,
+    ]
+  )
+
   useEffect(() => {
     if (!autoStart || status !== 'idle' || isStartingRef.current) return
 
@@ -615,7 +711,11 @@ export default function DashboardTerminal({
   return (
     <>
       <TerminalPanel
+        predefinedEnvVarNames={
+          terminalEnvVars?.names ?? getDefaultTerminalEnvVarNames(template)
+        }
         sandboxId={activeSandboxId}
+        envVarTemplate={terminalEnvVars?.template ?? template}
         restartDisabled={restartDisabled}
         restartLabel={restartLabel}
         template={sandboxScoped ? undefined : template}
@@ -623,6 +723,7 @@ export default function DashboardTerminal({
         onFocusTerminal={focusTerminal}
         onCopyTerminalText={() => void copyTerminalText()}
         onRestartTerminal={restartTerminal}
+        onSetEnvVar={handleSetEnvVar}
       />
 
       <DashboardTerminalCommandDialog

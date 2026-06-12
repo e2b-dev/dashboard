@@ -1,3 +1,4 @@
+import { TRPCError } from '@trpc/server'
 import { millisecondsInDay } from 'date-fns/constants'
 import { Sandbox } from 'e2b'
 import { z } from 'zod'
@@ -18,7 +19,16 @@ import { createTRPCRouter } from '@/core/server/trpc/init'
 import { protectedTeamProcedure } from '@/core/server/trpc/procedures'
 import { SandboxIdSchema } from '@/core/shared/schemas/api'
 import { SANDBOX_MONITORING_METRICS_RETENTION_MS } from '@/features/dashboard/sandbox/monitoring/utils/constants'
-import { TERMINAL_SANDBOX_TIMEOUT_MS } from '@/features/dashboard/terminal/constants'
+import {
+  DEFAULT_CWD,
+  TERMINAL_SANDBOX_TIMEOUT_MS,
+} from '@/features/dashboard/terminal/constants'
+import {
+  getTerminalEnvVars,
+  setTerminalEnvVar,
+} from '@/features/dashboard/terminal/env-vars.server'
+import { getTerminalEnvVarNames } from '@/features/dashboard/terminal/secret-envs.server'
+import { normalizeTerminalTemplate } from '@/features/dashboard/terminal/template'
 
 const sandboxRepositoryProcedure = protectedTeamProcedure.use(
   withTeamAuthedRequestRepository(
@@ -208,6 +218,107 @@ export const sandboxRouter = createTRPCRouter({
     }),
 
   // MUTATIONS
+
+  terminalEnvVars: protectedTeamProcedure
+    .input(
+      z.object({
+        sandboxId: SandboxIdSchema.optional(),
+        template: z.string().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      let template = normalizeTerminalTemplate(input.template)
+
+      if (input.sandboxId) {
+        const sandbox = await Sandbox.connect(input.sandboxId, {
+          apiUrl: process.env.NEXT_PUBLIC_INFRA_API_URL,
+          domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
+          sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
+          timeoutMs: TERMINAL_SANDBOX_TIMEOUT_MS,
+          headers: authHeaders(ctx.session.access_token, ctx.teamId),
+        })
+        const info = await sandbox.getInfo()
+
+        template =
+          normalizeTerminalTemplate(
+            info.metadata.template ?? info.name ?? info.templateId
+          ) ?? template
+      }
+
+      if (!template) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Invalid terminal template.',
+        })
+      }
+
+      return {
+        template,
+        names: getTerminalEnvVarNames(template),
+      }
+    }),
+
+  createTerminalPty: protectedTeamProcedure
+    .input(
+      z.object({
+        sandboxId: SandboxIdSchema,
+        template: z.string(),
+        cols: z.number().int().positive(),
+        rows: z.number().int().positive(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const template = normalizeTerminalTemplate(input.template)
+      if (!template) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Invalid terminal template.',
+        })
+      }
+
+      const sandbox = await Sandbox.connect(input.sandboxId, {
+        apiUrl: process.env.NEXT_PUBLIC_INFRA_API_URL,
+        domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
+        sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
+        timeoutMs: TERMINAL_SANDBOX_TIMEOUT_MS,
+        headers: authHeaders(ctx.session.access_token, ctx.teamId),
+      })
+      const pty = await sandbox.pty.create({
+        cols: input.cols,
+        rows: input.rows,
+        timeoutMs: 0,
+        cwd: DEFAULT_CWD,
+        envs: getTerminalEnvVars(input.sandboxId),
+        onData: () => undefined,
+      })
+      await pty.disconnect()
+
+      return {
+        pid: pty.pid,
+      }
+    }),
+
+  setTerminalEnvVar: protectedTeamProcedure
+    .input(
+      z.object({
+        sandboxId: SandboxIdSchema,
+        name: z.string().min(1).max(128),
+        value: z.string().min(1).max(32_768),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const name = setTerminalEnvVar(input)
+      if (!name) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Invalid environment variable name.',
+        })
+      }
+
+      return {
+        name,
+      }
+    }),
 
   killTerminalPty: protectedTeamProcedure
     .input(
