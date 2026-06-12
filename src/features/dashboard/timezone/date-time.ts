@@ -101,11 +101,6 @@ const shiftCalendarDays = (
   }
 }
 
-interface ZonedDateRangeFormatOptions {
-  includeTime?: boolean
-  includeTimezone?: boolean
-}
-
 const pad = (value: number): string => String(value).padStart(2, '0')
 
 const formatZonedDateTimeInput = (
@@ -158,47 +153,14 @@ const formatTimezoneAbbreviation = (
   return abbreviation ?? timezone
 }
 
-const formatZonedDateRange = (
-  start: string | number | Date,
-  end: string | number | Date,
-  timezone: Timezone,
-  {
-    includeTime = false,
-    includeTimezone = true,
-  }: ZonedDateRangeFormatOptions = {}
-): string => {
-  const baseOptions: Intl.DateTimeFormatOptions = {
-    timeZone: timezone,
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }
-
-  if (includeTime) {
-    baseOptions.hour = '2-digit'
-    baseOptions.minute = '2-digit'
-    baseOptions.second = '2-digit'
-  }
-
-  const endOptions: Intl.DateTimeFormatOptions = {
-    ...baseOptions,
-    timeZoneName: includeTimezone ? 'short' : undefined,
-  }
-
-  const startFormatter = new Intl.DateTimeFormat('en-US', baseOptions)
-  const endFormatter = new Intl.DateTimeFormat('en-US', endOptions)
-
-  return `${startFormatter.format(new Date(start))} - ${endFormatter.format(
-    new Date(end)
-  )}`
-}
-
 // Static date-fns format strings for known display presets.
 const DATE_FORMAT_PRESETS = {
   // Jun 8, 2026
   date: 'MMM d, yyyy',
   // 9:05:12 AM
   time: 'h:mm:ss a',
+  // 09:05:12 AM
+  'time-padded-hour': 'hh:mm:ss a',
   // 09:05
   'time-24h-no-seconds': 'HH:mm',
   // 09:05:12
@@ -282,6 +244,47 @@ const formatDate = (
     timezone,
     resolveDateFormatPreset(date, timezone, format)
   )
+}
+
+interface FormatDateRangeOptions {
+  timezone: Timezone
+  includeTime?: boolean
+  includeTimezone?: boolean
+}
+
+const formatDateRange = (
+  start: string | number | Date,
+  end: string | number | Date,
+  {
+    timezone,
+    includeTime = false,
+    includeTimezone = true,
+  }: FormatDateRangeOptions
+): string => {
+  const formatSide = (
+    value: string | number | Date,
+    withTimezone: boolean
+  ): string => {
+    const date = formatDate(value, { timezone, format: 'date' }) ?? ''
+
+    if (includeTime) {
+      const time =
+        formatDate(value, { timezone, format: 'time-padded-hour' }) ?? ''
+      const base = `${date} at ${time}`
+
+      if (withTimezone)
+        return `${base} ${formatTimezoneAbbreviation(value, timezone)}`
+
+      return base
+    }
+
+    if (withTimezone)
+      return `${date} ${formatTimezoneAbbreviation(value, timezone)}`
+
+    return date
+  }
+
+  return `${formatSide(start, false)} - ${formatSide(end, includeTimezone)}`
 }
 
 interface DateTimeParts {
@@ -414,8 +417,8 @@ export {
   createZonedTimeAxisLabelFormatter,
   formatDate,
   formatDateParts,
+  formatDateRange,
   formatTimezoneAbbreviation,
-  formatZonedDateRange,
   formatZonedDateTimeInput,
   getRelativeDay,
   getZonedDateParts,
@@ -431,7 +434,7 @@ export type {
   DateTimeParts,
   FormatDateOptions,
   FormatDatePartsOptions,
+  FormatDateRangeOptions,
   ZonedDateParts,
-  ZonedDateRangeFormatOptions,
   ZonedDateTimeParts,
 }

@@ -1,10 +1,7 @@
 'use client'
 
 import { useCallback, useMemo, useState } from 'react'
-import {
-  formatZonedDateRange,
-  useTimezone,
-} from '@/features/dashboard/timezone'
+import { formatDateRange, useTimezone } from '@/features/dashboard/timezone'
 import { cn } from '@/lib/utils'
 import { findMatchingPreset } from '@/lib/utils/time-range'
 import { formatTimeframeAsISO8601Interval } from '@/lib/utils/timeframe'
@@ -64,7 +61,7 @@ export function UsageTimeRangeControls({
   )
 
   const rangeLabel = useMemo(() => {
-    return formatZonedDateRange(timeframe.start, timeframe.end, timezone)
+    return formatDateRange(timeframe.start, timeframe.end, { timezone })
   }, [timeframe.start, timeframe.end, timezone])
 
   const rangeCopyValue = useMemo(

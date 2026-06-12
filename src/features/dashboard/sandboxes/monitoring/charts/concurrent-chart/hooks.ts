@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import type { TeamMetricsResponse } from '@/core/modules/sandboxes/models.client'
 import {
   formatDate,
-  formatZonedDateRange,
+  formatDateRange,
   useTimezone,
 } from '@/features/dashboard/timezone'
 import { formatNumber } from '@/lib/utils/formatting'
@@ -78,7 +78,8 @@ export function useTimeRangeDisplay(timeframe: Timeframe) {
 
     // show timestamps for static mode or true custom ranges
     if (!timeframe.isLive || currentRange === 'custom') {
-      return formatZonedDateRange(timeframe.start, timeframe.end, timezone, {
+      return formatDateRange(timeframe.start, timeframe.end, {
+        timezone,
         includeTime: true,
         includeTimezone: true,
       })
