@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useMemo, useState } from 'react'
-import { useTimezone } from '@/features/dashboard/timezone'
+import { formatDate, useTimezone } from '@/features/dashboard/timezone'
 import { cn } from '@/lib/utils'
 import { LiveDot } from '@/ui/live'
 import { Button } from '@/ui/primitives/button'
@@ -15,10 +15,7 @@ import {
 import { Separator } from '@/ui/primitives/separator'
 import { TimeRangePicker } from '@/ui/time-range-picker'
 import { type TimeRangePreset, TimeRangePresets } from '@/ui/time-range-presets'
-import {
-  SANDBOX_MONITORING_CUSTOM_END_FUTURE_MS,
-  SANDBOX_MONITORING_TIME_LABEL_FORMAT_OPTIONS,
-} from '../utils/constants'
+import { SANDBOX_MONITORING_CUSTOM_END_FUTURE_MS } from '../utils/constants'
 import { findPresetById, getMonitoringPresets } from '../utils/presets'
 import {
   computeLifecyclePadding,
@@ -99,19 +96,19 @@ export default function SandboxMonitoringTimeRangeControls({
   }, [activePresetId, presets])
 
   const rangeLabel = useMemo(() => {
-    const rangeLabelFormatter = new Intl.DateTimeFormat(undefined, {
-      ...SANDBOX_MONITORING_TIME_LABEL_FORMAT_OPTIONS,
-      timeZone: timezone,
-    })
     const startDate = new Date(timeframe.start)
     const endDate = new Date(timeframe.end)
     if (!isValidDate(startDate) || !isValidDate(endDate)) {
       return '--'
     }
 
-    return `${rangeLabelFormatter.format(startDate)} - ${rangeLabelFormatter.format(
-      endDate
-    )}`
+    const startLabel = formatDate(startDate, {
+      timezone,
+      format: 'time-24h',
+    })
+    const endLabel = formatDate(endDate, { timezone, format: 'time-24h' })
+
+    return `${startLabel} - ${endLabel}`
   }, [timeframe.end, timeframe.start, timezone])
 
   const lifecyclePadding = useMemo(() => {

@@ -199,6 +199,8 @@ const DATE_FORMAT_PRESETS = {
   date: 'MMM d, yyyy',
   // 9:05:12 AM
   time: 'h:mm:ss a',
+  // 09:05:12
+  'time-24h': 'HH:mm:ss',
   // 2026-06-08 09:05:12 EDT
   'exact-timestamp': 'yyyy-MM-dd HH:mm:ss zzz',
 } as const
@@ -401,11 +403,6 @@ const formatDateParts = (
   }
 }
 
-const formatZonedExactTimestamp = (
-  value: string | number | Date,
-  timezone: Timezone
-): string => formatInTimeZone(value, timezone, 'yyyy-MM-dd HH:mm:ss zzz')
-
 // Returns a relative day label for a timestamp; e.g. today in NY -> "Today", prior day -> "Yesterday", else "Jun 9, 2026".
 const getRelativeDay = (
   value: string | number | Date,
@@ -432,7 +429,6 @@ export {
   formatTimezoneAbbreviation,
   formatZonedDateRange,
   formatZonedDateTimeInput,
-  formatZonedExactTimestamp,
   getRelativeDay,
   formatZonedTimeAxisLabel,
   getZonedDateParts,
