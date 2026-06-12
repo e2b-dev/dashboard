@@ -45,6 +45,7 @@ export const useColumns = (deps: unknown[]) => {
         minSize: 140,
         maxSize: 400,
         enableResizing: true,
+        enableSorting: false,
         cell: TemplateNameCell,
       },
       {

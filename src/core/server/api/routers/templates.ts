@@ -45,8 +45,6 @@ export const templatesRouter = createTRPCRouter({
         search: z.string().optional(),
         sort: z
           .enum([
-            'name_asc',
-            'name_desc',
             'created_at_asc',
             'created_at_desc',
             'updated_at_asc',

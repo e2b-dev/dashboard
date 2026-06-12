@@ -42,7 +42,6 @@ import { TemplatesTableBody as TableBody } from './table-body'
 import { fallbackData, templatesTableConfig, useColumns } from './table-config'
 
 const COLUMN_TO_SORT_BASE: Record<string, string> = {
-  name: 'name',
   createdAt: 'created_at',
   updatedAt: 'updated_at',
 }
