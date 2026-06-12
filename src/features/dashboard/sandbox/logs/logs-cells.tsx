@@ -20,24 +20,22 @@ export const Timestamp = ({ timestampUnix }: TimestampProps) => {
     format: 'date-time-with-centiseconds',
   })
 
-  if (!formattedTimestamp) {
-    return (
-      <CopyButtonInline
-        value=""
-        className="font-mono group prose-table-numeric truncate"
-      >
-        --
-      </CopyButtonInline>
-    )
-  }
+  const copyValue = formattedTimestamp?.iso ?? ''
+  const content = formattedTimestamp ? (
+    <>
+      <span className="text-fg-tertiary">{formattedTimestamp.datePart}</span>{' '}
+      {formattedTimestamp.timePart}.{formattedTimestamp.subsecondPart}
+    </>
+  ) : (
+    '--'
+  )
 
   return (
     <CopyButtonInline
-      value={formattedTimestamp.iso}
+      value={copyValue}
       className="font-mono group prose-table-numeric truncate"
     >
-      <span className="text-fg-tertiary">{formattedTimestamp.datePart}</span>{' '}
-      {formattedTimestamp.timePart}.{formattedTimestamp.subsecondPart}
+      {content}
     </CopyButtonInline>
   )
 }
