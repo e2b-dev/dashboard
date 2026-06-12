@@ -1,29 +1,8 @@
 import { notFound } from 'next/navigation'
+import { AGENT_TEMPLATES } from '@/configs/agents'
 import { INCLUDE_AGENTS_IN_DASHBOARD } from '@/configs/flags'
 import { Page } from '@/features/dashboard/layouts/page'
 import { Badge } from '@/ui/primitives/badge'
-
-const AGENT_TEMPLATES = [
-  {
-    name: 'Codex',
-    command: 'codex',
-    templateId: 'codex',
-    description: 'Ubuntu template with Codex installed for coding sessions.',
-  },
-  {
-    name: 'Claude',
-    command: 'claude',
-    templateId: 'claude',
-    description:
-      'Ubuntu template with Claude Code installed for coding sessions.',
-  },
-  {
-    name: 'OpenCode',
-    command: 'opencode',
-    templateId: 'opencode',
-    description: 'Ubuntu template with OpenCode installed for coding sessions.',
-  },
-]
 
 export default async function AgentsPage() {
   if (!INCLUDE_AGENTS_IN_DASHBOARD) {
@@ -65,7 +44,7 @@ export default async function AgentsPage() {
 
             <div className="border-stroke mt-4 flex items-center justify-between gap-2 border-t pt-3">
               <span className="text-fg-tertiary prose-label uppercase">
-                Ubuntu
+                {template.base}
               </span>
               <code className="prose-code text-fg-tertiary">
                 {template.templateId}
