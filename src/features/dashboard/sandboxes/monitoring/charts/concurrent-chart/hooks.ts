@@ -80,8 +80,7 @@ export function useTimeRangeDisplay(timeframe: Timeframe) {
     if (!timeframe.isLive || currentRange === 'custom') {
       return formatDateRange(timeframe.start, timeframe.end, {
         timezone,
-        includeTime: true,
-        includeTimezone: true,
+        format: 'date-time-padded-hour',
       })
     }
 

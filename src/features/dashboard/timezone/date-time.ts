@@ -159,8 +159,8 @@ const DATE_FORMAT_PRESETS = {
   date: 'MMM d, yyyy',
   // 9:05:12 AM
   time: 'h:mm:ss a',
-  // 09:05:12 AM
-  'time-padded-hour': 'hh:mm:ss a',
+  // Jun 8, 2026 at 09:05:12 AM
+  'date-time-padded-hour': "MMM d, yyyy 'at' hh:mm:ss a",
   // 09:05
   'time-24h-no-seconds': 'HH:mm',
   // 09:05:12
@@ -248,43 +248,25 @@ const formatDate = (
 
 interface FormatDateRangeOptions {
   timezone: Timezone
-  includeTime?: boolean
-  includeTimezone?: boolean
+  format?: DateFormatPreset
 }
+
+const TIMEZONE_INCLUSIVE_DATE_FORMAT_PRESETS: ReadonlySet<DateFormatPreset> =
+  new Set(['compact-timestamp', 'exact-timestamp'])
 
 const formatDateRange = (
   start: string | number | Date,
   end: string | number | Date,
-  {
-    timezone,
-    includeTime = false,
-    includeTimezone = true,
-  }: FormatDateRangeOptions
+  { timezone, format = 'date' }: FormatDateRangeOptions
 ): string => {
-  const formatSide = (
-    value: string | number | Date,
-    withTimezone: boolean
-  ): string => {
-    const date = formatDate(value, { timezone, format: 'date' }) ?? ''
+  const startLabel = formatDate(start, { timezone, format }) ?? ''
+  const endLabel = formatDate(end, { timezone, format }) ?? ''
 
-    if (includeTime) {
-      const time =
-        formatDate(value, { timezone, format: 'time-padded-hour' }) ?? ''
-      const base = `${date} at ${time}`
-
-      if (withTimezone)
-        return `${base} ${formatTimezoneAbbreviation(value, timezone)}`
-
-      return base
-    }
-
-    if (withTimezone)
-      return `${date} ${formatTimezoneAbbreviation(value, timezone)}`
-
-    return date
+  if (TIMEZONE_INCLUSIVE_DATE_FORMAT_PRESETS.has(format)) {
+    return `${startLabel} - ${endLabel}`
   }
 
-  return `${formatSide(start, false)} - ${formatSide(end, includeTimezone)}`
+  return `${startLabel} - ${endLabel} ${formatTimezoneAbbreviation(end, timezone)}`
 }
 
 interface DateTimeParts {
