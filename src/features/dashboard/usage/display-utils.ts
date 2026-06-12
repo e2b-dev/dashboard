@@ -1,4 +1,4 @@
-import { getZonedDateParts, type Timezone } from '@/features/dashboard/timezone'
+import { getDateParts, type Timezone } from '@/features/dashboard/timezone'
 import { formatCurrency, formatNumber } from '@/lib/utils/formatting'
 import {
   determineSamplingMode,
@@ -13,8 +13,8 @@ import type {
 } from './types'
 
 const isThisYearInTimezone = (timestamp: number, timezone: Timezone): boolean =>
-  getZonedDateParts(timestamp, timezone).year ===
-  getZonedDateParts(new Date(), timezone).year
+  getDateParts(timestamp, timezone).year ===
+  getDateParts(new Date(), timezone).year
 
 const formatZonedDay = (timestamp: number, timezone: Timezone): string =>
   new Intl.DateTimeFormat('en-US', {
@@ -44,8 +44,8 @@ const formatZonedWeekRange = (
   endTimestamp: number,
   timezone: Timezone
 ): string => {
-  const startParts = getZonedDateParts(startTimestamp, timezone)
-  const endParts = getZonedDateParts(endTimestamp, timezone)
+  const startParts = getDateParts(startTimestamp, timezone)
+  const endParts = getDateParts(endTimestamp, timezone)
   const sameYear = startParts.year === endParts.year
   const sameMonth = sameYear && startParts.month === endParts.month
 
