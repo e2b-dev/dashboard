@@ -23,8 +23,9 @@ import { Separator } from '@/ui/primitives/separator'
 import { TableFilterButton } from '@/ui/table-filter-button'
 import { useTemplateTableStore } from './stores/table-store'
 
-// Components
-const ResourcesFilter = () => {
+// Currently unused on the templates page (server-side resource filtering was
+// dropped from the dropdown); kept exported for reuse on the builds page.
+export const ResourcesFilter = () => {
   const { cpuCount, setCpuCount, memoryMB, setMemoryMB } =
     useTemplateTableStore()
 
@@ -132,15 +133,9 @@ const TemplatesTableFilters = React.forwardRef<
   TemplatesTableFiltersProps
 >(({ className, ...props }, ref) => {
   const {
-    globalFilter,
-    cpuCount,
-    memoryMB,
     isPublic,
     createdAfter,
     createdBefore,
-    setGlobalFilter,
-    setCpuCount,
-    setMemoryMB,
     setIsPublic,
     setCreatedAfter,
     setCreatedBefore,
@@ -161,14 +156,6 @@ const TemplatesTableFilters = React.forwardRef<
         <DropdownMenuContent>
           <DropdownMenuGroup>
             <DropdownMenuLabel>Filters</DropdownMenuLabel>
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>Resources</DropdownMenuSubTrigger>
-              <DropdownMenuPortal>
-                <DropdownMenuSubContent>
-                  <ResourcesFilter />
-                </DropdownMenuSubContent>
-              </DropdownMenuPortal>
-            </DropdownMenuSub>
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>Visibility</DropdownMenuSubTrigger>
               <DropdownMenuPortal>
@@ -207,20 +194,6 @@ const TemplatesTableFilters = React.forwardRef<
       </DropdownMenu>
 
       {/* Filter Pills */}
-      {cpuCount && (
-        <TableFilterButton
-          label="CPU"
-          value={`${cpuCount} cores`}
-          onClick={() => setCpuCount(undefined)}
-        />
-      )}
-      {memoryMB && (
-        <TableFilterButton
-          label="Memory"
-          value={`${memoryMB} MB`}
-          onClick={() => setMemoryMB(undefined)}
-        />
-      )}
       {isPublic !== undefined && (
         <TableFilterButton
           label="Visibility"
