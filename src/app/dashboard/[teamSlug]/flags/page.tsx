@@ -3,16 +3,16 @@ import { AUTH_URLS } from '@/configs/urls'
 import { auth } from '@/core/server/auth'
 import { listFeatureFlags } from '@/core/server/feature-flags/list.server'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
-import { FeatureFlagsTable } from '@/features/dashboard/admin/feature-flags'
+import { FeatureFlagsTable } from '@/features/dashboard/flags/feature-flags'
 import { Page } from '@/features/dashboard/layouts/page'
 
-interface AdminPageProps {
+interface FlagsPageProps {
   params: Promise<{
     teamSlug: string
   }>
 }
 
-export default async function AdminPage({ params }: AdminPageProps) {
+export default async function FlagsPage({ params }: FlagsPageProps) {
   const [{ teamSlug }, authContext] = await Promise.all([
     params,
     auth.getAuthContext(),

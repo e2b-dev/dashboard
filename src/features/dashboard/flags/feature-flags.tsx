@@ -40,7 +40,7 @@ export function FeatureFlagsTable({
   return (
     <div className="flex flex-col gap-3">
       <div>
-        <h1 className="prose-title text-fg">Admin</h1>
+        <h1 className="prose-title text-fg">Feature Flags</h1>
         <p className="prose-body text-fg-secondary">
           Feature flags evaluated for this team.
         </p>
