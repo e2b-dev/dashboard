@@ -14,6 +14,9 @@ export const serverSchema = z.object({
 
   TURNSTILE_SECRET_KEY: z.string().optional(),
 
+  POSTHOG_API_KEY: z.string().min(1).optional(),
+  POSTHOG_PROJECT_ID: z.string().min(1).optional(),
+
   AUTH_PROVIDER: z.enum(['supabase', 'ory']),
   AUTH_SECRET: z.string().min(1).optional(),
   AUTH_TRUST_HOST: z.string().optional(),
@@ -64,6 +67,9 @@ export const clientSchema = z.object({
   NEXT_PUBLIC_POSTHOG_DASHBOARD_FEEDBACK_SURVEY_ID: z
     .string()
     .min(1)
+    .optional(),
+  NEXT_PUBLIC_VERCEL_ENV: z
+    .enum(['production', 'preview', 'development'])
     .optional(),
 
   NEXT_PUBLIC_INCLUDE_BILLING: z.string().optional(),
