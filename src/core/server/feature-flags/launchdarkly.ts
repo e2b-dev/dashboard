@@ -92,7 +92,6 @@ async function getInitializedLaunchDarklyClient() {
 function createLaunchDarklyContext({
   userId,
   teamId,
-  teamSlug,
 }: FeatureFlagContextInput): LDContext {
   if (!teamId) {
     return {
@@ -108,7 +107,6 @@ function createLaunchDarklyContext({
     },
     team: {
       key: teamId,
-      ...(teamSlug ? { slug: teamSlug } : {}),
     },
   }
 }

@@ -34,7 +34,6 @@ export default async function AdminPage({ params }: AdminPageProps) {
   const context = {
     userId: authContext.user.id,
     teamId: teamIdResult.data,
-    teamSlug,
   }
   const flags = await listFeatureFlags(context)
   const isAdmin = flags.some((flag) => flag.id === 'isAdmin' && flag.value)
