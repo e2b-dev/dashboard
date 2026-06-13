@@ -45,6 +45,7 @@ export type BooleanFeatureFlagDefinition = {
   kind: 'boolean'
   key: string
   defaultValue: boolean
+  description?: string
 }
 
 export type JsonFeatureFlagDefinition<T> = {
@@ -52,6 +53,24 @@ export type JsonFeatureFlagDefinition<T> = {
   key: string
   defaultValue: T
   schema: z.ZodType<T>
+  description?: string
 }
 
-export const FEATURE_FLAGS = {} as const
+export type FeatureFlagDefinition =
+  | BooleanFeatureFlagDefinition
+  | JsonFeatureFlagDefinition<unknown>
+
+export const FEATURE_FLAGS = {
+  isAdmin: {
+    kind: 'boolean',
+    key: 'is_admin',
+    defaultValue: false,
+    description: 'Enables dashboard admin-only surfaces.',
+  },
+  iExist: {
+    kind: 'boolean',
+    key: 'i_exist',
+    defaultValue: false,
+    description: 'Test flag for validating LaunchDarkly team targeting.',
+  },
+} as const satisfies Record<string, FeatureFlagDefinition>
