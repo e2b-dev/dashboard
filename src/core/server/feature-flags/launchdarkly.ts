@@ -16,15 +16,9 @@ import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 
 const INITIALIZATION_TIMEOUT_SECONDS = 5
 
-type LaunchDarklyGlobal = typeof globalThis & {
-  __dashboardLaunchDarklyClient?: LDClient
-  __dashboardLaunchDarklyInitialization?: Promise<LDClient | null>
-  __dashboardLaunchDarklyReady?: boolean
-}
-
-function getLaunchDarklyGlobal() {
-  return globalThis as LaunchDarklyGlobal
-}
+let launchDarklyClient: LDClient | undefined
+let launchDarklyInitialization: Promise<LDClient | null> | undefined
+let launchDarklyReady = false
 
 function getLaunchDarklySdkKey() {
   const key = process.env.LAUNCHDARKLY_SDK_KEY?.trim()
@@ -38,17 +32,15 @@ function getLaunchDarklyClient() {
     return null
   }
 
-  const ldGlobal = getLaunchDarklyGlobal()
-
-  if (!ldGlobal.__dashboardLaunchDarklyClient) {
-    ldGlobal.__dashboardLaunchDarklyClient = init(sdkKey, {
+  if (!launchDarklyClient) {
+    launchDarklyClient = init(sdkKey, {
       logger: basicLogger({ level: 'warn' }),
     })
-    ldGlobal.__dashboardLaunchDarklyReady = false
-    ldGlobal.__dashboardLaunchDarklyInitialization = undefined
+    launchDarklyReady = false
+    launchDarklyInitialization = undefined
   }
 
-  return ldGlobal.__dashboardLaunchDarklyClient
+  return launchDarklyClient
 }
 
 async function getInitializedLaunchDarklyClient() {
@@ -58,22 +50,20 @@ async function getInitializedLaunchDarklyClient() {
     return null
   }
 
-  const ldGlobal = getLaunchDarklyGlobal()
-
-  if (ldGlobal.__dashboardLaunchDarklyReady) {
+  if (launchDarklyReady) {
     return client
   }
 
-  ldGlobal.__dashboardLaunchDarklyInitialization ??= client
+  launchDarklyInitialization ??= client
     .waitForInitialization({
       timeout: INITIALIZATION_TIMEOUT_SECONDS,
     })
     .then(() => {
-      ldGlobal.__dashboardLaunchDarklyReady = true
+      launchDarklyReady = true
       return client
     })
     .catch((error: unknown) => {
-      ldGlobal.__dashboardLaunchDarklyInitialization = undefined
+      launchDarklyInitialization = undefined
 
       l.warn(
         {
@@ -86,7 +76,7 @@ async function getInitializedLaunchDarklyClient() {
       return null
     })
 
-  return ldGlobal.__dashboardLaunchDarklyInitialization
+  return launchDarklyInitialization
 }
 
 export function createLaunchDarklyContext({
