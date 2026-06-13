@@ -47,6 +47,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
+    "@launchdarkly/node-server-sdk": "^9.11.2",
     "@marsidev/react-turnstile": "^1.4.1",
     "@next-safe-action/adapter-react-hook-form": "^2.0.0",
     "@next/env": "^16.2.7",

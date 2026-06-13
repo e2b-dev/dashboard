@@ -10,6 +10,7 @@ export const serverSchema = z.object({
   BILLING_API_URL: z.url().optional(),
   ZEROBOUNCE_API_KEY: z.string().optional(),
   PLAIN_API_KEY: z.string().min(1).optional(),
+  LAUNCHDARKLY_SDK_KEY: z.string().min(1).optional(),
 
   TURNSTILE_SECRET_KEY: z.string().optional(),
 
