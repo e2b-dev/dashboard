@@ -2,7 +2,6 @@ import type { JSX } from 'react'
 import {
   AccountSettingsIcon,
   CardIcon,
-  CpuIcon,
   GaugeIcon,
   KeyIcon,
   PersonsIcon,
@@ -12,11 +11,7 @@ import {
   UsageIcon,
   WebhookIcon,
 } from '@/ui/primitives/icons'
-import {
-  INCLUDE_AGENTS_IN_DASHBOARD,
-  INCLUDE_ARGUS,
-  INCLUDE_BILLING,
-} from './flags'
+import { INCLUDE_ARGUS, INCLUDE_BILLING } from './flags'
 import { PROTECTED_URLS } from './urls'
 
 type SidebarNavArgs = {
@@ -46,16 +41,6 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
     icon: TemplateIcon,
     activeMatch: `/dashboard/*/templates/**`,
   },
-  ...(INCLUDE_AGENTS_IN_DASHBOARD
-    ? [
-        {
-          label: 'Agents',
-          href: (args: SidebarNavArgs) => PROTECTED_URLS.AGENTS(args.teamSlug!),
-          icon: CpuIcon,
-          activeMatch: `/dashboard/*/agents`,
-        },
-      ]
-    : []),
 
   // Integrations
   ...(INCLUDE_ARGUS

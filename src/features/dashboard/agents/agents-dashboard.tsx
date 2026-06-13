@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { useAction } from 'next-safe-action/hooks'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import type { AgentTemplateConfig } from '@/configs/agents'
 import { PROTECTED_URLS } from '@/configs/urls'
@@ -310,18 +310,15 @@ export function AgentsDashboard({ templates, teamSlug }: AgentsDashboardProps) {
     )
   )
 
-  const sandboxesByAgentId = useMemo(() => {
-    const sandboxes = data?.sandboxes ?? []
-
-    return Object.fromEntries(
-      templates.map((template) => [
-        template.id,
-        sandboxes
-          .filter((sandbox) => isAgentSandbox(sandbox, template))
-          .sort(sortByNewestStartedAt),
-      ])
-    ) as Record<string, Sandbox[]>
-  }, [data?.sandboxes, templates])
+  const sandboxes = data?.sandboxes ?? []
+  const sandboxesByAgentId = Object.fromEntries(
+    templates.map((template) => [
+      template.id,
+      sandboxes
+        .filter((sandbox) => isAgentSandbox(sandbox, template))
+        .sort(sortByNewestStartedAt),
+    ])
+  ) as Record<string, Sandbox[]>
 
   return (
     <div className="border-stroke bg-bg-1 divide-stroke overflow-hidden rounded-lg border">

@@ -11,8 +11,8 @@ export default async function AgentTerminalPage({
     notFound()
   }
 
-  const { teamSlug } = await params
-  const { command, new: forceNew, sandboxId, template } = await searchParams
+  const [{ teamSlug }, { command, new: forceNew, sandboxId, template }] =
+    await Promise.all([params, searchParams])
 
   return (
     <TerminalLaunchPage
