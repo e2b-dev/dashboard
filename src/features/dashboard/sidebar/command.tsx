@@ -1,8 +1,8 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
-import { SIDEBAR_ALL_LINKS } from '@/configs/sidebar'
+import { useMemo, useState } from 'react'
+import { getVisibleSidebarLinks, SIDEBAR_ALL_LINKS } from '@/configs/sidebar'
 import useKeydown from '@/lib/hooks/use-keydown'
 import { cn } from '@/lib/utils'
 import {
@@ -29,8 +29,12 @@ export default function DashboardSidebarCommand({
   className,
 }: DashboardSidebarCommandProps) {
   const [open, setOpen] = useState(false)
-  const { team } = useDashboard()
+  const { features, team } = useDashboard()
   const router = useRouter()
+  const links = useMemo(
+    () => getVisibleSidebarLinks(SIDEBAR_ALL_LINKS, features),
+    [features]
+  )
 
   const { open: sidebarOpen, openMobile: sidebarOpenMobile } = useSidebar()
   const isSidebarOpen = sidebarOpen || sidebarOpenMobile
@@ -75,7 +79,7 @@ export default function DashboardSidebarCommand({
         <CommandList className="p-1 pb-3">
           <CommandEmpty>No results found.</CommandEmpty>
           <CommandGroup heading="Pages">
-            {SIDEBAR_ALL_LINKS.map((link) => (
+            {links.map((link) => (
               <CommandItem
                 key={link.label}
                 onSelect={() => {

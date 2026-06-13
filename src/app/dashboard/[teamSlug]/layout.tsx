@@ -9,6 +9,9 @@ import { AUTH_URLS } from '@/configs/urls'
 import { DASHBOARD_TEAMS_LIST_QUERY_OPTIONS } from '@/core/application/teams/queries'
 import { DASHBOARD_USER_PROFILE_QUERY_OPTIONS } from '@/core/application/user/queries'
 import { auth } from '@/core/server/auth'
+import { getDashboardFeatures } from '@/core/server/feature-flags/dashboard-features.server'
+import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
+import { DEFAULT_DASHBOARD_FEATURES } from '@/features/dashboard/features'
 import DashboardLayoutView from '@/features/dashboard/layouts/layout'
 import Sidebar from '@/features/dashboard/sidebar/sidebar'
 import { OryPostHogIdentityBridge } from '@/features/ory-posthog-identity-bridge'
@@ -47,25 +50,39 @@ export default async function DashboardLayout({
     throw redirect(AUTH_URLS.SIGN_IN)
   }
 
-  await Promise.all([
-    prefetchAsync(
-      trpc.teams.list.queryOptions(
-        undefined,
-        DASHBOARD_TEAMS_LIST_QUERY_OPTIONS
-      )
-    ),
-    prefetchAsync(
-      trpc.user.profile.queryOptions(
-        undefined,
-        DASHBOARD_USER_PROFILE_QUERY_OPTIONS
-      )
-    ),
-  ])
+  const teamsPrefetch = prefetchAsync(
+    trpc.teams.list.queryOptions(undefined, DASHBOARD_TEAMS_LIST_QUERY_OPTIONS)
+  )
+  const userProfilePrefetch = prefetchAsync(
+    trpc.user.profile.queryOptions(
+      undefined,
+      DASHBOARD_USER_PROFILE_QUERY_OPTIONS
+    )
+  )
+
+  const teamIdResult = await getTeamIdFromSlug(
+    teamSlug,
+    authContext.accessToken
+  )
+  const features =
+    teamIdResult.ok && teamIdResult.data
+      ? await getDashboardFeatures({
+          userId: authContext.user.id,
+          teamId: teamIdResult.data,
+          teamSlug,
+        })
+      : DEFAULT_DASHBOARD_FEATURES
+
+  await Promise.all([teamsPrefetch, userProfilePrefetch])
 
   return (
     <HydrateClient>
       {postHogEnabled && <OryPostHogIdentityBridge user={authContext.user} />}
-      <DashboardTeamGate teamSlug={teamSlug} fallbackUser={authContext.user}>
+      <DashboardTeamGate
+        features={features}
+        teamSlug={teamSlug}
+        fallbackUser={authContext.user}
+      >
         <SidebarProvider
           defaultOpen={typeof sidebarState === 'undefined' ? true : defaultOpen}
         >

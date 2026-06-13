@@ -3,7 +3,11 @@
 import micromatch from 'micromatch'
 import { usePathname } from 'next/navigation'
 import { useMemo } from 'react'
-import { SIDEBAR_MAIN_LINKS, type SidebarNavItem } from '@/configs/sidebar'
+import {
+  getVisibleSidebarLinks,
+  SIDEBAR_MAIN_LINKS,
+  type SidebarNavItem,
+} from '@/configs/sidebar'
 
 import { useIsMobile } from '@/lib/hooks/use-mobile'
 import { cn } from '@/lib/utils'
@@ -36,7 +40,7 @@ const createGroupedLinks = (links: SidebarNavItem[]): GroupedLinks => {
 }
 
 export default function DashboardSidebarContent() {
-  const { team } = useDashboard()
+  const { features, team } = useDashboard()
   const selectedTeamSlug = team.slug
 
   const pathname = usePathname()
@@ -44,8 +48,9 @@ export default function DashboardSidebarContent() {
   const { setOpenMobile } = useSidebar()
 
   const groupedNavLinks = useMemo(
-    () => createGroupedLinks(SIDEBAR_MAIN_LINKS),
-    []
+    () =>
+      createGroupedLinks(getVisibleSidebarLinks(SIDEBAR_MAIN_LINKS, features)),
+    [features]
   )
 
   const isActive = (link: SidebarNavItem) => {
@@ -56,7 +61,7 @@ export default function DashboardSidebarContent() {
 
   return (
     <SidebarContent className="overflow-x-hidden gap-0">
-      {Object.entries(groupedNavLinks).map(([group, links], ix) => (
+      {Object.entries(groupedNavLinks).map(([group, links]) => (
         <SidebarGroup key={group}>
           {group !== 'ungrouped' && (
             <SidebarGroupLabel>{group}</SidebarGroupLabel>
