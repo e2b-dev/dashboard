@@ -1,17 +1,12 @@
-import { notFound } from 'next/navigation'
-import { INCLUDE_AGENTS_IN_DASHBOARD } from '@/configs/flags'
 import { AgentsDashboard } from '@/features/dashboard/agents/agents-dashboard'
 import { Page } from '@/features/dashboard/layouts/page'
 import { HydrateClient, prefetch, trpc, trpcCaller } from '@/trpc/server'
+import { requireAgentsDashboardAccess } from './access'
 
 export default async function AgentsPage({
   params,
 }: PageProps<'/dashboard/[teamSlug]/agents'>) {
-  if (!INCLUDE_AGENTS_IN_DASHBOARD) {
-    notFound()
-  }
-
-  const { teamSlug } = await params
+  const { teamSlug } = await requireAgentsDashboardAccess(params)
   const { templates } = await trpcCaller.agents.getTemplates({ teamSlug })
 
   prefetch(

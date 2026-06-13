@@ -5,8 +5,6 @@ export const VERBOSE = process.env.NEXT_PUBLIC_VERBOSE === '1'
 export const ENABLE_USER_BOOTSTRAP = process.env.ENABLE_USER_BOOTSTRAP === '1'
 export const INCLUDE_BILLING = process.env.NEXT_PUBLIC_INCLUDE_BILLING === '1'
 export const INCLUDE_ARGUS = process.env.NEXT_PUBLIC_INCLUDE_ARGUS === '1'
-export const INCLUDE_AGENTS_IN_DASHBOARD =
-  process.env.NEXT_PUBLIC_AGENTS_IN_DASHBOARD === 'true'
 export const INCLUDE_STATUS_INDICATOR =
   process.env.NEXT_PUBLIC_INCLUDE_STATUS_INDICATOR === '1'
 export const USE_MOCK_DATA =
@@ -74,5 +72,11 @@ export const FEATURE_FLAGS = {
     key: 'i_exist',
     defaultValue: false,
     description: 'Test flag for validating LaunchDarkly team targeting.',
+  },
+  agentsDashboard: {
+    kind: 'boolean',
+    key: 'agents_dashboard',
+    defaultValue: false,
+    description: 'Enables direct dashboard access to agent templates.',
   },
 } as const satisfies Record<string, FeatureFlagDefinition>
