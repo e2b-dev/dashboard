@@ -3,11 +3,7 @@
 import micromatch from 'micromatch'
 import { usePathname } from 'next/navigation'
 import { useMemo } from 'react'
-import {
-  getVisibleSidebarLinks,
-  SIDEBAR_MAIN_LINKS,
-  type SidebarNavItem,
-} from '@/configs/sidebar'
+import { SIDEBAR_MAIN_LINKS, type SidebarNavItem } from '@/configs/sidebar'
 
 import { useIsMobile } from '@/lib/hooks/use-mobile'
 import { cn } from '@/lib/utils'
@@ -40,7 +36,7 @@ const createGroupedLinks = (links: SidebarNavItem[]): GroupedLinks => {
 }
 
 export default function DashboardSidebarContent() {
-  const { features, team } = useDashboard()
+  const { team } = useDashboard()
   const selectedTeamSlug = team.slug
 
   const pathname = usePathname()
@@ -48,9 +44,8 @@ export default function DashboardSidebarContent() {
   const { setOpenMobile } = useSidebar()
 
   const groupedNavLinks = useMemo(
-    () =>
-      createGroupedLinks(getVisibleSidebarLinks(SIDEBAR_MAIN_LINKS, features)),
-    [features]
+    () => createGroupedLinks(SIDEBAR_MAIN_LINKS),
+    []
   )
 
   const isActive = (link: SidebarNavItem) => {

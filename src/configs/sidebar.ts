@@ -1,8 +1,4 @@
 import type { JSX } from 'react'
-import type {
-  DashboardFeatureKey,
-  DashboardFeatures,
-} from '@/features/dashboard/features'
 import {
   AccountSettingsIcon,
   CardIcon,
@@ -13,7 +9,6 @@ import {
   SettingsIcon,
   TemplateIcon,
   UsageIcon,
-  VaultIcon,
   WebhookIcon,
 } from '@/ui/primitives/icons'
 import { INCLUDE_ARGUS, INCLUDE_BILLING } from './flags'
@@ -30,7 +25,6 @@ export type SidebarNavItem = {
   icon: (...args: any[]) => JSX.Element
   group?: string
   activeMatch?: string
-  requiredFeature?: DashboardFeatureKey
 }
 
 export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
@@ -84,15 +78,6 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
     group: 'team',
     activeMatch: `/dashboard/*/members`,
   },
-  {
-    label: 'Admin',
-    href: (args) => PROTECTED_URLS.ADMIN(args.teamSlug!),
-    icon: VaultIcon,
-    group: 'team',
-    activeMatch: `/dashboard/*/admin`,
-    requiredFeature: 'isAdmin',
-  },
-
   // Billing
   ...(INCLUDE_BILLING
     ? [
@@ -131,12 +116,3 @@ export const SIDEBAR_EXTRA_LINKS: SidebarNavItem[] = [
 ]
 
 export const SIDEBAR_ALL_LINKS = [...SIDEBAR_MAIN_LINKS, ...SIDEBAR_EXTRA_LINKS]
-
-export function getVisibleSidebarLinks<T extends SidebarNavItem>(
-  links: T[],
-  features: DashboardFeatures
-) {
-  return links.filter(
-    (link) => !link.requiredFeature || features[link.requiredFeature]
-  )
-}

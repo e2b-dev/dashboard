@@ -9,17 +9,10 @@ import { AUTH_URLS } from '@/configs/urls'
 import { DASHBOARD_TEAMS_LIST_QUERY_OPTIONS } from '@/core/application/teams/queries'
 import { DASHBOARD_USER_PROFILE_QUERY_OPTIONS } from '@/core/application/user/queries'
 import { auth } from '@/core/server/auth'
-import { getDashboardFeatures } from '@/core/server/feature-flags/dashboard-features.server'
-import { DEFAULT_DASHBOARD_FEATURES } from '@/features/dashboard/features'
 import DashboardLayoutView from '@/features/dashboard/layouts/layout'
 import Sidebar from '@/features/dashboard/sidebar/sidebar'
 import { OryPostHogIdentityBridge } from '@/features/ory-posthog-identity-bridge'
-import {
-  getQueryClient,
-  HydrateClient,
-  prefetchAsync,
-  trpc,
-} from '@/trpc/server'
+import { HydrateClient, prefetchAsync, trpc } from '@/trpc/server'
 import { SidebarInset, SidebarProvider } from '@/ui/primitives/sidebar'
 
 export const metadata: Metadata = {
@@ -54,39 +47,25 @@ export default async function DashboardLayout({
     throw redirect(AUTH_URLS.SIGN_IN)
   }
 
-  const queryClient = getQueryClient()
-  const teamsQueryOptions = trpc.teams.list.queryOptions(
-    undefined,
-    DASHBOARD_TEAMS_LIST_QUERY_OPTIONS
-  )
-  const teamsPromise = queryClient.fetchQuery(teamsQueryOptions)
-  const userProfilePrefetch = prefetchAsync(
-    trpc.user.profile.queryOptions(
-      undefined,
-      DASHBOARD_USER_PROFILE_QUERY_OPTIONS
-    )
-  )
-
-  const teams = await teamsPromise
-  const team = teams.find((candidate) => candidate.slug === teamSlug)
-  const features = team?.id
-    ? await getDashboardFeatures({
-        userId: authContext.user.id,
-        teamId: team.id,
-        teamSlug,
-      })
-    : DEFAULT_DASHBOARD_FEATURES
-
-  await userProfilePrefetch
+  await Promise.all([
+    prefetchAsync(
+      trpc.teams.list.queryOptions(
+        undefined,
+        DASHBOARD_TEAMS_LIST_QUERY_OPTIONS
+      )
+    ),
+    prefetchAsync(
+      trpc.user.profile.queryOptions(
+        undefined,
+        DASHBOARD_USER_PROFILE_QUERY_OPTIONS
+      )
+    ),
+  ])
 
   return (
     <HydrateClient>
       {postHogEnabled && <OryPostHogIdentityBridge user={authContext.user} />}
-      <DashboardTeamGate
-        features={features}
-        teamSlug={teamSlug}
-        fallbackUser={authContext.user}
-      >
+      <DashboardTeamGate teamSlug={teamSlug} fallbackUser={authContext.user}>
         <SidebarProvider
           defaultOpen={typeof sidebarState === 'undefined' ? true : defaultOpen}
         >

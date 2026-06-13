@@ -5,21 +5,18 @@ import { DASHBOARD_TEAMS_LIST_QUERY_OPTIONS } from '@/core/application/teams/que
 import { DASHBOARD_USER_PROFILE_QUERY_OPTIONS } from '@/core/application/user/queries'
 import type { AuthUser } from '@/core/modules/auth/models'
 import { DashboardContextProvider } from '@/features/dashboard/context'
-import type { DashboardFeatures } from '@/features/dashboard/features'
 import LoadingLayout from '@/features/dashboard/loading-layout'
 import { useTRPC } from '@/trpc/client'
 import Unauthorized from '../unauthorized'
 
 interface DashboardTeamGateProps {
   teamSlug: string
-  features: DashboardFeatures
   fallbackUser: AuthUser
   children: React.ReactNode
 }
 
 export function DashboardTeamGate({
   teamSlug,
-  features,
   fallbackUser,
   children,
 }: DashboardTeamGateProps) {
@@ -49,7 +46,6 @@ export function DashboardTeamGate({
 
   return (
     <DashboardContextProvider
-      features={features}
       initialTeam={team}
       initialTeams={teams}
       initialUser={resolvedUser}

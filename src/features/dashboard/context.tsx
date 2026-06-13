@@ -6,10 +6,8 @@ import { COOKIE_KEYS } from '@/configs/cookies'
 import type { AuthUser } from '@/core/modules/auth/models'
 import type { TeamModel } from '@/core/modules/teams/models'
 import { setBrowserCookie } from '@/lib/utils/browser-cookies'
-import type { DashboardFeatures } from './features'
 
 interface DashboardContextValue {
-  features: DashboardFeatures
   team: TeamModel
   teams: TeamModel[]
   user: AuthUser
@@ -21,7 +19,6 @@ const DashboardContext = createContext<DashboardContextValue | undefined>(
 
 interface DashboardContextProviderProps {
   children: ReactNode
-  features: DashboardContextValue['features']
   initialTeam: TeamModel
   initialTeams: TeamModel[]
   initialUser: AuthUser
@@ -29,7 +26,6 @@ interface DashboardContextProviderProps {
 
 export function DashboardContextProvider({
   children,
-  features,
   initialTeam,
   initialTeams,
   initialUser,
@@ -44,7 +40,6 @@ export function DashboardContextProvider({
   }, [initialTeam, updateTeamCookieState])
 
   const value = {
-    features,
     team: initialTeam,
     teams: initialTeams,
     user: initialUser,

@@ -1,7 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import { AUTH_URLS } from '@/configs/urls'
 import { auth } from '@/core/server/auth'
-import { getDashboardFeatures } from '@/core/server/feature-flags/dashboard-features.server'
 import { listFeatureFlags } from '@/core/server/feature-flags/list.server'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
 import { FeatureFlagsTable } from '@/features/dashboard/admin/feature-flags'
@@ -37,13 +36,12 @@ export default async function AdminPage({ params }: AdminPageProps) {
     teamId: teamIdResult.data,
     teamSlug,
   }
-  const features = await getDashboardFeatures(context)
+  const flags = await listFeatureFlags(context)
+  const isAdmin = flags.some((flag) => flag.id === 'isAdmin' && flag.value)
 
-  if (!features.isAdmin) {
+  if (!isAdmin) {
     notFound()
   }
-
-  const flags = await listFeatureFlags(context)
 
   return (
     <Page>
