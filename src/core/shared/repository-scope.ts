@@ -4,5 +4,4 @@ export interface RequestScope {
 
 export interface TeamRequestScope extends RequestScope {
   teamId: string
-  teamSlug?: string
 }
