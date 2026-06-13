@@ -1,4 +1,4 @@
-import type { JSX } from 'react'
+import { JSX } from 'react'
 import {
   AccountSettingsIcon,
   CardIcon,
@@ -78,6 +78,7 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
     group: 'team',
     activeMatch: `/dashboard/*/members`,
   },
+
   // Billing
   ...(INCLUDE_BILLING
     ? [

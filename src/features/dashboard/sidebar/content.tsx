@@ -56,7 +56,7 @@ export default function DashboardSidebarContent() {
 
   return (
     <SidebarContent className="overflow-x-hidden gap-0">
-      {Object.entries(groupedNavLinks).map(([group, links]) => (
+      {Object.entries(groupedNavLinks).map(([group, links], ix) => (
         <SidebarGroup key={group}>
           {group !== 'ungrouped' && (
             <SidebarGroupLabel>{group}</SidebarGroupLabel>
