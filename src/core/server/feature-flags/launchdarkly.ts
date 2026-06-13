@@ -89,7 +89,7 @@ async function getInitializedLaunchDarklyClient() {
   return ldGlobal.__dashboardLaunchDarklyInitialization
 }
 
-function createLaunchDarklyContext({
+export function createLaunchDarklyContext({
   userId,
   teamId,
 }: FeatureFlagContextInput): LDContext {

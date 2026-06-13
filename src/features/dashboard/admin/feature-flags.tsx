@@ -33,11 +33,9 @@ function FlagValueBadge({ value }: { value: unknown }) {
 export function FeatureFlagsTable({
   flags,
   teamId,
-  teamSlug,
 }: {
   flags: EvaluatedFeatureFlag[]
   teamId: string
-  teamSlug: string
 }) {
   return (
     <div className="flex flex-col gap-3">
@@ -47,7 +45,6 @@ export function FeatureFlagsTable({
           Feature flags evaluated for this team.
         </p>
         <div className="mt-2 flex flex-wrap gap-2">
-          <Badge variant="code">team: {teamSlug}</Badge>
           <Badge variant="code">team_id: {teamId}</Badge>
         </div>
       </div>

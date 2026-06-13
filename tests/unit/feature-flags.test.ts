@@ -5,6 +5,7 @@ import type {
   JsonFeatureFlagDefinition,
 } from '@/configs/flags'
 import { createFeatureFlagService } from '@/core/server/feature-flags/flags.server'
+import { createLaunchDarklyContext } from '@/core/server/feature-flags/launchdarkly'
 
 const context = {
   userId: 'user-id',
@@ -71,5 +72,26 @@ describe('createFeatureFlagService', () => {
     )
 
     expect(result).toEqual([{ name: 'Fallback' }])
+  })
+})
+
+describe('createLaunchDarklyContext', () => {
+  it('targets teams by stable team id', () => {
+    expect(createLaunchDarklyContext(context)).toEqual({
+      kind: 'multi',
+      user: {
+        key: 'user-id',
+      },
+      team: {
+        key: 'team-id',
+      },
+    })
+  })
+
+  it('falls back to a user context when no team id is supplied', () => {
+    expect(createLaunchDarklyContext({ userId: 'user-id' })).toEqual({
+      kind: 'user',
+      key: 'user-id',
+    })
   })
 })

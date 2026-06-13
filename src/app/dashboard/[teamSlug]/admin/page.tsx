@@ -44,11 +44,7 @@ export default async function AdminPage({ params }: AdminPageProps) {
 
   return (
     <Page>
-      <FeatureFlagsTable
-        flags={flags}
-        teamId={teamIdResult.data}
-        teamSlug={teamSlug}
-      />
+      <FeatureFlagsTable flags={flags} teamId={teamIdResult.data} />
     </Page>
   )
 }
