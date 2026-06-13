@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { getVisibleSidebarLinks, SIDEBAR_ALL_LINKS } from '@/configs/sidebar'
 import useKeydown from '@/lib/hooks/use-keydown'
 import { cn } from '@/lib/utils'
@@ -31,10 +31,7 @@ export default function DashboardSidebarCommand({
   const [open, setOpen] = useState(false)
   const { features, team } = useDashboard()
   const router = useRouter()
-  const links = useMemo(
-    () => getVisibleSidebarLinks(SIDEBAR_ALL_LINKS, features),
-    [features]
-  )
+  const links = getVisibleSidebarLinks(SIDEBAR_ALL_LINKS, features)
 
   const { open: sidebarOpen, openMobile: sidebarOpenMobile } = useSidebar()
   const isSidebarOpen = sidebarOpen || sidebarOpenMobile
