@@ -37,6 +37,7 @@ interface DashboardTerminalProps {
   backHref?: string
   forceNewSandbox?: boolean
   getSandbox?: TerminalSandboxResolver
+  isWindowMinimized?: boolean
   launchTarget?: TerminalLaunchTarget
   onSandboxAttached?: (sandboxId: string) => void
   onSandboxAttachFailed?: (target: TerminalLaunchTarget | undefined) => void
@@ -44,6 +45,7 @@ interface DashboardTerminalProps {
   onWindowMinimize?: () => void
   sandboxManagementAuth: SandboxManagementAuth
   sandboxScoped?: boolean
+  syncUrl?: boolean
   teamSlug: string
 }
 
@@ -52,6 +54,7 @@ export default function DashboardTerminal({
   backHref,
   forceNewSandbox = false,
   getSandbox,
+  isWindowMinimized = false,
   launchTarget,
   onSandboxAttached,
   onSandboxAttachFailed,
@@ -59,6 +62,7 @@ export default function DashboardTerminal({
   onWindowMinimize,
   sandboxManagementAuth,
   sandboxScoped = false,
+  syncUrl = true,
   teamSlug,
 }: DashboardTerminalProps) {
   const [status, setStatus] = useState<TerminalStatus>('idle')
@@ -284,7 +288,11 @@ export default function DashboardTerminal({
       const url = new URL(window.location.href)
       let changed = false
 
-      if (!sandboxScoped && url.searchParams.get('sandboxId') !== sandboxId) {
+      if (
+        syncUrl &&
+        !sandboxScoped &&
+        url.searchParams.get('sandboxId') !== sandboxId
+      ) {
         url.searchParams.set('sandboxId', sandboxId)
         changed = true
       }
@@ -298,7 +306,7 @@ export default function DashboardTerminal({
         window.history.replaceState(window.history.state, '', url)
       }
     },
-    [sandboxScoped]
+    [sandboxScoped, syncUrl]
   )
 
   const startTerminal = useCallback(
@@ -621,10 +629,18 @@ export default function DashboardTerminal({
     resizeTerminal,
   ])
 
+  useEffect(() => {
+    if (isWindowMinimized) return
+
+    resizeTerminal()
+    focusTerminal()
+  }, [focusTerminal, isWindowMinimized, resizeTerminal])
+
   return (
     <>
       <TerminalPanel
         backHref={backHref}
+        collapsed={isWindowMinimized}
         sandboxId={activeSandboxId}
         restartDisabled={restartDisabled}
         restartLabel={restartLabel}

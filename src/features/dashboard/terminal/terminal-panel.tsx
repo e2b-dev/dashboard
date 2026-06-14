@@ -13,6 +13,7 @@ interface TerminalPanelProps {
   backHref?: string
   sandboxId?: string
   template?: string
+  collapsed?: boolean
   restartDisabled: boolean
   restartLabel: string
   terminalContainerRef: RefObject<HTMLDivElement | null>
@@ -25,6 +26,7 @@ interface TerminalPanelProps {
 
 export default function TerminalPanel({
   backHref,
+  collapsed = false,
   sandboxId,
   template,
   restartDisabled,
@@ -41,6 +43,7 @@ export default function TerminalPanel({
       <header className="h-10 w-full border-b">
         <TerminalPanelHeader
           backHref={backHref}
+          collapsed={collapsed}
           sandboxId={sandboxId}
           template={template}
           restartDisabled={restartDisabled}
@@ -55,7 +58,11 @@ export default function TerminalPanel({
         ref={terminalContainerRef}
         role="application"
         aria-label="Terminal"
-        className="min-h-0 flex-1 cursor-text overflow-hidden bg-black p-3"
+        className={
+          collapsed
+            ? 'hidden'
+            : 'min-h-0 flex-1 cursor-text overflow-hidden bg-black p-3'
+        }
         onMouseDown={onFocusTerminal}
       />
     </section>
@@ -64,6 +71,7 @@ export default function TerminalPanel({
 
 function TerminalPanelHeader({
   backHref,
+  collapsed,
   sandboxId,
   template,
   restartDisabled,
@@ -75,6 +83,7 @@ function TerminalPanelHeader({
 }: Pick<
   TerminalPanelProps,
   | 'backHref'
+  | 'collapsed'
   | 'sandboxId'
   | 'template'
   | 'restartDisabled'
@@ -145,8 +154,8 @@ function TerminalPanelHeader({
             type="button"
             variant="tertiary"
             className="size-7"
-            aria-label="Minimize terminal"
-            title="Minimize terminal"
+            aria-label={collapsed ? 'Restore terminal' : 'Minimize terminal'}
+            title={collapsed ? 'Restore terminal' : 'Minimize terminal'}
             onClick={onMinimize}
           >
             <span aria-hidden className="block h-px w-3 bg-current" />

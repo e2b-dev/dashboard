@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { useAction } from 'next-safe-action/hooks'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 import type { AgentTemplateConfig } from '@/configs/agents'
 import { PROTECTED_URLS } from '@/configs/urls'
@@ -14,6 +14,7 @@ import {
 } from '@/core/server/actions/sandbox-actions'
 import type { SandboxManagementAuth } from '@/core/shared/sandbox-management-auth'
 import { useSandboxListTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
+import DashboardTerminal from '@/features/dashboard/terminal/dashboard-terminal'
 import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
 import { cn } from '@/lib/utils/ui'
 import { useTRPC } from '@/trpc/client'
@@ -36,6 +37,14 @@ interface AgentsDashboardProps {
   sandboxManagementAuth: SandboxManagementAuth
   templates: AgentTemplateConfig[]
   teamSlug: string
+}
+
+type AgentTerminalWindow = {
+  id: string
+  forceNewSandbox?: boolean
+  minimized: boolean
+  sandboxId?: string
+  template: AgentTemplateConfig
 }
 
 const normalizeIdentifier = (value: string | undefined | null) =>
@@ -92,15 +101,6 @@ const applySandboxHistoryFilter = (template: AgentTemplateConfig) => {
   tableStore.resetFilters()
   tableStore.setTemplateFilters([template.template])
 }
-
-const getTerminalUrl = (
-  teamSlug: string,
-  template: AgentTemplateConfig,
-  options?: {
-    forceNew?: boolean
-    sandboxId?: string
-  }
-) => PROTECTED_URLS.AGENT_TERMINAL(teamSlug, template.template, options)
 
 const canReopenTerminal = (sandbox: Sandbox) =>
   sandbox.state === 'running' || sandbox.state === 'paused'
@@ -216,6 +216,7 @@ function PauseAgentSandboxButton({
 function AgentSessionList({
   canPause,
   onKilled,
+  onOpenTerminal,
   onPaused,
   sessions,
   teamSlug,
@@ -223,6 +224,7 @@ function AgentSessionList({
 }: {
   canPause: boolean
   onKilled: () => void
+  onOpenTerminal: (sandboxId: string) => void
   onPaused: () => void
   sessions: Sandbox[]
   teamSlug: string
@@ -261,15 +263,13 @@ function AgentSessionList({
           </div>
           {canReopenTerminal(sandbox) ? (
             <div className="flex flex-wrap items-center gap-3 md:justify-end">
-              <Button asChild size="none" variant="tertiary">
-                <Link
-                  href={getTerminalUrl(teamSlug, template, {
-                    sandboxId: sandbox.sandboxID,
-                  })}
-                >
-                  Open
-                  <ExternalLinkIcon />
-                </Link>
+              <Button
+                size="none"
+                variant="tertiary"
+                onClick={() => onOpenTerminal(sandbox.sandboxID)}
+              >
+                Open
+                <ExternalLinkIcon />
               </Button>
               {sandbox.state === 'running' ? (
                 <PauseAgentSandboxButton
@@ -308,12 +308,17 @@ function AgentSessionList({
 }
 
 export function AgentsDashboard({
-  sandboxManagementAuth: _sandboxManagementAuth,
+  sandboxManagementAuth,
   templates,
   teamSlug,
 }: AgentsDashboardProps) {
   const trpc = useTRPC()
   const [expandedAgentId, setExpandedAgentId] = useState<string | null>(null)
+  const [activeWindowId, setActiveWindowId] = useState<string | null>(null)
+  const [terminalWindows, setTerminalWindows] = useState<AgentTerminalWindow[]>(
+    []
+  )
+  const nextWindowIdRef = useRef(0)
   const pauseSupported = canPauseSandboxes()
 
   const { data, error, isPending, refetch } = useQuery(
@@ -336,95 +341,274 @@ export function AgentsDashboard({
     ])
   ) as Record<string, Sandbox[]>
 
+  const focusWindow = (windowId: string) => {
+    setActiveWindowId(windowId)
+    setTerminalWindows((currentWindows) =>
+      currentWindows.map((terminalWindow) =>
+        terminalWindow.id === windowId
+          ? { ...terminalWindow, minimized: false }
+          : terminalWindow
+      )
+    )
+  }
+
+  const openTerminalWindow = ({
+    forceNewSandbox,
+    sandboxId,
+    template,
+  }: {
+    forceNewSandbox?: boolean
+    sandboxId?: string
+    template: AgentTemplateConfig
+  }) => {
+    if (sandboxId) {
+      const existingWindow = terminalWindows.find(
+        (terminalWindow) => terminalWindow.sandboxId === sandboxId
+      )
+
+      if (existingWindow) {
+        focusWindow(existingWindow.id)
+        return
+      }
+    }
+
+    const windowId = `agent-terminal-${template.id}-${nextWindowIdRef.current}`
+    nextWindowIdRef.current += 1
+
+    setTerminalWindows((currentWindows) => [
+      ...currentWindows,
+      {
+        id: windowId,
+        forceNewSandbox,
+        minimized: false,
+        sandboxId,
+        template,
+      },
+    ])
+    setActiveWindowId(windowId)
+  }
+
   return (
-    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-      {templates.map((template) => {
-        const sessions = sandboxesByAgentId[template.id] ?? []
-        const recentSessions = sessions.slice(0, RECENT_SESSION_LIMIT)
-        const isExpanded = expandedAgentId === template.id
-        return (
-          <section
-            className="border-stroke bg-bg-1 flex min-h-48 flex-col overflow-hidden rounded-lg border"
-            key={template.id}
-          >
-            <div className="flex min-h-0 flex-1 flex-col gap-4 p-4">
-              <div className="min-w-0">
-                <h3 className="prose-body-highlight text-fg truncate">
-                  {template.name}
-                </h3>
-                <p className="prose-body text-fg-tertiary mt-1 line-clamp-2">
-                  {template.description}
-                </p>
-              </div>
+    <>
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {templates.map((template) => {
+          const sessions = sandboxesByAgentId[template.id] ?? []
+          const recentSessions = sessions.slice(0, RECENT_SESSION_LIMIT)
+          const isExpanded = expandedAgentId === template.id
+          return (
+            <section
+              className="border-stroke bg-bg-1 flex min-h-48 flex-col overflow-hidden rounded-lg border"
+              key={template.id}
+            >
+              <div className="flex min-h-0 flex-1 flex-col gap-4 p-4">
+                <div className="min-w-0">
+                  <h3 className="prose-body-highlight text-fg truncate">
+                    {template.name}
+                  </h3>
+                  <p className="prose-body text-fg-tertiary mt-1 line-clamp-2">
+                    {template.description}
+                  </p>
+                </div>
 
-              <div className="prose-label text-fg-tertiary mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 uppercase">
-                <span>{template.template}</span>
-              </div>
+                <div className="prose-label text-fg-tertiary mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 uppercase">
+                  <span>{template.template}</span>
+                </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  asChild
-                  className="w-full"
-                  size="default"
-                  variant="primary"
-                >
-                  <Link
-                    href={getTerminalUrl(teamSlug, template, {
-                      forceNew: true,
-                    })}
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    className="w-full"
+                    size="default"
+                    variant="primary"
+                    onClick={() =>
+                      openTerminalWindow({
+                        forceNewSandbox: true,
+                        template,
+                      })
+                    }
                   >
                     Start
                     <ExternalLinkIcon />
-                  </Link>
-                </Button>
-                <Button
-                  className="w-full"
-                  size="default"
-                  variant="secondary"
-                  onClick={() =>
-                    setExpandedAgentId((currentAgentId) =>
-                      currentAgentId === template.id ? null : template.id
-                    )
-                  }
-                >
-                  <HistoryIcon />
-                  History
-                  <ChevronDownIcon
-                    className={cn(
-                      'size-4 transition-transform',
-                      isExpanded && 'rotate-180'
-                    )}
-                  />
-                </Button>
+                  </Button>
+                  <Button
+                    className="w-full"
+                    size="default"
+                    variant="secondary"
+                    onClick={() =>
+                      setExpandedAgentId((currentAgentId) =>
+                        currentAgentId === template.id ? null : template.id
+                      )
+                    }
+                  >
+                    <HistoryIcon />
+                    History
+                    <ChevronDownIcon
+                      className={cn(
+                        'size-4 transition-transform',
+                        isExpanded && 'rotate-180'
+                      )}
+                    />
+                  </Button>
+                </div>
               </div>
-            </div>
 
-            {isExpanded ? (
-              isPending ? (
-                <div className="prose-body text-fg-tertiary border-stroke flex items-center gap-2 border-t px-3 py-3">
-                  <Loader size="sm" variant="slash" />
-                  Loading sessions
-                </div>
-              ) : error ? (
-                <div className="prose-body text-accent-error-highlight border-stroke border-t px-3 py-3">
-                  Failed to load sessions
-                </div>
-              ) : (
-                <AgentSessionList
-                  canPause={pauseSupported}
-                  onKilled={() => {
-                    void refetch()
-                  }}
-                  onPaused={() => {
-                    void refetch()
-                  }}
-                  sessions={recentSessions}
-                  teamSlug={teamSlug}
-                  template={template}
-                />
-              )
-            ) : null}
-          </section>
+              {isExpanded ? (
+                isPending ? (
+                  <div className="prose-body text-fg-tertiary border-stroke flex items-center gap-2 border-t px-3 py-3">
+                    <Loader size="sm" variant="slash" />
+                    Loading sessions
+                  </div>
+                ) : error ? (
+                  <div className="prose-body text-accent-error-highlight border-stroke border-t px-3 py-3">
+                    Failed to load sessions
+                  </div>
+                ) : (
+                  <AgentSessionList
+                    canPause={pauseSupported}
+                    onKilled={() => {
+                      void refetch()
+                    }}
+                    onPaused={() => {
+                      void refetch()
+                    }}
+                    onOpenTerminal={(sandboxId) =>
+                      openTerminalWindow({
+                        sandboxId,
+                        template,
+                      })
+                    }
+                    sessions={recentSessions}
+                    teamSlug={teamSlug}
+                    template={template}
+                  />
+                )
+              ) : null}
+            </section>
+          )
+        })}
+      </div>
+
+      <AgentTerminalWindowLayer
+        activeWindowId={activeWindowId}
+        sandboxManagementAuth={sandboxManagementAuth}
+        teamSlug={teamSlug}
+        windows={terminalWindows}
+        onActivateWindow={focusWindow}
+        onCloseWindow={(windowId) => {
+          setTerminalWindows((currentWindows) =>
+            currentWindows.filter(
+              (terminalWindow) => terminalWindow.id !== windowId
+            )
+          )
+          setActiveWindowId((currentWindowId) =>
+            currentWindowId === windowId ? null : currentWindowId
+          )
+        }}
+        onMinimizeWindow={(windowId) => {
+          setTerminalWindows((currentWindows) =>
+            currentWindows.map((terminalWindow) =>
+              terminalWindow.id === windowId
+                ? { ...terminalWindow, minimized: true }
+                : terminalWindow
+            )
+          )
+        }}
+        onSandboxAttached={(windowId, sandboxId) => {
+          setTerminalWindows((currentWindows) =>
+            currentWindows.map((terminalWindow) =>
+              terminalWindow.id === windowId
+                ? { ...terminalWindow, forceNewSandbox: false, sandboxId }
+                : terminalWindow
+            )
+          )
+        }}
+      />
+    </>
+  )
+}
+
+function AgentTerminalWindowLayer({
+  activeWindowId,
+  sandboxManagementAuth,
+  teamSlug,
+  windows,
+  onActivateWindow,
+  onCloseWindow,
+  onMinimizeWindow,
+  onSandboxAttached,
+}: {
+  activeWindowId: string | null
+  sandboxManagementAuth: SandboxManagementAuth
+  teamSlug: string
+  windows: AgentTerminalWindow[]
+  onActivateWindow: (windowId: string) => void
+  onCloseWindow: (windowId: string) => void
+  onMinimizeWindow: (windowId: string) => void
+  onSandboxAttached: (windowId: string, sandboxId: string) => void
+}) {
+  if (windows.length === 0) {
+    return null
+  }
+
+  return (
+    <div className="pointer-events-none fixed top-18 right-4 bottom-10 left-4 z-40 md:left-[248px]">
+      {windows.map((terminalWindow, index) => {
+        const offset = Math.min(index, 5) * 28
+        const isActive = activeWindowId === terminalWindow.id
+        const minimizedIndex = windows
+          .filter((candidate) => candidate.minimized)
+          .findIndex((candidate) => candidate.id === terminalWindow.id)
+
+        return (
+          <fieldset
+            className={cn(
+              'pointer-events-auto absolute m-0 min-w-0 border-0 p-0 shadow-xl',
+              terminalWindow.minimized
+                ? 'h-10 w-56'
+                : 'h-[min(540px,calc(100%_-_2rem))] w-[min(880px,calc(100%_-_2rem))]',
+              isActive && 'z-10'
+            )}
+            key={terminalWindow.id}
+            style={
+              terminalWindow.minimized
+                ? {
+                    right: minimizedIndex * 232,
+                    top: 0,
+                  }
+                : {
+                    left: offset,
+                    top: offset,
+                  }
+            }
+          >
+            <legend className="sr-only">
+              {terminalWindow.template.name} terminal window
+            </legend>
+            <DashboardTerminal
+              autoStart
+              forceNewSandbox={terminalWindow.forceNewSandbox}
+              isWindowMinimized={terminalWindow.minimized}
+              launchTarget={{
+                command: '',
+                sandboxId: terminalWindow.sandboxId,
+                template: terminalWindow.template.template,
+              }}
+              sandboxManagementAuth={sandboxManagementAuth}
+              syncUrl={false}
+              teamSlug={teamSlug}
+              onSandboxAttached={(sandboxId) =>
+                onSandboxAttached(terminalWindow.id, sandboxId)
+              }
+              onWindowClose={() => onCloseWindow(terminalWindow.id)}
+              onWindowMinimize={() => {
+                if (terminalWindow.minimized) {
+                  onActivateWindow(terminalWindow.id)
+                  return
+                }
+
+                onMinimizeWindow(terminalWindow.id)
+              }}
+            />
+          </fieldset>
         )
       })}
     </div>
