@@ -12,6 +12,7 @@ import {
   killSandboxAction,
   pauseSandboxAction,
 } from '@/core/server/actions/sandbox-actions'
+import type { SandboxManagementAuth } from '@/core/shared/sandbox-management-auth'
 import { useSandboxListTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
 import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
 import { cn } from '@/lib/utils/ui'
@@ -32,6 +33,7 @@ const RECENT_SESSION_LIMIT = 3
 const LOCAL_INFRA_HOSTNAMES = new Set(['localhost', '127.0.0.1', '[::1]'])
 
 interface AgentsDashboardProps {
+  sandboxManagementAuth: SandboxManagementAuth
   templates: AgentTemplateConfig[]
   teamSlug: string
 }
@@ -305,7 +307,11 @@ function AgentSessionList({
   )
 }
 
-export function AgentsDashboard({ templates, teamSlug }: AgentsDashboardProps) {
+export function AgentsDashboard({
+  sandboxManagementAuth: _sandboxManagementAuth,
+  templates,
+  teamSlug,
+}: AgentsDashboardProps) {
   const trpc = useTRPC()
   const [expandedAgentId, setExpandedAgentId] = useState<string | null>(null)
   const pauseSupported = canPauseSandboxes()

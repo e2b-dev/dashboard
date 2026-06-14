@@ -39,5 +39,5 @@ export async function requireAgentsDashboardAccess(params: TeamRouteParams) {
     notFound()
   }
 
-  return { teamSlug }
+  return { authContext, teamId: teamIdResult.data, teamSlug }
 }
