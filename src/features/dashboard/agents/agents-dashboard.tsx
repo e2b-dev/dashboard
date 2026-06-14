@@ -14,11 +14,13 @@ import {
 } from '@/core/server/actions/sandbox-actions'
 import { useSandboxListTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
 import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
+import { cn } from '@/lib/utils/ui'
 import { useTRPC } from '@/trpc/client'
 import { AlertPopover } from '@/ui/alert-popover'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import {
+  ChevronDownIcon,
   ExternalLinkIcon,
   HistoryIcon,
   PausedIcon,
@@ -226,31 +228,37 @@ function AgentSessionList({
 }) {
   if (sessions.length === 0) {
     return (
-      <div className="prose-body text-fg-tertiary px-4 py-3">No sessions</div>
+      <div className="prose-body text-fg-tertiary border-stroke border-t px-3 py-3">
+        No sessions yet
+      </div>
     )
   }
 
   return (
-    <div className="divide-stroke divide-y">
+    <div className="divide-stroke border-stroke divide-y border-t">
       {sessions.map((sandbox) => (
         <div
-          className="grid min-h-11 grid-cols-[minmax(0,1fr)_112px_92px_auto] items-center gap-3 px-4 py-2"
+          className="grid gap-2 px-3 py-2.5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
           key={sandbox.sandboxID}
         >
-          <Link
-            className="prose-body-highlight text-fg hover:underline min-w-0 truncate font-mono"
-            href={PROTECTED_URLS.SANDBOX(teamSlug, sandbox.sandboxID)}
-          >
-            <span className="truncate">{sandbox.sandboxID}</span>
-          </Link>
-          <span className="prose-label text-fg-tertiary truncate uppercase">
-            {formatStartedAt(sandbox.startedAt)}
-          </span>
-          <Badge variant={getStateBadgeVariant(sandbox.state)}>
-            {sandbox.state}
-          </Badge>
+          <div className="min-w-0">
+            <div className="flex min-w-0 items-center gap-2">
+              <Badge variant={getStateBadgeVariant(sandbox.state)}>
+                {sandbox.state}
+              </Badge>
+              <Link
+                className="prose-body text-fg-secondary hover:text-fg min-w-0 truncate font-mono hover:underline"
+                href={PROTECTED_URLS.SANDBOX(teamSlug, sandbox.sandboxID)}
+              >
+                {sandbox.sandboxID}
+              </Link>
+            </div>
+            <div className="prose-label text-fg-tertiary mt-1 truncate uppercase">
+              {formatStartedAt(sandbox.startedAt)}
+            </div>
+          </div>
           {canReopenTerminal(sandbox) ? (
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3 md:justify-end">
               <Button asChild size="none" variant="tertiary">
                 <Link
                   href={getTerminalUrl(teamSlug, template, {
@@ -276,17 +284,19 @@ function AgentSessionList({
               />
             </div>
           ) : (
-            <span className="prose-body text-fg-tertiary">Closed</span>
+            <span className="prose-label text-fg-tertiary uppercase md:text-right">
+              Closed
+            </span>
           )}
         </div>
       ))}
-      <div className="px-4 py-2">
+      <div className="px-3 py-2">
         <Button asChild size="none" variant="tertiary">
           <Link
             href={PROTECTED_URLS.SANDBOXES_LIST(teamSlug)}
             onClick={() => applySandboxHistoryFilter(template)}
           >
-            View all
+            View all sessions
             <ExternalLinkIcon />
           </Link>
         </Button>
@@ -321,25 +331,31 @@ export function AgentsDashboard({ templates, teamSlug }: AgentsDashboardProps) {
   ) as Record<string, Sandbox[]>
 
   return (
-    <div className="border-stroke bg-bg-1 divide-stroke overflow-hidden rounded-lg border">
+    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
       {templates.map((template) => {
         const sessions = sandboxesByAgentId[template.id] ?? []
         const recentSessions = sessions.slice(0, RECENT_SESSION_LIMIT)
         const isExpanded = expandedAgentId === template.id
-
         return (
-          <section className="divide-stroke divide-y" key={template.id}>
-            <div className="grid gap-4 px-4 py-3 md:grid-cols-[minmax(0,1fr)_14rem] md:items-center">
-              <div className="flex min-w-0 flex-col gap-1">
-                <h3 className="prose-body-highlight text-fg">
+          <section
+            className="border-stroke bg-bg-1 flex min-h-48 flex-col overflow-hidden rounded-lg border"
+            key={template.id}
+          >
+            <div className="flex min-h-0 flex-1 flex-col gap-4 p-4">
+              <div className="min-w-0">
+                <h3 className="prose-body-highlight text-fg truncate">
                   {template.name}
                 </h3>
-                <p className="prose-body text-fg-tertiary truncate">
+                <p className="prose-body text-fg-tertiary mt-1 line-clamp-2">
                   {template.description}
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 md:w-56">
+              <div className="prose-label text-fg-tertiary mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 uppercase">
+                <span>{template.template}</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
                 <Button
                   asChild
                   className="w-full"
@@ -367,21 +383,24 @@ export function AgentsDashboard({ templates, teamSlug }: AgentsDashboardProps) {
                 >
                   <HistoryIcon />
                   History
-                  {sessions.length > 0 ? (
-                    <span className="text-fg-tertiary">{sessions.length}</span>
-                  ) : null}
+                  <ChevronDownIcon
+                    className={cn(
+                      'size-4 transition-transform',
+                      isExpanded && 'rotate-180'
+                    )}
+                  />
                 </Button>
               </div>
             </div>
 
             {isExpanded ? (
               isPending ? (
-                <div className="prose-body text-fg-tertiary flex items-center gap-2 px-4 py-3">
+                <div className="prose-body text-fg-tertiary border-stroke flex items-center gap-2 border-t px-3 py-3">
                   <Loader size="sm" variant="slash" />
                   Loading sessions
                 </div>
               ) : error ? (
-                <div className="prose-body text-accent-error-highlight px-4 py-3">
+                <div className="prose-body text-accent-error-highlight border-stroke border-t px-3 py-3">
                   Failed to load sessions
                 </div>
               ) : (
