@@ -30,13 +30,10 @@ export async function requireAgentsDashboardAccess(params: TeamRouteParams) {
     notFound()
   }
 
-  const isEnabled = await featureFlags.getBoolean(
-    FEATURE_FLAGS.agentsDashboard,
-    {
-      userId: authContext.user.id,
-      teamId: teamIdResult.data,
-    }
-  )
+  const isEnabled = await featureFlags.getBoolean(FEATURE_FLAGS.agentsEnabled, {
+    userId: authContext.user.id,
+    teamId: teamIdResult.data,
+  })
 
   if (!isEnabled) {
     notFound()

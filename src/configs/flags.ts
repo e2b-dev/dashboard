@@ -73,9 +73,9 @@ export const FEATURE_FLAGS = {
     defaultValue: false,
     description: 'Test flag for validating LaunchDarkly team targeting.',
   },
-  agentsDashboard: {
+  agentsEnabled: {
     kind: 'boolean',
-    key: 'agents_dashboard',
+    key: 'agents_enabled',
     defaultValue: false,
     description: 'Enables direct dashboard access to agent templates.',
   },
