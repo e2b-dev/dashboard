@@ -40,6 +40,8 @@ interface DashboardTerminalProps {
   launchTarget?: TerminalLaunchTarget
   onSandboxAttached?: (sandboxId: string) => void
   onSandboxAttachFailed?: (target: TerminalLaunchTarget | undefined) => void
+  onWindowClose?: () => void
+  onWindowMinimize?: () => void
   sandboxManagementAuth: SandboxManagementAuth
   sandboxScoped?: boolean
   teamSlug: string
@@ -53,6 +55,8 @@ export default function DashboardTerminal({
   launchTarget,
   onSandboxAttached,
   onSandboxAttachFailed,
+  onWindowClose,
+  onWindowMinimize,
   sandboxManagementAuth,
   sandboxScoped = false,
   teamSlug,
@@ -626,7 +630,9 @@ export default function DashboardTerminal({
         restartLabel={restartLabel}
         template={sandboxScoped ? undefined : template}
         terminalContainerRef={terminalContainerRef}
+        onClose={onWindowClose}
         onFocusTerminal={focusTerminal}
+        onMinimize={onWindowMinimize}
         onCopyTerminalText={() => void copyTerminalText()}
         onRestartTerminal={restartTerminal}
       />

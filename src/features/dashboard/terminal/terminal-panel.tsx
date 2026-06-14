@@ -3,6 +3,7 @@ import type { RefObject } from 'react'
 import { IconButton } from '@/ui/primitives/icon-button'
 import {
   ArrowLeftIcon,
+  CloseIcon,
   CopyIcon,
   RefreshIcon,
   TerminalIcon,
@@ -17,6 +18,8 @@ interface TerminalPanelProps {
   terminalContainerRef: RefObject<HTMLDivElement | null>
   onFocusTerminal: () => void
   onCopyTerminalText: () => void
+  onClose?: () => void
+  onMinimize?: () => void
   onRestartTerminal: () => void
 }
 
@@ -29,6 +32,8 @@ export default function TerminalPanel({
   terminalContainerRef,
   onFocusTerminal,
   onCopyTerminalText,
+  onClose,
+  onMinimize,
   onRestartTerminal,
 }: TerminalPanelProps) {
   return (
@@ -40,7 +45,9 @@ export default function TerminalPanel({
           template={template}
           restartDisabled={restartDisabled}
           restartLabel={restartLabel}
+          onClose={onClose}
           onCopyTerminalText={onCopyTerminalText}
+          onMinimize={onMinimize}
           onRestartTerminal={onRestartTerminal}
         />
       </header>
@@ -62,6 +69,8 @@ function TerminalPanelHeader({
   restartDisabled,
   restartLabel,
   onCopyTerminalText,
+  onClose,
+  onMinimize,
   onRestartTerminal,
 }: Pick<
   TerminalPanelProps,
@@ -70,7 +79,9 @@ function TerminalPanelHeader({
   | 'template'
   | 'restartDisabled'
   | 'restartLabel'
+  | 'onClose'
   | 'onCopyTerminalText'
+  | 'onMinimize'
   | 'onRestartTerminal'
 >) {
   return (
@@ -129,6 +140,30 @@ function TerminalPanelHeader({
         >
           <RefreshIcon />
         </IconButton>
+        {onMinimize ? (
+          <IconButton
+            type="button"
+            variant="tertiary"
+            className="size-7"
+            aria-label="Minimize terminal"
+            title="Minimize terminal"
+            onClick={onMinimize}
+          >
+            <span aria-hidden className="block h-px w-3 bg-current" />
+          </IconButton>
+        ) : null}
+        {onClose ? (
+          <IconButton
+            type="button"
+            variant="tertiary"
+            className="size-7"
+            aria-label="Close terminal"
+            title="Close terminal"
+            onClick={onClose}
+          >
+            <CloseIcon />
+          </IconButton>
+        ) : null}
       </div>
     </div>
   )
