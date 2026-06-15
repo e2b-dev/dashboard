@@ -8,8 +8,10 @@ import { getMiddlewareRedirectFromPath } from '@/lib/utils/redirects'
 import { getRewriteForPath } from '@/lib/utils/rewrites'
 import { isProxyAuthRoute, isProxyDashboardRoute } from './proxy-plan'
 
-export { isProxyAuthRoute as isAuthRoute }
-export { isProxyDashboardRoute as isDashboardRoute }
+export {
+  isProxyAuthRoute as isAuthRoute,
+  isProxyDashboardRoute as isDashboardRoute,
+}
 
 function isDashboardTerminalRoute(pathname: string): boolean {
   return (

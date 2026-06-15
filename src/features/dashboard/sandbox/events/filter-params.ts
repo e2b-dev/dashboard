@@ -26,4 +26,4 @@ const sandboxEventsFilterParams = {
   order: parseAsStringEnum(SANDBOX_EVENTS_ORDER_VALUES),
 }
 
-export { sandboxEventsFilterParams, type SandboxEventsOrder }
+export { type SandboxEventsOrder, sandboxEventsFilterParams }
