@@ -6,7 +6,6 @@
       "dependencies": {
         "@hookform/resolvers": "^5.2.2",
         "@launchdarkly/node-server-sdk": "^9.11.2",
-        "@next-safe-action/adapter-react-hook-form": "^2.0.0",
         "@next/env": "^16.2.7",
         "@opentelemetry/api": "^1.9.0",
         "@opentelemetry/auto-instrumentations-node": "^0.77.0",
@@ -393,8 +392,6 @@
     "@launchdarkly/node-server-sdk": ["@launchdarkly/node-server-sdk@9.11.2", "", { "dependencies": { "@launchdarkly/js-server-sdk-common": "2.19.1", "https-proxy-agent": "^7.0.6", "launchdarkly-eventsource": "2.2.0" } }, "sha512-+S0V8bkxSvD3THaLTw/AKG6OVFFUqcoKXDrV7JhuCk9xhvI/LsvgpdzHZdzJjlicW/U+DRn3rPvhzGdYPLyasg=="],
 
     "@napi-rs/wasm-runtime": ["@napi-rs/wasm-runtime@1.1.4", "", { "dependencies": { "@tybys/wasm-util": "^0.10.1" }, "peerDependencies": { "@emnapi/core": "^1.7.1", "@emnapi/runtime": "^1.7.1" } }, "sha512-3NQNNgA1YSlJb/kMH1ildASP9HW7/7kYnRI2szWJaofaS1hWmbGI4H+d3+22aGzXXN9IJ+n+GiFVcGipJP18ow=="],
-
-    "@next-safe-action/adapter-react-hook-form": ["@next-safe-action/adapter-react-hook-form@2.0.0", "", { "peerDependencies": { "@hookform/resolvers": ">= 5.0.0", "next": ">= 14.0.0", "next-safe-action": ">= 8.0.0", "react": ">= 18.2.0", "react-dom": ">= 18.2.0", "react-hook-form": ">= 7.0.0" } }, "sha512-vp3KAd5NKnBBCF/3b8kDxEYj0+BUYVjlSZOWHikz/Y2O+yLheRmtj8Vcm379itlqGUKcLV5O2o/dwKHvH8pYog=="],
 
     "@next/env": ["@next/env@16.2.7", "", {}, "sha512-tMJizPlj6ZYpBMMdK8S0LJufrP4QTdR6pcv9KQ/bVETPAmg0j1mlHE9G2c38UyGHxoBapgwuj7XjbGJ2RcDFOg=="],
 
