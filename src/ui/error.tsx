@@ -17,12 +17,14 @@ export default function ErrorBoundary({
   className,
   hideFrame = false,
   onRetry,
+  report = true,
 }: {
   error: Error & { digest?: string }
   description?: string
   className?: string
   hideFrame?: boolean
   onRetry?: () => void
+  report?: boolean
 }) {
   useEffect(() => {
     l.error(
@@ -33,10 +35,14 @@ export default function ErrorBoundary({
       `${error.message}`
     )
 
-    if (process.env.NEXT_PUBLIC_POSTHOG_KEY) {
+    // Only report when a PostHog client is actually initialized. We init only on
+    // dashboard routes, and global-error renders outside the provider tree — in
+    // both cases captureException on an uninitialized singleton silently drops.
+    // global-error handles its own reporting (report={false}).
+    if (report && posthog.__loaded) {
       posthog.captureException(error)
     }
-  }, [error])
+  }, [error, report])
 
   return (
     <div

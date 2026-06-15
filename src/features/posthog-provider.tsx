@@ -1,3 +1,4 @@
+import { usePathname } from 'next/navigation'
 import posthog, { type Survey } from 'posthog-js'
 import { PostHogProvider as PHProvider } from 'posthog-js/react'
 import { createContext, useContext, useEffect, useState } from 'react'
@@ -31,12 +32,20 @@ export function PostHogProvider({
   children: React.ReactNode
   enabled: boolean
 }) {
+  const pathname = usePathname()
   const [dashboardFeedbackSurvey, setDashboardFeedbackSurvey] =
     useState<Survey | null>(null)
   const [isInitialized, setIsInitialized] = useState(false)
 
+  // Only track the dashboard app — not auth, marketing, or proxied (docs/blog)
+  // paths. PostHog initializes lazily once the user reaches a /dashboard route.
+  const shouldInit = enabled && !!pathname?.startsWith('/dashboard')
+
   useEffect(() => {
-    if (!enabled || !process.env.NEXT_PUBLIC_POSTHOG_KEY) {
+    if (!shouldInit || !process.env.NEXT_PUBLIC_POSTHOG_KEY) {
+      return
+    }
+    if (posthog.__loaded) {
       return
     }
 
@@ -76,7 +85,7 @@ export function PostHogProvider({
       }
       setIsInitialized(true)
     })
-  }, [enabled])
+  }, [shouldInit])
 
   return (
     <AppPostHogContext.Provider
