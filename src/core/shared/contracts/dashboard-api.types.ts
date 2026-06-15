@@ -40,6 +40,45 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/agents': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List agents */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned agents. */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['AgentsResponse']
+          }
+        }
+        401: components['responses']['401']
+        403: components['responses']['403']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/builds': {
     parameters: {
       query?: never
@@ -1107,6 +1146,22 @@ export interface components {
     }
     DefaultTemplatesResponse: {
       templates: components['schemas']['DefaultTemplate'][]
+    }
+    Agent: {
+      author?: string | null
+      command?: string | null
+      createdAt: string
+      deletedAt?: string | null
+      description: string
+      id: string
+      name: string
+      public: boolean
+      teamId?: string | null
+      template: string
+      updatedAt: string
+    }
+    AgentsResponse: {
+      agents: components['schemas']['Agent'][]
     }
     TeamTemplate: {
       templateID: string

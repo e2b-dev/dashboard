@@ -4,11 +4,16 @@ export type AgentId = string
 
 export type AgentTemplateConfig = {
   id: AgentId
+  teamId?: string | null
   name: string
   command?: string
   template: string
-  base?: string
   description: string
+  author?: string
+  public?: boolean
+  createdAt?: string
+  updatedAt?: string
+  deletedAt?: string | null
 }
 
 const DEFAULT_AGENT_TEMPLATES = [
@@ -17,7 +22,6 @@ const DEFAULT_AGENT_TEMPLATES = [
     name: 'Codex',
     command: 'codex',
     template: 'codex',
-    base: 'Ubuntu',
     description: 'Codex CLI for coding sessions.',
   },
   {
@@ -25,7 +29,6 @@ const DEFAULT_AGENT_TEMPLATES = [
     name: 'Claude',
     command: 'claude',
     template: 'claude',
-    base: 'Ubuntu',
     description: 'Claude Code for coding sessions.',
   },
   {
@@ -33,7 +36,6 @@ const DEFAULT_AGENT_TEMPLATES = [
     name: 'OpenCode',
     command: 'opencode',
     template: 'opencode',
-    base: 'Ubuntu',
     description: 'OpenCode for coding sessions.',
   },
 ] satisfies AgentTemplateConfig[]
@@ -41,12 +43,17 @@ const DEFAULT_AGENT_TEMPLATES = [
 export const AgentTemplateConfigSchema = z
   .object({
     id: z.string().trim().min(1).optional(),
+    teamId: z.string().trim().min(1).nullable().optional(),
     name: z.string().trim().min(1),
     command: z.string().trim().min(1).optional(),
     template: z.string().trim().min(1).optional(),
     templateId: z.string().trim().min(1).optional(),
-    base: z.string().trim().min(1).optional(),
     description: z.string().trim().min(1),
+    author: z.string().trim().min(1).optional(),
+    public: z.boolean().optional(),
+    createdAt: z.string().trim().min(1).optional(),
+    updatedAt: z.string().trim().min(1).optional(),
+    deletedAt: z.string().trim().min(1).nullable().optional(),
   })
   .superRefine((value, ctx) => {
     if (!value.template && !value.templateId) {
@@ -60,11 +67,16 @@ export const AgentTemplateConfigSchema = z
   .transform(
     (value): AgentTemplateConfig => ({
       id: value.id ?? value.name.toLowerCase().replace(/\s+/g, '-'),
+      teamId: value.teamId,
       name: value.name,
       command: value.command,
       template: value.template ?? value.templateId ?? '',
-      base: value.base,
       description: value.description,
+      author: value.author,
+      public: value.public,
+      createdAt: value.createdAt,
+      updatedAt: value.updatedAt,
+      deletedAt: value.deletedAt,
     })
   )
 
@@ -99,11 +111,16 @@ const toAgentTemplateConfig = (
 
   return {
     id: getString(source, 'id') ?? name.toLowerCase().replace(/\s+/g, '-'),
+    teamId: getString(source, 'teamId') ?? null,
     name,
     command: getString(source, 'command'),
     template,
-    base: getString(source, 'base'),
     description,
+    author: getString(source, 'author'),
+    public: typeof source.public === 'boolean' ? source.public : undefined,
+    createdAt: getString(source, 'createdAt'),
+    updatedAt: getString(source, 'updatedAt'),
+    deletedAt: getString(source, 'deletedAt') ?? null,
   }
 }
 
