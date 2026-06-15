@@ -54,6 +54,7 @@ type AgentTerminalWindow = {
   id: string
   forceNewSandbox?: boolean
   minimized: boolean
+  minimizedOrder?: number
   position: WindowPosition
   sandboxId?: string
   template: AgentTemplateConfig
@@ -352,6 +353,7 @@ export function AgentsDashboard({
     []
   )
   const nextWindowIdRef = useRef(0)
+  const nextMinimizedOrderRef = useRef(0)
   const pauseSupported = canPauseSandboxes()
 
   const { data, error, isPending, refetch } = useQuery(
@@ -581,10 +583,15 @@ export function AgentsDashboard({
           setTerminalWindows((currentWindows) =>
             currentWindows.map((terminalWindow) =>
               terminalWindow.id === windowId
-                ? { ...terminalWindow, minimized: true }
+                ? {
+                    ...terminalWindow,
+                    minimized: true,
+                    minimizedOrder: nextMinimizedOrderRef.current,
+                  }
                 : terminalWindow
             )
           )
+          nextMinimizedOrderRef.current += 1
         }}
         onMoveWindow={(windowId, position) => {
           setTerminalWindows((currentWindows) =>
@@ -705,6 +712,11 @@ function AgentTerminalWindowLayer({
         const isActive = activeWindowId === terminalWindow.id
         const minimizedIndex = windows
           .filter((candidate) => candidate.minimized)
+          .sort(
+            (a, b) =>
+              (a.minimizedOrder ?? Number.MAX_SAFE_INTEGER) -
+              (b.minimizedOrder ?? Number.MAX_SAFE_INTEGER)
+          )
           .findIndex((candidate) => candidate.id === terminalWindow.id)
         const windowStyle = terminalWindow.minimized
           ? {
