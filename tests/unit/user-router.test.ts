@@ -11,7 +11,7 @@ const providerMock = vi.hoisted(() => ({
 }))
 
 vi.mock('@/core/server/auth', () => ({
-  createAuthForHeaders: vi.fn(() => providerMock),
+  createAuthForSession: vi.fn(() => providerMock),
 }))
 
 vi.mock('@/lib/utils/server', () => ({

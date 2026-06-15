@@ -6,8 +6,7 @@ import type { AuthProvider } from './provider'
 
 export const auth: AuthProvider = oryAuthProvider
 
-export function createAuthForHeaders(
-  _headers: Headers,
+export function createAuthForSession(
   authSession?: Session | null
 ): AuthProvider {
   return createOryAuthProvider(authSession)

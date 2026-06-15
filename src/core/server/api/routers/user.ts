@@ -1,7 +1,7 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 import type { AuthUser } from '@/core/server/auth'
-import { createAuthForHeaders } from '@/core/server/auth'
+import { createAuthForSession } from '@/core/server/auth'
 import { createTRPCRouter } from '@/core/server/trpc/init'
 import { protectedProcedure } from '@/core/server/trpc/procedures'
 import { l } from '@/core/shared/clients/logger/logger'
@@ -50,7 +50,7 @@ export const userRouter = createTRPCRouter({
   // against a timeout and falls back to the cheap session user so the dashboard
   // never hangs on the identity provider.
   profile: protectedProcedure.query(async ({ ctx }): Promise<AuthUser> => {
-    const provider = createAuthForHeaders(ctx.headers, ctx.authSession)
+    const provider = createAuthForSession(ctx.authSession)
 
     const result = await withTimeout(
       provider.getUserProfile().catch(() => null),
@@ -89,7 +89,7 @@ export const userRouter = createTRPCRouter({
         }
       }
 
-      const provider = createAuthForHeaders(ctx.headers, ctx.authSession)
+      const provider = createAuthForSession(ctx.authSession)
 
       if (input.email !== undefined || input.password !== undefined) {
         const profile = await withTimeout(
