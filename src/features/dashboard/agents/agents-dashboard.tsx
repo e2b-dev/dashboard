@@ -27,6 +27,7 @@ import {
   ExternalLinkIcon,
   HistoryIcon,
   PausedIcon,
+  RefreshIcon,
   RemoveIcon,
 } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
@@ -506,13 +507,26 @@ export function AgentsDashboard({
                 Recent sessions for {expandedTemplate.template}
               </p>
             </div>
-            <Button
-              size="none"
-              variant="tertiary"
-              onClick={() => setExpandedAgentId(null)}
-            >
-              Close
-            </Button>
+            <div className="flex shrink-0 items-center gap-3">
+              <Button
+                loading={isPending ? 'Refreshing...' : undefined}
+                size="none"
+                variant="tertiary"
+                onClick={() => {
+                  void refetch()
+                }}
+              >
+                <RefreshIcon />
+                Refresh
+              </Button>
+              <Button
+                size="none"
+                variant="tertiary"
+                onClick={() => setExpandedAgentId(null)}
+              >
+                Close
+              </Button>
+            </div>
           </div>
 
           {isPending ? (
