@@ -28,7 +28,7 @@ export default async function UsagePage({
 
   return (
     <UsageChartsProvider data={result.data}>
-      <div className="h-full max-h-full min-h-0 overflow-y-auto lg:overflow-hidden">
+      <div className="h-full max-h-full min-h-0 overflow-y-auto">
         <div className="container mx-auto p-0 md:p-8 2xl:px-24 2xl:py-8 max-w-[1800px] lg:flex lg:flex-col lg:h-full">
           <Frame
             classNames={{
