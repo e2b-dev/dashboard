@@ -135,28 +135,32 @@ function TerminalPanelHeader({
       </div>
 
       <div className="flex items-center gap-1">
-        <IconButton
-          type="button"
-          variant="tertiary"
-          className="size-7"
-          aria-label="Copy terminal output"
-          title="Copy terminal output"
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={onCopyTerminalText}
-        >
-          <CopyIcon />
-        </IconButton>
-        <IconButton
-          type="button"
-          variant="tertiary"
-          className="size-7"
-          aria-label={restartLabel}
-          title={restartLabel}
-          disabled={restartDisabled}
-          onClick={onRestartTerminal}
-        >
-          <RefreshIcon />
-        </IconButton>
+        {collapsed ? null : (
+          <>
+            <IconButton
+              type="button"
+              variant="tertiary"
+              className="size-7"
+              aria-label="Copy terminal output"
+              title="Copy terminal output"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={onCopyTerminalText}
+            >
+              <CopyIcon />
+            </IconButton>
+            <IconButton
+              type="button"
+              variant="tertiary"
+              className="size-7"
+              aria-label={restartLabel}
+              title={restartLabel}
+              disabled={restartDisabled}
+              onClick={onRestartTerminal}
+            >
+              <RefreshIcon />
+            </IconButton>
+          </>
+        )}
         {onMinimize ? (
           <IconButton
             type="button"
