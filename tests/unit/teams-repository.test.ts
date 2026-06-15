@@ -12,7 +12,7 @@ describe('createTeamsRepository', () => {
           PATCH: vi.fn(),
           DELETE: vi.fn(),
         } as unknown as typeof import('@/core/shared/clients/api').api,
-        authHeaders: vi.fn(() => ({ 'X-Supabase-Token': 'token' })),
+        authHeaders: vi.fn(() => ({ Authorization: 'Bearer token' })),
       }
     )
 

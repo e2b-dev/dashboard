@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { buildOryStartURL, type OryAuthIntent } from './build-start-url'
 
-// Map each legacy auth page to the intent we want the Ory hosted UI to
+// Map each dashboard auth page to the intent we want the Ory hosted UI to
 // open with. Done at the middleware layer so the (auth) layout never
 // renders in Ory mode - otherwise the user briefly sees the auth shell
 // before the page-level redirect kicks in.

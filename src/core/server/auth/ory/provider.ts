@@ -27,7 +27,7 @@ import { revokeOryOAuthSessionsForSubject } from './oauth-session'
 import { completeOrySignOut } from './signout-flow'
 
 // Where the account-settings page expects to land after a forced re-auth so it
-// reveals the password form (matches the Supabase ?reauth=1 contract).
+// reveals the password form.
 const ACCOUNT_SETTINGS_REAUTH_RETURN_TO = `${PROTECTED_URLS.ACCOUNT_SETTINGS}?reauth=1`
 
 export const oryAuthProvider = createOryAuthProvider()
@@ -115,7 +115,6 @@ export function createOryAuthProvider(
 
     async startReauthForAccountSettings(): Promise<ReauthDispatch> {
       return {
-        kind: 'redirect',
         to: buildOryStartURL('reauth', ACCOUNT_SETTINGS_REAUTH_RETURN_TO),
       }
     },

@@ -42,8 +42,6 @@ vi.mock('@/core/shared/clients/logger/logger', () => ({
 const { proxy } = await import('@/proxy')
 const { GET: oauthStartGET } = await import('@/app/api/auth/oauth-start/route')
 
-const originalAuthProvider = process.env.AUTH_PROVIDER
-
 function request(path: string): NextRequest {
   return new NextRequest(`https://app.e2b.dev${path}`)
 }
@@ -66,7 +64,6 @@ function orySession({
 
 describe('Ory auth entrypoints', () => {
   beforeEach(() => {
-    process.env.AUTH_PROVIDER = 'ory'
     authSession.current = null
     authMiddlewareMock.mockClear()
     signInMock.mockReset().mockResolvedValue(undefined)
@@ -79,13 +76,10 @@ describe('Ory auth entrypoints', () => {
 
   afterEach(() => {
     vi.unstubAllEnvs()
-    process.env.AUTH_PROVIDER = originalAuthProvider
     authSession.current = null
   })
 
-  it('routes legacy auth pages to Ory, including during auth migration', async () => {
-    vi.stubEnv('NEXT_PUBLIC_AUTH_MIGRATION_IN_PROGRESS', '1')
-
+  it('routes auth pages to Ory', async () => {
     const signIn = await proxy(request('/sign-in/'), {} as NextFetchEvent)
     const signUp = await proxy(
       request('/sign-up?returnTo=%2Fdashboard'),

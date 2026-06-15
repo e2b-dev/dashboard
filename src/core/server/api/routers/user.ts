@@ -1,6 +1,5 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
-import { isAuthMigrationInProgress } from '@/configs/flags'
 import type { AuthUser } from '@/core/server/auth'
 import { createAuthForHeaders } from '@/core/server/auth'
 import { createTRPCRouter } from '@/core/server/trpc/init'
@@ -93,13 +92,6 @@ export const userRouter = createTRPCRouter({
       const provider = createAuthForHeaders(ctx.headers, ctx.authSession)
 
       if (input.email !== undefined || input.password !== undefined) {
-        if (isAuthMigrationInProgress()) {
-          return {
-            status: 'error' as const,
-            code: 'account_credentials_not_changeable' as const,
-          }
-        }
-
         const profile = await withTimeout(
           provider.getUserProfile().catch(() => null),
           PROFILE_LOOKUP_TIMEOUT_MS

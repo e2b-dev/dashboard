@@ -86,7 +86,7 @@ describe('createKeysRepository', () => {
       {
         infraClient:
           infraClient as unknown as typeof import('@/core/shared/clients/api').infra,
-        authHeaders: vi.fn(() => ({ 'X-Supabase-Token': 'token' })),
+        authHeaders: vi.fn(() => ({ Authorization: 'Bearer token' })),
         resolveAuthUserEmailsById,
       }
     )
@@ -152,7 +152,7 @@ describe('createKeysRepository', () => {
       {
         infraClient:
           infraClient as unknown as typeof import('@/core/shared/clients/api').infra,
-        authHeaders: vi.fn(() => ({ 'X-Supabase-Token': 'token' })),
+        authHeaders: vi.fn(() => ({ Authorization: 'Bearer token' })),
         resolveAuthUserEmailsById,
       }
     )

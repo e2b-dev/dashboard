@@ -27,8 +27,6 @@ export const authMiddleware = t.middleware(async ({ ctx, next }) => {
         message: 'session not found',
       })
 
-      // provider-level logs already capture supabase errors when present;
-      // this warn distinguishes "no cookie / expired session" at the trpc boundary
       l.warn(
         {
           key: 'trpc_auth_middleware:no_session',

@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation'
 import type { Metadata } from 'next/types'
 import { DashboardTeamGate } from '@/app/dashboard/[teamSlug]/team-gate'
 import { COOKIE_KEYS } from '@/configs/cookies'
-import { isOryAuthEnabled } from '@/configs/flags'
 import { METADATA } from '@/configs/metadata'
 import { AUTH_URLS } from '@/configs/urls'
 import { DASHBOARD_TEAMS_LIST_QUERY_OPTIONS } from '@/core/application/teams/queries'
@@ -38,8 +37,7 @@ export default async function DashboardLayout({
   const cookieStore = await cookies()
   const { teamSlug } = await params
   const authContext = await auth.getAuthContext()
-  const postHogEnabled =
-    isOryAuthEnabled() && !!process.env.NEXT_PUBLIC_POSTHOG_KEY
+  const postHogEnabled = !!process.env.NEXT_PUBLIC_POSTHOG_KEY
 
   const sidebarState = cookieStore.get(COOKIE_KEYS.SIDEBAR_STATE)?.value
   const defaultOpen = sidebarState === 'true'

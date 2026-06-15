@@ -22,14 +22,14 @@ type CLISearchParams = Promise<{
 async function handleCLIAuth(
   next: string,
   userEmail: string,
-  supabaseAccessToken: string
+  authProviderAccessToken: string
 ) {
   if (!isLoopbackUrl(next)) {
     throw new Error('Invalid redirect URL')
   }
 
   const teamsResult = await createUserTeamsRepository({
-    accessToken: supabaseAccessToken,
+    accessToken: authProviderAccessToken,
   }).listUserTeams()
 
   if (!teamsResult.ok) {
@@ -44,7 +44,9 @@ async function handleCLIAuth(
     throw new Error('Failed to resolve default team')
   }
 
-  const e2bAccessToken = await generateE2BUserAccessToken(supabaseAccessToken)
+  const e2bAccessToken = await generateE2BUserAccessToken(
+    authProviderAccessToken
+  )
 
   const searchParams = new URLSearchParams({
     email: userEmail,

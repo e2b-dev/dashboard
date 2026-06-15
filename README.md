@@ -18,7 +18,7 @@ Our Dashboard is a modern, feature-rich web application built to manage and moni
 ## Features
 - **Modern Stack**: Built with Next.js 16, React 19, and TypeScript
 - **Real-time Analytics**: Monitor your sandbox usage and performance
-- **Authentication**: Secure authentication powered by Supabase
+- **Authentication**: Secure authentication powered by Auth.js and Ory
 - **Type Safety**: Full TypeScript support throughout the codebase
 
 ## Getting Started
@@ -29,7 +29,7 @@ Our Dashboard is a modern, feature-rich web application built to manage and moni
 - Node.js 20.9+
 - Git
 - Vercel account
-- Supabase account
+- Ory project or self-hosted Ory deployment
 
 ### Local Development Setup
 
@@ -56,31 +56,11 @@ cp .env.example .env.local
 
 4. Set up required services:
 
-#### a. Supabase Setup
-1. Create a new Supabase project
-2. Go to Project Settings > API
-3. Copy the `anon key` & `service_role key` to populate `.env.local`
-4. Configure authentication:
-   - Go to Authentication > URL Configuration
-   - Set Site URL to the hosting domain 
-   - Add `http://localhost:3000/**` to Redirect URLs (for development)
-5. Enable auth providers:
-   - Go to Authentication > Providers
-   - Enable the providers you want to use (GitHub, Google, E-Mail)
-   - Configure each provider with the appropriate credentials
-6. Configure e-mail templates:
-   - Navigate to **Authentication → Templates** in the Supabase dashboard
-   - Update the URLs in the **Reset Password** and **Confirm Sign-Up** templates so that the CTA links point back to the dashboard's confirmation endpoint:
-
-   **Reset Password**
-   ```
-   {{ .SiteURL }}/api/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next={{ .RedirectTo }}&confirmation_url={{ .ConfirmationURL }}
-   ```
-
-   **Confirm Sign-Up**
-   ```
-   {{ .SiteURL }}/api/auth/confirm?token_hash={{ .TokenHash }}&type=email&next={{ .RedirectTo }}&confirmation_url={{ .ConfirmationURL }}
-   ```
+#### a. Auth.js / Ory Setup
+1. Configure an Ory OAuth2 client for the dashboard callback URL: `/api/auth/oauth/callback/ory`.
+2. Populate `.env.local` with the Ory and Auth.js variables from `.env.example`.
+3. Enable the upstream identity providers you want in Ory (GitHub, Google, email/password, etc.).
+4. Ensure the Ory access-token audience matches the backend JWT audience setting.
 
 #### b. Key-Value Store Setup (Optional)
 Redis/KV is optional for standard dashboard deployments, including local, enterprise, and on-prem environments. The dashboard can boot and run core auth and dashboard workflows without KV configured.

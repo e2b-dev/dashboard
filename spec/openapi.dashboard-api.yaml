@@ -10,19 +10,8 @@ components:
       type: apiKey
       in: header
       name: X-Admin-Token
-    # Generated code uses security schemas in the alphabetical order.
-    # In order to check first the token, and then the team (so we can already use the user),
-    # there is a 1 and 2 present in the names of the security schemas.
-    Supabase1TokenAuth:
-      type: apiKey
-      in: header
-      name: X-Supabase-Token
-    Supabase2TeamAuth:
-      type: apiKey
-      in: header
-      name: X-Supabase-Team
     # AuthProviderBearerAuth / AuthProviderTeamAuth: B before T in the name
-    # so Bearer is validated before Team (same reason as Supabase1/2 above).
+    # so Bearer is validated before Team.
     AuthProviderBearerAuth:
       type: http
       scheme: bearer
@@ -901,8 +890,8 @@ paths:
       summary: List team builds
       tags: [builds]
       security:
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
         - AuthProviderBearerAuth: []
           AuthProviderTeamAuth: []
       parameters:
@@ -931,8 +920,8 @@ paths:
       summary: Get build statuses
       tags: [builds]
       security:
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
         - AuthProviderBearerAuth: []
           AuthProviderTeamAuth: []
       parameters:
@@ -959,8 +948,8 @@ paths:
       summary: Get build details
       tags: [builds]
       security:
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
         - AuthProviderBearerAuth: []
           AuthProviderTeamAuth: []
       parameters:
@@ -986,8 +975,8 @@ paths:
       summary: Get sandbox record
       tags: [sandboxes]
       security:
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
         - AuthProviderBearerAuth: []
           AuthProviderTeamAuth: []
       parameters:
@@ -1014,7 +1003,7 @@ paths:
       description: Returns all teams the authenticated user belongs to, with limits and default flag.
       tags: [teams]
       security:
-        - Supabase1TokenAuth: []
+        - AuthProviderBearerAuth: []
         - AuthProviderBearerAuth: []
       responses:
         "200":
@@ -1031,7 +1020,7 @@ paths:
       summary: Create team
       tags: [teams]
       security:
-        - Supabase1TokenAuth: []
+        - AuthProviderBearerAuth: []
         - AuthProviderBearerAuth: []
       requestBody:
         required: true
@@ -1208,7 +1197,7 @@ paths:
       description: Resolves a team slug to the team's identity, validating the user is a member.
       tags: [teams]
       security:
-        - Supabase1TokenAuth: []
+        - AuthProviderBearerAuth: []
         - AuthProviderBearerAuth: []
       parameters:
         - $ref: "#/components/parameters/teamSlug"
@@ -1233,8 +1222,8 @@ paths:
       summary: Update team
       tags: [teams]
       security:
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
         - AuthProviderBearerAuth: []
           AuthProviderTeamAuth: []
       parameters:
@@ -1266,8 +1255,8 @@ paths:
       summary: List team members
       tags: [teams]
       security:
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
         - AuthProviderBearerAuth: []
           AuthProviderTeamAuth: []
       parameters:
@@ -1289,8 +1278,8 @@ paths:
       summary: Add team member
       tags: [teams]
       security:
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
         - AuthProviderBearerAuth: []
           AuthProviderTeamAuth: []
       parameters:
@@ -1320,8 +1309,8 @@ paths:
       summary: Remove team member
       tags: [teams]
       security:
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
         - AuthProviderBearerAuth: []
           AuthProviderTeamAuth: []
       parameters:
@@ -1345,8 +1334,8 @@ paths:
       description: Returns a paginated list of the team's templates (and default templates inline, unless the team is on a dedicated cluster), with filtering, search, and column sorting via keyset cursor pagination.
       tags: [templates]
       security:
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
         - AuthProviderBearerAuth: []
           AuthProviderTeamAuth: []
       parameters:
@@ -1379,7 +1368,7 @@ paths:
       description: Returns the list of default templates with their latest build info and aliases.
       tags: [templates]
       security:
-        - Supabase1TokenAuth: []
+        - AuthProviderBearerAuth: []
         - AuthProviderBearerAuth: []
       responses:
         "200":

@@ -40,7 +40,7 @@ describe('createUserTeamsRepository', () => {
       {
         apiClient:
           apiClient as unknown as typeof import('@/core/shared/clients/api').api,
-        authHeaders: vi.fn(() => ({ 'X-Supabase-Token': 'token' })),
+        authHeaders: vi.fn(() => ({ Authorization: 'Bearer token' })),
       }
     )
 

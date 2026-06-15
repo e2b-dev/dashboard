@@ -12,12 +12,9 @@ export const serverSchema = z.object({
   PLAIN_API_KEY: z.string().min(1).optional(),
   LAUNCHDARKLY_SDK_KEY: z.string().min(1).optional(),
 
-  TURNSTILE_SECRET_KEY: z.string().optional(),
-
   POSTHOG_API_KEY: z.string().min(1).optional(),
   POSTHOG_PROJECT_ID: z.string().min(1).optional(),
 
-  AUTH_PROVIDER: z.enum(['supabase', 'ory']),
   AUTH_SECRET: z.string().min(1).optional(),
   AUTH_TRUST_HOST: z.string().optional(),
   // Prefix for Auth.js cookie names to disambiguate multiple local
@@ -59,8 +56,6 @@ export const serverSchema = z.object({
 })
 
 export const clientSchema = z.object({
-  NEXT_PUBLIC_SUPABASE_URL: z.url().optional(),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1).optional(),
   NEXT_PUBLIC_E2B_DOMAIN: z.string(),
 
   NEXT_PUBLIC_POSTHOG_KEY: z.string().min(1).optional(),
@@ -80,11 +75,6 @@ export const clientSchema = z.object({
   NEXT_PUBLIC_SCAN: z.string().optional(),
   NEXT_PUBLIC_MOCK_DATA: z.string().optional(),
   NEXT_PUBLIC_VERBOSE: z.string().optional(),
-  NEXT_PUBLIC_AUTH_MIGRATION_IN_PROGRESS: z.string().optional(),
-
-  NEXT_PUBLIC_CAPTCHA_ENABLED: z.string().optional(),
-  NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),
-
   NEXT_PUBLIC_INFRA_API_URL: z.url().optional(),
   NEXT_PUBLIC_E2B_SANDBOX_URL: z.url().optional(),
   NEXT_PUBLIC_DASHBOARD_API_URL: z.url().optional(),
@@ -93,12 +83,6 @@ export const clientSchema = z.object({
 const merged = serverSchema.merge(clientSchema)
 
 type MergedEnv = z.infer<typeof merged>
-
-const supabaseRequiredEnvVars = [
-  'NEXT_PUBLIC_SUPABASE_URL',
-  'NEXT_PUBLIC_SUPABASE_ANON_KEY',
-  'DASHBOARD_API_ADMIN_TOKEN',
-] as const satisfies readonly (keyof MergedEnv)[]
 
 const oryRequiredEnvVars = [
   'AUTH_SECRET',
@@ -112,15 +96,14 @@ const oryRequiredEnvVars = [
 function requireEnvVars(
   data: MergedEnv,
   ctx: z.RefinementCtx,
-  envVars: readonly (keyof MergedEnv)[],
-  authProvider: MergedEnv['AUTH_PROVIDER']
+  envVars: readonly (keyof MergedEnv)[]
 ) {
   for (const envVar of envVars) {
     if (data[envVar]) continue
 
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: `AUTH_PROVIDER=${authProvider} requires ${envVar}`,
+      message: `Auth.js/Ory requires ${envVar}`,
       path: [envVar],
     })
   }
@@ -141,29 +124,22 @@ function validateOryAdminEnv(data: MergedEnv, ctx: z.RefinementCtx) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: `Self-hosted Ory is missing ${missingSelfHostedVars.join(', ')}`,
-        path: ['AUTH_PROVIDER'],
+        path: ['ORY_KRATOS_ADMIN_URL'],
       })
     }
   } else if (!hasProjectToken) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message:
-        'AUTH_PROVIDER=ory requires ORY_PROJECT_API_TOKEN (Ory Network) or both ORY_KRATOS_ADMIN_URL and ORY_HYDRA_ADMIN_URL (self-hosted)',
-      path: ['AUTH_PROVIDER'],
+        'Auth.js/Ory requires ORY_PROJECT_API_TOKEN (Ory Network) or both ORY_KRATOS_ADMIN_URL and ORY_HYDRA_ADMIN_URL (self-hosted)',
+      path: ['ORY_PROJECT_API_TOKEN'],
     })
   }
 }
 
 export const appEnvSchema = merged.superRefine((data, ctx) => {
-  switch (data.AUTH_PROVIDER) {
-    case 'supabase':
-      requireEnvVars(data, ctx, supabaseRequiredEnvVars, data.AUTH_PROVIDER)
-      break
-    case 'ory':
-      requireEnvVars(data, ctx, oryRequiredEnvVars, data.AUTH_PROVIDER)
-      validateOryAdminEnv(data, ctx)
-      break
-  }
+  requireEnvVars(data, ctx, oryRequiredEnvVars)
+  validateOryAdminEnv(data, ctx)
 })
 
 export type Env = z.infer<typeof appEnvSchema>

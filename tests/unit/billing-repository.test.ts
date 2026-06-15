@@ -43,8 +43,8 @@ describe('createBillingRepository', () => {
         method: 'POST',
         headers: expect.objectContaining({
           'Content-Type': 'application/json',
-          'X-Supabase-Token': 'access-token',
-          'X-Supabase-Team': 'team-id',
+          Authorization: 'Bearer access-token',
+          'X-Team-ID': 'team-id',
         }),
       })
     )

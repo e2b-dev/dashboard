@@ -4,7 +4,6 @@ import {
   NextResponse,
 } from 'next/server'
 import { auth as authjsMiddleware } from '@/auth'
-import { isOryAuthEnabled } from './configs/flags'
 import { getOryAuthRouteRedirect } from './core/server/auth/ory/auth-route-redirect'
 import { isOrySessionAuthenticated } from './core/server/auth/ory/authjs-session-boundary'
 import {
@@ -24,7 +23,7 @@ type ProxyCoreOptions = {
 }
 
 // Runs the selected proxy concerns in order; the first handler that returns a
-// Response wins. Ory mode supplies `knownAuth` from the Auth.js wrapper.
+// Response wins. Protected/auth pages get `knownAuth` from the Auth.js wrapper.
 async function proxyCore(
   request: NextRequest,
   plan: ProxyPlan,
@@ -93,7 +92,7 @@ function proxyWithOryAuth(
 export async function proxy(request: NextRequest, event: NextFetchEvent) {
   const plan = classifyProxyRequest(request.nextUrl.pathname)
 
-  if (!isOryAuthEnabled() || !plan.needsOryAuthJsSession) {
+  if (!plan.needsAuthJsSession) {
     return proxyCore(request, plan)
   }
 

@@ -34,7 +34,7 @@ describe('logger redaction', () => {
         },
       },
       server_function_input: {
-        access_token: 'supabase-access-token',
+        access_token: 'auth-provider-access-token',
         api_key: 'team-api-key',
         captchaToken: 'captcha-secret',
         nested: {

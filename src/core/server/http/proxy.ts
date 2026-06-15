@@ -3,7 +3,6 @@ import 'server-cli-only'
 import { type NextRequest, NextResponse } from 'next/server'
 import { ALLOW_SEO_INDEXING } from '@/configs/flags'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { createAuthForProxy } from '@/core/server/auth'
 import { getMiddlewareRedirectFromPath } from '@/lib/utils/redirects'
 import { getRewriteForPath } from '@/lib/utils/rewrites'
 import { isProxyAuthRoute, isProxyDashboardRoute } from './proxy-plan'
@@ -103,18 +102,12 @@ export function handleMiddlewareRewrite(
   return response
 }
 
-// Terminal concern: gate dashboard/auth routes on authentication. `knownAuth`
-// is supplied in Ory mode (resolved by the Auth.js middleware wrapper); in
-// Supabase mode it's resolved here from the request/response cookies.
+// Terminal concern: gate dashboard/auth routes on the Auth.js session resolved
+// by the middleware wrapper.
 export async function handleAuthGate(
   request: NextRequest,
-  knownAuth?: boolean
+  knownAuth = false
 ): Promise<Response> {
   const response = NextResponse.next({ request })
-
-  const isAuthenticated =
-    knownAuth ??
-    !!(await createAuthForProxy(request, response).getAuthContext())
-
-  return getAuthRedirect(request, isAuthenticated) ?? response
+  return getAuthRedirect(request, knownAuth) ?? response
 }

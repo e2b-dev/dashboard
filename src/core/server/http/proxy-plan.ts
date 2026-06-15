@@ -14,7 +14,7 @@ export type ProxyRouteKind =
 
 export type ProxyPlan = {
   kind: ProxyRouteKind
-  needsOryAuthJsSession: boolean
+  needsAuthJsSession: boolean
   runAuthRouteRedirect: boolean
   runAuthGate: boolean
   runMiddlewareRedirect: boolean
@@ -33,7 +33,7 @@ export function classifyProxyRequest(pathname: string): ProxyPlan {
   if (matchesAnyPrefix(pathname, TRPC_API_PREFIXES)) {
     return {
       kind: 'api-trpc',
-      needsOryAuthJsSession: false,
+      needsAuthJsSession: false,
       runAuthRouteRedirect: false,
       runAuthGate: false,
       runMiddlewareRedirect: false,
@@ -61,7 +61,7 @@ export function classifyProxyRequest(pathname: string): ProxyPlan {
 
   return {
     kind,
-    needsOryAuthJsSession: runsAuthGate,
+    needsAuthJsSession: runsAuthGate,
     runAuthRouteRedirect: runsAuthGate,
     runAuthGate: runsAuthGate,
     runMiddlewareRedirect: true,
@@ -85,7 +85,7 @@ export function isProxyDashboardRoute(pathname: string): boolean {
 function bypassPlan(kind: ProxyRouteKind): ProxyPlan {
   return {
     kind,
-    needsOryAuthJsSession: false,
+    needsAuthJsSession: false,
     runAuthRouteRedirect: false,
     runAuthGate: false,
     runMiddlewareRedirect: false,

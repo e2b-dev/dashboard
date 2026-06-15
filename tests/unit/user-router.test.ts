@@ -83,20 +83,4 @@ describe('userRouter.update', () => {
       name: undefined,
     })
   })
-
-  it('blocks credential updates while auth migration is in progress', async () => {
-    vi.stubEnv('NEXT_PUBLIC_AUTH_MIGRATION_IN_PROGRESS', '1')
-
-    const ctx = await createTRPCContext({ headers: new Headers() })
-    const caller = createCaller(ctx)
-
-    const result = await caller.update({ password: 'new-password' })
-
-    expect(result).toEqual({
-      status: 'error',
-      code: 'account_credentials_not_changeable',
-    })
-    expect(providerMock.getUserProfile).not.toHaveBeenCalled()
-    expect(providerMock.updateUser).not.toHaveBeenCalled()
-  })
 })

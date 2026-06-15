@@ -21,25 +21,20 @@ import { PROTECTED_URLS } from '@/configs/urls'
  */
 
 // create hoisted mocks
-const { mockSupabaseClient, mockCookieStore, mockResolveUserTeam } = vi.hoisted(
-  () => ({
-    mockSupabaseClient: {
-      auth: {
-        getSession: vi.fn(),
-        getUser: vi.fn(),
-        signOut: vi.fn(),
-      },
-    },
-    mockCookieStore: {
-      get: vi.fn(),
-      set: vi.fn(),
-    },
-    mockResolveUserTeam: vi.fn(),
-  })
-)
+const { mockAuth, mockCookieStore, mockResolveUserTeam } = vi.hoisted(() => ({
+  mockAuth: {
+    getAuthContext: vi.fn(),
+    signOut: vi.fn(),
+  },
+  mockCookieStore: {
+    get: vi.fn(),
+    set: vi.fn(),
+  },
+  mockResolveUserTeam: vi.fn(),
+}))
 
-vi.mock('@/core/shared/clients/supabase/server', () => ({
-  createClient: vi.fn(() => mockSupabaseClient),
+vi.mock('@/core/server/auth', () => ({
+  auth: mockAuth,
 }))
 
 vi.mock('next/headers', () => ({
@@ -70,8 +65,9 @@ import { TAB_URL_MAP } from '@/configs/dashboard-tab-url-map'
 describe('Dashboard Route - Team Resolution Integration Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockSupabaseClient.auth.getSession.mockResolvedValue({
-      data: { session: { access_token: 'session-token' } },
+    mockAuth.getAuthContext.mockResolvedValue({
+      user: { id: 'user-123' },
+      accessToken: 'session-token',
     })
   })
 
@@ -95,12 +91,6 @@ describe('Dashboard Route - Team Resolution Integration Tests', () => {
 
   describe('Authenticated Users - Team Resolved Successfully', () => {
     it('should redirect to team sandboxes when team is resolved', async () => {
-      // setup: authenticated user
-      mockSupabaseClient.auth.getUser.mockResolvedValue({
-        data: { user: { id: 'user-123' } },
-        error: null,
-      })
-
       // setup: team resolution succeeds
       mockResolveUserTeam.mockResolvedValue({
         id: 'team-456',
@@ -126,11 +116,6 @@ describe('Dashboard Route - Team Resolution Integration Tests', () => {
     })
 
     it('should redirect to specified tab when provided', async () => {
-      mockSupabaseClient.auth.getUser.mockResolvedValue({
-        data: { user: { id: 'user-123' } },
-        error: null,
-      })
-
       mockResolveUserTeam.mockResolvedValue({
         id: 'team-456',
         slug: 'my-team',
@@ -148,12 +133,9 @@ describe('Dashboard Route - Team Resolution Integration Tests', () => {
 
   describe('Authenticated Users - No Team Found (Unexpected State)', () => {
     it('should sign out and redirect with error when no team can be resolved', async () => {
-      mockSupabaseClient.auth.getUser.mockResolvedValue({
-        data: { user: { id: 'user-123' } },
-        error: null,
+      mockAuth.signOut.mockResolvedValue({
+        redirectTo: '/api/auth/oauth/signout-flow',
       })
-
-      mockSupabaseClient.auth.signOut.mockResolvedValue({ error: null })
 
       // resolveUserTeam returns null (no team found)
       mockResolveUserTeam.mockResolvedValue(null)
@@ -163,21 +145,17 @@ describe('Dashboard Route - Team Resolution Integration Tests', () => {
       const response = await GET(request)
 
       // verify: user is signed out
-      expect(mockSupabaseClient.auth.signOut).toHaveBeenCalled()
+      expect(mockAuth.signOut).toHaveBeenCalled()
 
-      // verify: redirects to sign-in with error message
-      expect(response.headers.get('location')).toContain('/sign-in')
-      expect(response.headers.get('location')).toContain('error=')
+      expect(response.headers.get('location')).toContain(
+        '/api/auth/oauth/signout-flow'
+      )
     })
   })
 
   describe('Unauthenticated Users', () => {
     it('should redirect to sign-in when user is not authenticated', async () => {
-      // no user
-      mockSupabaseClient.auth.getUser.mockResolvedValue({
-        data: { user: null },
-        error: null,
-      })
+      mockAuth.getAuthContext.mockResolvedValue(null)
 
       const request = createRequest({})
 
@@ -191,10 +169,7 @@ describe('Dashboard Route - Team Resolution Integration Tests', () => {
     })
 
     it('should redirect to sign-in when auth returns error', async () => {
-      mockSupabaseClient.auth.getUser.mockResolvedValue({
-        data: null,
-        error: { message: 'Invalid token' },
-      })
+      mockAuth.getAuthContext.mockResolvedValue(null)
 
       const request = createRequest({})
 
@@ -209,11 +184,6 @@ describe('Dashboard Route - Team Resolution Integration Tests', () => {
     const testTeamSlug = 'my-team'
 
     beforeEach(() => {
-      mockSupabaseClient.auth.getUser.mockResolvedValue({
-        data: { user: { id: 'user-123' } },
-        error: null,
-      })
-
       mockResolveUserTeam.mockResolvedValue({
         id: 'team-456',
         slug: testTeamSlug,

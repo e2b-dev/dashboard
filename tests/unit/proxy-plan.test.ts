@@ -13,12 +13,12 @@ describe('classifyProxyRequest', () => {
     ['/docs/quickstart', 'rewrite', false, false, false],
     ['/', 'rewrite', false, false, false],
     ['/unknown-public-page', 'public', false, false, false],
-  ])('classifies %s', (pathname, kind, needsOryAuthJsSession, runAuthRouteRedirect, runAuthGate) => {
+  ])('classifies %s', (pathname, kind, needsAuthJsSession, runAuthRouteRedirect, runAuthGate) => {
     const plan = classifyProxyRequest(pathname)
 
     expect(plan).toMatchObject({
       kind,
-      needsOryAuthJsSession,
+      needsAuthJsSession,
       runAuthRouteRedirect,
       runAuthGate,
     })
