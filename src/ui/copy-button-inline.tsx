@@ -3,19 +3,21 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { cn, EASE_APPEAR } from '@/lib/utils/ui'
-import { CheckIcon, CopyIcon } from '@/ui/primitives/icons'
+import { CheckmarkIcon, CopyIcon } from '@/ui/primitives/icons'
 
 export default function CopyButtonInline({
   value,
   children,
   className,
   iconPosition = 'right',
+  truncate = true,
   'aria-label': ariaLabel,
 }: {
   value: string
   children: React.ReactNode
   className?: string
   iconPosition?: 'left' | 'right'
+  truncate?: boolean
   'aria-label'?: string
 }) {
   const [wasCopied, copy] = useClipboard(1000)
@@ -44,7 +46,7 @@ export default function CopyButtonInline({
             exit={{ opacity: 0.2, scale: 0.97, filter: 'blur(1px)' }}
             transition={{ duration: 0.1, ease: EASE_APPEAR }}
           >
-            <CheckIcon />
+            <CheckmarkIcon />
           </motion.span>
         ) : (
           <motion.span
@@ -72,7 +74,9 @@ export default function CopyButtonInline({
       )}
     >
       {iconPosition === 'left' && icon}
-      <span className="truncate">{children}</span>
+      <span className={truncate ? 'truncate' : 'whitespace-nowrap'}>
+        {children}
+      </span>
       {iconPosition === 'right' && icon}
     </button>
   )

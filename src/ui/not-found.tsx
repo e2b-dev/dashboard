@@ -10,7 +10,7 @@ import {
   CardFooter,
   CardHeader,
 } from './primitives/card'
-import { ArrowLeftIcon, DashboardIcon, HomeIcon } from './primitives/icons'
+import { ArrowLeftIcon, GridIcon, HomeIcon } from './primitives/icons'
 
 export default function NotFound() {
   return (
@@ -36,7 +36,7 @@ export default function NotFound() {
             </Button>
             <Button variant="secondary" asChild className="flex-1">
               <Link href={PROTECTED_URLS.DASHBOARD}>
-                <DashboardIcon />
+                <GridIcon />
                 Dashboard
               </Link>
             </Button>

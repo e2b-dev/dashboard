@@ -12,7 +12,7 @@ export const authMiddleware = t.middleware(async ({ ctx, next }) => {
   span.setAttribute('trpc.middleware.name', 'auth')
 
   try {
-    const provider = createAuthForHeaders(ctx.headers)
+    const provider = createAuthForHeaders(ctx.headers, ctx.authSession)
 
     const authContext = await context.with(
       trace.setSpan(context.active(), span),

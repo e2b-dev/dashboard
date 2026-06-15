@@ -6,7 +6,8 @@ import {
   serializeCookieHeader,
 } from '@supabase/ssr'
 import type { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/core/shared/clients/supabase/server'
+import { getSupabaseAuthConfig } from '@/core/shared/clients/supabase/env'
+import type { createClient } from '@/core/shared/clients/supabase/server'
 
 type SupabaseAuthClient = Awaited<ReturnType<typeof createClient>>['auth']
 
@@ -30,44 +31,40 @@ export function createServerClientForProxy(
   request: NextRequest,
   response: NextResponse
 ): SupabaseServerClient {
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options)
-          })
-        },
+  const { url, anonKey } = getSupabaseAuthConfig()
+
+  return createServerClient(url, anonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll()
       },
-    }
-  )
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          response.cookies.set(name, value, options)
+        })
+      },
+    },
+  })
 }
 
 export function createServerClientForHeaders(
   headers: Headers
 ): SupabaseServerClient {
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        getAll() {
-          return parseCookieHeader(headers.get('cookie') ?? '')
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            headers.append(
-              'Set-Cookie',
-              serializeCookieHeader(name, value, options)
-            )
-          })
-        },
+  const { url, anonKey } = getSupabaseAuthConfig()
+
+  return createServerClient(url, anonKey, {
+    cookies: {
+      getAll() {
+        return parseCookieHeader(headers.get('cookie') ?? '')
       },
-    }
-  )
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          headers.append(
+            'Set-Cookie',
+            serializeCookieHeader(name, value, options)
+          )
+        })
+      },
+    },
+  })
 }

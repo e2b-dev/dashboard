@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { TeamMetricsResponse } from '@/app/api/teams/[teamSlug]/metrics/types'
+import type { TeamMetricsResponse } from '@/core/modules/sandboxes/models.client'
 import { formatCompactDate, formatDecimal } from '@/lib/utils/formatting'
 import { transformMetrics } from '../team-metrics-chart'
 import { calculateAverage } from '../team-metrics-chart/utils'

@@ -4,10 +4,11 @@ import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
 import { auth } from '@/core/server/auth'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
+import { isLoopbackUrl } from '@/core/shared/schemas/url'
 import { encodedRedirect } from '@/lib/utils/auth'
 import { generateE2BUserAccessToken } from '@/lib/utils/server'
 import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
-import { CloudIcon, LinkIcon, SystemIcon } from '@/ui/primitives/icons'
+import { CloudIcon, LaptopIcon, LinkIcon } from '@/ui/primitives/icons'
 
 // Types
 type CLISearchParams = Promise<{
@@ -23,7 +24,7 @@ async function handleCLIAuth(
   userEmail: string,
   supabaseAccessToken: string
 ) {
-  if (!next?.startsWith('http://localhost')) {
+  if (!isLoopbackUrl(next)) {
     throw new Error('Invalid redirect URL')
   }
 
@@ -59,7 +60,7 @@ function CLIIcons() {
   return (
     <p className="flex items-center justify-center gap-4 text-3xl  tracking-tight sm:text-4xl">
       <span className="text-fg-tertiary">
-        <SystemIcon className="size-8" />
+        <LaptopIcon className="size-8" />
       </span>
       <span className="text-fg-secondary">
         <LinkIcon className="size-4" />
@@ -103,7 +104,7 @@ export default async function CLIAuthPage({
   }
 
   // Validate redirect URL
-  if (!next?.startsWith('http://localhost')) {
+  if (!next || !isLoopbackUrl(next)) {
     l.error(
       {
         key: 'cli_auth:invalid_redirect_url',

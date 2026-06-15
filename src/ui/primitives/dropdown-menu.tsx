@@ -5,7 +5,7 @@ import type { VariantProps } from 'class-variance-authority'
 import * as React from 'react'
 import { cn } from '@/lib/utils'
 import { Checkbox } from './checkbox'
-import { CheckIcon, ChevronRightIcon } from './icons'
+import { CheckmarkIcon, ChevronRightIcon } from './icons'
 import {
   menuContentStyles,
   menuGroupStyles,
@@ -158,7 +158,7 @@ const DropdownMenuRadioItem = React.forwardRef<
 
     <span className="absolute right-2 flex h-3.5 w-3.5 items-center justify-center">
       <DropdownMenuPrimitive.ItemIndicator>
-        <CheckIcon className="text-fg size-4" />
+        <CheckmarkIcon className="text-fg size-4" />
       </DropdownMenuPrimitive.ItemIndicator>
     </span>
   </DropdownMenuPrimitive.RadioItem>

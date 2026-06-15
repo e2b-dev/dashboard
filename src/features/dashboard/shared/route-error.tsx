@@ -34,6 +34,7 @@ export function DashboardRouteError({
   return (
     <ErrorBoundary
       description="Sorry, something went wrong with this page."
+      className="min-h-svh"
       error={error}
       onRetry={() => {
         router.refresh()

@@ -8,11 +8,34 @@ import {
 
 const oryOAuth2Audience = process.env.ORY_OAUTH2_AUDIENCE
 
+const useSecureCookies = process.env.VERCEL_ENV === 'production'
+// Standard Auth.js secure-cookie convention.
+const securePrefix = useSecureCookies ? '__Secure-' : ''
+// Cookies are scoped by host+path+name, NOT by port. Running two local
+// dashboards on different localhost ports makes them share the default
+// session cookie and clobber each other. AUTH_COOKIE_PREFIX lets each
+// instance use a distinct cookie name. Unset in prod/preview.
+const cookiePrefix = process.env.AUTH_COOKIE_PREFIX
+  ? `${process.env.AUTH_COOKIE_PREFIX}.`
+  : ''
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  // isolates from existing /api/auth/{callback,email-callback,verify-otp}
+  // isolates from existing /api/auth/{callback,email-callback}
   basePath: '/api/auth/oauth',
   secret: process.env.AUTH_SECRET,
   session: { strategy: 'jwt' },
+  useSecureCookies,
+  cookies: {
+    sessionToken: {
+      name: `${securePrefix}${cookiePrefix}authjs.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: useSecureCookies,
+      },
+    },
+  },
   // route handler that logs the failure and redirects to /sign-in so users
   // never see Auth.js's built-in error page; see oauth-recover/route.ts.
   pages: {

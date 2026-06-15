@@ -1,10 +1,13 @@
 'use client'
 
+import { Portal } from '@radix-ui/react-portal'
 import Link from 'next/link'
+import { usePostHog } from 'posthog-js/react'
 import { useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { getTeamDisplayName } from '@/core/modules/teams/utils'
-import { signOutAction } from '@/core/server/actions/auth-actions'
+import { resetOryPostHogIdentity } from '@/features/ory-posthog-identity-bridge'
+import { useAppPostHogProvider } from '@/features/posthog-provider'
 import { cn } from '@/lib/utils'
 import {
   DropdownMenu,
@@ -17,9 +20,10 @@ import {
 import {
   AccountSettingsIcon,
   AddIcon,
-  LogoutIcon,
+  LogOutIcon,
   UnpackIcon,
 } from '@/ui/primitives/icons'
+import { Loader } from '@/ui/primitives/loader'
 import { SidebarMenuButton, SidebarMenuItem } from '@/ui/primitives/sidebar'
 import { useDashboard } from '../context'
 import { CreateTeamDialog } from './create-team-dialog'
@@ -28,10 +32,21 @@ import { TeamAvatar } from './team-avatar'
 
 export default function DashboardSidebarMenu() {
   const { team } = useDashboard()
+  const { enabled: postHogEnabled } = useAppPostHogProvider()
+  const posthog = usePostHog()
   const [createTeamOpen, setCreateTeamOpen] = useState(false)
+  // Stays true until the hard navigation unloads the page; the overlay should
+  // never tear down before then.
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const handleLogout = () => {
-    signOutAction()
+    setIsLoggingOut(true)
+    if (postHogEnabled) resetOryPostHogIdentity(posthog)
+    // Hard navigation (not the Next router) to a plain route handler that clears
+    // the session cookie server-side: a soft RSC redirect would re-render the
+    // signed-out dashboard and tear down this overlay before the browser leaves
+    // the page. window.location keeps the overlay up until unload.
+    window.location.href = '/api/auth/sign-out'
   }
 
   return (
@@ -45,12 +60,8 @@ export default function DashboardSidebarMenu() {
                 classNames={{
                   root: cn(
                     'size-8 shrink-0 transition-all duration-100 ease-in-out',
-                    'group-data-[collapsible=icon]:block group-data-[collapsible=icon]:size-9',
-                    {
-                      'drop-shadow-sm filter': team.profilePictureUrl,
-                    }
+                    'group-data-[collapsible=icon]:block group-data-[collapsible=icon]:size-9'
                   ),
-                  image: 'group-data-[collapsible=icon]:size-full',
                 }}
               />
               <div className="grid flex-1 text-left  leading-tight">
@@ -94,9 +105,10 @@ export default function DashboardSidebarMenu() {
               <DropdownMenuItem
                 variant="error"
                 className="h-9 gap-2.5 [&_svg]:size-5 font-sans prose-body-highlight"
+                disabled={isLoggingOut}
                 onSelect={handleLogout}
               >
-                <LogoutIcon className="ml-0.5" /> Log out
+                <LogOutIcon className="ml-0.5" /> Log out
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>
@@ -106,6 +118,12 @@ export default function DashboardSidebarMenu() {
         open={createTeamOpen}
         onOpenChange={setCreateTeamOpen}
       />
+      {isLoggingOut && (
+        <Portal className="bg-bg/90 fixed inset-0 z-60 flex items-center justify-center gap-2.5">
+          <Loader variant="slash" size="sm" />
+          <span className="prose-body-highlight">Logging out...</span>
+        </Portal>
+      )}
     </>
   )
 }

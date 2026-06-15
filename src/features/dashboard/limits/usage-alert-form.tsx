@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils'
 import { formatNumber } from '@/lib/utils/formatting'
 import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
-import { EditIcon, TrashIcon } from '@/ui/primitives/icons'
+import { EditIcon, RemoveIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { CurrencyInputSchema, sanitizeCurrencyInput } from './currency-input'
 import { focusBlockInputOnMouseDown } from './focus-block-input'
@@ -238,7 +238,7 @@ export const UsageAlertForm = ({
               loading={clearAlertMutation.isPending ? 'Removing...' : undefined}
               onClick={clearAlert}
             >
-              <TrashIcon className="size-4" />
+              <RemoveIcon className="size-4" />
               Remove
             </Button>
             <Button

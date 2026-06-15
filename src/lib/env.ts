@@ -1,7 +1,6 @@
 import { z } from 'zod'
 
 export const serverSchema = z.object({
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   KV_REST_API_TOKEN: z.string().min(1).optional(),
   KV_REST_API_URL: z.url().optional(),
 
@@ -11,12 +10,20 @@ export const serverSchema = z.object({
   BILLING_API_URL: z.url().optional(),
   ZEROBOUNCE_API_KEY: z.string().optional(),
   PLAIN_API_KEY: z.string().min(1).optional(),
+  LAUNCHDARKLY_SDK_KEY: z.string().min(1).optional(),
 
   TURNSTILE_SECRET_KEY: z.string().optional(),
 
-  AUTH_PROVIDER: z.enum(['supabase', 'ory']).optional(),
+  POSTHOG_API_KEY: z.string().min(1).optional(),
+  POSTHOG_PROJECT_ID: z.string().min(1).optional(),
+
+  AUTH_PROVIDER: z.enum(['supabase', 'ory']),
   AUTH_SECRET: z.string().min(1).optional(),
   AUTH_TRUST_HOST: z.string().optional(),
+  // Prefix for Auth.js cookie names to disambiguate multiple local
+  // instances sharing localhost (cookies aren't scoped by port).
+  // Leave unset in prod/preview.
+  AUTH_COOKIE_PREFIX: z.string().min(1).optional(),
   ORY_SDK_URL: z.url().optional(),
   ORY_OAUTH2_CLIENT_ID: z.string().min(1).optional(),
   ORY_OAUTH2_CLIENT_SECRET: z.string().min(1).optional(),
@@ -52,14 +59,17 @@ export const serverSchema = z.object({
 })
 
 export const clientSchema = z.object({
-  NEXT_PUBLIC_SUPABASE_URL: z.url(),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
+  NEXT_PUBLIC_SUPABASE_URL: z.url().optional(),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1).optional(),
   NEXT_PUBLIC_E2B_DOMAIN: z.string(),
 
   NEXT_PUBLIC_POSTHOG_KEY: z.string().min(1).optional(),
   NEXT_PUBLIC_POSTHOG_DASHBOARD_FEEDBACK_SURVEY_ID: z
     .string()
     .min(1)
+    .optional(),
+  NEXT_PUBLIC_VERCEL_ENV: z
+    .enum(['production', 'preview', 'development'])
     .optional(),
 
   NEXT_PUBLIC_INCLUDE_BILLING: z.string().optional(),
@@ -76,12 +86,87 @@ export const clientSchema = z.object({
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),
 
   NEXT_PUBLIC_INFRA_API_URL: z.url().optional(),
+  NEXT_PUBLIC_E2B_SANDBOX_URL: z.url().optional(),
   NEXT_PUBLIC_DASHBOARD_API_URL: z.url().optional(),
 })
 
-const merged = serverSchema.extend(clientSchema.shape)
+const merged = serverSchema.merge(clientSchema)
 
-export type Env = z.infer<typeof merged>
+type MergedEnv = z.infer<typeof merged>
+
+const supabaseRequiredEnvVars = [
+  'NEXT_PUBLIC_SUPABASE_URL',
+  'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+  'DASHBOARD_API_ADMIN_TOKEN',
+] as const satisfies readonly (keyof MergedEnv)[]
+
+const oryRequiredEnvVars = [
+  'AUTH_SECRET',
+  'ORY_SDK_URL',
+  'ORY_OAUTH2_CLIENT_ID',
+  'ORY_OAUTH2_CLIENT_SECRET',
+  'ORY_OAUTH2_AUDIENCE',
+  'DASHBOARD_API_ADMIN_TOKEN',
+] as const satisfies readonly (keyof MergedEnv)[]
+
+function requireEnvVars(
+  data: MergedEnv,
+  ctx: z.RefinementCtx,
+  envVars: readonly (keyof MergedEnv)[],
+  authProvider: MergedEnv['AUTH_PROVIDER']
+) {
+  for (const envVar of envVars) {
+    if (data[envVar]) continue
+
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: `AUTH_PROVIDER=${authProvider} requires ${envVar}`,
+      path: [envVar],
+    })
+  }
+}
+
+function validateOryAdminEnv(data: MergedEnv, ctx: z.RefinementCtx) {
+  const hasKratosAdmin = !!data.ORY_KRATOS_ADMIN_URL
+  const hasHydraAdmin = !!data.ORY_HYDRA_ADMIN_URL
+  const isSelfHosted = hasKratosAdmin || hasHydraAdmin
+  const hasProjectToken = !!data.ORY_PROJECT_API_TOKEN
+
+  if (isSelfHosted) {
+    const missingSelfHostedVars: string[] = []
+    if (!hasKratosAdmin) missingSelfHostedVars.push('ORY_KRATOS_ADMIN_URL')
+    if (!hasHydraAdmin) missingSelfHostedVars.push('ORY_HYDRA_ADMIN_URL')
+
+    if (missingSelfHostedVars.length > 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Self-hosted Ory is missing ${missingSelfHostedVars.join(', ')}`,
+        path: ['AUTH_PROVIDER'],
+      })
+    }
+  } else if (!hasProjectToken) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message:
+        'AUTH_PROVIDER=ory requires ORY_PROJECT_API_TOKEN (Ory Network) or both ORY_KRATOS_ADMIN_URL and ORY_HYDRA_ADMIN_URL (self-hosted)',
+      path: ['AUTH_PROVIDER'],
+    })
+  }
+}
+
+export const appEnvSchema = merged.superRefine((data, ctx) => {
+  switch (data.AUTH_PROVIDER) {
+    case 'supabase':
+      requireEnvVars(data, ctx, supabaseRequiredEnvVars, data.AUTH_PROVIDER)
+      break
+    case 'ory':
+      requireEnvVars(data, ctx, oryRequiredEnvVars, data.AUTH_PROVIDER)
+      validateOryAdminEnv(data, ctx)
+      break
+  }
+})
+
+export type Env = z.infer<typeof appEnvSchema>
 
 export function validateEnv(schema: z.ZodSchema) {
   const parsed = schema.safeParse(process.env)

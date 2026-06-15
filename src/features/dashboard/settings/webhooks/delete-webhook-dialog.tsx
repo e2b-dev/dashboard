@@ -19,7 +19,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/ui/primitives/dialog'
-import { TrashIcon } from '@/ui/primitives/icons'
+import { RemoveIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
 import type { Webhook } from './types'
 
@@ -96,7 +96,7 @@ export const DeleteWebhookDialog = ({
               </>
             ) : (
               <>
-                <TrashIcon className="size-4" />
+                <RemoveIcon className="size-4" />
                 Delete
               </>
             )}

@@ -1,18 +1,24 @@
 'use client'
 
-import type { InferSafeActionFnResult } from 'next-safe-action'
+import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
-import type { NonUndefined } from 'react-hook-form'
-import type { getTeamMetrics } from '@/core/server/functions/sandboxes/get-team-metrics'
+import type { TeamMetricsResponse } from '@/core/modules/sandboxes/models.client'
 import { useDashboard } from '@/features/dashboard/context'
 import { formatDecimal, formatNumber } from '@/lib/utils/formatting'
+import { useTRPCClient } from '@/trpc/client'
 import { AnimatedNumber } from '@/ui/primitives/animated-number'
 import { useRecentMetrics } from './hooks/use-recent-metrics'
+import { MAX_DAYS_AGO } from './time-picker/constants'
+
+const MAX_CONCURRENT_SANDBOXES_REFRESH_MS = 5 * 60 * 1000
 
 interface TeamMonitoringHeaderClientProps {
-  initialData: NonUndefined<
-    InferSafeActionFnResult<typeof getTeamMetrics>['data']
-  >
+  initialData?: TeamMetricsResponse
+}
+
+function getLatestMetric(data: TeamMetricsResponse | undefined) {
+  if (!data?.metrics.length) return undefined
+  return data.metrics[data.metrics.length - 1]
 }
 
 export function ConcurrentSandboxesClient({
@@ -21,10 +27,12 @@ export function ConcurrentSandboxesClient({
   const { team } = useDashboard()
   const { data } = useRecentMetrics({ initialData })
   const limit = team.limits.concurrentSandboxes
+  const latestMetric = getLatestMetric(data)
 
-  const lastConcurrentSandboxes = formatNumber(
-    data?.metrics?.[(data?.metrics?.length ?? 0) - 1]?.concurrentSandboxes ?? 0
-  )
+  const lastConcurrentSandboxes =
+    latestMetric === undefined
+      ? '—'
+      : formatNumber(latestMetric.concurrentSandboxes)
 
   return (
     <>
@@ -47,9 +55,10 @@ export function SandboxesStartRateClient({
   const { data } = useRecentMetrics({ initialData })
 
   const lastSandboxesStartRate = useMemo(() => {
-    const rate =
-      data?.metrics?.[(data?.metrics?.length ?? 0) - 1]?.sandboxStartRate ?? 0
-    return formatDecimal(rate, 3)
+    const latestMetric = getLatestMetric(data)
+    return latestMetric === undefined
+      ? '—'
+      : formatDecimal(latestMetric.sandboxStartRate, 3)
   }, [data])
 
   return (
@@ -61,19 +70,43 @@ export function SandboxesStartRateClient({
 }
 
 interface MaxConcurrentSandboxesClientProps {
-  concurrentSandboxes: number
+  concurrentSandboxes?: number
 }
 
 export function MaxConcurrentSandboxesClient({
   concurrentSandboxes,
-}: MaxConcurrentSandboxesClientProps) {
+}: MaxConcurrentSandboxesClientProps = {}) {
   const { team } = useDashboard()
+  const trpcClient = useTRPCClient()
   const limit = team.limits.concurrentSandboxes
+
+  const { data } = useQuery({
+    queryKey: [
+      'sandboxes.getTeamMetricsMax',
+      team.slug,
+      'concurrent_sandboxes',
+    ],
+    queryFn: () => {
+      const end = Date.now()
+      return trpcClient.sandboxes.getTeamMetricsMax.query({
+        teamSlug: team.slug,
+        startDate: end - (MAX_DAYS_AGO - 60_000),
+        endDate: end,
+        metric: 'concurrent_sandboxes',
+      })
+    },
+    refetchInterval: MAX_CONCURRENT_SANDBOXES_REFRESH_MS,
+    refetchIntervalInBackground: false,
+  })
+
+  const displayedConcurrentSandboxes = concurrentSandboxes ?? data?.value
 
   return (
     <>
       <span className="prose-value-big mt-1">
-        {formatNumber(concurrentSandboxes)}
+        {displayedConcurrentSandboxes === undefined
+          ? '—'
+          : formatNumber(displayedConcurrentSandboxes)}
       </span>
       <span className="absolute right-3 bottom-1 md:right-6 md:bottom-4 prose-label text-fg-tertiary ">
         LIMIT: {formatNumber(limit)}

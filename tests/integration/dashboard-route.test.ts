@@ -21,35 +21,25 @@ import { PROTECTED_URLS } from '@/configs/urls'
  */
 
 // create hoisted mocks
-const {
-  mockSupabaseClient,
-  mockSupabaseAdmin,
-  mockCookieStore,
-  mockResolveUserTeam,
-} = vi.hoisted(() => ({
-  mockSupabaseClient: {
-    auth: {
-      getSession: vi.fn(),
-      getUser: vi.fn(),
-      signOut: vi.fn(),
+const { mockSupabaseClient, mockCookieStore, mockResolveUserTeam } = vi.hoisted(
+  () => ({
+    mockSupabaseClient: {
+      auth: {
+        getSession: vi.fn(),
+        getUser: vi.fn(),
+        signOut: vi.fn(),
+      },
     },
-  },
-  mockSupabaseAdmin: {
-    from: vi.fn(),
-  },
-  mockCookieStore: {
-    get: vi.fn(),
-    set: vi.fn(),
-  },
-  mockResolveUserTeam: vi.fn(),
-}))
+    mockCookieStore: {
+      get: vi.fn(),
+      set: vi.fn(),
+    },
+    mockResolveUserTeam: vi.fn(),
+  })
+)
 
 vi.mock('@/core/shared/clients/supabase/server', () => ({
   createClient: vi.fn(() => mockSupabaseClient),
-}))
-
-vi.mock('@/core/shared/clients/supabase/admin', () => ({
-  supabaseAdmin: mockSupabaseAdmin,
 }))
 
 vi.mock('next/headers', () => ({

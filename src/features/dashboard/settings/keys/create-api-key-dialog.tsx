@@ -31,7 +31,7 @@ import {
 } from '@/ui/primitives/form'
 import {
   AddIcon,
-  CheckIcon,
+  CheckmarkIcon,
   CopyIcon,
   WarningIcon,
 } from '@/ui/primitives/icons'
@@ -207,7 +207,7 @@ export const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
                     aria-hidden
                   >
                     {copiedReveal ? (
-                      <CheckIcon className="size-5" />
+                      <CheckmarkIcon className="size-5" />
                     ) : (
                       <CopyIcon className="size-4" />
                     )}

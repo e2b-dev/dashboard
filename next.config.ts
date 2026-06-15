@@ -1,5 +1,6 @@
 // NOTE: related to src/configs/rewrites.ts
 import path from 'node:path'
+import { withPostHogConfig } from '@posthog/nextjs-config'
 import type { NextConfig } from 'next'
 import { DOCUMENTATION_DOMAIN } from './src/configs/documentation'
 
@@ -140,4 +141,14 @@ const config: NextConfig = {
   skipTrailingSlashRedirect: true,
 }
 
-export default config
+export default withPostHogConfig(config, {
+  personalApiKey: process.env.POSTHOG_API_KEY ?? '',
+  projectId: process.env.POSTHOG_PROJECT_ID,
+  host: 'https://us.posthog.com',
+  sourcemaps: {
+    enabled: Boolean(process.env.POSTHOG_API_KEY),
+    releaseName: 'dashboard',
+    releaseVersion: process.env.VERCEL_GIT_COMMIT_SHA,
+    deleteAfterUpload: true,
+  },
+})
