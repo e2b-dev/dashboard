@@ -7,7 +7,7 @@ import { IdBadge, UserAvatar } from '@/features/dashboard/shared'
 import { formatDate, useTimezone } from '@/features/dashboard/timezone'
 import { defaultSuccessToast, useToast } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
-import { E2BLogo } from '@/ui/brand'
+import { E2BSquareBadge } from '@/ui/brand'
 import { Button } from '@/ui/primitives/button'
 import { KeyIcon, RemoveIcon } from '@/ui/primitives/icons'
 import { TableCell, TableRow } from '@/ui/primitives/table'
@@ -98,8 +98,8 @@ export const ApiKeysTableRow = ({ apiKey, onDelete }: ApiKeysTableRowProps) => {
             {isCliKey ? (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="text-fg-tertiary flex size-5 shrink-0 items-center justify-center">
-                    <E2BLogo className="size-5" />
+                  <span className="flex size-5 shrink-0 items-center justify-center">
+                    <E2BSquareBadge />
                   </span>
                 </TooltipTrigger>
                 <TooltipContent side="top">

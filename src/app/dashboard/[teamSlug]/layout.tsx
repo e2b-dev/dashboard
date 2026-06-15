@@ -10,6 +10,7 @@ import { DASHBOARD_TEAMS_LIST_QUERY_OPTIONS } from '@/core/application/teams/que
 import { DASHBOARD_USER_PROFILE_QUERY_OPTIONS } from '@/core/application/user/queries'
 import { auth } from '@/core/server/auth'
 import DashboardLayoutView from '@/features/dashboard/layouts/layout'
+import { DashboardPostHogErrorBoundary } from '@/features/dashboard/posthog-error-boundary'
 import Sidebar from '@/features/dashboard/sidebar/sidebar'
 import { TimezoneProvider } from '@/features/dashboard/timezone/context'
 import { parseTimezone } from '@/features/dashboard/timezone/utils'
@@ -81,9 +82,11 @@ export default async function DashboardLayout({
               <div className="flex h-full max-h-full min-h-0 w-full flex-1 overflow-hidden">
                 <Sidebar />
                 <SidebarInset>
-                  <DashboardLayoutView params={params}>
-                    {children}
-                  </DashboardLayoutView>
+                  <DashboardPostHogErrorBoundary>
+                    <DashboardLayoutView params={params}>
+                      {children}
+                    </DashboardLayoutView>
+                  </DashboardPostHogErrorBoundary>
                 </SidebarInset>
               </div>
             </div>

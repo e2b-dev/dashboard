@@ -1,3 +1,4 @@
+import { usePathname } from 'next/navigation'
 import posthog, { type Survey } from 'posthog-js'
 import { PostHogProvider as PHProvider } from 'posthog-js/react'
 import { createContext, useContext, useEffect, useState } from 'react'
@@ -31,12 +32,20 @@ export function PostHogProvider({
   children: React.ReactNode
   enabled: boolean
 }) {
+  const pathname = usePathname()
   const [dashboardFeedbackSurvey, setDashboardFeedbackSurvey] =
     useState<Survey | null>(null)
   const [isInitialized, setIsInitialized] = useState(false)
 
+  // Only track the dashboard app — not auth, marketing, or proxied (docs/blog)
+  // paths. PostHog initializes lazily once the user reaches a /dashboard route.
+  const shouldInit = enabled && !!pathname?.startsWith('/dashboard')
+
   useEffect(() => {
-    if (!enabled || !process.env.NEXT_PUBLIC_POSTHOG_KEY) {
+    if (!shouldInit || !process.env.NEXT_PUBLIC_POSTHOG_KEY) {
+      return
+    }
+    if (posthog.__loaded) {
       return
     }
 
@@ -48,6 +57,11 @@ export function PostHogProvider({
       // https://posthog.com/docs/libraries/next-js#configuring-a-reverse-proxy-to-posthog
       api_host: '/ph-proxy',
       ui_host: 'https://us.posthog.com',
+      capture_exceptions: {
+        capture_unhandled_errors: true,
+        capture_unhandled_rejections: true,
+        capture_console_errors: false,
+      },
       advanced_enable_surveys: true,
       disable_session_recording: process.env.NODE_ENV !== 'production',
       advanced_disable_toolbar_metrics: true,
@@ -55,6 +69,10 @@ export function PostHogProvider({
       loaded: (posthog) => {
         if (process.env.NODE_ENV === 'development') posthog.debug()
       },
+    })
+
+    posthog.register({
+      environment: process.env.NEXT_PUBLIC_VERCEL_ENV ?? 'development',
     })
 
     posthog.getSurveys((surveys) => {
@@ -67,7 +85,7 @@ export function PostHogProvider({
       }
       setIsInitialized(true)
     })
-  }, [enabled])
+  }, [shouldInit])
 
   return (
     <AppPostHogContext.Provider
