@@ -9,7 +9,11 @@ import { cn } from '@/lib/utils/ui'
 import { useTRPC } from '@/trpc/client'
 import { HoverPrefetchLink } from '@/ui/hover-prefetch-link'
 import { Badge } from '@/ui/primitives/badge'
-import { CheckIcon, ChevronRightIcon, CloseIcon } from '@/ui/primitives/icons'
+import {
+  CheckmarkIcon,
+  ChevronRightIcon,
+  CloseIcon,
+} from '@/ui/primitives/icons'
 import { NULL_BUILD_ID } from '../../tags/constants'
 import { OverviewSection } from './section'
 import { TemplateSpecs } from './template-specs'
@@ -90,7 +94,7 @@ function BuildStatusBadge({ status }: { status: BuildStatus }) {
     success: {
       label: 'Success',
       variant: 'positive',
-      icon: <CheckIcon className="size-3 scale-125" />,
+      icon: <CheckmarkIcon className="size-3 scale-125" />,
     },
     failed: {
       label: 'Failed',

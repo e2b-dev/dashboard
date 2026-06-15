@@ -7,7 +7,7 @@ import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
 import { cn } from '@/lib/utils/ui'
 import { IconButton } from '@/ui/primitives/icon-button'
-import { CheckIcon, CopyIcon } from '@/ui/primitives/icons'
+import { CheckmarkIcon, CopyIcon } from '@/ui/primitives/icons'
 import { TemplateVisibilityDropdown } from '../visibility-dropdown'
 import { OverviewSection } from './section'
 
@@ -95,7 +95,7 @@ function TemplateIdCopy({ templateID }: { templateID: string }) {
         className="size-6"
       >
         {wasCopied ? (
-          <CheckIcon className="size-3.5 text-icon" />
+          <CheckmarkIcon className="size-3.5 text-icon" />
         ) : (
           <CopyIcon className="size-3.5 text-icon-secondary" />
         )}

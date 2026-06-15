@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
 import { IconButton } from '@/ui/primitives/icon-button'
-import { MoreActionsIcon, TrashIcon } from '@/ui/primitives/icons'
+import { MoreActionsIcon, RemoveIcon } from '@/ui/primitives/icons'
 import { MiddleTruncate } from '@/ui/primitives/middle-truncate'
 import { BuildLink } from './build-link'
 import { DEFAULT_TAG_NAME } from './constants'
@@ -129,7 +129,7 @@ export function ActionsCell(ctx: CellContext<TagGroup, unknown>) {
               setDeleteOpen(true)
             }}
           >
-            <TrashIcon className="size-4" />
+            <RemoveIcon className="size-4" />
             Delete
           </DropdownMenuItem>
         </DropdownMenuContent>

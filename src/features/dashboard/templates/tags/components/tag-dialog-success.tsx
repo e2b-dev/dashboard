@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils/ui'
-import { CheckIcon } from '@/ui/primitives/icons'
+import { CheckmarkIcon } from '@/ui/primitives/icons'
 import { MiddleTruncate } from '@/ui/primitives/middle-truncate'
 
 interface TagDialogSuccessProps {
@@ -22,7 +22,7 @@ export function TagDialogSuccess({
         className
       )}
     >
-      <CheckIcon className="size-12 text-accent-positive-highlight" />
+      <CheckmarkIcon className="size-12 text-accent-positive-highlight" />
       <p className="prose-headline-small text-fg max-w-full uppercase">
         <span
           className="flex max-w-full items-baseline justify-center font-mono"

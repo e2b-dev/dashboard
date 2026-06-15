@@ -39,7 +39,7 @@ import {
   DataTableRow,
 } from '@/ui/data-table'
 import { HoverPrefetchLink } from '@/ui/hover-prefetch-link'
-import { TriangleIcon } from '@/ui/primitives/icons'
+import { TriangleRightIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
 import { RowHoverFrame } from '@/ui/row-hover-frame'
 import { TAGS_PAGE_LIMIT } from './constants'
@@ -411,7 +411,7 @@ function GroupSection({ row, teamSlug, templateId }: GroupSectionProps) {
                 : 'opacity-0 group-hover/row:opacity-100'
             )}
           >
-            <TriangleIcon
+            <TriangleRightIcon
               className={cn(
                 'size-4 transition-[rotate,color]',
                 'duration-240 ease-out-quint',
