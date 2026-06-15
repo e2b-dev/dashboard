@@ -1,10 +1,10 @@
+import type { Timezone } from '@/features/dashboard/timezone'
 import {
   dateTimePartsToUtcTimestamp,
+  formatAxisNumber,
   getDateParts,
   shiftCalendarDays,
-  type Timezone,
-} from '@/features/dashboard/timezone'
-import { formatAxisNumber } from '@/lib/utils/formatting'
+} from '@/lib/utils/formatting'
 import type { TimeRangePreset } from '@/ui/time-range-presets'
 import type {
   ComputeChartConfig,

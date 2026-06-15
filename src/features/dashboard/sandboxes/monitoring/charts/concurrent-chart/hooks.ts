@@ -1,11 +1,11 @@
 import { useMemo } from 'react'
 import type { TeamMetricsResponse } from '@/core/modules/sandboxes/models.client'
+import { useTimezone } from '@/features/dashboard/timezone'
 import {
   formatDate,
   formatDateRange,
-  useTimezone,
-} from '@/features/dashboard/timezone'
-import { formatNumber } from '@/lib/utils/formatting'
+  formatNumber,
+} from '@/lib/utils/formatting'
 import { formatTimeframeAsISO8601Interval } from '@/lib/utils/timeframe'
 import { transformMetrics } from '../team-metrics-chart'
 import { calculateAverage } from '../team-metrics-chart/utils'

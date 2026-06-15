@@ -10,7 +10,7 @@ import {
   formatTimezoneAbbreviation,
   getRelativeDay,
   instantToCalendarDate,
-} from '@/features/dashboard/timezone'
+} from '@/lib/utils/formatting'
 import { requireTimezone } from './helpers/timezone'
 
 describe('timezone date-time helpers', () => {

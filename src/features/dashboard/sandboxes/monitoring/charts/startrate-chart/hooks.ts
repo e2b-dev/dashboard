@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import type { TeamMetricsResponse } from '@/core/modules/sandboxes/models.client'
-import { formatDate, useTimezone } from '@/features/dashboard/timezone'
-import { formatDecimal } from '@/lib/utils/formatting'
+import { useTimezone } from '@/features/dashboard/timezone'
+import { formatDate, formatDecimal } from '@/lib/utils/formatting'
 import { transformMetrics } from '../team-metrics-chart'
 import { calculateAverage } from '../team-metrics-chart/utils'
 

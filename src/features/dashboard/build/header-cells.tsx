@@ -1,9 +1,10 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
-import { formatDate, useTimezone } from '@/features/dashboard/timezone'
+import { useTimezone } from '@/features/dashboard/timezone'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import {
+  formatDate,
   formatDurationCompact,
   formatTimeAgoCompact,
 } from '@/lib/utils/formatting'

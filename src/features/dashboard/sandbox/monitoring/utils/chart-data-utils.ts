@@ -1,4 +1,5 @@
-import { formatDate, type Timezone } from '@/features/dashboard/timezone'
+import type { Timezone } from '@/features/dashboard/timezone'
+import { formatDate } from '@/lib/utils/formatting'
 import type { SandboxMetricsDataPoint } from '../types/sandbox-metrics-chart'
 
 export function toNumericValue(value: unknown): number {

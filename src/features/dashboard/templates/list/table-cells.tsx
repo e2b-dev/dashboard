@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { CellContext } from '@tanstack/react-table'
 import { useMemo, useState } from 'react'
 import type { DefaultTemplate, Template } from '@/core/modules/templates/models'
-import { formatDateParts, useTimezone } from '@/features/dashboard/timezone'
+import { useTimezone } from '@/features/dashboard/timezone'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import {
   defaultErrorToast,
@@ -12,6 +12,7 @@ import {
   useToast,
 } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { formatDateParts } from '@/lib/utils/formatting'
 import { isVersionCompatible } from '@/lib/utils/version'
 import { useTRPC } from '@/trpc/client'
 import { AlertDialog } from '@/ui/alert-dialog'

@@ -1,8 +1,6 @@
 import { calculateStepForDuration } from '@/features/dashboard/sandboxes/monitoring/utils'
-import {
-  formatDateTimeInput,
-  type Timezone,
-} from '@/features/dashboard/timezone'
+import type { Timezone } from '@/features/dashboard/timezone'
+import { formatDateTimeInput } from '@/lib/utils/formatting'
 import type { TimeframeState } from '@/lib/utils/timeframe'
 import {
   CUSTOM_PANEL_HEIGHT,

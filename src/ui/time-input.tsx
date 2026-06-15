@@ -1,14 +1,12 @@
 'use client'
 
 import { memo, useCallback, useEffect, useState } from 'react'
-import {
-  formatTimezoneAbbreviation,
-  useTimezone,
-} from '@/features/dashboard/timezone'
+import { useTimezone } from '@/features/dashboard/timezone'
 import { cn } from '@/lib/utils'
 import {
   formatDateWithSpaces,
   formatTimeWithSpaces,
+  formatTimezoneAbbreviation,
   tryParseDatetime,
 } from '@/lib/utils/formatting'
 import { NumberInput } from './number-input'

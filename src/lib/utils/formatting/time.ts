@@ -1,5 +1,7 @@
+import * as chrono from 'chrono-node'
+import { format, isValid } from 'date-fns'
 import { formatInTimeZone, fromZonedTime } from 'date-fns-tz'
-import type { Timezone } from './schema'
+import type { Timezone } from '@/features/dashboard/timezone/schema'
 
 interface CalendarDateParts {
   year: number
@@ -386,18 +388,234 @@ const getRelativeDay = (
   return formatInTimeZone(value, timezone, 'PP')
 }
 
+function formatChartTimestampLocal(
+  timestamp: number | string | Date,
+  showDate = false
+): string {
+  const date = new Date(timestamp)
+
+  if (showDate) {
+    return format(date, 'MMM d')
+  }
+
+  return format(date, 'h:mm:ss a')
+}
+
+function formatChartTimestampUTC(
+  timestamp: number | string | Date,
+  showDate = false
+): string {
+  const date = new Date(timestamp)
+
+  if (showDate) {
+    return formatInTimeZone(date, 'UTC', 'MMM d')
+  }
+
+  return formatInTimeZone(date, 'UTC', 'h:mm:ss a')
+}
+
+const formatRelativeAgo = (date: Date): string => {
+  const now = Date.now()
+  const timestamp = date.getTime()
+  const seconds = Math.floor((now - timestamp) / 1000)
+  if (seconds < 60) return `${seconds}s ago`
+
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes} min ago`
+
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+
+  const days = Math.floor(hours / 24)
+  if (days < 7) return `${days}d ago`
+
+  const weeks = Math.floor(days / 7)
+  if (weeks < 5) return `${weeks}w ago`
+
+  if (days < 365) {
+    const months = Math.floor(days / 30)
+    return `${months}mo ago`
+  }
+
+  const years = Math.floor(days / 365)
+  return `${years}y ago`
+}
+
+function parseUTCDateComponents(date: string | Date) {
+  const dateTimeString = new Date(date).toUTCString()
+  const [day, dateStr, month, year, time, timezone] = dateTimeString.split(' ')
+
+  return {
+    day,
+    date: dateStr,
+    month,
+    year,
+    time,
+    timezone,
+    full: dateTimeString,
+  }
+}
+
+function formatTimeAxisLabel(
+  value: string | number,
+  showDate = false,
+  useLocal = true
+): string {
+  const date = new Date(value)
+
+  if (useLocal) {
+    return formatChartTimestampLocal(date, showDate)
+  }
+
+  return formatChartTimestampUTC(date, showDate)
+}
+
+function formatDuration(durationMs: number): string {
+  const seconds = Math.floor(durationMs / 1000)
+
+  if (seconds < 60) {
+    return `${seconds} second${seconds !== 1 ? 's' : ''}`
+  }
+  if (seconds < 3600) {
+    const minutes = Math.floor(seconds / 60)
+    return `${minutes} minute${minutes !== 1 ? 's' : ''}`
+  }
+
+  const hours = Math.floor(seconds / 3600)
+  return `${hours} hour${hours !== 1 ? 's' : ''}`
+}
+
+function formatDurationCompact(ms: number, showDecimalSeconds = false): string {
+  const seconds = Math.floor(ms / 1000)
+  const minutes = Math.floor(seconds / 60)
+  const hours = Math.floor(minutes / 60)
+
+  if (hours > 0) {
+    const remainingMinutes = minutes % 60
+    return `${hours}h ${remainingMinutes}m`
+  }
+  if (minutes > 0) {
+    const remainingSeconds = seconds % 60
+    return `${minutes}m ${remainingSeconds}s`
+  }
+  return showDecimalSeconds
+    ? `${seconds}.${Math.floor((ms % 1000) / 100)}s`
+    : `${seconds}s`
+}
+
+function formatTimeAgoCompact(ms: number): string {
+  const minutes = Math.floor(ms / 1000 / 60)
+  const hours = Math.floor(minutes / 60)
+  const days = Math.floor(hours / 24)
+  const months = Math.floor(days / 30)
+
+  if (minutes < 1) {
+    return '< 1m ago'
+  }
+  if (hours < 1) {
+    return `${minutes}m ago`
+  }
+  if (days < 1) {
+    const remainingMinutes = minutes % 60
+    return `${hours}h ${remainingMinutes}m ago`
+  }
+  if (months < 1) {
+    const remainingHours = hours % 24
+    return `${days}d ${remainingHours}h ago`
+  }
+
+  const remainingDays = days % 30
+  return `${months}mo ${remainingDays}d ago`
+}
+
+function formatAveragingPeriod(stepMs: number): string {
+  return `${formatDuration(stepMs)} average`
+}
+
+function tryParseDatetime(input: string): Date | null {
+  if (!input.trim()) return null
+
+  const timestamp = Number(input)
+  if (!Number.isNaN(timestamp)) {
+    const date = new Date(
+      timestamp < 10000000000 ? timestamp * 1000 : timestamp
+    )
+    if (isValid(date)) return date
+  }
+
+  try {
+    const parsedDate = chrono.parseDate(input)
+    return parsedDate || null
+  } catch {
+    return null
+  }
+}
+
+function formatDateWithSpaces(date: Date | null): string {
+  if (!date) return ''
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const year = date.getFullYear()
+  return `${day} / ${month} / ${year}`
+}
+
+function formatTimeWithSpaces(
+  hours: string | number,
+  minutes: string | number,
+  seconds: string | number
+): string {
+  const h = String(hours).padStart(2, '0')
+  const m = String(minutes).padStart(2, '0')
+  const s = String(seconds).padStart(2, '0')
+  return `${h} : ${m} : ${s}`
+}
+
+function parseDateTimeComponents(dateTimeStr: string): {
+  date: string
+  time: string
+} {
+  if (!dateTimeStr) return { date: '', time: '' }
+  const parsed = tryParseDatetime(dateTimeStr)
+  if (!parsed) return { date: '', time: '' }
+
+  const year = parsed.getFullYear()
+  const month = String(parsed.getMonth() + 1).padStart(2, '0')
+  const day = String(parsed.getDate()).padStart(2, '0')
+  const hours = String(parsed.getHours()).padStart(2, '0')
+  const minutes = String(parsed.getMinutes()).padStart(2, '0')
+  const seconds = String(parsed.getSeconds()).padStart(2, '0')
+
+  return {
+    date: `${year}/${month}/${day}`,
+    time: `${hours}:${minutes}:${seconds}`,
+  }
+}
+
 export {
+  dateTimePartsToUtcDate,
+  dateTimePartsToUtcTimestamp,
+  formatAveragingPeriod,
+  formatChartTimestampLocal,
+  formatChartTimestampUTC,
   formatDate,
   formatDateParts,
   formatDateRange,
-  formatTimezoneAbbreviation,
   formatDateTimeInput,
-  getRelativeDay,
+  formatDateWithSpaces,
+  formatDuration,
+  formatDurationCompact,
+  formatRelativeAgo,
+  formatTimeAgoCompact,
+  formatTimeAxisLabel,
+  formatTimeWithSpaces,
+  formatTimezoneAbbreviation,
   getDateParts,
   getDateTimeParts,
-  shiftCalendarDays,
-  dateTimePartsToUtcDate,
-  dateTimePartsToUtcTimestamp,
+  getRelativeDay,
   instantToCalendarDate,
+  parseDateTimeComponents,
+  parseUTCDateComponents,
+  shiftCalendarDays,
+  tryParseDatetime,
 }
-export type { DateFormat, CalendarDateTimeParts }
+export type { CalendarDateTimeParts, DateFormat }

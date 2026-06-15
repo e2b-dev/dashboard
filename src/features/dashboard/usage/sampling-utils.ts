@@ -1,11 +1,11 @@
 import type { UsageResponse } from '@/core/modules/billing/models'
+import type { Timezone } from '@/features/dashboard/timezone'
 import {
   type CalendarDateTimeParts,
   dateTimePartsToUtcTimestamp,
   getDateTimeParts,
   shiftCalendarDays,
-  type Timezone,
-} from '@/features/dashboard/timezone'
+} from '@/lib/utils/formatting'
 import {
   HOURLY_SAMPLING_THRESHOLD_DAYS,
   WEEKLY_SAMPLING_THRESHOLD_DAYS,

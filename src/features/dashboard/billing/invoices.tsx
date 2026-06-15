@@ -1,9 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { formatDate, useTimezone } from '@/features/dashboard/timezone'
+import { useTimezone } from '@/features/dashboard/timezone'
 import { cn } from '@/lib/utils'
-import { formatCurrency } from '@/lib/utils/formatting'
+import { formatCurrency, formatDate } from '@/lib/utils/formatting'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import { ArrowDownIcon, ExternalLinkIcon } from '@/ui/primitives/icons'

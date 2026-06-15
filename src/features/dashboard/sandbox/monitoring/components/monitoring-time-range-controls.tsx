@@ -1,8 +1,9 @@
 'use client'
 
 import { useCallback, useMemo, useState } from 'react'
-import { formatDate, useTimezone } from '@/features/dashboard/timezone'
+import { useTimezone } from '@/features/dashboard/timezone'
 import { cn } from '@/lib/utils'
+import { formatDate } from '@/lib/utils/formatting'
 import { LiveDot } from '@/ui/live'
 import { Button } from '@/ui/primitives/button'
 import { IconButton } from '@/ui/primitives/icon-button'

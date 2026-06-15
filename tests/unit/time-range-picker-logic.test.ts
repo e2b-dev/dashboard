@@ -1,6 +1,6 @@
 import { startOfDay } from 'date-fns'
 import { describe, expect, it, vi } from 'vitest'
-import { instantToCalendarDate } from '@/features/dashboard/timezone'
+import { instantToCalendarDate } from '@/lib/utils/formatting'
 import {
   createTimeRangeSchema,
   normalizeTimeRangeValues,

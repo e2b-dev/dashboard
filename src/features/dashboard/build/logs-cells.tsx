@@ -3,8 +3,8 @@ import {
   LogLevelBadge,
   LogMessage,
 } from '@/features/dashboard/common/log-cells'
-import { formatDate, useTimezone } from '@/features/dashboard/timezone'
-import { formatDurationCompact } from '@/lib/utils/formatting'
+import { useTimezone } from '@/features/dashboard/timezone'
+import { formatDate, formatDurationCompact } from '@/lib/utils/formatting'
 import CopyButtonInline from '@/ui/copy-button-inline'
 
 export const LogLevel = ({ level }: { level: BuildLogModel['level'] }) => {
@@ -30,7 +30,7 @@ export const Timestamp = ({
       className="font-mono group prose-table-numeric"
     >
       <span className="inline-block w-[7ch] shrink-0 text-right">
-        {formatDurationCompact(millisAfterStart, true, true)}
+        {formatDurationCompact(millisAfterStart, true)}
       </span>
       <span className="ml-2 whitespace-nowrap group-hover:text-current transition-colors text-fg-tertiary">
         {formatDate(timestampUnix, {

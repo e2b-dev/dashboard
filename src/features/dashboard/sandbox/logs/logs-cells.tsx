@@ -2,7 +2,8 @@
 
 import type { SandboxLogModel } from '@/core/modules/sandboxes/models'
 import { LogLevelBadge } from '@/features/dashboard/common/log-cells'
-import { formatDateParts, useTimezone } from '@/features/dashboard/timezone'
+import { useTimezone } from '@/features/dashboard/timezone'
+import { formatDateParts } from '@/lib/utils/formatting'
 import CopyButtonInline from '@/ui/copy-button-inline'
 
 export const LogLevel = ({ level }: { level: SandboxLogModel['level'] }) => {

@@ -3,13 +3,12 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useCallback, useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
-
+import { useTimezone } from '@/features/dashboard/timezone'
+import { cn } from '@/lib/utils'
 import {
   formatDateTimeInput,
   instantToCalendarDate,
-  useTimezone,
-} from '@/features/dashboard/timezone'
-import { cn } from '@/lib/utils'
+} from '@/lib/utils/formatting'
 
 import { Button } from './primitives/button'
 import {

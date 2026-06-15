@@ -1,10 +1,8 @@
 'use client'
 
-import {
-  formatZonedDateRange,
-  useTimezone,
-} from '@/features/dashboard/timezone'
+import { useTimezone } from '@/features/dashboard/timezone'
 import { cn } from '@/lib/utils'
+import { formatDateRange } from '@/lib/utils/formatting'
 import { useUsageCharts } from '../usage-charts-context'
 import { USAGE_METRICS, type UsageMetricKey } from './metrics'
 import { type HoverSection, UsageAreaChart } from './usage-area-chart'
@@ -80,9 +78,7 @@ export function SingleMetricChart({
           </span>
           <span className="prose-label text-fg-tertiary uppercase">
             total {meta.label} for{' '}
-            {formatZonedDateRange(timeframe.start, timeframe.end, timezone, {
-              includeTimezone: false,
-            })}
+            {formatDateRange(timeframe.start, timeframe.end, { timezone })}
           </span>
         </div>
       </div>

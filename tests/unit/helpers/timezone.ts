@@ -1,4 +1,5 @@
-import { parseTimezone, type Timezone } from '@/features/dashboard/timezone'
+import type { Timezone } from '@/features/dashboard/timezone'
+import { parseTimezone } from '@/features/dashboard/timezone/utils'
 
 const requireTimezone = (value: string): Timezone => {
   const timezone = parseTimezone(value)
