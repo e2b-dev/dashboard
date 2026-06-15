@@ -1,5 +1,4 @@
-![Dashboard Preview Dark](/readme-assets/dashboard-preview-dark.png#gh-dark-mode-only)
-![Dashboard Preview Light](/readme-assets/dashboard-preview-light.png#gh-light-mode-only)
+![Dashboard Preview](/readme-assets/dashboard-preview.png)
 
 # Dashboard
 

@@ -17,11 +17,11 @@ import {
 } from '@/lib/hooks/use-toast'
 import { formatDate } from '@/lib/utils/formatting'
 import { useTRPC } from '@/trpc/client'
-import { E2BLogo } from '@/ui/brand'
+import { E2BSquareBadge } from '@/ui/brand'
 import { Avatar, AvatarFallback, AvatarImage } from '@/ui/primitives/avatar'
 import { Badge } from '@/ui/primitives/badge'
 import { IconButton } from '@/ui/primitives/icon-button'
-import { TrashIcon } from '@/ui/primitives/icons'
+import { RemoveIcon } from '@/ui/primitives/icons'
 import { TableCell, TableRow } from '@/ui/primitives/table'
 import { useDashboard } from '../context'
 import {
@@ -252,7 +252,7 @@ const AddedCell = ({
       </span>
       {addedBySystem ? (
         <div className="flex size-5 shrink-0 items-center justify-center">
-          <E2BLogo className="text-fg-tertiary size-5" />
+          <E2BSquareBadge />
         </div>
       ) : (
         <UserAvatar
@@ -271,7 +271,7 @@ const AddedCell = ({
           teamName={teamName}
           trigger={
             <IconButton aria-label={`Remove ${memberName ?? memberEmail}`}>
-              <TrashIcon />
+              <RemoveIcon />
             </IconButton>
           }
         />

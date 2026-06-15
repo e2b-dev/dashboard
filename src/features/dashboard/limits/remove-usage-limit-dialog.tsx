@@ -17,7 +17,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/ui/primitives/dialog'
-import { TrashIcon } from '@/ui/primitives/icons'
+import { RemoveIcon } from '@/ui/primitives/icons'
 
 interface RemoveUsageLimitDialogProps {
   disabled?: boolean
@@ -86,7 +86,7 @@ export const RemoveUsageLimitDialog = ({
             disabled={disabled || clearLimitMutation.isPending}
             loading={clearLimitMutation.isPending ? 'Removing...' : undefined}
           >
-            <TrashIcon className="size-4" />
+            <RemoveIcon className="size-4" />
             Remove
           </Button>
         </DialogTrigger>
@@ -118,7 +118,7 @@ export const RemoveUsageLimitDialog = ({
                 clearLimitMutation.mutate({ teamSlug, type: 'limit' })
               }
             >
-              <TrashIcon className="size-4" />
+              <RemoveIcon className="size-4" />
               Remove
             </Button>
           </div>

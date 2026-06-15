@@ -1,10 +1,6 @@
 import type { RefObject } from 'react'
 import { IconButton } from '@/ui/primitives/icon-button'
-import {
-  CopyIcon,
-  RefreshIcon,
-  TerminalCustomIcon,
-} from '@/ui/primitives/icons'
+import { CopyIcon, RefreshIcon, TerminalIcon } from '@/ui/primitives/icons'
 
 interface TerminalPanelProps {
   sandboxId?: string
@@ -69,7 +65,7 @@ function TerminalPanelHeader({
   return (
     <div className="flex h-full items-center justify-between px-3">
       <div className="flex min-w-0 items-center gap-2">
-        <TerminalCustomIcon className="text-icon-tertiary size-4" />
+        <TerminalIcon className="text-icon-tertiary size-4" />
         <span className="prose-label-highlight shrink-0 uppercase">
           Terminal
         </span>

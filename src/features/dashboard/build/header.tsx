@@ -4,7 +4,7 @@ import type { BuildDetailsModel } from '@/core/modules/builds/models'
 import { cn } from '@/lib/utils/ui'
 import CopyButton from '@/ui/copy-button'
 import CopyButtonInline from '@/ui/copy-button-inline'
-import { CheckIcon, CloseIcon } from '@/ui/primitives/icons'
+import { CheckmarkIcon, CloseIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
 import { Skeleton } from '@/ui/primitives/skeleton'
 import { DetailsItem, DetailsRow } from '../layouts/details-row'
@@ -105,7 +105,7 @@ function StatusBanner({ status, statusMessage }: StatusBannerProps) {
           </>
         ) : status === 'success' ? (
           <>
-            <CheckIcon className="size-4 text-accent-positive-highlight" />
+            <CheckmarkIcon className="size-4 text-accent-positive-highlight" />
             <p className="prose-body text-fg">Build Successful</p>
           </>
         ) : (

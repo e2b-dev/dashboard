@@ -32,7 +32,7 @@ import {
   FormItem,
   FormMessage,
 } from '@/ui/primitives/form'
-import { CheckIcon } from '@/ui/primitives/icons'
+import { CheckmarkIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { Loader } from '@/ui/primitives/loader'
 import type { Webhook } from './types'
@@ -162,7 +162,7 @@ export const UpdateWebhookSecretDialog = ({
                   </>
                 ) : (
                   <>
-                    <CheckIcon className="size-4" />
+                    <CheckmarkIcon className="size-4" />
                     Confirm
                   </>
                 )}

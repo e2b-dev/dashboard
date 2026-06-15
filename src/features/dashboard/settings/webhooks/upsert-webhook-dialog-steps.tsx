@@ -22,7 +22,7 @@ import {
   FormMessage,
 } from '@/ui/primitives/form'
 import {
-  CheckIcon,
+  CheckmarkIcon,
   CopyIcon,
   ExternalLinkIcon,
   WarningIcon,
@@ -339,7 +339,7 @@ export function UpsertWebhookDialogSteps({
                           Copy
                         </span>
                         {secretCopiedFeedback && (
-                          <CheckIcon className="absolute size-4 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
+                          <CheckmarkIcon className="absolute size-4 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
                         )}
                       </Button>
                     </div>

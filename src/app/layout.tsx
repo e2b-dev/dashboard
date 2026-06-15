@@ -6,26 +6,16 @@ import { SpeedInsights } from '@vercel/speed-insights/next'
 import Head from 'next/head'
 import type { Metadata } from 'next/types'
 import { Suspense } from 'react'
-import {
-  FAVICON_CONTENT_TYPE,
-  FAVICON_SIZE,
-  getFaviconHref,
-} from '@/configs/favicon'
+import { getFaviconIcons } from '@/configs/favicon'
+import { isOryAuthEnabled } from '@/configs/flags'
 import ClientProviders from '@/features/client-providers'
-import { GeneralAnalyticsCollector } from '@/features/general-analytics-collector'
 import { GTMHead } from '@/features/google-tag-manager'
 import { Toaster } from '@/ui/primitives/toaster'
 import { Body } from './body'
 
 export const metadata: Metadata = {
   icons: {
-    icon: [
-      {
-        url: getFaviconHref(process.env.VERCEL_ENV),
-        type: FAVICON_CONTENT_TYPE,
-        sizes: `${FAVICON_SIZE.width}x${FAVICON_SIZE.height}`,
-      },
-    ],
+    icon: getFaviconIcons(process.env.VERCEL_ENV),
   },
 }
 
@@ -34,16 +24,18 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const postHogEnabled =
+    isOryAuthEnabled() && !!process.env.NEXT_PUBLIC_POSTHOG_KEY
+
   return (
     <html lang="en" suppressHydrationWarning>
       <Head>
         <GTMHead />
       </Head>
       <Body>
-        <ClientProviders>
+        <ClientProviders postHogEnabled={postHogEnabled}>
           {children}
           <Suspense>
-            <GeneralAnalyticsCollector />
             <Toaster />
           </Suspense>
         </ClientProviders>

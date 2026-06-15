@@ -7,9 +7,9 @@ import { IdBadge, UserAvatar } from '@/features/dashboard/shared'
 import { defaultSuccessToast, useToast } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { formatDate, formatUTCTimestamp } from '@/lib/utils/formatting'
-import { E2BLogo } from '@/ui/brand'
+import { E2BSquareBadge } from '@/ui/brand'
 import { Button } from '@/ui/primitives/button'
-import { KeyIcon, TrashIcon } from '@/ui/primitives/icons'
+import { KeyIcon, RemoveIcon } from '@/ui/primitives/icons'
 import { TableCell, TableRow } from '@/ui/primitives/table'
 import {
   Tooltip,
@@ -94,8 +94,8 @@ export const ApiKeysTableRow = ({ apiKey, onDelete }: ApiKeysTableRowProps) => {
             {isCliKey ? (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="text-fg-tertiary flex size-5 shrink-0 items-center justify-center">
-                    <E2BLogo className="size-5" />
+                  <span className="flex size-5 shrink-0 items-center justify-center">
+                    <E2BSquareBadge />
                   </span>
                 </TooltipTrigger>
                 <TooltipContent side="top">
@@ -122,7 +122,7 @@ export const ApiKeysTableRow = ({ apiKey, onDelete }: ApiKeysTableRowProps) => {
               aria-label={`Delete ${apiKey.name ?? 'API key'}`}
               onClick={onDelete}
             >
-              <TrashIcon className="size-4" />
+              <RemoveIcon className="size-4" />
             </Button>
           </div>
         </div>

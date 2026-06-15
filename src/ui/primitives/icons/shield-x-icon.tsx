@@ -1,0 +1,17 @@
+import { Icon, type IconProps } from './icon'
+
+/**
+ * ![ShieldXIcon](data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNOS4zMzM2NiA5TDguMDAwMzMgNy42NjY2N004LjAwMDMzIDcuNjY2NjdMNi42NjY5OSA2LjMzMzMzTTguMDAwMzMgNy42NjY2N0w5LjMzMzY2IDYuMzMzMzNNOC4wMDAzMyA3LjY2NjY3TDYuNjY2OTkgOU04LjAwMDMzIDJMMTMuMzMzNyAzLjgzMzMzVjcuOTQxNTNDMTMuMzMzNyAxMS4yNTY1IDEwLjY2NyAxMi42NjY3IDguMDAwMzMgMTQuMTA1M0M1LjMzMzY2IDEyLjY2NjcgMi42NjY5OSAxMS4yNTY1IDIuNjY2OTkgNy45NDE1M1YzLjgzMzMzTDguMDAwMzMgMloiIHN0cm9rZT0iIzg4ODg4OCIgc3Ryb2tlLXdpZHRoPSIxLjMzMzMzIiBzdHJva2UtbGluZWNhcD0ic3F1YXJlIi8+PC9zdmc+)
+ *
+ * Synced from Figma `Icon/16px/ShieldX`.
+ */
+export const ShieldXIcon = (props: IconProps) => (
+  <Icon fill="none" viewBox="0 0 16 16" {...props}>
+    <path
+      d="M9.33366 9L8.00033 7.66667M8.00033 7.66667L6.66699 6.33333M8.00033 7.66667L9.33366 6.33333M8.00033 7.66667L6.66699 9M8.00033 2L13.3337 3.83333V7.94153C13.3337 11.2565 10.667 12.6667 8.00033 14.1053C5.33366 12.6667 2.66699 11.2565 2.66699 7.94153V3.83333L8.00033 2Z"
+      stroke="currentColor"
+      strokeLinecap="square"
+      strokeWidth="1.33333"
+    />
+  </Icon>
+)

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { httpUrlSchema } from '@/core/shared/schemas/url'
+import {
+  httpUrlSchema,
+  isLoopbackUrl,
+  loopbackUrlSchema,
+} from '@/core/shared/schemas/url'
 
 describe('httpUrlSchema', () => {
   describe('accepts valid http/https URLs', () => {
@@ -69,5 +73,93 @@ describe('httpUrlSchema', () => {
     it('rejects empty strings', () => {
       expect(httpUrlSchema.safeParse('').success).toBe(false)
     })
+  })
+})
+
+describe('isLoopbackUrl', () => {
+  describe('accepts genuine loopback URLs', () => {
+    it('accepts http localhost with port and path', () => {
+      expect(isLoopbackUrl('http://localhost:3000/callback')).toBe(true)
+    })
+
+    it('accepts http localhost without port', () => {
+      expect(isLoopbackUrl('http://localhost')).toBe(true)
+    })
+
+    it('accepts http 127.0.0.1 with port', () => {
+      expect(isLoopbackUrl('http://127.0.0.1:55021')).toBe(true)
+    })
+
+    it('accepts http IPv6 loopback', () => {
+      expect(isLoopbackUrl('http://[::1]:9000')).toBe(true)
+    })
+
+    it('accepts https loopback', () => {
+      expect(isLoopbackUrl('https://localhost:3000/callback')).toBe(true)
+    })
+  })
+
+  describe('rejects host-confusion bypass attempts', () => {
+    it('rejects a subdomain of an attacker host', () => {
+      expect(isLoopbackUrl('http://localhost.evil.com')).toBe(false)
+    })
+
+    it('rejects a subdomain with a port', () => {
+      expect(isLoopbackUrl('http://localhost.evil.com:3000/callback')).toBe(
+        false
+      )
+    })
+
+    it('rejects a hyphenated attacker host', () => {
+      expect(isLoopbackUrl('http://localhost-evil.com')).toBe(false)
+    })
+
+    it('rejects userinfo pointing at an attacker host', () => {
+      expect(isLoopbackUrl('http://localhost@evil.com')).toBe(false)
+    })
+
+    it('rejects an attacker host with localhost in the path', () => {
+      expect(isLoopbackUrl('http://evil.com/localhost')).toBe(false)
+    })
+  })
+
+  describe('rejects non-http(s) and malformed inputs', () => {
+    it('rejects a non-loopback https host', () => {
+      expect(isLoopbackUrl('https://evil.com')).toBe(false)
+    })
+
+    it('rejects javascript URLs', () => {
+      expect(isLoopbackUrl('javascript:alert(1)')).toBe(false)
+    })
+
+    it('rejects file URLs to loopback-looking paths', () => {
+      expect(isLoopbackUrl('file://localhost/etc/passwd')).toBe(false)
+    })
+
+    it('rejects protocol-relative URLs', () => {
+      expect(isLoopbackUrl('//localhost')).toBe(false)
+    })
+
+    it('rejects plain strings', () => {
+      expect(isLoopbackUrl('not-a-url')).toBe(false)
+    })
+
+    it('rejects empty strings', () => {
+      expect(isLoopbackUrl('')).toBe(false)
+    })
+  })
+})
+
+describe('loopbackUrlSchema', () => {
+  it('parses a genuine loopback URL', () => {
+    expect(loopbackUrlSchema.safeParse('http://localhost:3000').success).toBe(
+      true
+    )
+  })
+
+  it('fails on a host-confusion bypass attempt', () => {
+    expect(
+      loopbackUrlSchema.safeParse('http://localhost.evil.com').success
+    ).toBe(false)
   })
 })
