@@ -1,11 +1,16 @@
 'use client'
 
-import Link, { type LinkProps } from 'next/link'
-import { forwardRef, useState } from 'react'
+import Link from 'next/link'
+import { type ComponentPropsWithoutRef, forwardRef, useState } from 'react'
+
+type HoverPrefetchLinkProps = Omit<
+  ComponentPropsWithoutRef<typeof Link>,
+  'prefetch' | 'onMouseEnter'
+>
 
 export const HoverPrefetchLink = forwardRef<
   HTMLAnchorElement,
-  Omit<LinkProps, 'prefetch' | 'onMouseEnter'> & { children: React.ReactNode }
+  HoverPrefetchLinkProps
 >(function HoverPrefetchLink({ href, children, ...props }, ref) {
   const [active, setActive] = useState(false)
 
