@@ -28,11 +28,11 @@ export default async function UsagePage({
 
   return (
     <UsageChartsProvider data={result.data}>
-      <div className="flex-1 overflow-y-auto max-h-full min-h-0">
-        <div className="container mx-auto p-0 md:p-8 2xl:p-24 max-w-[1800px]">
+      <div className="h-full max-h-full min-h-0 overflow-y-auto lg:overflow-hidden">
+        <div className="container mx-auto p-0 md:p-8 2xl:px-24 2xl:py-8 max-w-[1800px] lg:flex lg:flex-col lg:h-full">
           <Frame
             classNames={{
-              wrapper: 'w-full lg:h-[75vh] lg:min-h-[700px]',
+              wrapper: 'w-full lg:flex-1 lg:min-h-[700px] lg:max-h-full',
               frame: 'lg:h-full max-lg:border-0',
             }}
           >

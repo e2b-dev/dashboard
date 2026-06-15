@@ -9,5 +9,9 @@ export const metadata: Metadata = {
 }
 
 export default function RootNotFound() {
-  return <NotFound />
+  return (
+    <div className="flex min-h-[100svh] flex-col">
+      <NotFound />
+    </div>
+  )
 }

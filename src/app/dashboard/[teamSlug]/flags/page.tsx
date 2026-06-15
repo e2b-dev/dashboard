@@ -43,7 +43,7 @@ export default async function FlagsPage({ params }: FlagsPageProps) {
   }
 
   return (
-    <Page>
+    <Page className="2xl:-my-14">
       <FeatureFlagsTable flags={flags} teamId={teamIdResult.data} />
     </Page>
   )
