@@ -36,6 +36,10 @@ const RECENT_SESSION_LIMIT = 3
 const LOCAL_INFRA_HOSTNAMES = new Set(['localhost', '127.0.0.1', '[::1]'])
 const TERMINAL_WINDOW_OFFSET_PX = 28
 const TERMINAL_WINDOW_MAX_CASCADE_STEPS = 5
+const TERMINAL_WINDOW_DEFAULT_WIDTH_PX = 880
+const TERMINAL_WINDOW_DEFAULT_HEIGHT_PX = 540
+const TERMINAL_WINDOW_MIN_WIDTH_PX = 520
+const TERMINAL_WINDOW_MIN_HEIGHT_PX = 320
 const MINIMIZED_TERMINAL_HEIGHT_PX = 40
 const MINIMIZED_TERMINAL_STACK_GAP_PX = 8
 
@@ -50,12 +54,18 @@ type WindowPosition = {
   y: number
 }
 
+type WindowSize = {
+  height: number
+  width: number
+}
+
 type AgentTerminalWindow = {
   id: string
   forceNewSandbox?: boolean
   minimized: boolean
   minimizedOrder?: number
   position: WindowPosition
+  size: WindowSize
   sandboxId?: string
   template: AgentTemplateConfig
 }
@@ -153,6 +163,25 @@ const clampWindowPosition = ({
 }): WindowPosition => ({
   x: Math.max(0, Math.min(position.x, layerRect.width - windowRect.width)),
   y: Math.max(0, Math.min(position.y, layerRect.height - windowRect.height)),
+})
+
+const clampWindowSize = ({
+  layerRect,
+  position,
+  size,
+}: {
+  layerRect: DOMRect
+  position: WindowPosition
+  size: WindowSize
+}): WindowSize => ({
+  height: Math.max(
+    TERMINAL_WINDOW_MIN_HEIGHT_PX,
+    Math.min(size.height, layerRect.height - position.y)
+  ),
+  width: Math.max(
+    TERMINAL_WINDOW_MIN_WIDTH_PX,
+    Math.min(size.width, layerRect.width - position.x)
+  ),
 })
 
 function KillAgentSandboxButton({
@@ -427,6 +456,10 @@ export function AgentsDashboard({
         minimized: false,
         position: getInitialWindowPosition(currentWindows.length),
         sandboxId,
+        size: {
+          height: TERMINAL_WINDOW_DEFAULT_HEIGHT_PX,
+          width: TERMINAL_WINDOW_DEFAULT_WIDTH_PX,
+        },
         template,
       },
     ])
@@ -602,6 +635,15 @@ export function AgentsDashboard({
             )
           )
         }}
+        onResizeWindow={(windowId, size) => {
+          setTerminalWindows((currentWindows) =>
+            currentWindows.map((terminalWindow) =>
+              terminalWindow.id === windowId
+                ? { ...terminalWindow, size }
+                : terminalWindow
+            )
+          )
+        }}
         onSandboxAttached={(windowId, sandboxId) => {
           void refetch()
           setTerminalWindows((currentWindows) =>
@@ -626,6 +668,7 @@ function AgentTerminalWindowLayer({
   onCloseWindow,
   onMinimizeWindow,
   onMoveWindow,
+  onResizeWindow,
   onSandboxAttached,
 }: {
   activeWindowId: string | null
@@ -636,6 +679,7 @@ function AgentTerminalWindowLayer({
   onCloseWindow: (windowId: string) => void
   onMinimizeWindow: (windowId: string) => void
   onMoveWindow: (windowId: string, position: WindowPosition) => void
+  onResizeWindow: (windowId: string, size: WindowSize) => void
   onSandboxAttached: (windowId: string, sandboxId: string) => void
 }) {
   const layerRef = useRef<HTMLDivElement>(null)
@@ -703,6 +747,59 @@ function AgentTerminalWindowLayer({
     window.addEventListener('pointercancel', handlePointerUp)
   }
 
+  const handleWindowResizeStart = (
+    event: PointerEvent<HTMLElement>,
+    terminalWindow: AgentTerminalWindow
+  ) => {
+    if (
+      terminalWindow.minimized ||
+      window.matchMedia('(max-width: 767px)').matches
+    ) {
+      return
+    }
+
+    const layerElement = layerRef.current
+
+    if (!layerElement) {
+      return
+    }
+
+    event.preventDefault()
+    event.stopPropagation()
+    onActivateWindow(terminalWindow.id)
+
+    const layerRect = layerElement.getBoundingClientRect()
+    const startSize = terminalWindow.size
+    const startPointer = {
+      x: event.clientX,
+      y: event.clientY,
+    }
+
+    const handlePointerMove = (pointerEvent: globalThis.PointerEvent) => {
+      onResizeWindow(
+        terminalWindow.id,
+        clampWindowSize({
+          layerRect,
+          position: terminalWindow.position,
+          size: {
+            height: startSize.height + pointerEvent.clientY - startPointer.y,
+            width: startSize.width + pointerEvent.clientX - startPointer.x,
+          },
+        })
+      )
+    }
+
+    const handlePointerUp = () => {
+      window.removeEventListener('pointermove', handlePointerMove)
+      window.removeEventListener('pointerup', handlePointerUp)
+      window.removeEventListener('pointercancel', handlePointerUp)
+    }
+
+    window.addEventListener('pointermove', handlePointerMove)
+    window.addEventListener('pointerup', handlePointerUp)
+    window.addEventListener('pointercancel', handlePointerUp)
+  }
+
   return (
     <div
       ref={layerRef}
@@ -727,6 +824,8 @@ function AgentTerminalWindowLayer({
               left: 0,
             }
           : ({
+              '--terminal-window-height': `${terminalWindow.size.height}px`,
+              '--terminal-window-width': `${terminalWindow.size.width}px`,
               '--terminal-window-x': `${terminalWindow.position.x}px`,
               '--terminal-window-y': `${terminalWindow.position.y}px`,
             } as CSSProperties)
@@ -738,7 +837,7 @@ function AgentTerminalWindowLayer({
               'pointer-events-auto absolute m-0 min-w-0 border-0 p-0 shadow-xl',
               terminalWindow.minimized
                 ? 'bottom-0 left-0 h-10 w-[min(18rem,calc(100%_-_1rem))]'
-                : 'top-0 left-0 h-full w-full md:top-[var(--terminal-window-y)] md:left-[var(--terminal-window-x)] md:h-[min(540px,calc(100%_-_2rem))] md:w-[min(880px,calc(100%_-_2rem))]',
+                : 'top-0 left-0 h-full w-full md:top-[var(--terminal-window-y)] md:left-[var(--terminal-window-x)] md:h-[min(var(--terminal-window-height),calc(100%_-_2rem))] md:w-[min(var(--terminal-window-width),calc(100%_-_2rem))]',
               isActive && 'z-10'
             )}
             key={terminalWindow.id}
@@ -776,6 +875,16 @@ function AgentTerminalWindowLayer({
                 onMinimizeWindow(terminalWindow.id)
               }}
             />
+            {terminalWindow.minimized ? null : (
+              <button
+                aria-label="Resize terminal window"
+                className="border-fg-tertiary/70 hover:border-fg-secondary focus-visible:ring-focus absolute right-1 bottom-1 hidden size-4 cursor-nwse-resize border-r border-b bg-transparent focus-visible:ring-2 focus-visible:outline-none md:block"
+                type="button"
+                onPointerDown={(event) =>
+                  handleWindowResizeStart(event, terminalWindow)
+                }
+              />
+            )}
           </fieldset>
         )
       })}
