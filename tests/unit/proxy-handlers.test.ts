@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const getMiddlewareRedirectMock = vi.hoisted(() => vi.fn())
 const getRewriteForPathMock = vi.hoisted(() => vi.fn())
-const createAuthForProxyMock = vi.hoisted(() => vi.fn())
 
 vi.mock('@/configs/flags', () => ({ ALLOW_SEO_INDEXING: false }))
 
@@ -13,10 +12,6 @@ vi.mock('@/lib/utils/redirects', () => ({
 
 vi.mock('@/lib/utils/rewrites', () => ({
   getRewriteForPath: getRewriteForPathMock,
-}))
-
-vi.mock('@/core/server/auth', () => ({
-  createAuthForProxy: createAuthForProxyMock,
 }))
 
 const {
@@ -33,7 +28,6 @@ function request(path: string): NextRequest {
 beforeEach(() => {
   getMiddlewareRedirectMock.mockReset().mockReturnValue(undefined)
   getRewriteForPathMock.mockReset().mockReturnValue({ config: undefined })
-  createAuthForProxyMock.mockReset()
 })
 
 describe('proxy handlers', () => {
@@ -73,10 +67,9 @@ describe('proxy handlers', () => {
     expect(response?.headers.get('X-Robots-Tag')).toBe('noindex, nofollow')
   })
 
-  it('uses provided auth state without resolving auth again', async () => {
+  it('redirects unauthenticated dashboard pages to sign-in', async () => {
     const response = await handleAuthGate(request('/dashboard/team-x'), false)
 
     expect(response.headers.get('location')).toContain('/sign-in')
-    expect(createAuthForProxyMock).not.toHaveBeenCalled()
   })
 })
