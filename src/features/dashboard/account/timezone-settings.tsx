@@ -1,13 +1,12 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { type Timezone, useTimezone } from '@/features/dashboard/timezone'
 import {
   formatTimezoneLabel,
   getBrowserTimezone,
   getTimezones,
-  type Timezone,
-  useTimezone,
-} from '@/features/dashboard/timezone'
+} from '@/features/dashboard/timezone/utils'
 import {
   defaultErrorToast,
   defaultSuccessToast,

@@ -1,7 +1,7 @@
 import { z } from 'zod'
-import { dateTimePartsToUtcDate } from '@/features/dashboard/timezone/date-time'
-import type { Timezone } from '@/features/dashboard/timezone/schema'
+import type { Timezone } from '@/features/dashboard/timezone'
 import { getBrowserTimezone } from '@/features/dashboard/timezone/utils'
+import { dateTimePartsToUtcDate } from '@/lib/utils/formatting'
 
 export interface TimeRangeValues {
   startDate: string

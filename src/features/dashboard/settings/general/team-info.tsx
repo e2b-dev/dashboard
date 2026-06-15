@@ -1,7 +1,8 @@
 'use client'
 
 import { useDashboard } from '@/features/dashboard/context'
-import { formatDate, useTimezone } from '@/features/dashboard/timezone'
+import { useTimezone } from '@/features/dashboard/timezone'
+import { formatDate } from '@/lib/utils/formatting'
 import CopyButtonInline from '@/ui/copy-button-inline'
 
 const InfoRow = ({ label, value }: { label: string; value: string }) => (

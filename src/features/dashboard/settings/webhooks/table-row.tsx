@@ -2,10 +2,11 @@
 
 import { Fragment, useState } from 'react'
 import { SandboxLifecycleEventTypeSchema } from '@/core/modules/sandboxes/lifecycle-event-types'
-import { formatDate, useTimezone } from '@/features/dashboard/timezone'
+import { useTimezone } from '@/features/dashboard/timezone'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { defaultSuccessToast, toast } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { formatDate } from '@/lib/utils/formatting'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import {

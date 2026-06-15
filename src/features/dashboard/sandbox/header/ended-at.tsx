@@ -1,10 +1,7 @@
 'use client'
 
-import {
-  formatDate,
-  getRelativeDay,
-  useTimezone,
-} from '@/features/dashboard/timezone'
+import { useTimezone } from '@/features/dashboard/timezone'
+import { formatDate, getRelativeDay } from '@/lib/utils/formatting'
 import CopyButton from '@/ui/copy-button'
 import { useSandboxContext } from '../context'
 

@@ -1,8 +1,9 @@
 'use client'
 
 import { useCallback, useMemo, useState } from 'react'
-import { formatDateRange, useTimezone } from '@/features/dashboard/timezone'
+import { useTimezone } from '@/features/dashboard/timezone'
 import { cn } from '@/lib/utils'
+import { formatDateRange } from '@/lib/utils/formatting'
 import { findMatchingPreset } from '@/lib/utils/time-range'
 import { formatTimeframeAsISO8601Interval } from '@/lib/utils/timeframe'
 import CopyButton from '@/ui/copy-button'

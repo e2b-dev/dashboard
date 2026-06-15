@@ -13,7 +13,8 @@ import {
   VirtualizedTableRow,
 } from '@/features/dashboard/common/virtualized-table-ui'
 import { IdBadge } from '@/features/dashboard/shared'
-import { formatDateParts, useTimezone } from '@/features/dashboard/timezone'
+import { useTimezone } from '@/features/dashboard/timezone'
+import { formatDateParts } from '@/lib/utils/formatting'
 import CopyButtonInline from '@/ui/copy-button-inline'
 import { JsonPopover } from '@/ui/json-popover'
 import { Button } from '@/ui/primitives/button'

@@ -2,8 +2,9 @@
 
 import { AnimatePresence, motion } from 'motion/react'
 import { useMemo } from 'react'
-import { formatDate, useTimezone } from '@/features/dashboard/timezone'
+import { useTimezone } from '@/features/dashboard/timezone'
 import { cn } from '@/lib/utils'
+import { formatDate } from '@/lib/utils/formatting'
 import {
   CardDescription,
   CardHeader,

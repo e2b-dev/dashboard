@@ -1,10 +1,10 @@
 import type { ClientTeamMetric } from '@/core/modules/sandboxes/models.client'
+import type { Timezone } from '@/features/dashboard/timezone'
 import {
   type DateFormat,
+  formatAxisNumber,
   formatDate,
-  type Timezone,
-} from '@/features/dashboard/timezone'
-import { formatAxisNumber } from '@/lib/utils/formatting'
+} from '@/lib/utils/formatting'
 import type { TeamMetricDataPoint } from './types'
 
 const resolveTimeAxisLabelFormat = (rangeMs: number): DateFormat => {

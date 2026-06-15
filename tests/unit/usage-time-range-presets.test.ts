@@ -1,9 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import {
-  formatDateTimeInput,
-  type Timezone,
-} from '@/features/dashboard/timezone'
+import type { Timezone } from '@/features/dashboard/timezone'
 import { getUsageTimeRangePresets } from '@/features/dashboard/usage/constants'
+import { formatDateTimeInput } from '@/lib/utils/formatting'
 import { requireTimezone } from './helpers/timezone'
 
 const getPresetRange = (timezone: Timezone, presetId: string) => {
