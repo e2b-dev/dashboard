@@ -19,14 +19,14 @@ components:
     # Generated code uses security schemas in the alphabetical order.
     # In order to check first the token, and then the team (so we can already use the user),
     # there is a 1 and 2 present in the names of the security schemas.
-    AuthProviderBearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: access_token
-    AuthProviderTeamAuth:
+    Supabase1TokenAuth:
       type: apiKey
       in: header
-      name: X-Team-ID
+      name: X-Supabase-Token
+    Supabase2TeamAuth:
+      type: apiKey
+      in: header
+      name: X-Supabase-Team
     AdminTokenAuth:
       type: apiKey
       in: header
@@ -282,8 +282,8 @@ paths:
       tags: [events]
       security:
         - ApiKeyAuth: []
-        - AuthProviderBearerAuth: []
-          AuthProviderTeamAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       parameters:
         - $ref: "#/components/parameters/sandboxID"
         - name: offset
@@ -331,8 +331,8 @@ paths:
       tags: [events]
       security:
         - ApiKeyAuth: []
-        - AuthProviderBearerAuth: []
-          AuthProviderTeamAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       parameters:
         - name: offset
           in: query
@@ -380,8 +380,8 @@ paths:
       tags: [webhooks]
       security:
         - ApiKeyAuth: []
-        - AuthProviderBearerAuth: []
-          AuthProviderTeamAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       requestBody:
         required: true
         content:
@@ -409,8 +409,8 @@ paths:
         tags: [webhooks]
         security:
           - ApiKeyAuth: []
-          - AuthProviderBearerAuth: []
-            AuthProviderTeamAuth: []
+          - Supabase1TokenAuth: []
+            Supabase2TeamAuth: []
         responses:
           "200":
             description: List of registered webhooks.
@@ -434,8 +434,8 @@ paths:
       tags: [webhooks]
       security:
         - ApiKeyAuth: []
-        - AuthProviderBearerAuth: []
-          AuthProviderTeamAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       parameters:
         - $ref: "#/components/parameters/webhookID"
       responses:
@@ -458,8 +458,8 @@ paths:
       tags: [webhooks]
       security:
         - ApiKeyAuth: []
-        - AuthProviderBearerAuth: []
-          AuthProviderTeamAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       parameters:
         - $ref: "#/components/parameters/webhookID"
       requestBody:
@@ -490,8 +490,8 @@ paths:
       tags: [webhooks]
       security:
         - ApiKeyAuth: []
-        - AuthProviderBearerAuth: []
-          AuthProviderTeamAuth: []
+        - Supabase1TokenAuth: []
+          Supabase2TeamAuth: []
       parameters:
         - $ref: "#/components/parameters/webhookID"
       responses:
