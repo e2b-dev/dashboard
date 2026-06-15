@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { AUTHORIZATION_HEADER, BEARER_TOKEN_PREFIX } from '@/configs/api'
 import { createKeysRepository } from '@/core/modules/keys/repository.server'
 
 const loggerMocks = vi.hoisted(() => ({
@@ -86,7 +87,9 @@ describe('createKeysRepository', () => {
       {
         infraClient:
           infraClient as unknown as typeof import('@/core/shared/clients/api').infra,
-        authHeaders: vi.fn(() => ({ Authorization: 'Bearer token' })),
+        authHeaders: vi.fn(() => ({
+          [AUTHORIZATION_HEADER]: `${BEARER_TOKEN_PREFIX}token`,
+        })),
         resolveAuthUserEmailsById,
       }
     )
@@ -152,7 +155,9 @@ describe('createKeysRepository', () => {
       {
         infraClient:
           infraClient as unknown as typeof import('@/core/shared/clients/api').infra,
-        authHeaders: vi.fn(() => ({ Authorization: 'Bearer token' })),
+        authHeaders: vi.fn(() => ({
+          [AUTHORIZATION_HEADER]: `${BEARER_TOKEN_PREFIX}token`,
+        })),
         resolveAuthUserEmailsById,
       }
     )

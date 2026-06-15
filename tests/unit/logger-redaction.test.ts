@@ -1,5 +1,6 @@
 import pino from 'pino'
 import { describe, expect, it } from 'vitest'
+import { AUTHORIZATION_HEADER, BEARER_TOKEN_PREFIX } from '@/configs/api'
 import {
   REDACTION_CENSOR,
   REDACTION_PATHS,
@@ -29,7 +30,7 @@ describe('logger redaction', () => {
       error: {
         config: {
           headers: {
-            Authorization: 'Bearer secret-auth-header',
+            [AUTHORIZATION_HEADER]: `${BEARER_TOKEN_PREFIX}secret-auth-header`,
           },
         },
       },
@@ -49,9 +50,7 @@ describe('logger redaction', () => {
     const payload = JSON.parse(writes[0] ?? '{}') as {
       error?: {
         config?: {
-          headers?: {
-            Authorization?: string
-          }
+          headers?: Partial<Record<typeof AUTHORIZATION_HEADER, string>>
         }
       }
       server_function_input?: {
@@ -80,7 +79,9 @@ describe('logger redaction', () => {
     expect(payload.server_function_input?.nested?.signatureSecret).toBe(
       REDACTION_CENSOR
     )
-    expect(payload.error?.config?.headers?.Authorization).toBe(REDACTION_CENSOR)
+    expect(payload.error?.config?.headers?.[AUTHORIZATION_HEADER]).toBe(
+      REDACTION_CENSOR
+    )
   })
 
   it('redacts signatureSecret at top level', () => {

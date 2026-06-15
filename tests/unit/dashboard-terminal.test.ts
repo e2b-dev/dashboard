@@ -1,4 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  AUTHORIZATION_HEADER,
+  BEARER_TOKEN_PREFIX,
+  TEAM_ID_HEADER,
+} from '@/configs/api'
 import { attachTerminalWithRetry } from '@/features/dashboard/terminal/attach-terminal'
 import { TERMINAL_SESSION_STORAGE_PREFIX } from '@/features/dashboard/terminal/constants'
 import { openTerminalSandbox } from '@/features/dashboard/terminal/sandbox-session'
@@ -50,8 +55,8 @@ function installLocalStorage() {
 describe('dashboard terminal helpers', () => {
   const sandboxManagementAuth = {
     headers: {
-      Authorization: 'Bearer auth-provider-token',
-      'X-Team-ID': 'team-123',
+      [AUTHORIZATION_HEADER]: `${BEARER_TOKEN_PREFIX}auth-provider-token`,
+      [TEAM_ID_HEADER]: 'team-123',
     },
     userId: 'user-123',
   }
@@ -350,8 +355,8 @@ describe('dashboard terminal helpers', () => {
         timeoutMs: 30 * 60 * 1000,
         requestTimeoutMs: undefined,
         headers: {
-          Authorization: 'Bearer auth-provider-token',
-          'X-Team-ID': 'team-123',
+          [AUTHORIZATION_HEADER]: `${BEARER_TOKEN_PREFIX}auth-provider-token`,
+          [TEAM_ID_HEADER]: 'team-123',
         },
       })
       expect(mockCreateSandbox).not.toHaveBeenCalled()
@@ -381,8 +386,8 @@ describe('dashboard terminal helpers', () => {
           userId: 'user-123',
         },
         headers: {
-          Authorization: 'Bearer auth-provider-token',
-          'X-Team-ID': 'team-123',
+          [AUTHORIZATION_HEADER]: `${BEARER_TOKEN_PREFIX}auth-provider-token`,
+          [TEAM_ID_HEADER]: 'team-123',
         },
       })
       expect(readStoredTerminalSession('user-123')).toEqual({

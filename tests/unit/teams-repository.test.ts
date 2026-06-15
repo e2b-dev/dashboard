@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { AUTHORIZATION_HEADER, BEARER_TOKEN_PREFIX } from '@/configs/api'
 import { createTeamsRepository } from '@/core/modules/teams/teams-repository.server'
 
 describe('createTeamsRepository', () => {
@@ -12,7 +13,9 @@ describe('createTeamsRepository', () => {
           PATCH: vi.fn(),
           DELETE: vi.fn(),
         } as unknown as typeof import('@/core/shared/clients/api').api,
-        authHeaders: vi.fn(() => ({ Authorization: 'Bearer token' })),
+        authHeaders: vi.fn(() => ({
+          [AUTHORIZATION_HEADER]: `${BEARER_TOKEN_PREFIX}token`,
+        })),
       }
     )
 

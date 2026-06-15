@@ -1,4 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import {
+  AUTHORIZATION_HEADER,
+  BEARER_TOKEN_PREFIX,
+  TEAM_ID_HEADER,
+} from '@/configs/api'
 import { createBillingRepository } from '@/core/modules/billing/repository.server'
 
 const scope = {
@@ -43,8 +48,8 @@ describe('createBillingRepository', () => {
         method: 'POST',
         headers: expect.objectContaining({
           'Content-Type': 'application/json',
-          Authorization: 'Bearer access-token',
-          'X-Team-ID': 'team-id',
+          [AUTHORIZATION_HEADER]: `${BEARER_TOKEN_PREFIX}access-token`,
+          [TEAM_ID_HEADER]: 'team-id',
         }),
       })
     )

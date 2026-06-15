@@ -1,3 +1,5 @@
+import { AUTHORIZATION_HEADER } from '@/configs/api'
+
 const TOP_LEVEL_REDACTION_KEYS = [
   'password',
   'confirmPassword',
@@ -13,8 +15,8 @@ const TOP_LEVEL_REDACTION_KEYS = [
   'apikey',
   'captchaToken',
   'captcha_token',
-  'authorization',
-  'Authorization',
+  AUTHORIZATION_HEADER.toLowerCase(),
+  AUTHORIZATION_HEADER,
   'cookie',
   'Cookie',
   'tokenHash',

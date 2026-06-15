@@ -1,5 +1,7 @@
 export const API_KEY_PREFIX = 'e2b_'
 export const ACCESS_TOKEN_PREFIX = 'sk_e2b_'
+export const AUTHORIZATION_HEADER = 'Authorization'
+export const BEARER_TOKEN_PREFIX = 'Bearer '
 export const TEAM_ID_HEADER = 'X-Team-ID'
 export const ENVD_ACCESS_TOKEN_HEADER = 'X-Access-Token'
 export const ADMIN_TOKEN_HEADER = 'X-Admin-Token'
@@ -11,8 +13,8 @@ type AuthHeaderStrategy = {
 }
 
 const oryHeaderStrategy: AuthHeaderStrategy = {
-  tokenHeader: 'Authorization',
-  tokenPrefix: 'Bearer ',
+  tokenHeader: AUTHORIZATION_HEADER,
+  tokenPrefix: BEARER_TOKEN_PREFIX,
   teamHeader: TEAM_ID_HEADER,
 }
 
