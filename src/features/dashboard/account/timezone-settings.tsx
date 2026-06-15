@@ -75,6 +75,8 @@ export const TimezoneSettings = ({ className }: TimezoneSettingsProps) => {
     [browserTimezone]
   )
   const isBrowserTimezoneSelected = timezone === browserTimezone
+  const showUseBrowserTimezoneButton =
+    Boolean(browserTimezone) && !isBrowserTimezoneSelected
 
   const handleTimezoneSelect = async (nextTimezone: Timezone) => {
     if (nextTimezone === timezone) {
@@ -151,16 +153,22 @@ export const TimezoneSettings = ({ className }: TimezoneSettingsProps) => {
           Browser timezone:{' '}
           <span className="font-mono">{browserTimezoneLabel}</span>
         </p>
-        {browserTimezone && !isBrowserTimezoneSelected ? (
+        <div className="flex min-h-9 min-w-49 justify-end">
           <Button
             type="button"
             variant="secondary"
             loading={isSaving ? 'Saving...' : undefined}
-            onClick={() => void handleTimezoneSelect(browserTimezone)}
+            className={cn(!showUseBrowserTimezoneButton && 'invisible')}
+            disabled={!showUseBrowserTimezoneButton}
+            aria-hidden={!showUseBrowserTimezoneButton}
+            tabIndex={showUseBrowserTimezoneButton ? undefined : -1}
+            onClick={() => {
+              if (browserTimezone) void handleTimezoneSelect(browserTimezone)
+            }}
           >
             Use browser timezone
           </Button>
-        ) : null}
+        </div>
       </CardFooter>
     </Card>
   )
