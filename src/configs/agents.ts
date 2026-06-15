@@ -1,3 +1,5 @@
+import { z } from 'zod'
+
 export type AgentId = string
 
 export type AgentTemplateConfig = {
@@ -35,6 +37,43 @@ const DEFAULT_AGENT_TEMPLATES = [
     description: 'OpenCode for coding sessions.',
   },
 ] satisfies AgentTemplateConfig[]
+
+export const AgentTemplateConfigSchema = z
+  .object({
+    id: z.string().trim().min(1).optional(),
+    name: z.string().trim().min(1),
+    command: z.string().trim().min(1).optional(),
+    template: z.string().trim().min(1).optional(),
+    templateId: z.string().trim().min(1).optional(),
+    base: z.string().trim().min(1).optional(),
+    description: z.string().trim().min(1),
+  })
+  .superRefine((value, ctx) => {
+    if (!value.template && !value.templateId) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Expected template or templateId',
+        path: ['template'],
+      })
+    }
+  })
+  .transform(
+    (value): AgentTemplateConfig => ({
+      id: value.id ?? value.name.toLowerCase().replace(/\s+/g, '-'),
+      name: value.name,
+      command: value.command,
+      template: value.template ?? value.templateId ?? '',
+      base: value.base,
+      description: value.description,
+    })
+  )
+
+export const AgentTemplatesSchema = z
+  .array(AgentTemplateConfigSchema)
+  .min(1) satisfies z.ZodType<AgentTemplateConfig[]>
+export const AgentTemplatesFeatureFlagSchema = z.array(
+  AgentTemplateConfigSchema
+) satisfies z.ZodType<AgentTemplateConfig[]>
 
 const getString = (source: Record<string, unknown>, key: string) => {
   const value = source[key]
@@ -102,6 +141,10 @@ export const AGENT_TEMPLATES: AgentTemplateConfig[] =
 
 export const getAgentTemplates = () =>
   getConfiguredAgentTemplates() ?? DEFAULT_AGENT_TEMPLATES
+
+export const resolveAgentTemplates = (
+  templates: AgentTemplateConfig[] | undefined
+) => templates ?? getAgentTemplates()
 
 export const AGENT_TEMPLATE_BY_ID = Object.fromEntries(
   AGENT_TEMPLATES.map((template) => [template.id, template])
