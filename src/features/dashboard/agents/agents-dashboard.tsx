@@ -232,14 +232,14 @@ function AgentSessionList({
 }) {
   if (sessions.length === 0) {
     return (
-      <div className="prose-body text-fg-tertiary border-stroke border-t px-3 py-3">
+      <div className="prose-body text-fg-tertiary px-3 py-3">
         No sessions yet
       </div>
     )
   }
 
   return (
-    <div className="divide-stroke border-stroke divide-y border-t">
+    <div className="divide-stroke divide-y">
       {sessions.map((sandbox) => (
         <div
           className="grid gap-2 px-3 py-2.5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
@@ -340,6 +340,15 @@ export function AgentsDashboard({
         .sort(sortByNewestStartedAt),
     ])
   ) as Record<string, Sandbox[]>
+  const expandedTemplate = templates.find(
+    (template) => template.id === expandedAgentId
+  )
+  const expandedSessions = expandedTemplate
+    ? (sandboxesByAgentId[expandedTemplate.id] ?? []).slice(
+        0,
+        RECENT_SESSION_LIMIT
+      )
+    : []
 
   const focusWindow = (windowId: string) => {
     setActiveWindowId(windowId)
@@ -392,8 +401,6 @@ export function AgentsDashboard({
     <>
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {templates.map((template) => {
-          const sessions = sandboxesByAgentId[template.id] ?? []
-          const recentSessions = sessions.slice(0, RECENT_SESSION_LIMIT)
           const isExpanded = expandedAgentId === template.id
           return (
             <section
@@ -450,42 +457,62 @@ export function AgentsDashboard({
                   </Button>
                 </div>
               </div>
-
-              {isExpanded ? (
-                isPending ? (
-                  <div className="prose-body text-fg-tertiary border-stroke flex items-center gap-2 border-t px-3 py-3">
-                    <Loader size="sm" variant="slash" />
-                    Loading sessions
-                  </div>
-                ) : error ? (
-                  <div className="prose-body text-accent-error-highlight border-stroke border-t px-3 py-3">
-                    Failed to load sessions
-                  </div>
-                ) : (
-                  <AgentSessionList
-                    canPause={pauseSupported}
-                    onKilled={() => {
-                      void refetch()
-                    }}
-                    onPaused={() => {
-                      void refetch()
-                    }}
-                    onOpenTerminal={(sandboxId) =>
-                      openTerminalWindow({
-                        sandboxId,
-                        template,
-                      })
-                    }
-                    sessions={recentSessions}
-                    teamSlug={teamSlug}
-                    template={template}
-                  />
-                )
-              ) : null}
             </section>
           )
         })}
       </div>
+
+      {expandedTemplate ? (
+        <section className="border-stroke bg-bg-1 mt-4 overflow-hidden rounded-lg border">
+          <div className="border-stroke flex items-center justify-between gap-3 border-b px-4 py-3">
+            <div className="min-w-0">
+              <h3 className="prose-body-highlight text-fg truncate">
+                {expandedTemplate.name} history
+              </h3>
+              <p className="prose-body text-fg-tertiary truncate">
+                Recent sessions for {expandedTemplate.template}
+              </p>
+            </div>
+            <Button
+              size="none"
+              variant="tertiary"
+              onClick={() => setExpandedAgentId(null)}
+            >
+              Close
+            </Button>
+          </div>
+
+          {isPending ? (
+            <div className="prose-body text-fg-tertiary flex items-center gap-2 px-4 py-3">
+              <Loader size="sm" variant="slash" />
+              Loading sessions
+            </div>
+          ) : error ? (
+            <div className="prose-body text-accent-error-highlight px-4 py-3">
+              Failed to load sessions
+            </div>
+          ) : (
+            <AgentSessionList
+              canPause={pauseSupported}
+              onKilled={() => {
+                void refetch()
+              }}
+              onPaused={() => {
+                void refetch()
+              }}
+              onOpenTerminal={(sandboxId) =>
+                openTerminalWindow({
+                  sandboxId,
+                  template: expandedTemplate,
+                })
+              }
+              sessions={expandedSessions}
+              teamSlug={teamSlug}
+              template={expandedTemplate}
+            />
+          )}
+        </section>
+      ) : null}
 
       <AgentTerminalWindowLayer
         activeWindowId={activeWindowId}
