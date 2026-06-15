@@ -74,7 +74,7 @@ const isAgentSandbox = (
 ): boolean => {
   const matchKeys = getAgentMatchKeys(template)
 
-  return [sandbox.templateID, sandbox.alias]
+  return [sandbox.templateID, sandbox.alias, sandbox.metadata?.template]
     .map(normalizeIdentifier)
     .some((identifier) => matchKeys.has(identifier))
 }
@@ -582,6 +582,7 @@ export function AgentsDashboard({
           )
         }}
         onSandboxAttached={(windowId, sandboxId) => {
+          void refetch()
           setTerminalWindows((currentWindows) =>
             currentWindows.map((terminalWindow) =>
               terminalWindow.id === windowId
