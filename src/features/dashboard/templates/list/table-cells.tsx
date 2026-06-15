@@ -12,7 +12,6 @@ import {
 } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
-import { isVersionCompatible } from '@/lib/utils/version'
 import { useTRPC } from '@/trpc/client'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { E2BBadge } from '@/ui/brand'
@@ -36,7 +35,6 @@ import {
   UnlockIcon,
 } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
-import ResourceUsage from '../../common/resource-usage'
 import { useDashboard } from '../../context'
 
 function E2BTemplateBadge() {
@@ -311,28 +309,6 @@ export function TemplateNameCell({
   )
 }
 
-export function CpuCell({
-  row,
-}: CellContext<Template | DefaultTemplate, unknown>) {
-  const cpuCount = row.getValue('cpuCount') as number
-  return (
-    <div className="w-full flex justify-end">
-      <ResourceUsage type="cpu" total={cpuCount} mode="simple" />
-    </div>
-  )
-}
-
-export function MemoryCell({
-  row,
-}: CellContext<Template | DefaultTemplate, unknown>) {
-  const memoryMB = row.getValue('memoryMB') as number
-  return (
-    <div className="w-full flex justify-end">
-      <ResourceUsage type="mem" total={memoryMB} mode="simple" />
-    </div>
-  )
-}
-
 export function CreatedAtCell({
   getValue,
 }: CellContext<Template | DefaultTemplate, unknown>) {
@@ -404,38 +380,5 @@ export function VisibilityCell({
       {!isPublic && <PrivateIcon className="size-3 text-fg-tertiary" />}
       {isPublic ? 'Public' : 'Internal'}
     </Badge>
-  )
-}
-
-const INVALID_ENVD_VERSION = '0.0.1'
-const SDK_V2_MINIMAL_ENVD_VERSION = '0.2.0'
-
-export function EnvdVersionCell({
-  getValue,
-}: CellContext<Template | DefaultTemplate, unknown>) {
-  const valueString = getValue() as string
-  const versionValue =
-    valueString && valueString !== INVALID_ENVD_VERSION ? valueString : null
-
-  const isNotV2Compatible = versionValue
-    ? isVersionCompatible(versionValue, SDK_V2_MINIMAL_ENVD_VERSION) === false
-    : false
-  return (
-    <div
-      className={cn(
-        'text-fg-tertiary whitespace-nowrap font-mono flex flex-row gap-1.5',
-        {
-          'text-accent-error-highlight': isNotV2Compatible,
-        }
-      )}
-    >
-      {versionValue ?? '--'}
-      {isNotV2Compatible && (
-        <HelpTooltip>
-          The envd version is not compatible with the SDK v2. To update the envd
-          version, you need to rebuild the template.
-        </HelpTooltip>
-      )}
-    </div>
   )
 }

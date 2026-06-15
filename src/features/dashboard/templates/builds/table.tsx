@@ -30,10 +30,13 @@ import {
 import BuildsEmpty from './empty'
 import {
   BuildId,
+  Cpu,
   Duration,
-  Reason,
+  Envd,
+  Memory,
   StartedAt,
   Status,
+  Storage,
   Template,
 } from './table-cells'
 import useFilters from './use-filters'
@@ -46,6 +49,10 @@ const COLUMN_WIDTHS = {
   id: 152,
   status: 96,
   template: 192,
+  cpu: 72,
+  memory: 88,
+  storage: 88,
+  envd: 98,
   started: 126,
   duration: 96,
 } as const
@@ -163,16 +170,25 @@ const BuildsTable = () => {
           <colgroup>
             <col style={colStyle(COLUMN_WIDTHS.status)} />
             <col style={colStyle(COLUMN_WIDTHS.template)} />
+            <col style={colStyle(COLUMN_WIDTHS.id)} />
+            <col style={colStyle(COLUMN_WIDTHS.cpu)} />
+            <col style={colStyle(COLUMN_WIDTHS.memory)} />
+            <col style={colStyle(COLUMN_WIDTHS.storage)} />
+            <col style={colStyle(COLUMN_WIDTHS.envd)} />
             <col style={colStyle(COLUMN_WIDTHS.started)} />
             <col style={colStyle(COLUMN_WIDTHS.duration)} />
-            <col style={colStyle(COLUMN_WIDTHS.id)} />
-            <col className="max-lg:min-w-[500px]" />
+            <col />
           </colgroup>
 
           <TableHeader className="sticky top-0 z-10 bg-bg">
             <TableRow>
               <TableHead>Status</TableHead>
               <TableHead>Template</TableHead>
+              <TableHead>ID</TableHead>
+              <TableHead className="text-end">CPU</TableHead>
+              <TableHead className="text-end">Memory</TableHead>
+              <TableHead className="text-end">Storage</TableHead>
+              <TableHead className="text-end">ENVD Ver.</TableHead>
               <TableHead>
                 <span className="inline-flex items-center gap-1 text-fg">
                   Started
@@ -180,7 +196,6 @@ const BuildsTable = () => {
                 </span>
               </TableHead>
               <TableHead className="text-end">Duration</TableHead>
-              <TableHead>ID</TableHead>
               <th />
             </TableRow>
           </TableHeader>
@@ -192,7 +207,7 @@ const BuildsTable = () => {
           >
             {showLoader && (
               <TableRow>
-                <TableCell colSpan={6}>
+                <TableCell colSpan={10}>
                   <div className="h-[35svh] w-full flex justify-center items-center">
                     <Loader variant="slash" size="lg" />
                   </div>
@@ -202,7 +217,7 @@ const BuildsTable = () => {
 
             {showEmpty && (
               <TableRow>
-                <TableCell colSpan={6}>
+                <TableCell colSpan={10}>
                   <BuildsEmpty error={buildsError?.message} />
                 </TableCell>
               </TableRow>
@@ -213,7 +228,7 @@ const BuildsTable = () => {
                 {hasScrolledPastInitialPages && (
                   <TableRow>
                     <TableCell
-                      colSpan={6}
+                      colSpan={10}
                       className="text-center max-lg:text-start text-fg-tertiary"
                     >
                       <BackToTopButton onBackToTop={handleBackToTop} />
@@ -247,7 +262,10 @@ const BuildsTable = () => {
                         className="py-1.5"
                         style={{ maxWidth: COLUMN_WIDTHS.status }}
                       >
-                        <Status status={build.status} />
+                        <Status
+                          status={build.status}
+                          statusMessage={build.statusMessage}
+                        />
                       </TableCell>
                       <TableCell
                         className="py-1.5 overflow-hidden"
@@ -257,6 +275,24 @@ const BuildsTable = () => {
                           template={build.template}
                           templateId={build.templateId}
                         />
+                      </TableCell>
+                      <TableCell
+                        className="py-1.5 overflow-hidden"
+                        style={{ maxWidth: COLUMN_WIDTHS.id }}
+                      >
+                        <BuildId id={build.id} />
+                      </TableCell>
+                      <TableCell className="py-1.5">
+                        <Cpu cpuCount={build.cpuCount} />
+                      </TableCell>
+                      <TableCell className="py-1.5">
+                        <Memory memoryMB={build.memoryMB} />
+                      </TableCell>
+                      <TableCell className="py-1.5">
+                        <Storage diskSizeMB={build.diskSizeMB} />
+                      </TableCell>
+                      <TableCell className="py-1.5">
+                        <Envd version={build.envdVersion} />
                       </TableCell>
                       <TableCell className="py-1.5">
                         <StartedAt timestamp={build.createdAt} />
@@ -268,15 +304,7 @@ const BuildsTable = () => {
                           isBuilding={isBuilding}
                         />
                       </TableCell>
-                      <TableCell
-                        className="py-1.5 overflow-hidden"
-                        style={{ maxWidth: COLUMN_WIDTHS.id }}
-                      >
-                        <BuildId id={build.id} />
-                      </TableCell>
-                      <TableCell className="py-1.5 w-full">
-                        <Reason statusMessage={build.statusMessage} />
-                      </TableCell>
+                      <TableCell className="py-1.5 w-full" />
                     </TableRow>
                   )
                 })}
@@ -284,7 +312,7 @@ const BuildsTable = () => {
                 {hasNextPage && (
                   <TableRow>
                     <TableCell
-                      colSpan={6}
+                      colSpan={10}
                       className="text-center max-lg:text-start text-fg-tertiary"
                     >
                       <LoadMoreButton

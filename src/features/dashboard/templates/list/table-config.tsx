@@ -10,10 +10,7 @@ import { useMemo } from 'react'
 import type { DefaultTemplate, Template } from '@/core/modules/templates/models'
 import {
   ActionsCell,
-  CpuCell,
   CreatedAtCell,
-  EnvdVersionCell,
-  MemoryCell,
   TemplateIdCell,
   TemplateNameCell,
   UpdatedAtCell,
@@ -56,22 +53,6 @@ export const useColumns = (deps: unknown[]) => {
         cell: TemplateIdCell,
       },
       {
-        accessorKey: 'cpuCount',
-        header: 'CPU',
-        size: 64,
-        enableResizing: false,
-        cell: CpuCell,
-        enableSorting: false,
-      },
-      {
-        accessorKey: 'memoryMB',
-        header: 'Memory',
-        size: 80,
-        enableResizing: false,
-        cell: MemoryCell,
-        enableSorting: false,
-      },
-      {
         accessorKey: 'createdAt',
         enableGlobalFilter: true,
         id: 'createdAt',
@@ -105,14 +86,6 @@ export const useColumns = (deps: unknown[]) => {
         cell: VisibilityCell,
         enableSorting: false,
         filterFn: 'equals',
-      },
-      {
-        accessorKey: 'envdVersion',
-        header: 'ENVD Ver.',
-        size: 40,
-        enableResizing: false,
-        cell: EnvdVersionCell,
-        enableSorting: false,
       },
       {
         id: 'actions',

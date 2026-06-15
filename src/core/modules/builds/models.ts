@@ -31,6 +31,10 @@ export interface ListedBuildModel {
   statusMessage: string | null
   createdAt: number
   finishedAt: number | null
+  cpuCount: number
+  memoryMB: number
+  diskSizeMB: number | null
+  envdVersion: string | null
 }
 
 export interface RunningBuildStatusModel {
