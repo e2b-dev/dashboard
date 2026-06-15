@@ -1,6 +1,7 @@
 'use client'
 
 import { type CommandHandle, type Sandbox, TimeoutError } from 'e2b'
+import type { PointerEvent } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SandboxManagementAuth } from '@/core/shared/sandbox-management-auth'
 import { attachTerminalWithRetry } from './attach-terminal'
@@ -42,6 +43,7 @@ interface DashboardTerminalProps {
   onSandboxAttached?: (sandboxId: string) => void
   onSandboxAttachFailed?: (target: TerminalLaunchTarget | undefined) => void
   onWindowClose?: () => void
+  onWindowDragStart?: (event: PointerEvent<HTMLDivElement>) => void
   onWindowMinimize?: () => void
   sandboxManagementAuth: SandboxManagementAuth
   sandboxScoped?: boolean
@@ -59,6 +61,7 @@ export default function DashboardTerminal({
   onSandboxAttached,
   onSandboxAttachFailed,
   onWindowClose,
+  onWindowDragStart,
   onWindowMinimize,
   sandboxManagementAuth,
   sandboxScoped = false,
@@ -648,6 +651,7 @@ export default function DashboardTerminal({
         terminalContainerRef={terminalContainerRef}
         onClose={onWindowClose}
         onFocusTerminal={focusTerminal}
+        onHeaderPointerDown={onWindowDragStart}
         onMinimize={onWindowMinimize}
         onCopyTerminalText={() => void copyTerminalText()}
         onRestartTerminal={restartTerminal}

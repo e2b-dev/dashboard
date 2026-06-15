@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { useAction } from 'next-safe-action/hooks'
+import type { CSSProperties, PointerEvent } from 'react'
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 import type { AgentTemplateConfig } from '@/configs/agents'
@@ -32,6 +33,10 @@ import { Loader } from '@/ui/primitives/loader'
 
 const RECENT_SESSION_LIMIT = 3
 const LOCAL_INFRA_HOSTNAMES = new Set(['localhost', '127.0.0.1', '[::1]'])
+const TERMINAL_WINDOW_OFFSET_PX = 28
+const TERMINAL_WINDOW_MAX_CASCADE_STEPS = 5
+const MINIMIZED_TERMINAL_HEIGHT_PX = 40
+const MINIMIZED_TERMINAL_STACK_GAP_PX = 8
 
 interface AgentsDashboardProps {
   sandboxManagementAuth: SandboxManagementAuth
@@ -39,10 +44,16 @@ interface AgentsDashboardProps {
   teamSlug: string
 }
 
+type WindowPosition = {
+  x: number
+  y: number
+}
+
 type AgentTerminalWindow = {
   id: string
   forceNewSandbox?: boolean
   minimized: boolean
+  position: WindowPosition
   sandboxId?: string
   template: AgentTemplateConfig
 }
@@ -120,6 +131,27 @@ const canPauseSandboxes = () => {
     return true
   }
 }
+
+const getInitialWindowPosition = (windowCount: number): WindowPosition => {
+  const offset =
+    Math.min(windowCount, TERMINAL_WINDOW_MAX_CASCADE_STEPS) *
+    TERMINAL_WINDOW_OFFSET_PX
+
+  return { x: offset, y: offset }
+}
+
+const clampWindowPosition = ({
+  layerRect,
+  position,
+  windowRect,
+}: {
+  layerRect: DOMRect
+  position: WindowPosition
+  windowRect: DOMRect
+}): WindowPosition => ({
+  x: Math.max(0, Math.min(position.x, layerRect.width - windowRect.width)),
+  y: Math.max(0, Math.min(position.y, layerRect.height - windowRect.height)),
+})
 
 function KillAgentSandboxButton({
   sandboxId,
@@ -390,6 +422,7 @@ export function AgentsDashboard({
         id: windowId,
         forceNewSandbox,
         minimized: false,
+        position: getInitialWindowPosition(currentWindows.length),
         sandboxId,
         template,
       },
@@ -539,6 +572,15 @@ export function AgentsDashboard({
             )
           )
         }}
+        onMoveWindow={(windowId, position) => {
+          setTerminalWindows((currentWindows) =>
+            currentWindows.map((terminalWindow) =>
+              terminalWindow.id === windowId
+                ? { ...terminalWindow, position }
+                : terminalWindow
+            )
+          )
+        }}
         onSandboxAttached={(windowId, sandboxId) => {
           setTerminalWindows((currentWindows) =>
             currentWindows.map((terminalWindow) =>
@@ -561,6 +603,7 @@ function AgentTerminalWindowLayer({
   onActivateWindow,
   onCloseWindow,
   onMinimizeWindow,
+  onMoveWindow,
   onSandboxAttached,
 }: {
   activeWindowId: string | null
@@ -570,42 +613,110 @@ function AgentTerminalWindowLayer({
   onActivateWindow: (windowId: string) => void
   onCloseWindow: (windowId: string) => void
   onMinimizeWindow: (windowId: string) => void
+  onMoveWindow: (windowId: string, position: WindowPosition) => void
   onSandboxAttached: (windowId: string, sandboxId: string) => void
 }) {
+  const layerRef = useRef<HTMLDivElement>(null)
+
   if (windows.length === 0) {
     return null
   }
 
+  const handleWindowDragStart = (
+    event: PointerEvent<HTMLDivElement>,
+    terminalWindow: AgentTerminalWindow
+  ) => {
+    const target = event.target as HTMLElement | null
+
+    if (
+      terminalWindow.minimized ||
+      target?.closest('button,a,input,textarea,select,[role="button"]') ||
+      window.matchMedia('(max-width: 767px)').matches
+    ) {
+      return
+    }
+
+    const layerElement = layerRef.current
+    const windowElement = event.currentTarget.closest(
+      '[data-agent-terminal-window]'
+    ) as HTMLElement | null
+
+    if (!layerElement || !windowElement) {
+      return
+    }
+
+    event.preventDefault()
+    onActivateWindow(terminalWindow.id)
+
+    const layerRect = layerElement.getBoundingClientRect()
+    const windowRect = windowElement.getBoundingClientRect()
+    const startPosition = terminalWindow.position
+    const startPointer = {
+      x: event.clientX,
+      y: event.clientY,
+    }
+
+    const handlePointerMove = (pointerEvent: globalThis.PointerEvent) => {
+      onMoveWindow(
+        terminalWindow.id,
+        clampWindowPosition({
+          layerRect,
+          position: {
+            x: startPosition.x + pointerEvent.clientX - startPointer.x,
+            y: startPosition.y + pointerEvent.clientY - startPointer.y,
+          },
+          windowRect,
+        })
+      )
+    }
+
+    const handlePointerUp = () => {
+      window.removeEventListener('pointermove', handlePointerMove)
+      window.removeEventListener('pointerup', handlePointerUp)
+      window.removeEventListener('pointercancel', handlePointerUp)
+    }
+
+    window.addEventListener('pointermove', handlePointerMove)
+    window.addEventListener('pointerup', handlePointerUp)
+    window.addEventListener('pointercancel', handlePointerUp)
+  }
+
   return (
-    <div className="pointer-events-none fixed top-18 right-4 bottom-10 left-4 z-40 md:left-[248px]">
-      {windows.map((terminalWindow, index) => {
-        const offset = Math.min(index, 5) * 28
+    <div
+      ref={layerRef}
+      className="pointer-events-none fixed top-18 right-2 bottom-4 left-2 z-40 md:right-4 md:bottom-10 md:left-[248px]"
+    >
+      {windows.map((terminalWindow) => {
         const isActive = activeWindowId === terminalWindow.id
         const minimizedIndex = windows
           .filter((candidate) => candidate.minimized)
           .findIndex((candidate) => candidate.id === terminalWindow.id)
+        const windowStyle = terminalWindow.minimized
+          ? {
+              bottom:
+                minimizedIndex *
+                (MINIMIZED_TERMINAL_HEIGHT_PX +
+                  MINIMIZED_TERMINAL_STACK_GAP_PX),
+              left: 0,
+            }
+          : ({
+              '--terminal-window-x': `${terminalWindow.position.x}px`,
+              '--terminal-window-y': `${terminalWindow.position.y}px`,
+            } as CSSProperties)
 
         return (
           <fieldset
+            data-agent-terminal-window
             className={cn(
               'pointer-events-auto absolute m-0 min-w-0 border-0 p-0 shadow-xl',
               terminalWindow.minimized
-                ? 'h-10 w-56'
-                : 'h-[min(540px,calc(100%_-_2rem))] w-[min(880px,calc(100%_-_2rem))]',
+                ? 'bottom-0 left-0 h-10 w-[min(18rem,calc(100%_-_1rem))]'
+                : 'top-0 left-0 h-full w-full md:top-[var(--terminal-window-y)] md:left-[var(--terminal-window-x)] md:h-[min(540px,calc(100%_-_2rem))] md:w-[min(880px,calc(100%_-_2rem))]',
               isActive && 'z-10'
             )}
             key={terminalWindow.id}
-            style={
-              terminalWindow.minimized
-                ? {
-                    right: minimizedIndex * 232,
-                    top: 0,
-                  }
-                : {
-                    left: offset,
-                    top: offset,
-                  }
-            }
+            style={windowStyle}
+            onPointerDown={() => onActivateWindow(terminalWindow.id)}
           >
             <legend className="sr-only">
               {terminalWindow.template.name} terminal window
@@ -622,6 +733,9 @@ function AgentTerminalWindowLayer({
               sandboxManagementAuth={sandboxManagementAuth}
               syncUrl={false}
               teamSlug={teamSlug}
+              onWindowDragStart={(event) =>
+                handleWindowDragStart(event, terminalWindow)
+              }
               onSandboxAttached={(sandboxId) =>
                 onSandboxAttached(terminalWindow.id, sandboxId)
               }

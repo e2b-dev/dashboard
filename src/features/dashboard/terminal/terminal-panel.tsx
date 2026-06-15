@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import type { RefObject } from 'react'
+import type { PointerEvent, RefObject } from 'react'
 import { IconButton } from '@/ui/primitives/icon-button'
 import {
   ArrowLeftIcon,
@@ -20,6 +20,7 @@ interface TerminalPanelProps {
   onFocusTerminal: () => void
   onCopyTerminalText: () => void
   onClose?: () => void
+  onHeaderPointerDown?: (event: PointerEvent<HTMLDivElement>) => void
   onMinimize?: () => void
   onRestartTerminal: () => void
 }
@@ -35,6 +36,7 @@ export default function TerminalPanel({
   onFocusTerminal,
   onCopyTerminalText,
   onClose,
+  onHeaderPointerDown,
   onMinimize,
   onRestartTerminal,
 }: TerminalPanelProps) {
@@ -50,6 +52,7 @@ export default function TerminalPanel({
           restartLabel={restartLabel}
           onClose={onClose}
           onCopyTerminalText={onCopyTerminalText}
+          onHeaderPointerDown={onHeaderPointerDown}
           onMinimize={onMinimize}
           onRestartTerminal={onRestartTerminal}
         />
@@ -78,6 +81,7 @@ function TerminalPanelHeader({
   restartLabel,
   onCopyTerminalText,
   onClose,
+  onHeaderPointerDown,
   onMinimize,
   onRestartTerminal,
 }: Pick<
@@ -90,11 +94,15 @@ function TerminalPanelHeader({
   | 'restartLabel'
   | 'onClose'
   | 'onCopyTerminalText'
+  | 'onHeaderPointerDown'
   | 'onMinimize'
   | 'onRestartTerminal'
 >) {
   return (
-    <div className="flex h-full items-center justify-between px-3">
+    <div
+      className="flex h-full items-center justify-between px-3"
+      onPointerDown={onHeaderPointerDown}
+    >
       <div className="flex min-w-0 items-center gap-2">
         {backHref ? (
           <Link
@@ -158,7 +166,14 @@ function TerminalPanelHeader({
             title={collapsed ? 'Restore terminal' : 'Minimize terminal'}
             onClick={onMinimize}
           >
-            <span aria-hidden className="block h-px w-3 bg-current" />
+            {collapsed ? (
+              <span
+                aria-hidden
+                className="block size-3 border border-current"
+              />
+            ) : (
+              <span aria-hidden className="block h-px w-3 bg-current" />
+            )}
           </IconButton>
         ) : null}
         {onClose ? (
