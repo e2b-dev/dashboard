@@ -87,77 +87,9 @@ export const AgentTemplatesFeatureFlagSchema = z.array(
   AgentTemplateConfigSchema
 ) satisfies z.ZodType<AgentTemplateConfig[]>
 
-const getString = (source: Record<string, unknown>, key: string) => {
-  const value = source[key]
-  return typeof value === 'string' && value.trim() ? value.trim() : undefined
-}
+export const AGENT_TEMPLATES: AgentTemplateConfig[] = DEFAULT_AGENT_TEMPLATES
 
-const toAgentTemplateConfig = (
-  value: unknown
-): AgentTemplateConfig | undefined => {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return undefined
-  }
-
-  const source = value as Record<string, unknown>
-  const name = getString(source, 'name')
-  const template =
-    getString(source, 'template') ?? getString(source, 'templateId')
-  const description = getString(source, 'description')
-
-  if (!name || !template || !description) {
-    return undefined
-  }
-
-  return {
-    id: getString(source, 'id') ?? name.toLowerCase().replace(/\s+/g, '-'),
-    teamId: getString(source, 'teamId') ?? null,
-    name,
-    command: getString(source, 'command'),
-    template,
-    description,
-    author: getString(source, 'author'),
-    public: typeof source.public === 'boolean' ? source.public : undefined,
-    createdAt: getString(source, 'createdAt'),
-    updatedAt: getString(source, 'updatedAt'),
-    deletedAt: getString(source, 'deletedAt') ?? null,
-  }
-}
-
-const parseAgentTemplates = (
-  value: string | undefined
-): AgentTemplateConfig[] | undefined => {
-  if (!value) return undefined
-
-  try {
-    const parsed = JSON.parse(value) as unknown
-
-    if (!Array.isArray(parsed)) {
-      return undefined
-    }
-
-    const templates = parsed
-      .map(toAgentTemplateConfig)
-      .filter((template): template is AgentTemplateConfig => Boolean(template))
-
-    return templates.length ? templates : undefined
-  } catch {
-    return undefined
-  }
-}
-
-const getConfiguredAgentTemplates = () =>
-  parseAgentTemplates(
-    process.env.AGENT_TEMPLATES ?? process.env.NEXT_PUBLIC_AGENT_TEMPLATES
-  )
-
-const configuredAgentTemplates = getConfiguredAgentTemplates()
-
-export const AGENT_TEMPLATES: AgentTemplateConfig[] =
-  configuredAgentTemplates ?? DEFAULT_AGENT_TEMPLATES
-
-export const getAgentTemplates = () =>
-  getConfiguredAgentTemplates() ?? DEFAULT_AGENT_TEMPLATES
+export const getAgentTemplates = () => DEFAULT_AGENT_TEMPLATES
 
 export const resolveAgentTemplates = (
   templates: AgentTemplateConfig[] | undefined
