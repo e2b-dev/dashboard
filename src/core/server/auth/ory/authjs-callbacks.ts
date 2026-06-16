@@ -102,7 +102,7 @@ export async function persistOryTokensInAuthJsJwt(
   }
 
   // Once a refresh has failed we stop retrying. The dead token (cleared
-  // access/refresh) propagates to the session, oryAuthProvider returns null,
+  // access/refresh) propagates to the session, getAuthContext returns null,
   // and the proxy redirects to /sign-in.
   if (token.error) {
     return token

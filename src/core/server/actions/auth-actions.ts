@@ -1,10 +1,10 @@
 'use server'
 
-import { auth } from '@/core/server/auth'
+import { startReauthForAccountSettings } from '@/core/server/auth'
 
 export async function reauthForAccountSettingsAction(): Promise<{
   url: string
 }> {
-  const dispatch = await auth.startReauthForAccountSettings()
+  const dispatch = await startReauthForAccountSettings()
   return { url: dispatch.to }
 }

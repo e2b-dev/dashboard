@@ -36,7 +36,9 @@ vi.mock('@/core/shared/clients/logger/logger', () => ({
   serializeErrorForLog: vi.fn((error: unknown) => error),
 }))
 
-const { oryAuthProvider } = await import('@/core/server/auth/ory/provider')
+const { handleCredentialChangeSuccess, updateUser } = await import(
+  '@/core/server/auth/ory/session'
+)
 
 const nowSeconds = Math.floor(Date.now() / 1000)
 
@@ -89,7 +91,7 @@ describe('Ory account security', () => {
       makeSession({ idToken: makeIdToken(nowSeconds - 10_000) })
     )
 
-    const result = await oryAuthProvider.updateUser({ password: 'new-secret' })
+    const result = await updateUser({ password: 'new-secret' })
 
     expect(result).toEqual({ ok: false, code: 'reauthentication_needed' })
     expect(updateIdentityMock).not.toHaveBeenCalled()
@@ -104,7 +106,7 @@ describe('Ory account security', () => {
         credentials: { password: { config: { hashed_password: 'hash' } } },
       })
 
-    const result = await oryAuthProvider.updateUser({ password: 'new-secret' })
+    const result = await updateUser({ password: 'new-secret' })
 
     expect(updateIdentityMock).toHaveBeenCalledWith({
       id: 'kratos-uuid',
@@ -123,7 +125,7 @@ describe('Ory account security', () => {
   it('revokes Ory/Kratos sessions and clears Auth.js after credential changes', async () => {
     authjsMock.mockResolvedValue(makeSession())
 
-    await oryAuthProvider.handleCredentialChangeSuccess()
+    await handleCredentialChangeSuccess()
 
     expect(revokeOAuthSessionsMock).toHaveBeenCalledWith('e2b-user-id')
     expect(revokeKratosSessionsMock).toHaveBeenCalledWith('kratos-uuid')

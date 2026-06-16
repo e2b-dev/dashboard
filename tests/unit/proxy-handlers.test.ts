@@ -19,7 +19,7 @@ const {
   handleRouteRewritePassthrough,
   handleMiddlewareRewrite,
   handleAuthGate,
-} = await import('@/core/server/http/proxy')
+} = await import('@/core/server/proxy/handlers')
 
 function request(path: string): NextRequest {
   return new NextRequest(`https://app.e2b.dev${path}`)

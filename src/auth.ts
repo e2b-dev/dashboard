@@ -37,9 +37,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   // route handler that logs the failure and redirects to /sign-in so users
-  // never see Auth.js's built-in error page; see oauth-recover/route.ts.
+  // never see Auth.js's built-in error page.
   pages: {
-    error: '/api/auth/oauth-recover',
+    error: '/api/auth/oauth/recover',
   },
   providers: [
     OryHydra({

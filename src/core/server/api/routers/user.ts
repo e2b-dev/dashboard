@@ -1,7 +1,11 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
-import type { AuthUser } from '@/core/server/auth'
-import { createAuthForSession } from '@/core/server/auth'
+import {
+  getUserProfile,
+  handleCredentialChangeSuccess,
+  updateUser,
+  type AuthUser,
+} from '@/core/server/auth'
 import { createTRPCRouter } from '@/core/server/trpc/init'
 import { protectedProcedure } from '@/core/server/trpc/procedures'
 import { l } from '@/core/shared/clients/logger/logger'
@@ -50,10 +54,8 @@ export const userRouter = createTRPCRouter({
   // against a timeout and falls back to the cheap session user so the dashboard
   // never hangs on the identity provider.
   profile: protectedProcedure.query(async ({ ctx }): Promise<AuthUser> => {
-    const provider = createAuthForSession(ctx.authSession)
-
     const result = await withTimeout(
-      provider.getUserProfile().catch(() => null),
+      getUserProfile(ctx.authSession).catch(() => null),
       PROFILE_LOOKUP_TIMEOUT_MS
     )
 
@@ -89,11 +91,9 @@ export const userRouter = createTRPCRouter({
         }
       }
 
-      const provider = createAuthForSession(ctx.authSession)
-
       if (input.email !== undefined || input.password !== undefined) {
         const profile = await withTimeout(
-          provider.getUserProfile().catch(() => null),
+          getUserProfile(ctx.authSession).catch(() => null),
           PROFILE_LOOKUP_TIMEOUT_MS
         )
         const credentialProfile =
@@ -121,16 +121,19 @@ export const userRouter = createTRPCRouter({
         }
       }
 
-      const result = await provider.updateUser({
-        email: input.email,
-        password: input.password,
-        name: input.name,
-      })
+      const result = await updateUser(
+        {
+          email: input.email,
+          password: input.password,
+          name: input.name,
+        },
+        ctx.authSession
+      )
 
       if (result.ok) {
         // Invalidate sessions when the password changed.
         if (input.password) {
-          await provider.handleCredentialChangeSuccess()
+          await handleCredentialChangeSuccess(ctx.authSession)
         }
 
         return { status: 'ok' as const, user: result.user }

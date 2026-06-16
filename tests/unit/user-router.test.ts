@@ -1,17 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTRPCContext } from '@/core/server/trpc/init'
 
-const providerMock = vi.hoisted(() => ({
+const authMock = vi.hoisted(() => ({
   getAuthContext: vi.fn(),
   getUserProfile: vi.fn(),
   updateUser: vi.fn(),
-  signOut: vi.fn(),
-  startReauthForAccountSettings: vi.fn(),
   handleCredentialChangeSuccess: vi.fn(),
 }))
 
 vi.mock('@/core/server/auth', () => ({
-  createAuthForSession: vi.fn(() => providerMock),
+  getAuthContext: authMock.getAuthContext,
+  getUserProfile: authMock.getUserProfile,
+  updateUser: authMock.updateUser,
+  handleCredentialChangeSuccess: authMock.handleCredentialChangeSuccess,
 }))
 
 vi.mock('@/lib/utils/server', () => ({
@@ -35,12 +36,13 @@ const authUser = {
 
 describe('userRouter.update', () => {
   beforeEach(() => {
-    providerMock.getAuthContext.mockResolvedValue({
+    authMock.getAuthContext.mockReset().mockResolvedValue({
       user: authUser,
       accessToken: 'access-token',
     })
-    providerMock.getUserProfile.mockReset()
-    providerMock.updateUser.mockReset()
+    authMock.getUserProfile.mockReset()
+    authMock.updateUser.mockReset()
+    authMock.handleCredentialChangeSuccess.mockReset()
   })
 
   afterEach(() => {
@@ -48,7 +50,7 @@ describe('userRouter.update', () => {
   })
 
   it('denies email changes when the provider profile says they are not changeable', async () => {
-    providerMock.getUserProfile.mockResolvedValue(authUser)
+    authMock.getUserProfile.mockResolvedValue(authUser)
 
     const ctx = await createTRPCContext({ headers: new Headers() })
     const caller = createCaller(ctx)
@@ -59,13 +61,13 @@ describe('userRouter.update', () => {
       status: 'error',
       code: 'account_credentials_not_changeable',
     })
-    expect(providerMock.getUserProfile).toHaveBeenCalled()
-    expect(providerMock.updateUser).not.toHaveBeenCalled()
+    expect(authMock.getUserProfile).toHaveBeenCalled()
+    expect(authMock.updateUser).not.toHaveBeenCalled()
   })
 
   it('falls back to session capabilities when live profile lookup fails', async () => {
-    providerMock.getUserProfile.mockResolvedValue(null)
-    providerMock.updateUser.mockResolvedValue({
+    authMock.getUserProfile.mockResolvedValue(null)
+    authMock.updateUser.mockResolvedValue({
       ok: true,
       user: authUser,
     })
@@ -76,11 +78,14 @@ describe('userRouter.update', () => {
     const result = await caller.update({ password: 'new-password' })
 
     expect(result).toEqual({ status: 'ok', user: authUser })
-    expect(providerMock.getUserProfile).toHaveBeenCalled()
-    expect(providerMock.updateUser).toHaveBeenCalledWith({
-      email: undefined,
-      password: 'new-password',
-      name: undefined,
-    })
+    expect(authMock.getUserProfile).toHaveBeenCalled()
+    expect(authMock.updateUser).toHaveBeenCalledWith(
+      {
+        email: undefined,
+        password: 'new-password',
+        name: undefined,
+      },
+      undefined
+    )
   })
 })

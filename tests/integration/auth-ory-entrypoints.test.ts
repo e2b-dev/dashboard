@@ -40,7 +40,7 @@ vi.mock('@/core/shared/clients/logger/logger', () => ({
 }))
 
 const { proxy } = await import('@/proxy')
-const { GET: oauthStartGET } = await import('@/app/api/auth/oauth-start/route')
+const { GET: oauthStartGET } = await import('@/app/api/auth/oauth/start/route')
 
 function request(path: string): NextRequest {
   return new NextRequest(`https://app.e2b.dev${path}`)
@@ -87,10 +87,10 @@ describe('Ory auth entrypoints', () => {
     )
 
     expect(signIn.headers.get('location')).toContain(
-      '/api/auth/oauth-start?intent=signin'
+      '/api/auth/oauth/start?intent=signin'
     )
     expect(signUp.headers.get('location')).toContain(
-      '/api/auth/oauth-start?intent=signup&returnTo=%2Fdashboard'
+      '/api/auth/oauth/start?intent=signup&returnTo=%2Fdashboard'
     )
   })
 
@@ -104,7 +104,7 @@ describe('Ory auth entrypoints', () => {
       const response = await proxy(request('/sign-in'), {} as NextFetchEvent)
 
       expect(response.headers.get('location')).toContain(
-        '/api/auth/oauth-start?intent=signin'
+        '/api/auth/oauth/start?intent=signin'
       )
     }
   })
@@ -129,7 +129,7 @@ describe('Ory auth entrypoints', () => {
 
   it('starts Ory sign-in, registration, and re-auth with the right parameters', async () => {
     await oauthStartGET(
-      new Request('https://app.e2b.dev/api/auth/oauth-start?intent=signin')
+      new Request('https://app.e2b.dev/api/auth/oauth/start?intent=signin')
     )
     expect(signInMock).toHaveBeenLastCalledWith(
       'ory',
@@ -140,7 +140,7 @@ describe('Ory auth entrypoints', () => {
 
     await oauthStartGET(
       new Request(
-        'https://app.e2b.dev/api/auth/oauth-start?intent=signup&returnTo=%2Fdashboard'
+        'https://app.e2b.dev/api/auth/oauth/start?intent=signup&returnTo=%2Fdashboard'
       )
     )
     expect(readSignupMetadataMock).toHaveBeenCalled()
@@ -155,7 +155,7 @@ describe('Ory auth entrypoints', () => {
     )
 
     await oauthStartGET(
-      new Request('https://app.e2b.dev/api/auth/oauth-start?intent=reauth')
+      new Request('https://app.e2b.dev/api/auth/oauth/start?intent=reauth')
     )
     expect(signInMock).toHaveBeenLastCalledWith(
       'ory',
@@ -166,7 +166,7 @@ describe('Ory auth entrypoints', () => {
 
   it('rejects invalid Ory auth intents', async () => {
     const response = await oauthStartGET(
-      new Request('https://app.e2b.dev/api/auth/oauth-start?intent=unknown')
+      new Request('https://app.e2b.dev/api/auth/oauth/start?intent=unknown')
     )
 
     expect(response?.status).toBe(400)

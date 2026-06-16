@@ -7,7 +7,7 @@ import { METADATA } from '@/configs/metadata'
 import { AUTH_URLS } from '@/configs/urls'
 import { DASHBOARD_TEAMS_LIST_QUERY_OPTIONS } from '@/core/application/teams/queries'
 import { DASHBOARD_USER_PROFILE_QUERY_OPTIONS } from '@/core/application/user/queries'
-import { auth } from '@/core/server/auth'
+import { getAuthContext } from '@/core/server/auth'
 import DashboardLayoutView from '@/features/dashboard/layouts/layout'
 import { DashboardPostHogErrorBoundary } from '@/features/dashboard/posthog-error-boundary'
 import Sidebar from '@/features/dashboard/sidebar/sidebar'
@@ -36,7 +36,7 @@ export default async function DashboardLayout({
 }: DashboardLayoutProps) {
   const cookieStore = await cookies()
   const { teamSlug } = await params
-  const authContext = await auth.getAuthContext()
+  const authContext = await getAuthContext()
   const postHogEnabled = !!process.env.NEXT_PUBLIC_POSTHOG_KEY
 
   const sidebarState = cookieStore.get(COOKIE_KEYS.SIDEBAR_STATE)?.value

@@ -34,7 +34,8 @@ const { mockAuth, mockCookieStore, mockResolveUserTeam } = vi.hoisted(() => ({
 }))
 
 vi.mock('@/core/server/auth', () => ({
-  auth: mockAuth,
+  getAuthContext: mockAuth.getAuthContext,
+  signOut: mockAuth.signOut,
 }))
 
 vi.mock('next/headers', () => ({

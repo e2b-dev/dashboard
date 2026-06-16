@@ -1,12 +1,12 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { auth } from '@/core/server/auth'
+import { getAuthContext, signOut } from '@/core/server/auth'
 import { resolveUserTeam } from '@/core/server/functions/team/resolve-user-team'
 import { l } from '@/core/shared/clients/logger/logger'
 import { setTeamCookies } from '@/lib/utils/cookies'
 
 export async function GET(request: NextRequest) {
-  const authContext = await auth.getAuthContext()
+  const authContext = await getAuthContext()
 
   if (!authContext) {
     return NextResponse.redirect(new URL(AUTH_URLS.SIGN_IN, request.url))
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
       'no personal team for user, signing out'
     )
 
-    const { redirectTo } = await auth.signOut({
+    const { redirectTo } = await signOut({
       origin: request.nextUrl.origin,
     })
 
