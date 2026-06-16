@@ -324,49 +324,28 @@ export default function DashboardTerminal({
       setTemplate(nextTemplate)
       appendOutput('Opening terminal...\r\n')
 
-      const openSandbox = async () => {
+      const openSandboxAndPty = async () => {
+        let sandbox: Sandbox
+
         if (getSandbox) {
           appendOutput('Connecting to sandbox...\r\n')
-          return getSandbox()
+          sandbox = await getSandbox()
+        } else {
+          const terminalSandbox = await openTerminalSandbox({
+            forceNewSandbox: options.forceNewSandbox,
+            onStatus: appendOutput,
+            requestTimeoutMs: requestedSandboxId
+              ? TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS
+              : undefined,
+            sandboxManagementAuth,
+            shouldStoreSession: !sandboxScoped,
+            sandboxId: requestedSandboxId,
+            template: nextTemplate,
+          })
+          sandbox = terminalSandbox.sandbox
         }
 
-        const terminalSandbox = await openTerminalSandbox({
-          forceNewSandbox: options.forceNewSandbox,
-          onStatus: appendOutput,
-          requestTimeoutMs: requestedSandboxId
-            ? TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS
-            : undefined,
-          sandboxManagementAuth,
-          shouldStoreSession: !sandboxScoped,
-          sandboxId: requestedSandboxId,
-          template: nextTemplate,
-        })
-
-        return terminalSandbox.sandbox
-      }
-
-      const canRetrySandboxOpen = Boolean(requestedSandboxId || getSandbox)
-
-      try {
-        const sandbox = await attachTerminalWithRetry({
-          canRetry: canRetrySandboxOpen,
-          isCurrent: isCurrentStart,
-          isRetryableError: (error) => error instanceof TimeoutError,
-          maxRetries: TERMINAL_ATTACH_MAX_RETRIES,
-          onRetry: (retryDelay) => {
-            appendOutput(
-              `Sandbox connection timed out. Retrying in ${Math.round(
-                retryDelay / 1000
-              )}s...\r\n`
-            )
-          },
-          open: openSandbox,
-          retryBaseDelayMs: TERMINAL_ATTACH_RETRY_BASE_DELAY_MS,
-          retryMaxDelayMs: TERMINAL_ATTACH_RETRY_MAX_DELAY_MS,
-          waitForRetry: waitForAttachRetry,
-        })
-
-        if (!sandbox || !isCurrentStart()) return
+        if (!isCurrentStart()) return null
 
         appendOutput(`Sandbox ${sandbox.sandboxId} is running.\r\n`)
         appendOutput('Opening PTY...\r\n')
@@ -381,6 +360,33 @@ export default function DashboardTerminal({
             appendOutput(data)
           },
         })
+
+        return { pty, sandbox }
+      }
+
+      const canRetryAttach = Boolean(requestedSandboxId || getSandbox)
+
+      try {
+        const result = await attachTerminalWithRetry({
+          canRetry: canRetryAttach,
+          isCurrent: isCurrentStart,
+          isRetryableError: (error) => error instanceof TimeoutError,
+          maxRetries: TERMINAL_ATTACH_MAX_RETRIES,
+          onRetry: (retryDelay) => {
+            appendOutput(
+              `Terminal attach timed out. Retrying in ${Math.round(
+                retryDelay / 1000
+              )}s...\r\n`
+            )
+          },
+          open: openSandboxAndPty,
+          retryBaseDelayMs: TERMINAL_ATTACH_RETRY_BASE_DELAY_MS,
+          retryMaxDelayMs: TERMINAL_ATTACH_RETRY_MAX_DELAY_MS,
+          waitForRetry: waitForAttachRetry,
+        })
+
+        if (!result) return
+        const { sandbox, pty } = result
 
         if (!isCurrentStart()) {
           try {
