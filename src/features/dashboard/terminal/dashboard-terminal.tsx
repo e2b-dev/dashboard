@@ -1,15 +1,11 @@
 'use client'
 
-import { type CommandHandle, type Sandbox, TimeoutError } from 'e2b'
+import { type CommandHandle, type Sandbox } from 'e2b'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SandboxManagementAuth } from '@/core/shared/sandbox-management-auth'
-import { attachTerminalWithRetry } from './attach-terminal'
 import {
   DEFAULT_CWD,
   TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS,
-  TERMINAL_ATTACH_MAX_RETRIES,
-  TERMINAL_ATTACH_RETRY_BASE_DELAY_MS,
-  TERMINAL_ATTACH_RETRY_MAX_DELAY_MS,
   TERMINAL_AUTOSTART_DEBOUNCE_MS,
 } from './constants'
 import DashboardTerminalCommandDialog from './dashboard-terminal-command-dialog'
@@ -73,31 +69,7 @@ export default function DashboardTerminal({
   const inputGenerationRef = useRef(0)
   const pendingCommandsRef = useRef<string[]>([])
   const isStartingRef = useRef(false)
-  const retryResolveRef = useRef<(() => void) | null>(null)
-  const retryTimerRef = useRef<number | null>(null)
   const startGenerationRef = useRef(0)
-
-  const clearAttachRetryTimer = useCallback(() => {
-    if (!retryTimerRef.current) return
-
-    window.clearTimeout(retryTimerRef.current)
-    retryTimerRef.current = null
-    retryResolveRef.current?.()
-    retryResolveRef.current = null
-  }, [])
-
-  const waitForAttachRetry = useCallback(
-    (delayMs: number) =>
-      new Promise<void>((resolve) => {
-        retryResolveRef.current = resolve
-        retryTimerRef.current = window.setTimeout(() => {
-          retryTimerRef.current = null
-          retryResolveRef.current = null
-          resolve()
-        }, delayMs)
-      }),
-    []
-  )
 
   const abortCurrentStart = useCallback(() => {
     startGenerationRef.current += 1
@@ -237,7 +209,6 @@ export default function DashboardTerminal({
   })
 
   const closeTerminal = useCallback(async () => {
-    clearAttachRetryTimer()
     clearPendingInput()
 
     const pty = ptyRef.current
@@ -255,7 +226,7 @@ export default function DashboardTerminal({
     } catch {
       // Best-effort cleanup. The sandbox is intentionally left alive.
     }
-  }, [clearAttachRetryTimer, clearPendingInput, requestPtyKill])
+  }, [clearPendingInput, requestPtyKill])
 
   const runCommand = useCallback(
     (command: string, terminalPid?: number) => {
@@ -326,7 +297,7 @@ export default function DashboardTerminal({
       setTemplate(nextTemplate)
       appendOutput('Opening terminal...\r\n')
 
-      const openSandboxAndPty = async () => {
+      const openSandbox = async () => {
         let sandbox: Sandbox
 
         if (getSandbox) {
@@ -348,9 +319,10 @@ export default function DashboardTerminal({
           sandbox = terminalSandbox.sandbox
         }
 
-        if (!isCurrentStart()) return null
+        return sandbox.sandboxId && isCurrentStart() ? sandbox : null
+      }
 
-        appendOutput(`Sandbox ${sandbox.sandboxId} is running.\r\n`)
+      const openPty = async (sandbox: Sandbox) => {
         appendOutput('Opening PTY...\r\n')
         const terminalSize = resizeTerminal()
         const pty = await sandbox.pty.create({
@@ -364,32 +336,19 @@ export default function DashboardTerminal({
           },
         })
 
-        return { pty, sandbox }
+        return pty
       }
 
-      const canRetryAttach = Boolean(requestedSandboxId || getSandbox)
-
       try {
-        const result = await attachTerminalWithRetry({
-          canRetry: canRetryAttach,
-          isCurrent: isCurrentStart,
-          isRetryableError: (error) => error instanceof TimeoutError,
-          maxRetries: TERMINAL_ATTACH_MAX_RETRIES,
-          onRetry: (retryDelay) => {
-            appendOutput(
-              `Terminal attach timed out. Retrying in ${Math.round(
-                retryDelay / 1000
-              )}s...\r\n`
-            )
-          },
-          open: openSandboxAndPty,
-          retryBaseDelayMs: TERMINAL_ATTACH_RETRY_BASE_DELAY_MS,
-          retryMaxDelayMs: TERMINAL_ATTACH_RETRY_MAX_DELAY_MS,
-          waitForRetry: waitForAttachRetry,
-        })
+        const sandbox = await openSandbox()
 
-        if (!result) return
-        const { sandbox, pty } = result
+        if (!sandbox) return
+
+        appendOutput(`Sandbox ${sandbox.sandboxId} is running.\r\n`)
+
+        const pty = await openPty(sandbox)
+
+        if (!pty) return
 
         if (!isCurrentStart()) {
           try {
@@ -451,7 +410,6 @@ export default function DashboardTerminal({
       onSandboxAttached,
       onSandboxAttachFailed,
       updateTerminalUrl,
-      waitForAttachRetry,
     ]
   )
 
@@ -609,13 +567,11 @@ export default function DashboardTerminal({
       window.removeEventListener('pagehide', handlePageHide)
       window.removeEventListener('pageshow', handlePageShow)
       abortCurrentStart()
-      clearAttachRetryTimer()
       clearPendingInput()
       void closeTerminal()
     }
   }, [
     abortCurrentStart,
-    clearAttachRetryTimer,
     clearPendingInput,
     closeTerminal,
     focusTerminal,

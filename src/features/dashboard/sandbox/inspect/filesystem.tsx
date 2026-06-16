@@ -21,7 +21,8 @@ export default function SandboxInspectFilesystem({
   rootPath,
 }: SandboxInspectFilesystemProps) {
   const { isRunning } = useSandboxContext()
-  const { isSandboxResumePending, resumeSandbox } = useSandboxInspectContext()
+  const { isSandboxResumePending, resumeSandbox, sandboxResumeError } =
+    useSandboxInspectContext()
   const children = useRootChildren()
   const { isLoaded, isLoading } = useDirectoryState(rootPath)
   const showRootLoading =
@@ -44,6 +45,7 @@ export default function SandboxInspectFilesystem({
             <SandboxInspectNotFound
               isResumePending={isSandboxResumePending}
               onResumeSandbox={() => void resumeSandbox()}
+              resumeError={sandboxResumeError}
             />
           ) : (
             <ScrollArea className="h-full">

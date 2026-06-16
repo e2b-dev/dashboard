@@ -22,12 +22,14 @@ interface SandboxInspectNotFoundProps {
   isResumePending?: boolean
   onResumeSandbox?: () => void
   resource?: 'filesystem' | 'terminal'
+  resumeError?: string
 }
 
 export default function SandboxInspectNotFound({
   isResumePending = false,
   onResumeSandbox,
   resource = 'filesystem',
+  resumeError,
 }: SandboxInspectNotFoundProps) {
   const router = useRouter()
   const { isRunning, sandboxInfo } = useSandboxContext()
@@ -77,9 +79,11 @@ export default function SandboxInspectNotFound({
       ? 'This directory appears to be empty or does not exist. You can reset to the default state, navigate to root, or refresh to try again.'
       : isRunning
         ? 'The terminal is unavailable right now. Refresh to try again.'
-        : isPaused
-          ? `Resume this sandbox to access the ${resourceName}.`
-          : `It seems like the sandbox is not connected anymore. We cannot access the ${resourceName} at this time.`
+        : resumeError
+          ? resumeError
+          : isPaused
+            ? `Resume this sandbox to access the ${resourceName}.`
+            : `It seems like the sandbox is not connected anymore. We cannot access the ${resourceName} at this time.`
 
   const actions =
     isRunning && isFilesystem ? (

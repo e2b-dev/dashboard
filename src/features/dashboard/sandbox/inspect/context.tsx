@@ -25,6 +25,7 @@ interface SandboxInspectContextValue {
   store: FilesystemStore
   operations: FilesystemOperations
   isSandboxResumePending: boolean
+  sandboxResumeError?: string
   resumeSandbox: () => Promise<void>
 }
 
@@ -46,12 +47,14 @@ export default function SandboxInspectProvider({
   const { team } = useDashboard()
   const teamId = team.id
 
-  const { sandboxInfo, isRunning } = useSandboxContext()
+  const { sandboxInfo, isRunning, refetchSandboxInfo } = useSandboxContext()
   const sandboxId = sandboxInfo?.sandboxID
   const storeRef = useRef<FilesystemStore | null>(null)
   const sandboxManagerRef = useRef<SandboxManager | null>(null)
   const connectGenerationRef = useRef(0)
+  const connectAbortControllerRef = useRef<AbortController | null>(null)
   const [isSandboxResumePending, setIsSandboxResumePending] = useState(false)
+  const [sandboxResumeError, setSandboxResumeError] = useState<string>()
 
   const { trackInteraction } = useSandboxInspectAnalytics()
 
@@ -178,11 +181,17 @@ export default function SandboxInspectProvider({
     [isRunning, trackInteraction]
   )
 
-  const connectSandbox = async (options?: { timeoutMs?: number }) => {
+  const connectSandbox = async (options?: {
+    requestTimeoutMs?: number
+    timeoutMs?: number
+  }) => {
     if (!storeRef.current || !sandboxId || !teamId) return
     const generation = connectGenerationRef.current + 1
     connectGenerationRef.current = generation
     const store = storeRef.current
+    connectAbortControllerRef.current?.abort()
+    const abortController = new AbortController()
+    connectAbortControllerRef.current = abortController
 
     // (re)create the sandbox-manager when sandbox / team / root changes
     if (sandboxManagerRef.current) {
@@ -193,6 +202,8 @@ export default function SandboxInspectProvider({
       domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
       // Keep inspect connections from extending sandbox TTL via SDK default connect timeout.
       timeoutMs: options?.timeoutMs ?? 1_000,
+      requestTimeoutMs: options?.requestTimeoutMs,
+      signal: abortController.signal,
       apiHeaders: {
         ...sandboxManagementAuth.headers,
       },
@@ -200,12 +211,15 @@ export default function SandboxInspectProvider({
 
     if (
       connectGenerationRef.current !== generation ||
-      storeRef.current !== store ||
-      sandboxInfo?.sandboxID !== sandboxId
+      storeRef.current !== store
     ) {
+      if (connectAbortControllerRef.current === abortController) {
+        connectAbortControllerRef.current = null
+      }
       return
     }
 
+    connectAbortControllerRef.current = null
     sandboxManagerRef.current = new SandboxManager(store, sandbox, rootPath)
     await sandboxManagerRef.current.loadDirectory(rootPath)
 
@@ -217,12 +231,23 @@ export default function SandboxInspectProvider({
   }
 
   const resumeSandbox = async () => {
+    setSandboxResumeError(undefined)
     setIsSandboxResumePending(true)
-    await connectSandbox({ timeoutMs: SANDBOX_RESUME_TIMEOUT_MS })
-      .catch(() => undefined)
-      .finally(() => {
-        setIsSandboxResumePending(false)
+    try {
+      await connectSandbox({
+        requestTimeoutMs: SANDBOX_RESUME_TIMEOUT_MS,
+        timeoutMs: SANDBOX_RESUME_TIMEOUT_MS,
       })
+      await refetchSandboxInfo()
+      setIsSandboxResumePending(false)
+    } catch (error) {
+      setSandboxResumeError(
+        error instanceof Error
+          ? error.message
+          : 'Failed to resume sandbox. Please try again.'
+      )
+      setIsSandboxResumePending(false)
+    }
   }
 
   // handle sandbox connection / disconnection
@@ -235,6 +260,8 @@ export default function SandboxInspectProvider({
     }
 
     connectGenerationRef.current += 1
+    connectAbortControllerRef.current?.abort()
+    connectAbortControllerRef.current = null
     sandboxManagerRef.current?.stopWatching()
     sandboxManagerRef.current = null
 
@@ -243,14 +270,7 @@ export default function SandboxInspectProvider({
       team_id: teamId,
       root_path: rootPath,
     })
-  }, [
-    isRunning,
-    trackInteraction,
-    teamId,
-    sandboxId,
-    rootPath,
-    sandboxManagementAuth,
-  ])
+  }, [isRunning, trackInteraction, teamId, sandboxId, rootPath])
 
   if (!storeRef.current || !sandboxInfo) {
     return null // should never happen, but satisfies type-checker
@@ -260,6 +280,7 @@ export default function SandboxInspectProvider({
     store: storeRef.current,
     operations,
     isSandboxResumePending,
+    sandboxResumeError,
     resumeSandbox,
   }
 

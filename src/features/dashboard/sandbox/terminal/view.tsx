@@ -19,6 +19,7 @@ export default function SandboxTerminalView({
   sandboxManagementAuth,
 }: SandboxTerminalViewProps) {
   const [shouldResumeSandbox, setShouldResumeSandbox] = useState(false)
+  const [terminalResumeError, setTerminalResumeError] = useState<string>()
   const { team } = useDashboard()
   const { sandboxId } =
     useRouteParams<'/dashboard/[teamSlug]/sandboxes/[sandboxId]'>()
@@ -34,13 +35,20 @@ export default function SandboxTerminalView({
     template: sandboxTemplateId,
   }
 
-  const refetchSandbox = () => {
-    void refetchSandboxInfo()
-  }
-
   const finishSandboxResume = async () => {
     const nextSandboxInfo = await refetchSandboxInfo()
     if (nextSandboxInfo?.state === 'running') {
+      setTerminalResumeError(undefined)
+      setShouldResumeSandbox(false)
+    }
+  }
+
+  const handleSandboxAttachFailed = async () => {
+    const nextSandboxInfo = await refetchSandboxInfo()
+    if (shouldResumeSandbox && nextSandboxInfo?.state !== 'running') {
+      setTerminalResumeError(
+        'Failed to resume sandbox terminal. Please try again.'
+      )
       setShouldResumeSandbox(false)
     }
   }
@@ -58,7 +66,11 @@ export default function SandboxTerminalView({
       <SandboxTerminalEmptyState>
         <SandboxInspectNotFound
           resource="terminal"
-          onResumeSandbox={() => setShouldResumeSandbox(true)}
+          onResumeSandbox={() => {
+            setTerminalResumeError(undefined)
+            setShouldResumeSandbox(true)
+          }}
+          resumeError={terminalResumeError}
         />
       </SandboxTerminalEmptyState>
     )
@@ -73,7 +85,7 @@ export default function SandboxTerminalView({
           void finishSandboxResume()
         }}
         onSandboxAttachFailed={() => {
-          refetchSandbox()
+          void handleSandboxAttachFailed()
         }}
         sandboxConnectRequestTimeoutMs={
           shouldResumeSandbox ? SANDBOX_TERMINAL_RESUME_TIMEOUT_MS : undefined
