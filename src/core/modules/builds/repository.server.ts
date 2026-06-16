@@ -149,6 +149,10 @@ export function createBuildsRepository(
             finishedAt: build.finishedAt
               ? new Date(build.finishedAt).getTime()
               : null,
+            cpuCount: build.cpuCount,
+            memoryMB: build.memoryMB,
+            diskSizeMB: build.diskSizeMB,
+            envdVersion: build.envdVersion,
           })
         ),
         nextCursor: result.data?.nextCursor ?? null,
