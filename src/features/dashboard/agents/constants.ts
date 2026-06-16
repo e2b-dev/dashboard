@@ -1,0 +1,16 @@
+export const RECENT_SESSION_LIMIT = 3
+
+export const LOCAL_INFRA_HOSTNAMES = new Set([
+  'localhost',
+  '127.0.0.1',
+  '[::1]',
+])
+
+export const TERMINAL_WINDOW_OFFSET_PX = 28
+export const TERMINAL_WINDOW_MAX_CASCADE_STEPS = 5
+export const TERMINAL_WINDOW_DEFAULT_WIDTH_PX = 880
+export const TERMINAL_WINDOW_DEFAULT_HEIGHT_PX = 540
+export const TERMINAL_WINDOW_MIN_WIDTH_PX = 520
+export const TERMINAL_WINDOW_MIN_HEIGHT_PX = 320
+export const MINIMIZED_TERMINAL_HEIGHT_PX = 40
+export const MINIMIZED_TERMINAL_STACK_GAP_PX = 8
