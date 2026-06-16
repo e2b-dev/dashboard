@@ -7,7 +7,7 @@ import {
   createDefaultTemplatesRepository,
   createTemplatesRepository,
 } from '@/core/modules/templates/repository.server'
-import { auth } from '@/core/server/auth'
+import { getAuthContext } from '@/core/server/auth'
 import { resolveUserTeam } from '@/core/server/functions/team/resolve-user-team'
 import { infra } from '@/core/shared/clients/api'
 import { createSandboxManagementAuth } from '@/core/shared/sandbox-management-auth.server'
@@ -58,7 +58,7 @@ export async function TerminalLaunchPage({
     )
   }
 
-  const authContext = await auth.getAuthContext()
+  const authContext = await getAuthContext()
 
   if (!authContext) {
     return (

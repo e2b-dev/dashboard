@@ -3,7 +3,7 @@ import 'server-only'
 import { notFound, redirect } from 'next/navigation'
 import { FEATURE_FLAGS } from '@/configs/flags'
 import { AUTH_URLS } from '@/configs/urls'
-import { auth } from '@/core/server/auth'
+import { getAuthContext } from '@/core/server/auth'
 import { featureFlags } from '@/core/server/feature-flags/flags.server'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
 
@@ -14,7 +14,7 @@ type TeamRouteParams = Promise<{
 export async function requireAgentsDashboardAccess(params: TeamRouteParams) {
   const [{ teamSlug }, authContext] = await Promise.all([
     params,
-    auth.getAuthContext(),
+    getAuthContext(),
   ])
 
   if (!authContext) {
