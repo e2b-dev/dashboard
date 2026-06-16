@@ -64,10 +64,7 @@ export async function runDashboardProxy(
   // breaking the custom UI's flow creation and form submits. Only the custom
   // Elements UI needs this same-origin proxy (gated, so production is
   // unaffected).
-  if (
-    isOryCustomUiEnabled() &&
-    isOrySdkProxyPath(request.nextUrl.pathname)
-  ) {
+  if (isOryCustomUiEnabled() && isOrySdkProxyPath(request.nextUrl.pathname)) {
     return oryProxy(request)
   }
 
