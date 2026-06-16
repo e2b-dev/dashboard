@@ -47,6 +47,7 @@ export default function SandboxInspectProvider({
   const teamId = team.id
 
   const { sandboxInfo, isRunning } = useSandboxContext()
+  const sandboxId = sandboxInfo?.sandboxID
   const storeRef = useRef<FilesystemStore | null>(null)
   const sandboxManagerRef = useRef<SandboxManager | null>(null)
   const connectGenerationRef = useRef(0)
@@ -63,7 +64,7 @@ export default function SandboxInspectProvider({
 
     if (needsNewStore) {
       trackInteraction('initialized', {
-        sandbox_id: sandboxInfo?.sandboxID,
+        sandbox_id: sandboxId,
         team_id: teamId,
         root_path: rootPath,
       })
@@ -178,18 +179,17 @@ export default function SandboxInspectProvider({
   )
 
   const connectSandbox = async (options?: { timeoutMs?: number }) => {
-    if (!storeRef.current || !sandboxInfo || !teamId) return
+    if (!storeRef.current || !sandboxId || !teamId) return
     const generation = connectGenerationRef.current + 1
     connectGenerationRef.current = generation
     const store = storeRef.current
-    const sandboxId = sandboxInfo.sandboxID
 
     // (re)create the sandbox-manager when sandbox / team / root changes
     if (sandboxManagerRef.current) {
       sandboxManagerRef.current.stopWatching()
     }
 
-    const sandbox = await Sandbox.connect(sandboxInfo.sandboxID, {
+    const sandbox = await Sandbox.connect(sandboxId, {
       domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
       // Keep inspect connections from extending sandbox TTL via SDK default connect timeout.
       timeoutMs: options?.timeoutMs ?? 1_000,
@@ -201,7 +201,7 @@ export default function SandboxInspectProvider({
     if (
       connectGenerationRef.current !== generation ||
       storeRef.current !== store ||
-      sandboxInfo.sandboxID !== sandboxId
+      sandboxInfo?.sandboxID !== sandboxId
     ) {
       return
     }
@@ -210,7 +210,7 @@ export default function SandboxInspectProvider({
     await sandboxManagerRef.current.loadDirectory(rootPath)
 
     trackInteraction('started_watching', {
-      sandbox_id: sandboxInfo?.sandboxID,
+      sandbox_id: sandboxId,
       team_id: teamId,
       root_path: rootPath,
     })
@@ -239,7 +239,7 @@ export default function SandboxInspectProvider({
     sandboxManagerRef.current = null
 
     trackInteraction('stopped_watching', {
-      sandbox_id: sandboxInfo?.sandboxID,
+      sandbox_id: sandboxId,
       team_id: teamId,
       root_path: rootPath,
     })
@@ -247,8 +247,7 @@ export default function SandboxInspectProvider({
     isRunning,
     trackInteraction,
     teamId,
-    sandboxInfo,
-    sandboxInfo?.sandboxID,
+    sandboxId,
     rootPath,
     sandboxManagementAuth,
   ])
