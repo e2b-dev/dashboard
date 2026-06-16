@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import type { AgentTemplateConfig } from '@/configs/agents'
 import {
   TERMINAL_WINDOW_DEFAULT_HEIGHT_PX,
@@ -18,13 +18,25 @@ export function useAgentTerminalWindows() {
   const nextWindowIdRef = useRef(0)
   const nextMinimizedOrderRef = useRef(0)
 
-  useEffect(() => {
-    terminalWindowsRef.current = terminalWindows
-  }, [terminalWindows])
+  const updateTerminalWindows = (
+    updater:
+      | AgentTerminalWindow[]
+      | ((currentWindows: AgentTerminalWindow[]) => AgentTerminalWindow[])
+  ) => {
+    const nextWindows =
+      typeof updater === 'function'
+        ? updater(terminalWindowsRef.current)
+        : updater
+
+    terminalWindowsRef.current = nextWindows
+    setTerminalWindows(nextWindows)
+
+    return nextWindows
+  }
 
   const focusWindow = (windowId: string) => {
     setActiveWindowId(windowId)
-    setTerminalWindows((currentWindows) =>
+    updateTerminalWindows((currentWindows) =>
       currentWindows.map((terminalWindow) =>
         terminalWindow.id === windowId
           ? { ...terminalWindow, minimized: false }
@@ -50,13 +62,13 @@ export function useAgentTerminalWindows() {
       )
 
       if (existingWindow) {
-        const nextWindows = currentWindows.map((terminalWindow) =>
-          terminalWindow.id === existingWindow.id
-            ? { ...terminalWindow, minimized: false }
-            : terminalWindow
+        updateTerminalWindows((currentWindows) =>
+          currentWindows.map((terminalWindow) =>
+            terminalWindow.id === existingWindow.id
+              ? { ...terminalWindow, minimized: false }
+              : terminalWindow
+          )
         )
-        terminalWindowsRef.current = nextWindows
-        setTerminalWindows(nextWindows)
         setActiveWindowId(existingWindow.id)
         return
       }
@@ -64,7 +76,7 @@ export function useAgentTerminalWindows() {
 
     const windowId = `agent-terminal-${template.id}-${nextWindowIdRef.current}`
     nextWindowIdRef.current += 1
-    const nextWindows = [
+    updateTerminalWindows((currentWindows) => [
       ...currentWindows,
       {
         command: forceNewSandbox ? template.command : undefined,
@@ -79,15 +91,13 @@ export function useAgentTerminalWindows() {
         },
         template,
       },
-    ]
+    ])
 
-    terminalWindowsRef.current = nextWindows
-    setTerminalWindows(nextWindows)
     setActiveWindowId(windowId)
   }
 
   const closeWindow = (windowId: string) => {
-    setTerminalWindows((currentWindows) =>
+    updateTerminalWindows((currentWindows) =>
       currentWindows.filter((terminalWindow) => terminalWindow.id !== windowId)
     )
     setActiveWindowId((currentWindowId) =>
@@ -96,7 +106,7 @@ export function useAgentTerminalWindows() {
   }
 
   const minimizeWindow = (windowId: string) => {
-    setTerminalWindows((currentWindows) =>
+    updateTerminalWindows((currentWindows) =>
       currentWindows.map((terminalWindow) =>
         terminalWindow.id === windowId
           ? {
@@ -111,7 +121,7 @@ export function useAgentTerminalWindows() {
   }
 
   const moveWindow = (windowId: string, position: WindowPosition) => {
-    setTerminalWindows((currentWindows) =>
+    updateTerminalWindows((currentWindows) =>
       currentWindows.map((terminalWindow) =>
         terminalWindow.id === windowId
           ? { ...terminalWindow, position }
@@ -121,7 +131,7 @@ export function useAgentTerminalWindows() {
   }
 
   const resizeWindow = (windowId: string, size: WindowSize) => {
-    setTerminalWindows((currentWindows) =>
+    updateTerminalWindows((currentWindows) =>
       currentWindows.map((terminalWindow) =>
         terminalWindow.id === windowId
           ? { ...terminalWindow, size }
@@ -131,7 +141,7 @@ export function useAgentTerminalWindows() {
   }
 
   const attachSandboxToWindow = (windowId: string, sandboxId: string) => {
-    setTerminalWindows((currentWindows) =>
+    updateTerminalWindows((currentWindows) =>
       currentWindows.map((terminalWindow) =>
         terminalWindow.id === windowId
           ? {
