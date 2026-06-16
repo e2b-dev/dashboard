@@ -1,6 +1,7 @@
 import {
   createLoader,
   parseAsArrayOf,
+  parseAsInteger,
   parseAsString,
   parseAsStringEnum,
 } from 'nuqs/server'
@@ -10,6 +11,8 @@ export const templateBuildsFilterParams = {
     parseAsStringEnum(['building', 'failed', 'success'])
   ),
   buildIdOrTemplate: parseAsString,
+  cpuCount: parseAsInteger,
+  memoryMB: parseAsInteger,
 }
 
 export const loadTemplateBuildsFilters = createLoader(

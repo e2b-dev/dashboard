@@ -53,16 +53,20 @@ const BuildsTable = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
-  const { statuses, buildIdOrTemplate } = useFilters()
+  const { statuses, buildIdOrTemplate, cpuCount, memoryMB } = useFilters()
   const { isFilterRefetching, clearFilterRefetching } = useFilterChangeTracking(
     statuses,
-    buildIdOrTemplate
+    buildIdOrTemplate,
+    cpuCount,
+    memoryMB
   )
 
   const queryInput = {
     teamSlug,
     statuses,
     buildIdOrTemplate,
+    cpuCount,
+    memoryMB,
   }
 
   // Builds list query
@@ -157,7 +161,7 @@ const BuildsTable = () => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTop = 0
     }
-  }, [statuses, buildIdOrTemplate])
+  }, [statuses, buildIdOrTemplate, cpuCount, memoryMB])
 
   // Derived UI state
   const hasData = buildsWithLiveStatus.length > 0
@@ -257,7 +261,9 @@ export default BuildsTable
 
 function useFilterChangeTracking(
   statuses: string[],
-  buildIdOrTemplate: string | undefined
+  buildIdOrTemplate: string | undefined,
+  cpuCount: number | undefined,
+  memoryMB: number | undefined
 ) {
   const [isFilterRefetching, setIsFilterRefetching] = useState(false)
   const isFirstRender = useRef(true)
@@ -269,7 +275,7 @@ function useFilterChangeTracking(
       return
     }
     setIsFilterRefetching(true)
-  }, [statuses, buildIdOrTemplate])
+  }, [statuses, buildIdOrTemplate, cpuCount, memoryMB])
 
   const clearFilterRefetching = useCallback(() => {
     setIsFilterRefetching(false)

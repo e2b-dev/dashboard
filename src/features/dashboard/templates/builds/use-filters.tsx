@@ -18,6 +18,8 @@ export default function useFilters() {
   )
 
   const buildIdOrTemplate = filters?.buildIdOrTemplate ?? undefined
+  const cpuCount = filters.cpuCount ?? undefined
+  const memoryMB = filters.memoryMB ?? undefined
 
   const setStatuses = useDebounceCallback((statuses: BuildStatus[]) => {
     setFilters({ statuses: statuses })
@@ -30,10 +32,23 @@ export default function useFilters() {
     300
   )
 
+  const setResources = useDebounceCallback(
+    (resources: { cpuCount?: number; memoryMB?: number }) => {
+      setFilters({
+        cpuCount: resources.cpuCount ?? null,
+        memoryMB: resources.memoryMB ?? null,
+      })
+    },
+    300
+  )
+
   return {
     statuses,
     buildIdOrTemplate,
+    cpuCount,
+    memoryMB,
     setStatuses,
     setBuildIdOrTemplate,
+    setResources,
   }
 }

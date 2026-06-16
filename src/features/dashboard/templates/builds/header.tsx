@@ -11,7 +11,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
+import { FilterIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/ui/primitives/popover'
+import {
+  ResourcesFilter,
+  type ResourcesFilterValue,
+} from '../../common/resources-filter'
 import { Status } from './table-cells'
 import useFilters from './use-filters'
 
@@ -63,14 +73,25 @@ const STATUS_OPTIONS: Array<{ value: BuildStatus; label: string }> = [
 ]
 
 export default function BuildsHeader() {
-  const { statuses, setStatuses, buildIdOrTemplate, setBuildIdOrTemplate } =
-    useFilters()
+  const {
+    statuses,
+    setStatuses,
+    buildIdOrTemplate,
+    setBuildIdOrTemplate,
+    cpuCount,
+    memoryMB,
+    setResources,
+  } = useFilters()
 
   const [localBuildIdOrTemplate, setLocalBuildIdOrTemplate] = useState<string>(
     buildIdOrTemplate ?? ''
   )
 
   const [localStatuses, setLocalStatuses] = useState<BuildStatus[]>(statuses)
+  const [localResources, setLocalResources] = useState<ResourcesFilterValue>({
+    cpuCount,
+    memoryMB,
+  })
 
   useEffect(() => {
     setLocalBuildIdOrTemplate(buildIdOrTemplate ?? '')
@@ -79,6 +100,21 @@ export default function BuildsHeader() {
   useEffect(() => {
     setLocalStatuses(statuses)
   }, [statuses])
+
+  useEffect(() => {
+    setLocalResources({ cpuCount, memoryMB })
+  }, [cpuCount, memoryMB])
+
+  const handleResourcesChange = (next: {
+    cpuCount?: number
+    memoryMB?: number
+  }) => {
+    setLocalResources(next)
+    setResources(next)
+  }
+
+  const activeResourceCount =
+    (localResources.cpuCount ? 1 : 0) + (localResources.memoryMB ? 1 : 0)
 
   const toggleStatus = (status: BuildStatus) => {
     const isSelected = localStatuses.includes(status)
@@ -113,34 +149,52 @@ export default function BuildsHeader() {
         }}
       />
 
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="secondary" className="w-min pr-3 pl-2.5">
-            <StatusIcons selectedStatuses={localStatuses} /> Status •{' '}
-            {localStatuses.length}/{STATUS_OPTIONS.length}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          <DropdownMenuCheckboxItem
-            checked={localStatuses.length === STATUS_OPTIONS.length}
-            onCheckedChange={selectAllStatuses}
-            onSelect={(e) => e.preventDefault()}
-          >
-            All
-          </DropdownMenuCheckboxItem>
-          <DropdownMenuSeparator />
-          {STATUS_OPTIONS.map((option) => (
+      <div className="flex items-center gap-1">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="secondary" className="w-min pr-3 pl-2.5">
+              <StatusIcons selectedStatuses={localStatuses} /> Status •{' '}
+              {localStatuses.length}/{STATUS_OPTIONS.length}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
             <DropdownMenuCheckboxItem
-              key={option.value}
-              checked={localStatuses.includes(option.value)}
-              onCheckedChange={() => toggleStatus(option.value)}
+              checked={localStatuses.length === STATUS_OPTIONS.length}
+              onCheckedChange={selectAllStatuses}
               onSelect={(e) => e.preventDefault()}
             >
-              <Status status={option.value} />
+              All
             </DropdownMenuCheckboxItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+            <DropdownMenuSeparator />
+            {STATUS_OPTIONS.map((option) => (
+              <DropdownMenuCheckboxItem
+                key={option.value}
+                checked={localStatuses.includes(option.value)}
+                onCheckedChange={() => toggleStatus(option.value)}
+                onSelect={(e) => e.preventDefault()}
+              >
+                <Status status={option.value} />
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="secondary" className="w-min gap-2 pr-3 pl-2.5">
+              <FilterIcon className="size-4 text-fg-tertiary" />
+              Filter
+              {activeResourceCount > 0 ? ` • ${activeResourceCount}` : ''}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-auto p-0">
+            <ResourcesFilter
+              value={localResources}
+              onChange={handleResourcesChange}
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
     </div>
   )
 }

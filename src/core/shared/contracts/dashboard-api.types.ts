@@ -55,6 +55,10 @@ export interface paths {
           build_id_or_template?: components['parameters']['build_id_or_template']
           /** @description Comma-separated list of build statuses to include. */
           statuses?: components['parameters']['build_statuses']
+          /** @description Filter builds by exact vCPU count. */
+          cpuCount?: components['parameters']['builds_cpu_count']
+          /** @description Filter builds by exact memory size in MB. */
+          memoryMB?: components['parameters']['builds_memory_mb']
           /** @description Maximum number of items to return per page. */
           limit?: components['parameters']['builds_limit']
           /** @description Cursor returned by the previous list response in `created_at|build_id` format. */
@@ -1229,6 +1233,10 @@ export interface components {
     builds_limit: number
     /** @description Cursor returned by the previous list response in `created_at|build_id` format. */
     builds_cursor: string
+    /** @description Filter builds by exact vCPU count. */
+    builds_cpu_count: number
+    /** @description Filter builds by exact memory size in MB. */
+    builds_memory_mb: number
     /** @description Optional filter by build identifier, template identifier, or template alias. */
     build_id_or_template: string
     /** @description Comma-separated list of build statuses to include. */
