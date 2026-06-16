@@ -4,11 +4,11 @@ import Sandbox from 'e2b'
 import type { ReactNode } from 'react'
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from 'react'
 import type { SandboxManagementAuth } from '@/core/shared/sandbox-management-auth'
 import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
@@ -19,9 +19,13 @@ import { createFilesystemStore, type FilesystemStore } from './filesystem/store'
 import type { FilesystemOperations } from './filesystem/types'
 import { SandboxManager } from './sandbox-manager'
 
+const SANDBOX_RESUME_TIMEOUT_MS = 5 * 60 * 1000
+
 interface SandboxInspectContextValue {
   store: FilesystemStore
   operations: FilesystemOperations
+  isSandboxResumePending: boolean
+  resumeSandbox: () => Promise<void>
 }
 
 const SandboxInspectContext = createContext<SandboxInspectContextValue | null>(
@@ -45,6 +49,8 @@ export default function SandboxInspectProvider({
   const { sandboxInfo, isRunning } = useSandboxContext()
   const storeRef = useRef<FilesystemStore | null>(null)
   const sandboxManagerRef = useRef<SandboxManager | null>(null)
+  const connectGenerationRef = useRef(0)
+  const [isSandboxResumePending, setIsSandboxResumePending] = useState(false)
 
   const { trackInteraction } = useSandboxInspectAnalytics()
 
@@ -171,8 +177,12 @@ export default function SandboxInspectProvider({
     [isRunning, trackInteraction]
   )
 
-  const connectSandbox = useCallback(async () => {
+  const connectSandbox = async (options?: { timeoutMs?: number }) => {
     if (!storeRef.current || !sandboxInfo || !teamId) return
+    const generation = connectGenerationRef.current + 1
+    connectGenerationRef.current = generation
+    const store = storeRef.current
+    const sandboxId = sandboxInfo.sandboxID
 
     // (re)create the sandbox-manager when sandbox / team / root changes
     if (sandboxManagerRef.current) {
@@ -182,17 +192,21 @@ export default function SandboxInspectProvider({
     const sandbox = await Sandbox.connect(sandboxInfo.sandboxID, {
       domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
       // Keep inspect connections from extending sandbox TTL via SDK default connect timeout.
-      timeoutMs: 1_000,
+      timeoutMs: options?.timeoutMs ?? 1_000,
       apiHeaders: {
         ...sandboxManagementAuth.headers,
       },
     })
 
-    sandboxManagerRef.current = new SandboxManager(
-      storeRef.current,
-      sandbox,
-      rootPath
-    )
+    if (
+      connectGenerationRef.current !== generation ||
+      storeRef.current !== store ||
+      sandboxInfo.sandboxID !== sandboxId
+    ) {
+      return
+    }
+
+    sandboxManagerRef.current = new SandboxManager(store, sandbox, rootPath)
     await sandboxManagerRef.current.loadDirectory(rootPath)
 
     trackInteraction('started_watching', {
@@ -200,7 +214,16 @@ export default function SandboxInspectProvider({
       team_id: teamId,
       root_path: rootPath,
     })
-  }, [sandboxInfo, teamId, rootPath, trackInteraction, sandboxManagementAuth])
+  }
+
+  const resumeSandbox = async () => {
+    setIsSandboxResumePending(true)
+    await connectSandbox({ timeoutMs: SANDBOX_RESUME_TIMEOUT_MS })
+      .catch(() => undefined)
+      .finally(() => {
+        setIsSandboxResumePending(false)
+      })
+  }
 
   // handle sandbox connection / disconnection
   useEffect(() => {
@@ -211,7 +234,9 @@ export default function SandboxInspectProvider({
       return
     }
 
+    connectGenerationRef.current += 1
     sandboxManagerRef.current?.stopWatching()
+    sandboxManagerRef.current = null
 
     trackInteraction('stopped_watching', {
       sandbox_id: sandboxInfo?.sandboxID,
@@ -220,11 +245,12 @@ export default function SandboxInspectProvider({
     })
   }, [
     isRunning,
-    connectSandbox,
     trackInteraction,
     teamId,
+    sandboxInfo,
     sandboxInfo?.sandboxID,
     rootPath,
+    sandboxManagementAuth,
   ])
 
   if (!storeRef.current || !sandboxInfo) {
@@ -234,6 +260,8 @@ export default function SandboxInspectProvider({
   const contextValue: SandboxInspectContextValue = {
     store: storeRef.current,
     operations,
+    isSandboxResumePending,
+    resumeSandbox,
   }
 
   return (

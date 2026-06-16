@@ -11,6 +11,7 @@ import SandboxInspectNode from './node'
 import SandboxInspectNotFound from './not-found'
 import SandboxInspectParentDirItem from './parent-dir-item'
 import { StoppedBanner } from './stopped-banner'
+import { useSandboxInspectContext } from './context'
 
 interface SandboxInspectFilesystemProps {
   rootPath: string
@@ -20,6 +21,7 @@ export default function SandboxInspectFilesystem({
   rootPath,
 }: SandboxInspectFilesystemProps) {
   const { isRunning } = useSandboxContext()
+  const { isSandboxResumePending, resumeSandbox } = useSandboxInspectContext()
   const children = useRootChildren()
   const { isLoaded, isLoading } = useDirectoryState(rootPath)
   const showRootLoading =
@@ -39,7 +41,10 @@ export default function SandboxInspectFilesystem({
           {showRootLoading ? (
             <LoadingLayout />
           ) : !children.length ? (
-            <SandboxInspectNotFound />
+            <SandboxInspectNotFound
+              isResumePending={isSandboxResumePending}
+              onResumeSandbox={() => void resumeSandbox()}
+            />
           ) : (
             <ScrollArea className="h-full">
               <SandboxInspectParentDirItem rootPath={rootPath} />

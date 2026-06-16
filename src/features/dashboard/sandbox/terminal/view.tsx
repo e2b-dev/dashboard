@@ -1,6 +1,6 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import { type ReactNode, useState } from 'react'
 import type { SandboxManagementAuth } from '@/core/shared/sandbox-management-auth'
 import LoadingLayout from '@/features/dashboard/loading-layout'
 import DashboardTerminal from '@/features/dashboard/terminal/dashboard-terminal'
@@ -16,6 +16,7 @@ interface SandboxTerminalViewProps {
 export default function SandboxTerminalView({
   sandboxManagementAuth,
 }: SandboxTerminalViewProps) {
+  const [shouldResumeSandbox, setShouldResumeSandbox] = useState(false)
   const { team } = useDashboard()
   const { sandboxId } =
     useRouteParams<'/dashboard/[teamSlug]/sandboxes/[sandboxId]'>()
@@ -39,10 +40,17 @@ export default function SandboxTerminalView({
     return <LoadingLayout />
   }
 
-  if (isSandboxNotFound || !sandboxInfo || sandboxInfo.state !== 'running') {
+  if (
+    isSandboxNotFound ||
+    !sandboxInfo ||
+    (sandboxInfo.state !== 'running' && !shouldResumeSandbox)
+  ) {
     return (
       <SandboxTerminalEmptyState>
-        <SandboxInspectNotFound resource="terminal" />
+        <SandboxInspectNotFound
+          resource="terminal"
+          onResumeSandbox={() => setShouldResumeSandbox(true)}
+        />
       </SandboxTerminalEmptyState>
     )
   }
@@ -52,8 +60,14 @@ export default function SandboxTerminalView({
       <DashboardTerminal
         autoStart
         launchTarget={launchTarget}
-        onSandboxAttached={refetchSandbox}
-        onSandboxAttachFailed={refetchSandbox}
+        onSandboxAttached={() => {
+          setShouldResumeSandbox(false)
+          refetchSandbox()
+        }}
+        onSandboxAttachFailed={() => {
+          setShouldResumeSandbox(false)
+          refetchSandbox()
+        }}
         sandboxManagementAuth={sandboxManagementAuth}
         sandboxScoped
         teamSlug={team.slug}
