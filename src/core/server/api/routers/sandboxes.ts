@@ -29,6 +29,9 @@ const sandboxesRepositoryProcedure = protectedTeamProcedure.use(
   )
 )
 
+const AGENT_SANDBOX_HISTORY_LIMIT = 25
+const DASHBOARD_TERMINAL_METADATA_SOURCE = 'dashboard-terminal'
+
 export const sandboxesRouter = createTRPCRouter({
   // QUERIES
   getSandboxes: sandboxesRepositoryProcedure.query(async ({ ctx }) => {
@@ -51,6 +54,44 @@ export const sandboxesRouter = createTRPCRouter({
       sandboxes: sandboxesResult.data,
     }
   }),
+
+  getAgentSandboxes: sandboxesRepositoryProcedure
+    .input(
+      z.object({
+        template: z.string().trim().min(1),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      if (USE_MOCK_DATA) {
+        await new Promise((resolve) => setTimeout(resolve, 200))
+
+        const sandboxes = MOCK_SANDBOXES_DATA().filter(
+          (sandbox) =>
+            sandbox.metadata?.source === DASHBOARD_TERMINAL_METADATA_SOURCE &&
+            sandbox.metadata?.template === input.template
+        )
+
+        return {
+          sandboxes,
+        }
+      }
+
+      const sandboxesResult = await ctx.sandboxesRepository.listSandboxes({
+        limit: AGENT_SANDBOX_HISTORY_LIMIT,
+        metadata: {
+          source: DASHBOARD_TERMINAL_METADATA_SOURCE,
+          template: input.template,
+        },
+      })
+
+      if (!sandboxesResult.ok) {
+        throwTRPCErrorFromRepoError(sandboxesResult.error)
+      }
+
+      return {
+        sandboxes: sandboxesResult.data,
+      }
+    }),
 
   getSandboxesMetrics: sandboxesRepositoryProcedure
     .input(

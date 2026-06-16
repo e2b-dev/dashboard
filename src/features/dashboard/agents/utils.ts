@@ -11,27 +11,6 @@ import {
 } from './constants'
 import type { WindowPosition, WindowSize } from './types'
 
-const normalizeIdentifier = (value: string | undefined | null) =>
-  value?.trim().toLowerCase() ?? ''
-
-const getAgentMatchKeys = (template: AgentTemplateConfig) =>
-  new Set(
-    [template.template, template.id]
-      .map(normalizeIdentifier)
-      .filter((value) => value.length > 0)
-  )
-
-export const isAgentSandbox = (
-  sandbox: Sandbox,
-  template: AgentTemplateConfig
-): boolean => {
-  const matchKeys = getAgentMatchKeys(template)
-
-  return [sandbox.templateID, sandbox.alias, sandbox.metadata?.template]
-    .map(normalizeIdentifier)
-    .some((identifier) => matchKeys.has(identifier))
-}
-
 export const sortByNewestStartedAt = (a: Sandbox, b: Sandbox) => {
   const aTime = new Date(a.startedAt).getTime()
   const bTime = new Date(b.startedAt).getTime()

@@ -36,6 +36,12 @@ export interface GetSandboxMetricsOptions {
   endUnixMs: number
 }
 
+export interface ListSandboxesOptions {
+  limit?: number
+  metadata?: Record<string, string>
+  state?: InfraComponents['schemas']['SandboxState'][]
+}
+
 export interface SandboxesRepository {
   getSandboxLogs(
     sandboxId: string,
@@ -60,7 +66,7 @@ export interface SandboxesRepository {
     sandboxId: string,
     options: GetSandboxMetricsOptions
   ): Promise<RepoResult<InfraComponents['schemas']['SandboxMetric'][]>>
-  listSandboxes(): Promise<RepoResult<Sandboxes>>
+  listSandboxes(options?: ListSandboxesOptions): Promise<RepoResult<Sandboxes>>
   getSandboxesMetrics(
     sandboxIds: string[]
   ): Promise<RepoResult<SandboxesMetricsRecord>>
@@ -80,6 +86,16 @@ const SANDBOX_NOT_FOUND_MESSAGE =
 const SANDBOX_EVENTS_PAGE_SIZE = 100
 const SANDBOX_EVENTS_MAX_PAGES = 50
 const SANDBOX_LIFECYCLE_EVENT_PREFIX = 'sandbox.lifecycle.'
+
+const encodeMetadataFilter = (metadata: Record<string, string>) => {
+  const params = new URLSearchParams()
+
+  for (const [key, value] of Object.entries(metadata)) {
+    params.set(key, value)
+  }
+
+  return params.toString()
+}
 
 export function createSandboxesRepository(
   scope: SandboxesRequestScope,
@@ -356,7 +372,46 @@ export function createSandboxesRepository(
 
       return ok(result.data)
     },
-    async listSandboxes() {
+    async listSandboxes(options = {}) {
+      if (options.metadata || options.state || options.limit) {
+        const result = await deps.infraClient.GET('/v2/sandboxes', {
+          params: {
+            query: {
+              limit: options.limit,
+              metadata: options.metadata
+                ? encodeMetadataFilter(options.metadata)
+                : undefined,
+              state: options.state,
+            },
+          },
+          headers: {
+            ...deps.authHeaders(scope.accessToken, scope.teamId),
+          },
+          cache: 'no-store',
+        })
+
+        if (!result.response.ok || result.error) {
+          l.error({
+            key: 'repositories:sandboxes:list_sandboxes_v2:infra_error',
+            error: result.error,
+            team_id: scope.teamId,
+            context: {
+              status: result.response.status,
+              path: '/v2/sandboxes',
+            },
+          })
+          return err(
+            repoErrorFromHttp(
+              result.response.status,
+              result.error?.message ?? 'Failed to list sandboxes',
+              result.error
+            )
+          )
+        }
+
+        return ok(result.data)
+      }
+
       const result = await deps.infraClient.GET('/sandboxes', {
         headers: {
           ...deps.authHeaders(scope.accessToken, scope.teamId),

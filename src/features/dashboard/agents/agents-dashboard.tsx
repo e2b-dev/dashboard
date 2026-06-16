@@ -3,7 +3,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import type { AgentTemplateConfig } from '@/configs/agents'
-import type { Sandbox } from '@/core/modules/sandboxes/models'
 import type { SandboxManagementAuth } from '@/core/shared/sandbox-management-auth'
 import { useTRPC } from '@/trpc/client'
 import { AgentHistoryPanel } from './agent-history-panel'
@@ -11,30 +10,13 @@ import { AgentTemplateCard } from './agent-template-card'
 import { AgentTerminalWindowLayer } from './agent-terminal-window-layer'
 import { RECENT_SESSION_LIMIT } from './constants'
 import { useAgentTerminalWindows } from './use-agent-terminal-windows'
-import {
-  canPauseSandboxes,
-  isAgentSandbox,
-  sortByNewestStartedAt,
-} from './utils'
+import { canPauseSandboxes, sortByNewestStartedAt } from './utils'
 
 interface AgentsDashboardProps {
   sandboxManagementAuth: SandboxManagementAuth
   templates: AgentTemplateConfig[]
   teamSlug: string
 }
-
-const getSandboxesByAgentId = (
-  sandboxes: Sandbox[],
-  templates: AgentTemplateConfig[]
-) =>
-  Object.fromEntries(
-    templates.map((template) => [
-      template.id,
-      sandboxes
-        .filter((sandbox) => isAgentSandbox(sandbox, template))
-        .sort(sortByNewestStartedAt),
-    ])
-  ) as Record<string, Sandbox[]>
 
 export function AgentsDashboard({
   sandboxManagementAuth,
@@ -56,29 +38,26 @@ export function AgentsDashboard({
     terminalWindows,
   } = useAgentTerminalWindows()
 
+  const expandedTemplate = templates.find(
+    (template) => template.id === expandedAgentId
+  )
   const { data, error, isFetching, isPending, refetch } = useQuery(
-    trpc.sandboxes.getSandboxes.queryOptions(
-      { teamSlug },
+    trpc.sandboxes.getAgentSandboxes.queryOptions(
       {
+        teamSlug,
+        template: expandedTemplate?.template ?? '',
+      },
+      {
+        enabled: !!expandedTemplate,
         refetchOnMount: 'always',
         refetchOnWindowFocus: true,
       }
     )
   )
 
-  const sandboxesByAgentId = getSandboxesByAgentId(
-    data?.sandboxes ?? [],
-    templates
-  )
-  const expandedTemplate = templates.find(
-    (template) => template.id === expandedAgentId
-  )
-  const expandedSessions = expandedTemplate
-    ? (sandboxesByAgentId[expandedTemplate.id] ?? []).slice(
-        0,
-        RECENT_SESSION_LIMIT
-      )
-    : []
+  const expandedSessions = (data?.sandboxes ?? [])
+    .toSorted(sortByNewestStartedAt)
+    .slice(0, RECENT_SESSION_LIMIT)
 
   const refreshSessions = () => {
     void refetch()
