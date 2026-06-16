@@ -18,7 +18,6 @@ import CopyButtonInline from '@/ui/copy-button-inline'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import { CheckmarkIcon, CloseIcon } from '@/ui/primitives/icons'
-import { Loader } from '@/ui/primitives/loader'
 import {
   Tooltip,
   TooltipContent,
@@ -31,9 +30,10 @@ export function BuildId({ id }: { id: string }) {
   return (
     <CopyButtonInline
       value={id}
+      truncate={false}
       className="w-full text-left text-fg-tertiary font-mono prose-table-numeric"
     >
-      {id.slice(0, 6)}...{id.slice(-6)}
+      {id.slice(0, 7)}...{id.slice(-5)}
     </CopyButtonInline>
   )
 }
@@ -160,7 +160,7 @@ export function Status({ status, statusMessage }: StatusProps) {
   const showReason = status === 'failed' && Boolean(statusMessage)
 
   return (
-    <div className="flex items-center gap-3 min-w-0">
+    <div className="flex items-center gap-3 min-w-0 shrink-0">
       {showReason ? (
         <Tooltip>
           <TooltipTrigger asChild>{badge}</TooltipTrigger>
@@ -177,7 +177,7 @@ export function Status({ status, statusMessage }: StatusProps) {
 
 export function Cpu({ cpuCount }: { cpuCount: number }) {
   return (
-    <div className="w-full flex justify-center">
+    <div className="w-full flex justify-end">
       <ResourceUsage type="cpu" total={cpuCount} mode="simple" />
     </div>
   )
