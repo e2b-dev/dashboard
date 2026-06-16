@@ -1,10 +1,10 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 import {
+  type AuthUser,
   getUserProfile,
   handleCredentialChangeSuccess,
   updateUser,
-  type AuthUser,
 } from '@/core/server/auth'
 import { createTRPCRouter } from '@/core/server/trpc/init'
 import { protectedProcedure } from '@/core/server/trpc/procedures'
