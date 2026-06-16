@@ -1,26 +1,10 @@
 import 'server-only'
 
 import type { Identity } from '@ory/client-fetch'
-import type { Session } from 'next-auth'
 import type { AuthUser } from '../types'
 
 type FromOryIdentityOptions = {
   userId?: string
-}
-
-// Cheap path: build the user from the Auth.js session alone (no Ory call). Used
-// at request time by getAuthContext. `providers` is empty because the session
-// doesn't carry credential info — use fromOryIdentity when that's needed.
-export function fromAuthSession(session: Session): AuthUser {
-  return {
-    id: session.user.id,
-    email: session.user.email ?? null,
-    name: session.user.name ?? null,
-    avatarUrl: session.user.image ?? null,
-    providers: [],
-    canChangeEmail: false,
-    canChangePassword: false,
-  }
 }
 
 // Rich path: build the user from a full Kratos Identity (traits + credentials).

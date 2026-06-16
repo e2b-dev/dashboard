@@ -1,3 +1,4 @@
+import '@ory/elements-react/theme/styles.css'
 import { ALLOW_SEO_INDEXING } from '@/configs/flags'
 import { METADATA } from '@/configs/metadata'
 import { cn } from '@/lib/utils'

@@ -15,8 +15,6 @@ export const serverSchema = z.object({
   TURNSTILE_SECRET_KEY: z.string().optional(),
 
   AUTH_PROVIDER: z.enum(['supabase', 'ory']).optional(),
-  AUTH_SECRET: z.string().min(1).optional(),
-  AUTH_TRUST_HOST: z.string().optional(),
   ORY_SDK_URL: z.url().optional(),
   ORY_OAUTH2_CLIENT_ID: z.string().min(1).optional(),
   ORY_OAUTH2_CLIENT_SECRET: z.string().min(1).optional(),
@@ -77,6 +75,11 @@ export const clientSchema = z.object({
 
   NEXT_PUBLIC_INFRA_API_URL: z.url().optional(),
   NEXT_PUBLIC_DASHBOARD_API_URL: z.url().optional(),
+
+  // Ory Network SDK URL exposed to the browser + the @ory/nextjs proxy/flow
+  // helpers (they read NEXT_PUBLIC_ORY_SDK_URL, falling back to ORY_SDK_URL).
+  // Same host as ORY_SDK_URL; public because @ory/elements-react runs client-side.
+  NEXT_PUBLIC_ORY_SDK_URL: z.url().optional(),
 })
 
 const merged = serverSchema.extend(clientSchema.shape)

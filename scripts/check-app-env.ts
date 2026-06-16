@@ -7,8 +7,8 @@ loadEnvConfig(projectDir)
 
 // Always required when AUTH_PROVIDER=ory, regardless of deploy target.
 const oryRequiredEnvVars = [
-  'AUTH_SECRET',
   'ORY_SDK_URL',
+  'NEXT_PUBLIC_ORY_SDK_URL',
   'ORY_OAUTH2_CLIENT_ID',
   'ORY_OAUTH2_CLIENT_SECRET',
   'ORY_OAUTH2_AUDIENCE',

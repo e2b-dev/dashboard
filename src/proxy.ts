@@ -3,15 +3,23 @@ import {
   type NextRequest,
   NextResponse,
 } from 'next/server'
-import { auth as authjsMiddleware } from '@/auth'
 import { isOryAuthEnabled } from './configs/flags'
-import { getOryAuthRouteRedirect } from './core/server/auth/ory/auth-route-redirect'
-import { isOrySessionAuthenticated } from './core/server/auth/ory/authjs-session-boundary'
+import {
+  getOryAuthRouteRedirect,
+  getOryFlowPathForAuthRoute,
+} from './core/server/auth/ory/auth-route-redirect'
+import {
+  isOryProxyPath,
+  isOrySessionActiveInProxy,
+  oryProxyMiddleware,
+} from './core/server/auth/ory/proxy-runtime'
 import {
   handleAuthGate,
   handleMiddlewareRedirect,
   handleMiddlewareRewrite,
   handleRouteRewritePassthrough,
+  isAuthRoute,
+  isDashboardRoute,
 } from './core/server/http/proxy'
 import { l, serializeErrorForLog } from './core/shared/clients/logger/logger'
 
@@ -47,24 +55,40 @@ async function proxyCore(
   }
 }
 
-// In Ory mode the Auth.js middleware wrapper populates req.auth and manages its
-// session cookies, so auth is resolved here and threaded into proxyCore. Auth
-// pages still bypass the local UI, but only after checking whether an existing
-// session should send the user back to the dashboard instead of the hosted UI.
-const proxyWithOryAuth = authjsMiddleware((req, _event: NextFetchEvent) => {
-  const isAuthenticated = isOrySessionAuthenticated(req.auth)
-  const authRouteRedirect = getOryAuthRouteRedirect(req, isAuthenticated)
+// In Ory mode we (1) serve the Kratos self-service + whoami endpoints from this
+// origin via the @ory/nextjs proxy (so the flow stays on previews), and (2) gate
+// auth/dashboard routes on a real whoami check. The session status is resolved
+// here (middleware can't use getServerSession) and threaded into proxyCore as
+// knownAuth so the terminal auth gate never re-resolves it server-side.
+async function proxyWithOryAuth(request: NextRequest): Promise<Response> {
+  if (isOryProxyPath(request.nextUrl.pathname)) {
+    return oryProxyMiddleware(request)
+  }
+
+  const pathname = request.nextUrl.pathname
+  const gateRelevant =
+    isDashboardRoute(pathname) ||
+    isAuthRoute(pathname) ||
+    !!getOryFlowPathForAuthRoute(pathname)
+
+  // whoami only where a redirect decision depends on it; elsewhere the value is
+  // unused but must still be a boolean so the gate doesn't call the provider.
+  const isAuthenticated = gateRelevant
+    ? await isOrySessionActiveInProxy(request)
+    : false
+
+  const authRouteRedirect = getOryAuthRouteRedirect(request, isAuthenticated)
   if (authRouteRedirect) return authRouteRedirect
 
-  return proxyCore(req, isAuthenticated)
-})
+  return proxyCore(request, isAuthenticated)
+}
 
-export async function proxy(request: NextRequest, event: NextFetchEvent) {
+export async function proxy(request: NextRequest, _event: NextFetchEvent) {
   if (!isOryAuthEnabled()) {
     return proxyCore(request)
   }
 
-  return proxyWithOryAuth(request, event)
+  return proxyWithOryAuth(request)
 }
 
 export const config = {

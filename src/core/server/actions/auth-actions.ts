@@ -14,7 +14,6 @@ import { USER_MESSAGES } from '@/configs/user-messages'
 import { actionClient } from '@/core/server/actions/client'
 import { returnServerError } from '@/core/server/actions/utils'
 import { auth } from '@/core/server/auth'
-import { buildOryStartURL } from '@/core/server/auth/ory/build-start-url'
 import { supabaseAuthFlows } from '@/core/server/auth/supabase/flows'
 import {
   forgotPasswordSchema,
@@ -120,7 +119,11 @@ function redirectLegacyAuthToOryIfEnabled(
 ) {
   if (!isOryAuthEnabled()) return
 
-  throw redirect(buildOryStartURL(intent, returnTo))
+  // Safety net: in Ory mode the middleware already redirects the legacy auth
+  // pages to the same-origin Kratos flows, so these form actions shouldn't run.
+  const path = intent === 'signup' ? '/registration' : '/login'
+  const query = returnTo ? `?return_to=${encodeURIComponent(returnTo)}` : ''
+  throw redirect(`${path}${query}`)
 }
 
 export const signInWithOAuthAction = actionClient
