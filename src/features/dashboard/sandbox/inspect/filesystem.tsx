@@ -4,6 +4,7 @@ import LoadingLayout from '@/features/dashboard/loading-layout'
 import SandboxInspectFilesystemHeader from '@/features/dashboard/sandbox/inspect/filesystem-header'
 import { ScrollArea } from '@/ui/primitives/scroll-area'
 import { useSandboxContext } from '../context'
+import { useSandboxInspectContext } from './context'
 import SandboxInspectFrame from './frame'
 import { useDirectoryState } from './hooks/use-directory'
 import { useRootChildren } from './hooks/use-node'
@@ -11,7 +12,6 @@ import SandboxInspectNode from './node'
 import SandboxInspectNotFound from './not-found'
 import SandboxInspectParentDirItem from './parent-dir-item'
 import { StoppedBanner } from './stopped-banner'
-import { useSandboxInspectContext } from './context'
 
 interface SandboxInspectFilesystemProps {
   rootPath: string
