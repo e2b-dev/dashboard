@@ -178,7 +178,9 @@ export const TimezoneSettings = ({ className }: TimezoneSettingsProps) => {
             className={cn(!showUseBrowserTimezoneButton && 'invisible')}
             disabled={!showUseBrowserTimezoneButton || isSaving}
             aria-hidden={!showUseBrowserTimezoneButton}
-            tabIndex={showUseBrowserTimezoneButton && !isSaving ? undefined : -1}
+            tabIndex={
+              showUseBrowserTimezoneButton && !isSaving ? undefined : -1
+            }
             onClick={() => {
               if (browserTimezone) void handleTimezoneSelect(browserTimezone)
             }}
