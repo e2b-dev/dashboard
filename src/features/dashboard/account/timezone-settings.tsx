@@ -122,8 +122,12 @@ export const TimezoneSettings = ({ className }: TimezoneSettingsProps) => {
               {timezoneLabel}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[24rem] max-w-[calc(100vw-2rem)] p-0">
-            <Command>
+          <PopoverContent
+            side="top"
+            avoidCollisions={false}
+            className="w-[24rem] max-w-[calc(100vw-2rem)] p-0"
+          >
+            <Command className="flex-col-reverse [&_[cmdk-input-wrapper]]:border-t [&_[cmdk-input-wrapper]]:border-b-0">
               <CommandInput placeholder="Search timezones..." />
               <CommandList>
                 <CommandEmpty>No timezones found.</CommandEmpty>
