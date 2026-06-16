@@ -137,27 +137,31 @@ async function runTrafficSimulation(config: TrafficTestConfig) {
 }
 
 describe('E2B Sandbox traffic simulator', () => {
-  it(`simulates traffic for ${TEST_DURATION_MINUTES} minutes with spawn probability ${SPAWN_PROBABILITY}`, {
-    timeout: (TEST_DURATION_MINUTES + 1) * 60 * 1000,
-  }, async () => {
-    const testConfig: TrafficTestConfig = {
-      testDurationMinutes: TEST_DURATION_MINUTES,
-      spawnProbability: SPAWN_PROBABILITY,
-      maxConcurrentSandboxes: MAX_CONCURRENT_SANDBOXES,
-      sandboxTimeoutMs: SBX_TIMEOUT_MS,
-      template: TEMPLATE,
+  it(
+    `simulates traffic for ${TEST_DURATION_MINUTES} minutes with spawn probability ${SPAWN_PROBABILITY}`,
+    {
+      timeout: (TEST_DURATION_MINUTES + 1) * 60 * 1000,
+    },
+    async () => {
+      const testConfig: TrafficTestConfig = {
+        testDurationMinutes: TEST_DURATION_MINUTES,
+        spawnProbability: SPAWN_PROBABILITY,
+        maxConcurrentSandboxes: MAX_CONCURRENT_SANDBOXES,
+        sandboxTimeoutMs: SBX_TIMEOUT_MS,
+        template: TEMPLATE,
+      }
+
+      l.info('test:starting_traffic_simulation', {
+        ...testConfig,
+        testStartTime: new Date().toISOString(),
+      })
+
+      const results = await runTrafficSimulation(testConfig)
+
+      l.info('test:traffic_simulation_completed', {
+        ...results,
+        testEndTime: new Date().toISOString(),
+      })
     }
-
-    l.info('test:starting_traffic_simulation', {
-      ...testConfig,
-      testStartTime: new Date().toISOString(),
-    })
-
-    const results = await runTrafficSimulation(testConfig)
-
-    l.info('test:traffic_simulation_completed', {
-      ...results,
-      testEndTime: new Date().toISOString(),
-    })
-  })
+  )
 })

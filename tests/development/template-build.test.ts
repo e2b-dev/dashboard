@@ -19,43 +19,47 @@ if (!TEST_E2B_DOMAIN || !TEST_E2B_API_KEY) {
 const BUILD_TIMEOUT_MS = 5 * 60 * 1000
 
 describe('E2B Template build test', () => {
-  it('builds a basic template with Node.js', {
-    timeout: BUILD_TIMEOUT_MS,
-  }, async () => {
-    const templateName = `test-template-${Date.now()}`
+  it(
+    'builds a basic template with Node.js',
+    {
+      timeout: BUILD_TIMEOUT_MS,
+    },
+    async () => {
+      const templateName = `test-template-${Date.now()}`
 
-    l.info('test:starting_template_build', {
-      templateName,
-      startTime: new Date().toISOString(),
-    })
+      l.info('test:starting_template_build', {
+        templateName,
+        startTime: new Date().toISOString(),
+      })
 
-    const template = Template()
-      .skipCache()
-      .fromNodeImage('lts')
-      .setWorkdir('/app')
-      .runCmd('echo "Hello from template build"')
-      .setStartCmd('node --version', 'node --version')
+      const template = Template()
+        .skipCache()
+        .fromNodeImage('lts')
+        .setWorkdir('/app')
+        .runCmd('echo "Hello from template build"')
+        .setStartCmd('node --version', 'node --version')
 
-    const buildInfo = await Template.build(template, {
-      alias: templateName,
-      apiKey: TEST_E2B_API_KEY,
-      domain: TEST_E2B_DOMAIN,
-      onBuildLogs: (log) => {
-        l.info('test:build_log', {
-          level: log.level,
-          message: log.message,
-        })
-      },
-    })
+      const buildInfo = await Template.build(template, {
+        alias: templateName,
+        apiKey: TEST_E2B_API_KEY,
+        domain: TEST_E2B_DOMAIN,
+        onBuildLogs: (log) => {
+          l.info('test:build_log', {
+            level: log.level,
+            message: log.message,
+          })
+        },
+      })
 
-    l.info('test:template_build_completed', {
-      templateId: buildInfo.templateId,
-      buildId: buildInfo.buildId,
-      alias: buildInfo.alias,
-      endTime: new Date().toISOString(),
-    })
+      l.info('test:template_build_completed', {
+        templateId: buildInfo.templateId,
+        buildId: buildInfo.buildId,
+        alias: buildInfo.alias,
+        endTime: new Date().toISOString(),
+      })
 
-    expect(buildInfo.templateId).toBeDefined()
-    expect(buildInfo.buildId).toBeDefined()
-  })
+      expect(buildInfo.templateId).toBeDefined()
+      expect(buildInfo.buildId).toBeDefined()
+    }
+  )
 })
