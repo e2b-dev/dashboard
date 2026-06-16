@@ -18,6 +18,7 @@ export default async function TerminalPage({
   searchParams,
 }: TerminalPageProps) {
   const { command = '', sandboxId, template } = await searchParams
+
   return (
     <TerminalLaunchPage
       command={command}

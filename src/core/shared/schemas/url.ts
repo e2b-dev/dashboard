@@ -3,8 +3,8 @@ import { z } from 'zod'
 /**
  * Validates that a string is a well-formed HTTP or HTTPS URL.
  *
- * Unlike `z.httpUrl()`, this also accepts localhost / 127.0.0.1 URLs so the
- * email-verification flow works against a local Supabase setup in development.
+ * Unlike `z.httpUrl()`, this also accepts localhost / 127.0.0.1 URLs for
+ * development redirects.
  *
  * The schema only validates URL structure — redirect safety is enforced
  * downstream by `isExternalOrigin()` and `buildRedirectUrl()` in the auth

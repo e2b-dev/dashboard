@@ -22,29 +22,6 @@ export const INCLUDE_DASHBOARD_FEEDBACK_SURVEY =
 export const INCLUDE_REPORT_ISSUE =
   process.env.NEXT_PUBLIC_INCLUDE_REPORT_ISSUE === '1'
 
-const CAPTCHA_ENABLED = process.env.NEXT_PUBLIC_CAPTCHA_ENABLED === '1'
-
-export const CAPTCHA_REQUIRED_CLIENT =
-  CAPTCHA_ENABLED && !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
-
-export const CAPTCHA_REQUIRED_SERVER =
-  CAPTCHA_ENABLED &&
-  !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY &&
-  !!process.env.TURNSTILE_SECRET_KEY
-
-export function isOryAuthEnabled() {
-  return process.env.AUTH_PROVIDER === 'ory'
-}
-
-// Freezes interactive auth entry points while we migrate identity stores.
-// When on: blocks sign-ups and sign-ins so OAuth callback URLs can move
-// between providers without sending users into broken provider flows.
-export function isAuthMigrationInProgress() {
-  return process.env.NEXT_PUBLIC_AUTH_MIGRATION_IN_PROGRESS === '1'
-}
-
-export const AUTH_MIGRATION_IN_PROGRESS = isAuthMigrationInProgress()
-
 export type BooleanFeatureFlagDefinition = {
   kind: 'boolean'
   key: string
