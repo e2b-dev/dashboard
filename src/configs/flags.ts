@@ -1,8 +1,4 @@
 import type { z } from 'zod'
-import {
-  type AgentTemplateConfig,
-  AgentTemplatesFeatureFlagSchema,
-} from '@/configs/agents'
 
 export const ALLOW_SEO_INDEXING = process.env.ALLOW_SEO_INDEXING === '1'
 export const VERBOSE = process.env.NEXT_PUBLIC_VERBOSE === '1'
@@ -45,7 +41,6 @@ type DashboardFeatureFlags = {
   isAdmin: BooleanFeatureFlagDefinition
   iExist: BooleanFeatureFlagDefinition
   agentsEnabled: BooleanFeatureFlagDefinition
-  agentTemplates: JsonFeatureFlagDefinition<AgentTemplateConfig[]>
 }
 
 export const FEATURE_FLAGS = {
@@ -66,12 +61,5 @@ export const FEATURE_FLAGS = {
     key: 'agents_enabled',
     defaultValue: false,
     description: 'Enables direct dashboard access to agent templates.',
-  },
-  agentTemplates: {
-    kind: 'json',
-    key: 'agent_templates',
-    defaultValue: [],
-    schema: AgentTemplatesFeatureFlagSchema,
-    description: 'Configures agent templates shown in the dashboard.',
   },
 } as const satisfies DashboardFeatureFlags

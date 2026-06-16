@@ -6,6 +6,7 @@ export const serverSchema = z.object({
 
   ENABLE_USER_BOOTSTRAP: z.string().optional(),
   DASHBOARD_API_ADMIN_TOKEN: z.string().min(1).optional(),
+  DASHBOARD_ENV: z.enum(['dev', 'staging', 'prod']).optional(),
 
   BILLING_API_URL: z.url().optional(),
   PLAIN_API_KEY: z.string().min(1).optional(),

@@ -1,4 +1,7 @@
 import { z } from 'zod'
+import { devAgentTemplates } from './agents/dev'
+import { prodAgentTemplates } from './agents/prod'
+import { stagingAgentTemplates } from './agents/staging'
 
 export type AgentId = string
 
@@ -15,30 +18,6 @@ export type AgentTemplateConfig = {
   updatedAt?: string
   deletedAt?: string | null
 }
-
-const DEFAULT_AGENT_TEMPLATES = [
-  {
-    id: 'codex',
-    name: 'Codex',
-    command: 'codex',
-    template: 'codex',
-    description: 'Codex CLI for coding sessions.',
-  },
-  {
-    id: 'claude',
-    name: 'Claude',
-    command: 'claude',
-    template: 'claude',
-    description: 'Claude Code for coding sessions.',
-  },
-  {
-    id: 'opencode',
-    name: 'OpenCode',
-    command: 'opencode',
-    template: 'opencode',
-    description: 'OpenCode for coding sessions.',
-  },
-] satisfies AgentTemplateConfig[]
 
 export const AgentTemplateConfigSchema = z
   .object({
@@ -83,18 +62,30 @@ export const AgentTemplateConfigSchema = z
 export const AgentTemplatesSchema = z
   .array(AgentTemplateConfigSchema)
   .min(1) satisfies z.ZodType<AgentTemplateConfig[]>
-export const AgentTemplatesFeatureFlagSchema = z.array(
-  AgentTemplateConfigSchema
-) satisfies z.ZodType<AgentTemplateConfig[]>
 
-export const AGENT_TEMPLATES: AgentTemplateConfig[] = DEFAULT_AGENT_TEMPLATES
+type AgentTemplateEnvironment = 'dev' | 'staging' | 'prod'
 
-export const getAgentTemplates = () => DEFAULT_AGENT_TEMPLATES
+const AGENT_TEMPLATES_BY_ENVIRONMENT = {
+  dev: devAgentTemplates,
+  staging: stagingAgentTemplates,
+  prod: prodAgentTemplates,
+} satisfies Record<AgentTemplateEnvironment, AgentTemplateConfig[]>
 
-export const resolveAgentTemplates = (
-  templates: AgentTemplateConfig[] | undefined
-) => templates ?? getAgentTemplates()
+const resolveAgentTemplateEnvironment = (): AgentTemplateEnvironment => {
+  switch (process.env.DASHBOARD_ENV) {
+    case 'dev':
+    case 'staging':
+    case 'prod':
+      return process.env.DASHBOARD_ENV
+    default:
+      break
+  }
 
-export const AGENT_TEMPLATE_BY_ID = Object.fromEntries(
-  AGENT_TEMPLATES.map((template) => [template.id, template])
-) as Record<string, AgentTemplateConfig>
+  if (process.env.VERCEL_ENV === 'production') return 'prod'
+  if (process.env.VERCEL_ENV === 'preview') return 'staging'
+
+  return 'dev'
+}
+
+export const getAgentTemplates = () =>
+  AGENT_TEMPLATES_BY_ENVIRONMENT[resolveAgentTemplateEnvironment()]
