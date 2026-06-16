@@ -1,7 +1,7 @@
 import { createSandboxManagementAuth } from '@/core/shared/sandbox-management-auth.server'
 import { AgentsDashboard } from '@/features/dashboard/agents/agents-dashboard'
 import { Page } from '@/features/dashboard/layouts/page'
-import { HydrateClient, prefetch, trpc, trpcCaller } from '@/trpc/server'
+import { HydrateClient, trpcCaller } from '@/trpc/server'
 import { requireAgentsDashboardAccess } from './access'
 
 export default async function AgentsPage({
@@ -10,12 +10,6 @@ export default async function AgentsPage({
   const { authContext, teamId, teamSlug } =
     await requireAgentsDashboardAccess(params)
   const { templates } = await trpcCaller.agents.getTemplates({ teamSlug })
-
-  prefetch(
-    trpc.sandboxes.getSandboxes.queryOptions({
-      teamSlug,
-    })
-  )
 
   return (
     <HydrateClient>
