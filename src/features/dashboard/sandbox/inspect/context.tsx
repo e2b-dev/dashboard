@@ -185,7 +185,7 @@ export default function SandboxInspectProvider({
     requestTimeoutMs?: number
     timeoutMs?: number
   }) => {
-    if (!storeRef.current || !sandboxId || !teamId) return
+    if (!storeRef.current || !sandboxId || !teamId) return false
     const generation = connectGenerationRef.current + 1
     connectGenerationRef.current = generation
     const store = storeRef.current
@@ -216,7 +216,7 @@ export default function SandboxInspectProvider({
       if (connectAbortControllerRef.current === abortController) {
         connectAbortControllerRef.current = null
       }
-      return
+      return false
     }
 
     connectAbortControllerRef.current = null
@@ -228,16 +228,22 @@ export default function SandboxInspectProvider({
       team_id: teamId,
       root_path: rootPath,
     })
+    return true
   }
 
   const resumeSandbox = async () => {
     setSandboxResumeError(undefined)
     setIsSandboxResumePending(true)
     try {
-      await connectSandbox({
+      const didConnect = await connectSandbox({
         requestTimeoutMs: SANDBOX_RESUME_TIMEOUT_MS,
         timeoutMs: SANDBOX_RESUME_TIMEOUT_MS,
       })
+      if (!didConnect) {
+        setSandboxResumeError('Failed to resume sandbox. Please try again.')
+        setIsSandboxResumePending(false)
+        return
+      }
       await refetchSandboxInfo()
       setIsSandboxResumePending(false)
     } catch (error) {
