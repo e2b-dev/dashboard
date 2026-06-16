@@ -71,6 +71,7 @@ export default function SandboxInspectProvider({
 
   const { sandboxInfo, isRunning, refetchSandboxInfo } = useSandboxContext()
   const sandboxId = sandboxInfo?.sandboxID
+  const sandboxState = sandboxInfo?.state
   const [store] = useState(() => createStoreWithRoot(rootPath))
   const sandboxManagerRef = useRef<SandboxManager | null>(null)
   const connectGenerationRef = useRef(0)
@@ -82,8 +83,8 @@ export default function SandboxInspectProvider({
   const { trackInteraction } = useSandboxInspectAnalytics()
   const normalizedRootPath = normalizePath(rootPath)
   const expectedConnectionKey =
-    sandboxId && teamId
-      ? `${teamId}:${sandboxId}:${normalizedRootPath}`
+    sandboxId && teamId && sandboxState
+      ? `${teamId}:${sandboxId}:${normalizedRootPath}:${sandboxState}`
       : undefined
 
   // ---------- filesystem operations exposed via context ----------
@@ -169,6 +170,7 @@ export default function SandboxInspectProvider({
   )
 
   const connectSandbox = async (options?: {
+    connectionKey?: string | null
     requestTimeoutMs?: number
     timeoutMs?: number
   }) => {
@@ -205,7 +207,9 @@ export default function SandboxInspectProvider({
     connectAbortControllerRef.current = null
     sandboxManagerRef.current = new SandboxManager(store, sandbox, rootPath)
     await sandboxManagerRef.current.loadDirectory(rootPath)
-    setConnectionKey(expectedConnectionKey)
+    if (options?.connectionKey !== null) {
+      setConnectionKey(options?.connectionKey ?? expectedConnectionKey)
+    }
 
     trackInteraction('started_watching', {
       sandbox_id: sandboxId,
@@ -217,10 +221,21 @@ export default function SandboxInspectProvider({
 
   useQuery({
     queryKey: ['sandbox-inspect-connect', expectedConnectionKey],
-    queryFn: () => connectSandbox(),
+    queryFn: () => {
+      if (!isRunning) {
+        connectGenerationRef.current += 1
+        connectAbortControllerRef.current?.abort()
+        connectAbortControllerRef.current = null
+        sandboxManagerRef.current?.stopWatching()
+        sandboxManagerRef.current = null
+        setConnectionKey(expectedConnectionKey)
+        return false
+      }
+
+      return connectSandbox({ connectionKey: expectedConnectionKey })
+    },
     enabled: Boolean(
-      isRunning &&
-        expectedConnectionKey &&
+      expectedConnectionKey &&
         connectionKey !== expectedConnectionKey &&
         !isSandboxResumePending
     ),
@@ -236,6 +251,7 @@ export default function SandboxInspectProvider({
     setIsSandboxResumePending(true)
     try {
       const didConnect = await connectSandbox({
+        connectionKey: null,
         requestTimeoutMs: SANDBOX_RESUME_TIMEOUT_MS,
         timeoutMs: SANDBOX_RESUME_TIMEOUT_MS,
       })
@@ -244,7 +260,12 @@ export default function SandboxInspectProvider({
         setIsSandboxResumePending(false)
         return
       }
-      await refetchSandboxInfo()
+      const nextSandboxInfo = await refetchSandboxInfo()
+      if (nextSandboxInfo?.state === 'running') {
+        setConnectionKey(
+          `${teamId}:${nextSandboxInfo.sandboxID}:${normalizedRootPath}:${nextSandboxInfo.state}`
+        )
+      }
       setIsSandboxResumePending(false)
     } catch (error) {
       setSandboxResumeError(

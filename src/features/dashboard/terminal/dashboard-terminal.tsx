@@ -342,13 +342,23 @@ export default function DashboardTerminal({
       try {
         const sandbox = await openSandbox()
 
-        if (!sandbox) return
+        if (!sandbox) {
+          if (isCurrentStart()) {
+            setStatus('idle')
+          }
+          return
+        }
 
         appendOutput(`Sandbox ${sandbox.sandboxId} is running.\r\n`)
 
         const pty = await openPty(sandbox)
 
-        if (!pty) return
+        if (!pty) {
+          if (isCurrentStart()) {
+            setStatus('idle')
+          }
+          return
+        }
 
         if (!isCurrentStart()) {
           try {
