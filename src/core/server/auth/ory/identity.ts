@@ -56,9 +56,8 @@ export function fromOryIdentity(
 }
 
 // Kratos credential keys (`password`, `oidc`, …) don't match the provider
-// vocabulary the dashboard UI expects (Supabase emits `email` for the
-// email/password credential). Map `password` → `email` for display parity,
-// while preserving other keys like `oidc`.
+// vocabulary the dashboard UI expects. Map `password` → `email` for display
+// parity, while preserving other keys like `oidc`.
 function normalizeProviders(credentials: Identity['credentials']): string[] {
   if (!credentials) return []
 

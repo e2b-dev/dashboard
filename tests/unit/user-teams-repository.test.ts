@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { AUTHORIZATION_HEADER, BEARER_TOKEN_PREFIX } from '@/configs/api'
 import type { components as DashboardComponents } from '@/contracts/dashboard-api'
 import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
 
@@ -40,7 +41,9 @@ describe('createUserTeamsRepository', () => {
       {
         apiClient:
           apiClient as unknown as typeof import('@/core/shared/clients/api').api,
-        authHeaders: vi.fn(() => ({ 'X-Supabase-Token': 'token' })),
+        authHeaders: vi.fn(() => ({
+          [AUTHORIZATION_HEADER]: `${BEARER_TOKEN_PREFIX}token`,
+        })),
       }
     )
 
