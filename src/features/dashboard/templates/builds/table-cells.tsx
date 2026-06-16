@@ -18,7 +18,6 @@ import CopyButtonInline from '@/ui/copy-button-inline'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import { CheckmarkIcon, CloseIcon } from '@/ui/primitives/icons'
-import { Loader } from '@/ui/primitives/loader'
 import {
   Tooltip,
   TooltipContent,
