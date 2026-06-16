@@ -3,22 +3,14 @@ import 'server-cli-only'
 import { type NextRequest, NextResponse } from 'next/server'
 import { ALLOW_SEO_INDEXING } from '@/configs/flags'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { createAuthForProxy } from '@/core/server/auth'
 import { getMiddlewareRedirectFromPath } from '@/lib/utils/redirects'
 import { getRewriteForPath } from '@/lib/utils/rewrites'
-import { isProxyAuthRoute, isProxyDashboardRoute } from './proxy-plan'
-
-export { isProxyAuthRoute as isAuthRoute }
-export { isProxyDashboardRoute as isDashboardRoute }
+import { isProxyAuthRoute, isProxyDashboardRoute } from './classifier'
 
 function isDashboardTerminalRoute(pathname: string): boolean {
   return (
     pathname === '/dashboard/terminal' || pathname === '/dashboard/terminal/'
   )
-}
-
-export function buildRedirectUrl(path: string, request: NextRequest): URL {
-  return new URL(path, request.url)
 }
 
 export function getAuthRedirect(
@@ -30,24 +22,16 @@ export function getAuthRedirect(
     !isDashboardTerminalRoute(request.nextUrl.pathname) &&
     !isAuthenticated
   ) {
-    return NextResponse.redirect(buildRedirectUrl(AUTH_URLS.SIGN_IN, request))
+    return NextResponse.redirect(new URL(AUTH_URLS.SIGN_IN, request.url))
   }
 
   if (isProxyAuthRoute(request.nextUrl.pathname) && isAuthenticated) {
-    return NextResponse.redirect(
-      buildRedirectUrl(PROTECTED_URLS.DASHBOARD, request)
-    )
+    return NextResponse.redirect(new URL(PROTECTED_URLS.DASHBOARD, request.url))
   }
 
   return null
 }
 
-// The handlers below are the ordered concerns the proxy runs for every request.
-// Each returns a Response when it handles the request, or null to fall through
-// to the next concern. They live here (not in static next.config matchers)
-// because they need custom headers / runtime path logic.
-
-// Redirects that require custom response headers.
 export function handleMiddlewareRedirect(
   request: NextRequest
 ): NextResponse | null {
@@ -60,8 +44,6 @@ export function handleMiddlewareRedirect(
   })
 }
 
-// Catch-all route rewrites are resolved by the route itself, so the proxy just
-// passes them through untouched.
 export function handleRouteRewritePassthrough(
   request: NextRequest
 ): NextResponse | null {
@@ -69,8 +51,6 @@ export function handleRouteRewritePassthrough(
   return config ? NextResponse.next({ request }) : null
 }
 
-// Rewrites the proxy performs itself (serving another origin under our domain),
-// tagging the request/response with the SEO-indexing intent.
 export function handleMiddlewareRewrite(
   request: NextRequest
 ): NextResponse | null {
@@ -103,18 +83,10 @@ export function handleMiddlewareRewrite(
   return response
 }
 
-// Terminal concern: gate dashboard/auth routes on authentication. `knownAuth`
-// is supplied in Ory mode (resolved by the Auth.js middleware wrapper); in
-// Supabase mode it's resolved here from the request/response cookies.
-export async function handleAuthGate(
+export function handleAuthGate(
   request: NextRequest,
-  knownAuth?: boolean
-): Promise<Response> {
+  isAuthenticated: boolean
+): Response {
   const response = NextResponse.next({ request })
-
-  const isAuthenticated =
-    knownAuth ??
-    !!(await createAuthForProxy(request, response).getAuthContext())
-
   return getAuthRedirect(request, isAuthenticated) ?? response
 }

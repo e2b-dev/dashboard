@@ -9,7 +9,6 @@ export type AuthContext = {
 
 export type SignOutOptions = {
   origin?: string
-  scope?: 'local' | 'others' | 'global'
   returnTo?: string
 }
 
@@ -44,9 +43,4 @@ export type UpdateUserResult =
   | { ok: true; user: AuthUser }
   | { ok: false; code: UpdateUserErrorCode; message?: string }
 
-// How the caller should drive the account-settings re-authentication step.
-// Supabase signs the user out and bounces through /sign-in; Ory forces a
-// fresh OAuth2 login via the oauth-start route.
-export type ReauthDispatch =
-  | { kind: 'sign-out'; returnTo: string }
-  | { kind: 'redirect'; to: string }
+export type ReauthDispatch = { to: string }

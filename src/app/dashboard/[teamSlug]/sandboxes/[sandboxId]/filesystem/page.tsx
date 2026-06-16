@@ -2,7 +2,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { COOKIE_KEYS } from '@/configs/cookies'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { auth } from '@/core/server/auth'
+import { getAuthContext } from '@/core/server/auth'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
 import { createSandboxManagementAuth } from '@/core/shared/sandbox-management-auth.server'
 import SandboxInspectView from '@/features/dashboard/sandbox/inspect/view'
@@ -22,7 +22,7 @@ export default async function SandboxInspectPage({
   const [{ teamSlug }, cookieStore, authContext] = await Promise.all([
     params,
     cookies(),
-    auth.getAuthContext(),
+    getAuthContext(),
   ])
 
   if (!authContext) {
