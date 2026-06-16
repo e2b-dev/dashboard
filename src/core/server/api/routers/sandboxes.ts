@@ -31,6 +31,7 @@ const sandboxesRepositoryProcedure = protectedTeamProcedure.use(
 
 const AGENT_SANDBOX_HISTORY_LIMIT = 25
 const DASHBOARD_TERMINAL_METADATA_SOURCE = 'dashboard-terminal'
+const AGENT_SANDBOX_HISTORY_STATES = ['running', 'paused'] as const
 
 export const sandboxesRouter = createTRPCRouter({
   // QUERIES
@@ -68,7 +69,9 @@ export const sandboxesRouter = createTRPCRouter({
         const sandboxes = MOCK_SANDBOXES_DATA().filter(
           (sandbox) =>
             sandbox.metadata?.source === DASHBOARD_TERMINAL_METADATA_SOURCE &&
-            sandbox.metadata?.template === input.template
+            sandbox.metadata?.template === input.template &&
+            sandbox.metadata?.userId === ctx.user.id &&
+            AGENT_SANDBOX_HISTORY_STATES.includes(sandbox.state)
         )
 
         return {
@@ -81,7 +84,9 @@ export const sandboxesRouter = createTRPCRouter({
         metadata: {
           source: DASHBOARD_TERMINAL_METADATA_SOURCE,
           template: input.template,
+          userId: ctx.user.id,
         },
+        state: [...AGENT_SANDBOX_HISTORY_STATES],
       })
 
       if (!sandboxesResult.ok) {
