@@ -5,7 +5,6 @@ import type { CellContext } from '@tanstack/react-table'
 import { useMemo, useState } from 'react'
 import type { DefaultTemplate, Template } from '@/core/modules/templates/models'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
-import { useRouteParams } from '@/lib/hooks/use-route-params'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -13,7 +12,6 @@ import {
 } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
-import { isVersionCompatible } from '@/lib/utils/version'
 import { useTRPC } from '@/trpc/client'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { E2BBadge } from '@/ui/brand'
@@ -37,7 +35,6 @@ import {
   UnlockIcon,
 } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
-import ResourceUsage from '../../common/resource-usage'
 import { useDashboard } from '../../context'
 
 function E2BTemplateBadge() {
@@ -59,16 +56,18 @@ export function ActionsCell({
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const template = row.original
   const { team } = useDashboard()
-  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
 
   const { toast } = useToast()
   const trpc = useTRPC()
   const queryClient = useQueryClient()
+  // Path-level key matches the paginated infinite query across every
+  // sort/filter/search variant currently in the cache.
+  const templatesListKey = trpc.templates.getTemplates.pathKey()
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
   const updateTemplateMutation = useMutation(
     trpc.templates.updateTemplate.mutationOptions({
-      onSuccess: async (data, variables) => {
+      onSuccess: (data) => {
         const templateName = template.aliases[0] || template.templateID
 
         toast(
@@ -80,30 +79,6 @@ export function ActionsCell({
             </>
           )
         )
-
-        await queryClient.cancelQueries({
-          queryKey: trpc.templates.getTemplates.queryKey({
-            teamSlug,
-          }),
-        })
-
-        queryClient.setQueryData(
-          trpc.templates.getTemplates.queryKey({
-            teamSlug,
-          }),
-          (old) => {
-            if (!old?.templates) return old
-
-            return {
-              ...old,
-              templates: old.templates.map((t: Template) =>
-                t.templateID === variables.templateId
-                  ? { ...t, public: variables.public }
-                  : t
-              ),
-            }
-          }
-        )
       },
       onError: (error) => {
         const templateName = template.aliases[0] || template.templateID
@@ -114,18 +89,14 @@ export function ActionsCell({
         )
       },
       onSettled: () => {
-        queryClient.invalidateQueries({
-          queryKey: trpc.templates.getTemplates.queryKey({
-            teamSlug,
-          }),
-        })
+        queryClient.invalidateQueries({ queryKey: templatesListKey })
       },
     })
   )
 
   const deleteTemplateMutation = useMutation(
     trpc.templates.deleteTemplate.mutationOptions({
-      onSuccess: async (_, variables) => {
+      onSuccess: () => {
         const templateName = template.aliases[0] || template.templateID
         toast(
           defaultSuccessToast(
@@ -136,32 +107,8 @@ export function ActionsCell({
             </>
           )
         )
-
-        // stop ongoing invlaidations and remove template from state while refetch is going in the background
-
-        await queryClient.cancelQueries({
-          queryKey: trpc.templates.getTemplates.queryKey({
-            teamSlug,
-          }),
-        })
-
-        queryClient.setQueryData(
-          trpc.templates.getTemplates.queryKey({
-            teamSlug,
-          }),
-
-          (old) => {
-            if (!old?.templates) return old
-            return {
-              ...old,
-              templates: old.templates.filter(
-                (t: Template) => t.templateID !== variables.templateId
-              ),
-            }
-          }
-        )
       },
-      onError: (error, _variables) => {
+      onError: (error) => {
         const templateName = template.aliases[0] || template.templateID
         toast(
           defaultErrorToast(
@@ -171,12 +118,7 @@ export function ActionsCell({
       },
       onSettled: () => {
         setIsDeleteDialogOpen(false)
-
-        queryClient.invalidateQueries({
-          queryKey: trpc.templates.getTemplates.queryKey({
-            teamSlug,
-          }),
-        })
+        queryClient.invalidateQueries({ queryKey: templatesListKey })
       },
     })
   )
@@ -367,28 +309,6 @@ export function TemplateNameCell({
   )
 }
 
-export function CpuCell({
-  row,
-}: CellContext<Template | DefaultTemplate, unknown>) {
-  const cpuCount = row.getValue('cpuCount') as number
-  return (
-    <div className="w-full flex justify-end">
-      <ResourceUsage type="cpu" total={cpuCount} mode="simple" />
-    </div>
-  )
-}
-
-export function MemoryCell({
-  row,
-}: CellContext<Template | DefaultTemplate, unknown>) {
-  const memoryMB = row.getValue('memoryMB') as number
-  return (
-    <div className="w-full flex justify-end">
-      <ResourceUsage type="mem" total={memoryMB} mode="simple" />
-    </div>
-  )
-}
-
 export function CreatedAtCell({
   getValue,
 }: CellContext<Template | DefaultTemplate, unknown>) {
@@ -460,38 +380,5 @@ export function VisibilityCell({
       {!isPublic && <PrivateIcon className="size-3 text-fg-tertiary" />}
       {isPublic ? 'Public' : 'Internal'}
     </Badge>
-  )
-}
-
-const INVALID_ENVD_VERSION = '0.0.1'
-const SDK_V2_MINIMAL_ENVD_VERSION = '0.2.0'
-
-export function EnvdVersionCell({
-  getValue,
-}: CellContext<Template | DefaultTemplate, unknown>) {
-  const valueString = getValue() as string
-  const versionValue =
-    valueString && valueString !== INVALID_ENVD_VERSION ? valueString : null
-
-  const isNotV2Compatible = versionValue
-    ? isVersionCompatible(versionValue, SDK_V2_MINIMAL_ENVD_VERSION) === false
-    : false
-  return (
-    <div
-      className={cn(
-        'text-fg-tertiary whitespace-nowrap font-mono flex flex-row gap-1.5',
-        {
-          'text-accent-error-highlight': isNotV2Compatible,
-        }
-      )}
-    >
-      {versionValue ?? '--'}
-      {isNotV2Compatible && (
-        <HelpTooltip>
-          The envd version is not compatible with the SDK v2. To update the envd
-          version, you need to rebuild the template.
-        </HelpTooltip>
-      )}
-    </div>
   )
 }

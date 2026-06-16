@@ -18,15 +18,22 @@ import CopyButtonInline from '@/ui/copy-button-inline'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import { CheckmarkIcon, CloseIcon } from '@/ui/primitives/icons'
-import { Loader } from '@/ui/primitives/loader'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/ui/primitives/tooltip'
+import { EnvdVersion } from '../../common/envd-version'
+import ResourceUsage from '../../common/resource-usage'
 
 export function BuildId({ id }: { id: string }) {
   return (
     <CopyButtonInline
       value={id}
+      truncate={false}
       className="w-full text-left text-fg-tertiary font-mono prose-table-numeric"
     >
-      {id.slice(0, 6)}...{id.slice(-6)}
+      {id.slice(0, 7)}...{id.slice(-5)}
     </CopyButtonInline>
   )
 }
@@ -58,42 +65,6 @@ export function Template({
     >
       <p className="truncate">{template}</p>
     </Button>
-  )
-}
-
-export function LoadMoreButton({
-  isLoading,
-  onLoadMore,
-}: {
-  isLoading: boolean
-  onLoadMore: () => void
-}) {
-  if (isLoading) {
-    return (
-      <span className="inline-flex items-center gap-1">
-        Loading
-        <Loader variant="dots" />
-      </span>
-    )
-  }
-  return (
-    <button
-      onClick={onLoadMore}
-      className="underline text-fg-secondary hover:text-accent-main-highlight transition-colors"
-    >
-      Load more
-    </button>
-  )
-}
-
-export function BackToTopButton({ onBackToTop }: { onBackToTop: () => void }) {
-  return (
-    <button
-      onClick={onBackToTop}
-      className="underline text-fg-secondary hover:text-accent-main-highlight transition-colors"
-    >
-      Back to top
-    </button>
   )
 }
 
@@ -143,9 +114,10 @@ export function StartedAt({ timestamp }: { timestamp: number }) {
 
 interface StatusProps {
   status: BuildStatus
+  statusMessage?: ListedBuildModel['statusMessage']
 }
 
-export function Status({ status }: StatusProps) {
+export function Status({ status, statusMessage }: StatusProps) {
   const config: Record<
     BuildStatus,
     {
@@ -173,31 +145,70 @@ export function Status({ status }: StatusProps) {
 
   const { label, icon, variant } = config[status]!
 
+  const badge = (
+    <Badge
+      variant={variant}
+      className={cn('select-none shrink-0 uppercase', {
+        'bg-bg-inverted/10': variant === 'default',
+      })}
+    >
+      {icon}
+      {label}
+    </Badge>
+  )
+
+  const showReason = status === 'failed' && Boolean(statusMessage)
+
   return (
-    <div className="flex items-center gap-3 min-w-0">
-      <Badge
-        variant={variant}
-        className={cn('select-none shrink-0 uppercase', {
-          'bg-bg-inverted/10': variant === 'default',
-        })}
-      >
-        {icon}
-        {label}
-      </Badge>
+    <div className="flex items-center gap-3 min-w-0 shrink-0">
+      {showReason ? (
+        <Tooltip>
+          <TooltipTrigger asChild>{badge}</TooltipTrigger>
+          <TooltipContent
+            align="start"
+            side="top"
+            sideOffset={8}
+            className="max-w-[360px] whitespace-pre-wrap break-words text-left font-mono text-xs normal-case text-fg-secondary"
+          >
+            {statusMessage}
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        badge
+      )}
     </div>
   )
 }
 
-export function Reason({
-  statusMessage,
-}: {
-  statusMessage: ListedBuildModel['statusMessage']
-}) {
-  if (!statusMessage) return null
-
+export function Cpu({ cpuCount }: { cpuCount: number }) {
   return (
-    <span className="block truncate max-w-0 min-w-full text-left text-fg-tertiary">
-      {statusMessage}
-    </span>
+    <div className="w-full flex justify-end">
+      <ResourceUsage type="cpu" total={cpuCount} mode="simple" />
+    </div>
+  )
+}
+
+export function Memory({ memoryMB }: { memoryMB: number }) {
+  return (
+    <div className="w-full flex justify-end">
+      <ResourceUsage type="mem" total={memoryMB} mode="simple" />
+    </div>
+  )
+}
+
+export function Storage({ diskSizeMB }: { diskSizeMB: number | null }) {
+  const diskSizeGB = diskSizeMB != null ? diskSizeMB / 1024 : null
+  return (
+    <div className="w-full flex justify-end">
+      <ResourceUsage type="disk" total={diskSizeGB} mode="simple" />
+    </div>
+  )
+}
+
+export function Envd({ version }: { version: string | null }) {
+  return (
+    <div className="w-full flex justify-end">
+      <EnvdVersion version={version} />
+    </div>
   )
 }
