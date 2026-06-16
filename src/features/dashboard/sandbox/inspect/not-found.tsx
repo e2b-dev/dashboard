@@ -17,7 +17,13 @@ import {
 import { useSandboxContext } from '../context'
 import SandboxInspectEmptyFrame from './empty'
 
-export default function SandboxInspectNotFound() {
+interface SandboxInspectNotFoundProps {
+  resource?: 'filesystem' | 'terminal'
+}
+
+export default function SandboxInspectNotFound({
+  resource = 'filesystem',
+}: SandboxInspectNotFoundProps) {
   const router = useRouter()
   const { isRunning } = useSandboxContext()
 
@@ -58,11 +64,16 @@ export default function SandboxInspectNotFound() {
     }
   }, [isPending])
 
-  const description = isRunning
-    ? 'This directory appears to be empty or does not exist. You can reset to the default state, navigate to root, or refresh to try again.'
-    : 'It seems like the sandbox is not connected anymore. We cannot access the filesystem at this time.'
+  const isFilesystem = resource === 'filesystem'
+  const resourceName = isFilesystem ? 'filesystem' : 'terminal'
+  const description =
+    isRunning && isFilesystem
+      ? 'This directory appears to be empty or does not exist. You can reset to the default state, navigate to root, or refresh to try again.'
+      : isRunning
+        ? 'The terminal is unavailable right now. Refresh to try again.'
+        : `It seems like the sandbox is not connected anymore. We cannot access the ${resourceName} at this time.`
 
-  const actions = isRunning ? (
+  const actions = isRunning && isFilesystem ? (
     <>
       <div className="flex w-full justify-between gap-4">
         <Button
@@ -102,6 +113,24 @@ export default function SandboxInspectNotFound() {
         Refresh
       </Button>
     </>
+  ) : isRunning ? (
+    <Button
+      variant="secondary"
+      onClick={() =>
+        resetTransition(async () => {
+          router.refresh()
+        })
+      }
+      className="w-full gap-2"
+      disabled={isResetPending}
+    >
+      <RefreshIcon
+        className={cn('text-fg-tertiary h-4 w-4 transition-transform', {
+          'animate-spin': isResetPending,
+        })}
+      />
+      Refresh
+    </Button>
   ) : (
     <Button
       variant="secondary"
@@ -115,7 +144,13 @@ export default function SandboxInspectNotFound() {
 
   return (
     <SandboxInspectEmptyFrame
-      title={isRunning ? 'Empty Directory' : 'Not Connected'}
+      title={
+        isRunning && isFilesystem
+          ? 'Empty Directory'
+          : isRunning
+            ? 'Terminal Unavailable'
+            : 'Not Connected'
+      }
       description={description}
       actions={actions}
     />
