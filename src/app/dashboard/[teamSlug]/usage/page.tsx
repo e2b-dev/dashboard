@@ -37,7 +37,7 @@ export default async function UsagePage({
               frame: 'lg:h-full max-lg:border-0 lg:flex lg:flex-col',
             }}
           >
-            <div className="hidden lg:flex lg:justify-end lg:p-3">
+            <div className="hidden lg:flex lg:justify-end lg:px-3 lg:pt-3">
               <UsageTopTimeRangeControls />
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 lg:grid-rows-2 lg:min-h-0 lg:flex-1">
