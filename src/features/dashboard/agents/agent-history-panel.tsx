@@ -10,7 +10,8 @@ import { AgentSessionList } from './agent-session-list'
 export function AgentHistoryPanel({
   canPause,
   error,
-  isPending,
+  isLoading,
+  isRefreshing,
   onClose,
   onOpenTerminal,
   onRefresh,
@@ -20,7 +21,8 @@ export function AgentHistoryPanel({
 }: {
   canPause: boolean
   error: unknown
-  isPending: boolean
+  isLoading: boolean
+  isRefreshing: boolean
   onClose: () => void
   onOpenTerminal: (sandboxId: string) => void
   onRefresh: () => void
@@ -44,7 +46,7 @@ export function AgentHistoryPanel({
         </div>
         <div className="flex shrink-0 items-center gap-3">
           <Button
-            loading={isPending ? 'Refreshing...' : undefined}
+            loading={isRefreshing ? 'Refreshing...' : undefined}
             size="none"
             variant="tertiary"
             onClick={onRefresh}
@@ -58,7 +60,7 @@ export function AgentHistoryPanel({
         </div>
       </div>
 
-      {isPending ? (
+      {isLoading ? (
         <div className="prose-body text-fg-tertiary flex items-center gap-2 px-4 py-3">
           <Loader size="sm" variant="slash" />
           Loading sessions

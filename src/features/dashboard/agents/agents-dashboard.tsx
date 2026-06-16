@@ -56,7 +56,7 @@ export function AgentsDashboard({
     terminalWindows,
   } = useAgentTerminalWindows()
 
-  const { data, error, isPending, refetch } = useQuery(
+  const { data, error, isFetching, isPending, refetch } = useQuery(
     trpc.sandboxes.getSandboxes.queryOptions(
       { teamSlug },
       {
@@ -111,7 +111,8 @@ export function AgentsDashboard({
         <AgentHistoryPanel
           canPause={pauseSupported}
           error={error}
-          isPending={isPending}
+          isLoading={isPending}
+          isRefreshing={isFetching}
           sessions={expandedSessions}
           teamSlug={teamSlug}
           template={expandedTemplate}
