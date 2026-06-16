@@ -32,21 +32,12 @@ const RIGHT_ALIGNED_COLUMNS = new Set([
 export const isRightAlignedColumn = (id: string) =>
   RIGHT_ALIGNED_COLUMNS.has(id)
 
-// Flex behavior per column, applied to both header and body cells. Columns are
-// fixed-width by default (shrink-0 → horizontal scroll); Template grows to fill
-// the leftover space.
-const COLUMN_CLASSNAMES: Record<string, string> = {
-  template: 'flex-1 min-w-[160px]',
-}
-
-export const columnClassName = (id: string) =>
-  COLUMN_CLASSNAMES[id] ?? 'shrink-0'
-
 export const buildsColumns: ColumnDef<ListedBuildModel>[] = [
   {
     accessorKey: 'status',
     header: 'Status',
     size: 76,
+    enableResizing: false,
     cell: ({ row }) => (
       <Status
         status={row.original.status}
@@ -57,7 +48,10 @@ export const buildsColumns: ColumnDef<ListedBuildModel>[] = [
   {
     accessorKey: 'template',
     header: 'Template',
-    size: 160,
+    size: 240,
+    minSize: 160,
+    maxSize: 480,
+    enableResizing: true,
     cell: ({ row }) => (
       <Template
         template={row.original.template}
@@ -69,42 +63,49 @@ export const buildsColumns: ColumnDef<ListedBuildModel>[] = [
     accessorKey: 'id',
     header: 'ID',
     size: 128,
+    enableResizing: false,
     cell: ({ row }) => <BuildId id={row.original.id} />,
   },
   {
     accessorKey: 'cpuCount',
     header: 'CPU',
     size: 64,
+    enableResizing: false,
     cell: ({ row }) => <Cpu cpuCount={row.original.cpuCount} />,
   },
   {
     accessorKey: 'memoryMB',
     header: 'Memory',
     size: 80,
+    enableResizing: false,
     cell: ({ row }) => <Memory memoryMB={row.original.memoryMB} />,
   },
   {
     accessorKey: 'diskSizeMB',
     header: 'Storage',
     size: 80,
+    enableResizing: false,
     cell: ({ row }) => <Storage diskSizeMB={row.original.diskSizeMB} />,
   },
   {
     accessorKey: 'envdVersion',
     header: 'ENVD Ver.',
     size: 96,
+    enableResizing: false,
     cell: ({ row }) => <Envd version={row.original.envdVersion} />,
   },
   {
     accessorKey: 'createdAt',
     header: 'Started',
     size: 110,
+    enableResizing: false,
     cell: ({ row }) => <StartedAt timestamp={row.original.createdAt} />,
   },
   {
     accessorKey: 'duration',
     header: 'Duration',
     size: 110,
+    enableResizing: false,
     cell: ({ row }) => (
       <div className="w-full text-end">
         <Duration
@@ -120,5 +121,6 @@ export const buildsColumns: ColumnDef<ListedBuildModel>[] = [
 export const buildsTableConfig: Partial<TableOptions<ListedBuildModel>> = {
   getCoreRowModel: getCoreRowModel(),
   enableSorting: false,
-  enableColumnResizing: false,
+  columnResizeMode: 'onChange',
+  enableColumnResizing: true,
 }

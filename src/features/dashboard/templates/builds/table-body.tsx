@@ -4,7 +4,7 @@ import type { ListedBuildModel } from '@/core/modules/builds/models'
 import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
 import { cn } from '@/lib/utils'
 import { DataTableBody, DataTableCell, DataTableRow } from '@/ui/data-table'
-import { columnClassName, isRightAlignedColumn } from './table-config'
+import { isRightAlignedColumn } from './table-config'
 
 const ROW_HEIGHT_PX = 40
 const VIRTUAL_OVERSCAN = 8
@@ -59,7 +59,7 @@ export function BuildsTableBody({
                 key={cell.id}
                 cell={cell}
                 className={cn(
-                  columnClassName(cell.column.id),
+                  'shrink-0',
                   isRightAlignedColumn(cell.column.id) && 'justify-end'
                 )}
               >

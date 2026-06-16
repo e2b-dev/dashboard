@@ -7,12 +7,14 @@ import {
   useQueryClient,
 } from '@tanstack/react-query'
 import {
+  type ColumnSizingState,
   flexRender,
   type TableOptions,
   useReactTable,
 } from '@tanstack/react-table'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useLocalStorage } from 'usehooks-ts'
 import { PROTECTED_URLS } from '@/configs/urls'
 import type {
   ListedBuildModel,
@@ -36,7 +38,6 @@ import { BuildsTableBody } from './table-body'
 import {
   buildsColumns,
   buildsTableConfig,
-  columnClassName,
   fallbackData,
   isRightAlignedColumn,
 } from './table-config'
@@ -47,12 +48,22 @@ const RUNNING_BUILD_POLL_INTERVAL_MS = 3_000
 const MAX_CACHED_PAGES = 3
 
 const BuildsTable = () => {
+  'use no memo'
+
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const router = useRouter()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
+  const [columnSizing, setColumnSizing] = useLocalStorage<ColumnSizingState>(
+    'builds:columnSizing:v1',
+    {},
+    {
+      deserializer: (value) => JSON.parse(value),
+      serializer: (value) => JSON.stringify(value),
+    }
+  )
   const { statuses, buildIdOrTemplate } = useFilters()
   const { isFilterRefetching, clearFilterRefetching } = useFilterChangeTracking(
     statuses,
@@ -132,6 +143,10 @@ const BuildsTable = () => {
     ...buildsTableConfig,
     data: buildsWithLiveStatus ?? fallbackData,
     columns: buildsColumns,
+    state: {
+      columnSizing,
+    },
+    onColumnSizingChange: setColumnSizing,
   } as TableOptions<ListedBuildModel>)
 
   const columnSizeVars = useColumnSizeVars(table)
@@ -187,7 +202,7 @@ const BuildsTable = () => {
                 <DataTableHead
                   key={header.id}
                   header={header}
-                  className={columnClassName(header.id)}
+                  className="shrink-0"
                   align={isRightAlignedColumn(header.id) ? 'right' : 'left'}
                 >
                   <span>
