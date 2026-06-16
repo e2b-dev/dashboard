@@ -37,15 +37,19 @@ const MAX_INPUT_FLUSH_RETRIES = 2
 async function killAbortedStartupSandbox({
   created,
   sandbox,
+  shouldClearStoredSession,
   userId,
 }: {
   created: boolean
   sandbox: Sandbox
+  shouldClearStoredSession: boolean
   userId: string
 }) {
   if (!created) return
 
-  clearStoredTerminalSession(userId)
+  if (shouldClearStoredSession) {
+    clearStoredTerminalSession(userId)
+  }
 
   try {
     await sandbox.kill()
@@ -420,6 +424,7 @@ export default function DashboardTerminal({
           await killAbortedStartupSandbox({
             created,
             sandbox,
+            shouldClearStoredSession: storeTerminalSession,
             userId: sandboxManagementAuth.userId,
           })
           return
@@ -448,6 +453,7 @@ export default function DashboardTerminal({
           await killAbortedStartupSandbox({
             created,
             sandbox,
+            shouldClearStoredSession: storeTerminalSession,
             userId: sandboxManagementAuth.userId,
           })
           return
