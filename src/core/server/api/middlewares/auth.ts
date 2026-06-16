@@ -1,6 +1,6 @@
 import { context, SpanStatusCode, trace } from '@opentelemetry/api'
 import { unauthorizedUserError } from '@/core/server/adapters/errors'
-import { createAuthForHeaders } from '@/core/server/auth'
+import { getAuthContext } from '@/core/server/auth'
 import { t } from '@/core/server/trpc/init'
 import { l } from '@/core/shared/clients/logger/logger'
 import { getTracer } from '@/core/shared/clients/tracer'
@@ -12,12 +12,10 @@ export const authMiddleware = t.middleware(async ({ ctx, next }) => {
   span.setAttribute('trpc.middleware.name', 'auth')
 
   try {
-    const provider = createAuthForHeaders(ctx.headers, ctx.authSession)
-
     const authContext = await context.with(
       trace.setSpan(context.active(), span),
       async () => {
-        return await provider.getAuthContext()
+        return await getAuthContext(ctx.authSession)
       }
     )
 
@@ -27,8 +25,6 @@ export const authMiddleware = t.middleware(async ({ ctx, next }) => {
         message: 'session not found',
       })
 
-      // provider-level logs already capture supabase errors when present;
-      // this warn distinguishes "no cookie / expired session" at the trpc boundary
       l.warn(
         {
           key: 'trpc_auth_middleware:no_session',

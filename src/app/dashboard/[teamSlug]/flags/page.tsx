@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import { AUTH_URLS } from '@/configs/urls'
-import { auth } from '@/core/server/auth'
+import { getAuthContext } from '@/core/server/auth'
 import { listFeatureFlags } from '@/core/server/feature-flags/list.server'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
 import { FeatureFlagsTable } from '@/features/dashboard/flags/feature-flags'
@@ -15,7 +15,7 @@ interface FlagsPageProps {
 export default async function FlagsPage({ params }: FlagsPageProps) {
   const [{ teamSlug }, authContext] = await Promise.all([
     params,
-    auth.getAuthContext(),
+    getAuthContext(),
   ])
 
   if (!authContext) {
@@ -43,7 +43,7 @@ export default async function FlagsPage({ params }: FlagsPageProps) {
   }
 
   return (
-    <Page>
+    <Page className="2xl:-my-14">
       <FeatureFlagsTable flags={flags} teamId={teamIdResult.data} />
     </Page>
   )

@@ -1,5 +1,11 @@
-import Login from './login-form'
+import { redirect } from 'next/navigation'
+import { buildOryStartURL } from '@/core/server/auth/ory/build-start-url'
 
-export default function Page() {
-  return <Login />
+type PageProps = {
+  searchParams: Promise<{ returnTo?: string }>
+}
+
+export default async function Page({ searchParams }: PageProps) {
+  const { returnTo } = await searchParams
+  redirect(buildOryStartURL('signin', returnTo))
 }

@@ -2339,6 +2339,7 @@ export interface components {
       allowOut?: string[]
       /** @description List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules. */
       denyOut?: string[]
+      egressProxy?: components['schemas']['SandboxEgressProxyConfig']
       /** @description Specify host mask which will be used for all sandbox requests */
       maskRequestHost?: string
       /** @description Per-domain transform rules applied to matching egress HTTP/HTTPS requests. Keys are domains (e.g. "api.example.com", "example.com"). A domain listed here is not automatically allowed - use allowOut to permit the traffic. */
@@ -2352,6 +2353,7 @@ export interface components {
       allowOut?: string[]
       /** @description List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules. */
       denyOut?: string[]
+      egressProxy?: components['schemas']['SandboxEgressProxyConfig']
       /** @description Per-domain transform rules. Replaces all existing rules when provided. */
       rules?: {
         [key: string]: components['schemas']['SandboxNetworkRule'][]
@@ -2370,6 +2372,15 @@ export interface components {
         [key: string]: string
       }
     }
+    /** @description SOCKS5 proxy for sandbox egress. Outbound TCP is tunneled through the proxy after allow/deny filtering; the sandbox is unaware. Domain-matched flows use remote DNS (ATYP=domain). */
+    SandboxEgressProxyConfig: {
+      /** @description SOCKS5 proxy address in host:port format (e.g. "proxy.example.com:1080"). */
+      address: string
+      /** @description Optional SOCKS5 username (RFC 1929), max 255 bytes. */
+      username?: string
+      /** @description Optional SOCKS5 password (RFC 1929), max 255 bytes. */
+      password?: string
+    } | null
     /**
      * @description Auto-resume enabled flag for paused sandboxes. Default false.
      * @default false

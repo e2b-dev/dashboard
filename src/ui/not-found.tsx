@@ -14,7 +14,7 @@ import { ArrowLeftIcon, GridIcon, HomeIcon } from './primitives/icons'
 
 export default function NotFound() {
   return (
-    <div className="flex min-h-[80vh] items-center justify-center">
+    <div className="flex w-full items-start justify-center pt-16 md:pt-24">
       <Card className="w-full max-w-md border border-stroke bg-bg-1/40 backdrop-blur-lg">
         <CardHeader className="text-center">
           <span className="prose-value-big">404</span>

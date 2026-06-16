@@ -20,7 +20,7 @@ const cookiePrefix = process.env.AUTH_COOKIE_PREFIX
   : ''
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  // isolates from existing /api/auth/{callback,email-callback}
+  // Keeps Auth.js OAuth routes under a dedicated namespace.
   basePath: '/api/auth/oauth',
   secret: process.env.AUTH_SECRET,
   session: { strategy: 'jwt' },
@@ -37,9 +37,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   // route handler that logs the failure and redirects to /sign-in so users
-  // never see Auth.js's built-in error page; see oauth-recover/route.ts.
+  // never see Auth.js's built-in error page.
   pages: {
-    error: '/api/auth/oauth-recover',
+    error: '/api/auth/oauth/recover',
   },
   providers: [
     OryHydra({
