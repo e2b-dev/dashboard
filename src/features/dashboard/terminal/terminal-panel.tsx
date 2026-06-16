@@ -121,7 +121,6 @@ function TerminalPanelHeader({
             </span>
           </>
         )}
-        <TerminalIcon className="text-icon-tertiary size-4" />
         {template ? (
           <span className="text-fg-tertiary shrink-0 font-mono text-xs">
             {template}

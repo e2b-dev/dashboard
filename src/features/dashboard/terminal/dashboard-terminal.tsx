@@ -482,6 +482,7 @@ export default function DashboardTerminal({
         // sending anything into the PTY.
         setPendingLaunch({
           command: command.trim(),
+          forceNewSandbox: options.forceNewSandbox,
           target: {
             ...options.target,
             template: nextTemplate,
@@ -506,7 +507,11 @@ export default function DashboardTerminal({
   const confirmPendingLaunch = useCallback(() => {
     if (!pendingLaunch) return
 
-    const { command, target: launchTarget } = pendingLaunch
+    const {
+      command,
+      forceNewSandbox: pendingForceNewSandbox,
+      target: launchTarget,
+    } = pendingLaunch
     const launchTemplate = launchTarget?.template ?? 'base'
     const launchSandboxId = launchTarget?.sandboxId
 
@@ -533,7 +538,9 @@ export default function DashboardTerminal({
     setPendingLaunch(null)
     pendingCommandsRef.current = [command]
     void startTerminal({
-      forceNewSandbox: !launchSandboxId && template !== launchTemplate,
+      forceNewSandbox:
+        pendingForceNewSandbox ??
+        (!launchSandboxId && template !== launchTemplate),
       target: launchTarget,
     })
   }, [

@@ -63,7 +63,6 @@ export async function TerminalLaunchPage({
   if (!authContext) {
     return (
       <TerminalSignIn
-        command={command}
         embedded={embedded}
         returnToPath={returnToPath}
         sandboxId={terminalSandboxId}
@@ -337,13 +336,11 @@ async function isTerminalTemplateAvailable({
 }
 
 function TerminalSignIn({
-  command,
   embedded,
   returnToPath,
   sandboxId,
   template,
 }: {
-  command?: string
   embedded: boolean
   returnToPath: string
   sandboxId?: string
@@ -357,10 +354,6 @@ function TerminalSignIn({
 
   if (sandboxId) {
     returnToParams.set('sandboxId', sandboxId)
-  }
-
-  if (command) {
-    returnToParams.set('command', command)
   }
 
   const returnToQuery = returnToParams.toString()

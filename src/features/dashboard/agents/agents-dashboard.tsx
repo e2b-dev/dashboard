@@ -22,6 +22,7 @@ import { useTRPC } from '@/trpc/client'
 import { AlertPopover } from '@/ui/alert-popover'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
+import { IconButton } from '@/ui/primitives/icon-button'
 import {
   ChevronDownIcon,
   ExternalLinkIcon,
@@ -852,7 +853,7 @@ function AgentTerminalWindowLayer({
               forceNewSandbox={terminalWindow.forceNewSandbox}
               isWindowMinimized={terminalWindow.minimized}
               launchTarget={{
-                command: '',
+                command: terminalWindow.template.command,
                 sandboxId: terminalWindow.sandboxId,
                 template: terminalWindow.template.template,
               }}
@@ -876,7 +877,7 @@ function AgentTerminalWindowLayer({
               }}
             />
             {terminalWindow.minimized ? null : (
-              <button
+              <IconButton
                 aria-label="Resize terminal window"
                 className="border-fg-tertiary/70 hover:border-fg-secondary focus-visible:ring-focus absolute right-1 bottom-1 hidden size-4 cursor-nwse-resize border-r border-b bg-transparent focus-visible:ring-2 focus-visible:outline-none md:block"
                 type="button"
