@@ -29,17 +29,22 @@ export const buildsRouter = createTRPCRouter({
       z.object({
         buildIdOrTemplate: z.string().optional(),
         statuses: z.array(BuildStatusSchema),
+        cpuCount: z.number().int().min(1).optional(),
+        memoryMB: z.number().int().min(1).optional(),
         limit: z.number().min(1).max(100).default(50),
         cursor: z.string().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
-      const { buildIdOrTemplate, statuses, limit, cursor } = input
+      const { buildIdOrTemplate, statuses, cpuCount, memoryMB, limit, cursor } =
+        input
 
       const result = await ctx.buildsRepository.listBuilds(
         buildIdOrTemplate,
         statuses,
         {
+          cpuCount,
+          memoryMB,
           limit,
           cursor,
         }

@@ -57,6 +57,8 @@ function normalizeListBuildsLimit(limit?: number): number {
 }
 
 interface ListBuildsOptions {
+  cpuCount?: number
+  memoryMB?: number
   limit?: number
   cursor?: string
 }
@@ -101,6 +103,8 @@ export function createBuildsRepository(
           query: {
             build_id_or_template: buildIdOrTemplate?.trim() || undefined,
             statuses,
+            cpuCount: options.cpuCount,
+            memoryMB: options.memoryMB,
             limit,
             cursor: options.cursor,
           },
