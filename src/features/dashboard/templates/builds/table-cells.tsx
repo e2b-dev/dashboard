@@ -164,7 +164,12 @@ export function Status({ status, statusMessage }: StatusProps) {
       {showReason ? (
         <Tooltip>
           <TooltipTrigger asChild>{badge}</TooltipTrigger>
-          <TooltipContent className="max-w-[360px] whitespace-pre-wrap break-words text-left font-mono text-xs normal-case text-fg-secondary">
+          <TooltipContent
+            align="start"
+            side="top"
+            sideOffset={8}
+            className="max-w-[360px] whitespace-pre-wrap break-words text-left font-mono text-xs normal-case text-fg-secondary"
+          >
             {statusMessage}
           </TooltipContent>
         </Tooltip>
