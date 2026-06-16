@@ -65,7 +65,6 @@ export default function SandboxTerminalView({
           refetchSandbox()
         }}
         onSandboxAttachFailed={() => {
-          setShouldResumeSandbox(false)
           refetchSandbox()
         }}
         sandboxManagementAuth={sandboxManagementAuth}
