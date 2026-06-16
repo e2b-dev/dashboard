@@ -39,6 +39,8 @@ interface TimezoneSettingsProps {
   className?: string
 }
 
+const TIMEZONE_SAVE_SETTLE_DELAY_MS = 300
+
 export const TimezoneSettings = ({ className }: TimezoneSettingsProps) => {
   const { timezone, setTimezone } = useTimezone()
   const { toast } = useToast()
@@ -79,13 +81,20 @@ export const TimezoneSettings = ({ className }: TimezoneSettingsProps) => {
     Boolean(browserTimezone) && !isBrowserTimezoneSelected
 
   const handleTimezoneSelect = async (nextTimezone: Timezone) => {
+    if (isSaving) return
+
     if (nextTimezone === timezone) {
       setOpen(false)
       return
     }
 
     setIsSaving(true)
+    setOpen(false)
     const didSave = await setTimezone(nextTimezone)
+
+    await new Promise((resolve) =>
+      window.setTimeout(resolve, TIMEZONE_SAVE_SETTLE_DELAY_MS)
+    )
     setIsSaving(false)
 
     if (!didSave) {
@@ -94,7 +103,6 @@ export const TimezoneSettings = ({ className }: TimezoneSettingsProps) => {
     }
 
     toast(defaultSuccessToast('Timezone updated.'))
-    setOpen(false)
   }
 
   return (
@@ -111,12 +119,17 @@ export const TimezoneSettings = ({ className }: TimezoneSettingsProps) => {
       </CardHeader>
 
       <CardContent className="flex flex-col gap-3">
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover
+          open={open}
+          onOpenChange={(nextOpen) => {
+            if (!isSaving) setOpen(nextOpen)
+          }}
+        >
           <PopoverTrigger asChild>
             <Button
               type="button"
               variant="secondary"
-              loading={isSaving ? 'Saving...' : undefined}
+              disabled={isSaving}
               className="w-full max-w-[24rem] justify-between font-mono"
             >
               {timezoneLabel}
@@ -127,7 +140,7 @@ export const TimezoneSettings = ({ className }: TimezoneSettingsProps) => {
             avoidCollisions={false}
             className="w-[24rem] max-w-[calc(100vw-2rem)] p-0"
           >
-            <Command className="flex-col-reverse [&_[cmdk-input-wrapper]]:border-t [&_[cmdk-input-wrapper]]:border-b-0">
+            <Command className="flex-col-reverse **:[[cmdk-input-wrapper]]:border-t **:[[cmdk-input-wrapper]]:border-b-0">
               <CommandInput placeholder="Search timezones..." />
               <CommandList>
                 <CommandEmpty>No timezones found.</CommandEmpty>
@@ -135,6 +148,7 @@ export const TimezoneSettings = ({ className }: TimezoneSettingsProps) => {
                   <CommandItem
                     key={option.value}
                     value={option.label}
+                    disabled={isSaving}
                     onSelect={() => void handleTimezoneSelect(option.value)}
                     className="justify-between"
                   >
@@ -161,11 +175,10 @@ export const TimezoneSettings = ({ className }: TimezoneSettingsProps) => {
           <Button
             type="button"
             variant="secondary"
-            loading={isSaving ? 'Saving...' : undefined}
             className={cn(!showUseBrowserTimezoneButton && 'invisible')}
-            disabled={!showUseBrowserTimezoneButton}
+            disabled={!showUseBrowserTimezoneButton || isSaving}
             aria-hidden={!showUseBrowserTimezoneButton}
-            tabIndex={showUseBrowserTimezoneButton ? undefined : -1}
+            tabIndex={showUseBrowserTimezoneButton && !isSaving ? undefined : -1}
             onClick={() => {
               if (browserTimezone) void handleTimezoneSelect(browserTimezone)
             }}
