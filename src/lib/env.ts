@@ -13,6 +13,11 @@ export const serverSchema = z.object({
 
   POSTHOG_API_KEY: z.string().min(1).optional(),
   POSTHOG_PROJECT_ID: z.string().min(1).optional(),
+  // Server-only PostHog project key for feature-flag evaluation (posthog-node).
+  // Lets self-hosted/local-dev evaluate flags without setting the public
+  // NEXT_PUBLIC_POSTHOG_KEY, so no browser analytics is loaded. Falls back to
+  // NEXT_PUBLIC_POSTHOG_KEY when unset. See feature-flags/posthog.ts.
+  POSTHOG_FLAGS_KEY: z.string().min(1).optional(),
 
   AUTH_SECRET: z.string().min(1).optional(),
   AUTH_TRUST_HOST: z.string().optional(),

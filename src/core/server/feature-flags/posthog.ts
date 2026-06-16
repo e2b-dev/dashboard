@@ -25,7 +25,13 @@ function getPostHogClient(): PostHog | null {
     return postHogClient
   }
 
-  const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY?.trim()
+  // Prefer a server-only key so flag evaluation can run without exposing a
+  // public key — self-hosted/local-dev can set POSTHOG_FLAGS_KEY for flags-only
+  // (no browser analytics, since the client never gets NEXT_PUBLIC_POSTHOG_KEY).
+  // Falls back to the public key for deployments that share one.
+  const apiKey =
+    process.env.POSTHOG_FLAGS_KEY?.trim() ||
+    process.env.NEXT_PUBLIC_POSTHOG_KEY?.trim()
   if (!apiKey) {
     postHogClient = null
     return null
