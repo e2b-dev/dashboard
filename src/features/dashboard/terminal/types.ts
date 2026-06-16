@@ -8,6 +8,7 @@ export type StoredTerminalSession = {
 }
 
 export type StartTerminalOptions = {
+  confirmCommand?: boolean
   forceNewSandbox?: boolean
   target?: TerminalLaunchTarget
 }
@@ -20,6 +21,7 @@ export type PendingTerminalLaunch = {
 
 export type TerminalLaunchTarget = {
   command?: string
+  confirmCommand?: boolean
   sandboxId?: string
   template?: string
 }

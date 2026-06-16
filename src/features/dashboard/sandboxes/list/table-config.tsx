@@ -88,12 +88,14 @@ export const templateIdentifierFilter: FilterFn<SandboxListRow> = (
 ) => {
   if (!value || value.length === 0) return true
 
-  const { alias, templateID } = row.original
+  const { alias, metadata, templateID } = row.original
 
-  // check if any filter value matches either alias or templateID
+  // check if any filter value matches alias, templateID, or dashboard terminal metadata
   return value.some((filterValue) => {
     return (
       (alias && alias.toLowerCase() === filterValue.toLowerCase()) ||
+      (metadata?.template &&
+        metadata.template.toLowerCase() === filterValue.toLowerCase()) ||
       (templateID && templateID.toLowerCase() === filterValue.toLowerCase())
     )
   })

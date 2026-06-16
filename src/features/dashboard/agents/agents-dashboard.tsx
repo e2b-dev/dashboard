@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { useAction } from 'next-safe-action/hooks'
 import type { CSSProperties, PointerEvent } from 'react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import type { AgentTemplateConfig } from '@/configs/agents'
 import { PROTECTED_URLS } from '@/configs/urls'
@@ -382,9 +382,14 @@ export function AgentsDashboard({
   const [terminalWindows, setTerminalWindows] = useState<AgentTerminalWindow[]>(
     []
   )
+  const terminalWindowsRef = useRef<AgentTerminalWindow[]>([])
   const nextWindowIdRef = useRef(0)
   const nextMinimizedOrderRef = useRef(0)
   const pauseSupported = canPauseSandboxes()
+
+  useEffect(() => {
+    terminalWindowsRef.current = terminalWindows
+  }, [terminalWindows])
 
   const { data, error, isPending, refetch } = useQuery(
     trpc.sandboxes.getSandboxes.queryOptions(
@@ -435,21 +440,29 @@ export function AgentsDashboard({
     sandboxId?: string
     template: AgentTemplateConfig
   }) => {
+    const currentWindows = terminalWindowsRef.current
+
     if (sandboxId) {
-      const existingWindow = terminalWindows.find(
+      const existingWindow = currentWindows.find(
         (terminalWindow) => terminalWindow.sandboxId === sandboxId
       )
 
       if (existingWindow) {
-        focusWindow(existingWindow.id)
+        const nextWindows = currentWindows.map((terminalWindow) =>
+          terminalWindow.id === existingWindow.id
+            ? { ...terminalWindow, minimized: false }
+            : terminalWindow
+        )
+        terminalWindowsRef.current = nextWindows
+        setTerminalWindows(nextWindows)
+        setActiveWindowId(existingWindow.id)
         return
       }
     }
 
     const windowId = `agent-terminal-${template.id}-${nextWindowIdRef.current}`
     nextWindowIdRef.current += 1
-
-    setTerminalWindows((currentWindows) => [
+    const nextWindows = [
       ...currentWindows,
       {
         command: forceNewSandbox ? template.command : undefined,
@@ -464,7 +477,10 @@ export function AgentsDashboard({
         },
         template,
       },
-    ])
+    ]
+
+    terminalWindowsRef.current = nextWindows
+    setTerminalWindows(nextWindows)
     setActiveWindowId(windowId)
   }
 
@@ -866,10 +882,12 @@ function AgentTerminalWindowLayer({
               isWindowMinimized={terminalWindow.minimized}
               launchTarget={{
                 command: terminalWindow.command,
+                confirmCommand: terminalWindow.command ? false : undefined,
                 sandboxId: terminalWindow.sandboxId,
                 template: terminalWindow.template.template,
               }}
               sandboxManagementAuth={sandboxManagementAuth}
+              storeTerminalSession={false}
               syncUrl={false}
               teamSlug={teamSlug}
               onWindowDragStart={(event) =>

@@ -68,6 +68,7 @@ interface DashboardTerminalProps {
   onWindowMinimize?: () => void
   sandboxManagementAuth: SandboxManagementAuth
   sandboxScoped?: boolean
+  storeTerminalSession?: boolean
   syncUrl?: boolean
   teamSlug: string
 }
@@ -86,6 +87,7 @@ export default function DashboardTerminal({
   onWindowMinimize,
   sandboxManagementAuth,
   sandboxScoped = false,
+  storeTerminalSession = !sandboxScoped,
   syncUrl = true,
   teamSlug,
 }: DashboardTerminalProps) {
@@ -106,6 +108,9 @@ export default function DashboardTerminal({
   const inputFlushRetryCountRef = useRef(0)
   const inputGenerationRef = useRef(0)
   const pendingCommandsRef = useRef<string[]>([])
+  const queueTerminalCommandRef = useRef<
+    (command: string, options?: StartTerminalOptions) => void
+  >(() => undefined)
   const isStartingRef = useRef(false)
   const retryResolveRef = useRef<(() => void) | null>(null)
   const retryTimerRef = useRef<number | null>(null)
@@ -378,7 +383,7 @@ export default function DashboardTerminal({
             ? TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS
             : undefined,
           sandboxManagementAuth,
-          shouldStoreSession: !sandboxScoped,
+          shouldStoreSession: storeTerminalSession,
           sandboxId: requestedSandboxId,
           template: nextTemplate,
         })
@@ -493,7 +498,7 @@ export default function DashboardTerminal({
       getSandbox,
       runCommand,
       sandboxManagementAuth,
-      sandboxScoped,
+      storeTerminalSession,
       template,
       onSandboxAttached,
       onSandboxAttachFailed,
@@ -515,11 +520,25 @@ export default function DashboardTerminal({
         return
       }
 
-      if (command.trim()) {
+      const normalizedCommand = command.trim()
+
+      if (normalizedCommand) {
+        if (options.confirmCommand === false) {
+          pendingCommandsRef.current = [normalizedCommand]
+          void startTerminal({
+            ...options,
+            target: {
+              ...options.target,
+              template: nextTemplate,
+            },
+          })
+          return
+        }
+
         // Commands can come from links, so require an explicit click before
         // sending anything into the PTY.
         setPendingLaunch({
-          command: command.trim(),
+          command: normalizedCommand,
           forceNewSandbox: options.forceNewSandbox,
           target: {
             ...options.target,
@@ -541,6 +560,10 @@ export default function DashboardTerminal({
     },
     [appendOutput, startTerminal, status, template]
   )
+
+  useEffect(() => {
+    queueTerminalCommandRef.current = queueTerminalCommand
+  }, [queueTerminalCommand])
 
   const confirmPendingLaunch = useCallback(() => {
     if (!pendingLaunch) return
@@ -628,19 +651,38 @@ export default function DashboardTerminal({
   useEffect(() => {
     if (!autoStart || status !== 'idle' || isStartingRef.current) return
 
+    const target =
+      launchTarget?.command || launchTarget?.sandboxId || launchTarget?.template
+        ? {
+            command: launchTarget.command,
+            confirmCommand: launchTarget.confirmCommand,
+            sandboxId: launchTarget.sandboxId,
+            template: launchTarget.template,
+          }
+        : undefined
+
     const autoStartTimer = window.setTimeout(() => {
       if (isStartingRef.current || ptyRef.current) return
 
-      queueTerminalCommand(launchTarget?.command ?? '', {
+      queueTerminalCommandRef.current(target?.command ?? '', {
+        confirmCommand: target?.confirmCommand,
         forceNewSandbox,
-        target: launchTarget,
+        target,
       })
     }, TERMINAL_AUTOSTART_DEBOUNCE_MS)
 
     return () => {
       window.clearTimeout(autoStartTimer)
     }
-  }, [autoStart, forceNewSandbox, launchTarget, queueTerminalCommand, status])
+  }, [
+    autoStart,
+    forceNewSandbox,
+    launchTarget?.command,
+    launchTarget?.confirmCommand,
+    launchTarget?.sandboxId,
+    launchTarget?.template,
+    status,
+  ])
 
   useEffect(() => {
     const handlePageHide = (event: PageTransitionEvent) => {
