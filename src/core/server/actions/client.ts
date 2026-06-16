@@ -10,7 +10,7 @@ import {
   toActionErrorFromRepoError,
 } from '@/core/server/adapters/errors'
 import type { AuthUser } from '@/core/server/auth'
-import { auth } from '@/core/server/auth'
+import { getAuthContext } from '@/core/server/auth'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import {
@@ -216,7 +216,7 @@ export const actionClient = createSafeActionClient({
 })
 
 export const authActionClient = actionClient.use(async ({ next }) => {
-  const authContext = await auth.getAuthContext()
+  const authContext = await getAuthContext()
 
   if (!authContext) {
     throw UnauthenticatedError()

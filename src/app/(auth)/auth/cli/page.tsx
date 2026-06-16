@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
-import { auth } from '@/core/server/auth'
+import { getAuthContext } from '@/core/server/auth'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { isLoopbackUrl } from '@/core/shared/schemas/url'
 import { encodedRedirect } from '@/lib/utils/auth'
@@ -22,14 +22,14 @@ type CLISearchParams = Promise<{
 async function handleCLIAuth(
   next: string,
   userEmail: string,
-  supabaseAccessToken: string
+  authProviderAccessToken: string
 ) {
   if (!isLoopbackUrl(next)) {
     throw new Error('Invalid redirect URL')
   }
 
   const teamsResult = await createUserTeamsRepository({
-    accessToken: supabaseAccessToken,
+    accessToken: authProviderAccessToken,
   }).listUserTeams()
 
   if (!teamsResult.ok) {
@@ -44,7 +44,9 @@ async function handleCLIAuth(
     throw new Error('Failed to resolve default team')
   }
 
-  const e2bAccessToken = await generateE2BUserAccessToken(supabaseAccessToken)
+  const e2bAccessToken = await generateE2BUserAccessToken(
+    authProviderAccessToken
+  )
 
   const searchParams = new URLSearchParams({
     email: userEmail,
@@ -97,7 +99,7 @@ export default async function CLIAuthPage({
   searchParams: CLISearchParams
 }) {
   const { next, state, error } = await searchParams
-  const authContext = await auth.getAuthContext()
+  const authContext = await getAuthContext()
 
   if (state === 'success') {
     return <SuccessState />

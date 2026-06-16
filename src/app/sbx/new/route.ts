@@ -2,13 +2,13 @@ import Sandbox from 'e2b'
 import { type NextRequest, NextResponse } from 'next/server'
 import { authHeaders } from '@/configs/api'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { auth } from '@/core/server/auth'
+import { getAuthContext } from '@/core/server/auth'
 import { resolveUserTeam } from '@/core/server/functions/team/resolve-user-team'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 
 export const GET = async (req: NextRequest) => {
   try {
-    const authContext = await auth.getAuthContext()
+    const authContext = await getAuthContext()
 
     if (!authContext) {
       const params = new URLSearchParams({

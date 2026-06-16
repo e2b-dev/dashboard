@@ -7,7 +7,6 @@ import Head from 'next/head'
 import type { Metadata } from 'next/types'
 import { Suspense } from 'react'
 import { getFaviconIcons } from '@/configs/favicon'
-import { isOryAuthEnabled } from '@/configs/flags'
 import ClientProviders from '@/features/client-providers'
 import { GTMHead } from '@/features/google-tag-manager'
 import { Toaster } from '@/ui/primitives/toaster'
@@ -24,8 +23,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const postHogEnabled =
-    isOryAuthEnabled() && !!process.env.NEXT_PUBLIC_POSTHOG_KEY
+  const postHogEnabled = !!process.env.NEXT_PUBLIC_POSTHOG_KEY
 
   return (
     <html lang="en" suppressHydrationWarning>

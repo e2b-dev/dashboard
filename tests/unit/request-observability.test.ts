@@ -22,15 +22,15 @@ describe('request observability', () => {
   it('removes query strings and hashes from logged request URLs', () => {
     const requestContext = createRequestObservabilityContext({
       requestUrl:
-        'https://dashboard.test/auth/callback?code=secret-code&returnTo=%2Fdashboard#acct',
+        'https://dashboard.test/api/auth/oauth/callback/ory?code=secret-code&returnTo=%2Fdashboard#acct',
       transport: 'route',
       handlerName: 'authCallback',
     })
 
     expect(requestContext.request_url).toBe(
-      'https://dashboard.test/auth/callback'
+      'https://dashboard.test/api/auth/oauth/callback/ory'
     )
-    expect(requestContext.request_path).toBe('/auth/callback')
+    expect(requestContext.request_path).toBe('/api/auth/oauth/callback/ory')
   })
 
   it('prefers referer when deriving browser-origin request context', () => {
