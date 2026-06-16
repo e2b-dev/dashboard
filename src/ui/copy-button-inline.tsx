@@ -10,12 +10,14 @@ export default function CopyButtonInline({
   children,
   className,
   iconPosition = 'right',
+  truncate = true,
   'aria-label': ariaLabel,
 }: {
   value: string
   children: React.ReactNode
   className?: string
   iconPosition?: 'left' | 'right'
+  truncate?: boolean
   'aria-label'?: string
 }) {
   const [wasCopied, copy] = useClipboard(1000)
@@ -72,7 +74,9 @@ export default function CopyButtonInline({
       )}
     >
       {iconPosition === 'left' && icon}
-      <span className="truncate">{children}</span>
+      <span className={truncate ? 'truncate' : 'whitespace-nowrap'}>
+        {children}
+      </span>
       {iconPosition === 'right' && icon}
     </button>
   )

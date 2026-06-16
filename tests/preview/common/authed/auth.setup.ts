@@ -18,7 +18,7 @@ test('sign in via Ory hosted UI and persist auth state', async ({
   expect(email, 'TEST_USER_EMAIL must be set').toBeTruthy()
   expect(password, 'TEST_USER_PASSWORD must be set').toBeTruthy()
 
-  // /sign-in middleware redirects through /api/auth/oauth-start → Hydra →
+  // /sign-in middleware redirects through /api/auth/oauth/start → Hydra →
   // Kratos hosted UI on a different origin; Playwright follows the chain.
   await page.goto('/sign-in')
 

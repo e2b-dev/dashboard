@@ -1,40 +1,25 @@
 import { describe, expect, it } from 'vitest'
-import { classifyProxyRequest } from '@/core/server/http/proxy-plan'
+import {
+  classifyProxyRequest,
+  planNeedsAuthJsSession,
+} from '@/core/server/proxy/classifier'
 
 describe('classifyProxyRequest', () => {
   it.each([
-    ['/dashboard/team/sandboxes', 'page-auth', true, true, true],
-    ['/sign-in', 'page-auth', true, true, true],
-    ['/sign-up', 'page-auth', true, true, true],
-    ['/api/trpc/user.update', 'api-trpc', false, false, false],
-    ['/api/auth/oauth/session', 'authjs-endpoint', false, false, false],
-    ['/api/auth/oauth-start', 'authjs-endpoint', false, false, false],
-    ['/api/health', 'api-public', false, false, false],
-    ['/docs/quickstart', 'rewrite', false, false, false],
-    ['/', 'rewrite', false, false, false],
-    ['/unknown-public-page', 'public', false, false, false],
-  ])('classifies %s', (pathname, kind, needsOryAuthJsSession, runAuthRouteRedirect, runAuthGate) => {
+    ['/dashboard/team/sandboxes', 'dashboard-page', true],
+    ['/sign-in', 'auth-page', true],
+    ['/sign-up', 'auth-page', true],
+    ['/api/trpc/user.update', 'trpc', false],
+    ['/api/auth/oauth/session', 'bypass', false],
+    ['/api/auth/oauth/start', 'bypass', false],
+    ['/api/health', 'bypass', false],
+    ['/docs/quickstart', 'rewrite', false],
+    ['/', 'rewrite', false],
+    ['/unknown-public-page', 'public', false],
+  ])('classifies %s', (pathname, kind, needsAuthJsSession) => {
     const plan = classifyProxyRequest(pathname)
 
-    expect(plan).toMatchObject({
-      kind,
-      needsOryAuthJsSession,
-      runAuthRouteRedirect,
-      runAuthGate,
-    })
-  })
-
-  it('runs proxy concerns only for page and rewrite routes', () => {
-    expect(classifyProxyRequest('/api/trpc/user.update')).toMatchObject({
-      runMiddlewareRedirect: false,
-      runRouteRewritePassthrough: false,
-      runMiddlewareRewrite: false,
-    })
-
-    expect(classifyProxyRequest('/dashboard/team')).toMatchObject({
-      runMiddlewareRedirect: true,
-      runRouteRewritePassthrough: true,
-      runMiddlewareRewrite: true,
-    })
+    expect(plan.kind).toBe(kind)
+    expect(planNeedsAuthJsSession(plan)).toBe(needsAuthJsSession)
   })
 })

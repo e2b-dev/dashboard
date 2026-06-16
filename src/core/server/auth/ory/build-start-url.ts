@@ -6,7 +6,7 @@ export type OryAuthorizationParams =
   | { prompt: 'registration' | 'login' }
   | undefined
 
-const ORY_START_PATH = '/api/auth/oauth-start'
+const ORY_START_PATH = '/api/auth/oauth/start'
 
 export function normalizeOryReturnTo(
   returnTo?: string | null

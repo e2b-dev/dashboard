@@ -10,7 +10,7 @@ interface ReauthDialogProps {
 
 export function ReauthDialog({ open, onOpenChange }: ReauthDialogProps) {
   const handleReauth = async () => {
-    // Hard navigation (not the Next router): oauth-start is a side-effecting GET
+    // Hard navigation (not the Next router): the OAuth start route is a side-effecting GET
     // that must run exactly once, so a soft RSC navigation would corrupt the
     // OAuth flow. See reauthForAccountSettingsAction.
     const { url } = await reauthForAccountSettingsAction()

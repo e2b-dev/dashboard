@@ -2,7 +2,6 @@ import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
 import type { NextRequest } from 'next/server'
 import type { Session } from 'next-auth'
 import { auth as authjs } from '@/auth'
-import { isOryAuthEnabled } from '@/configs/flags'
 
 import { trpcAppRouter } from '@/core/server/api/routers'
 import { createTRPCContext } from '@/core/server/trpc/init'
@@ -42,7 +41,7 @@ const oryHandler = authjs((req) => handler(req, req.auth))
 type RouteContext = { params: Promise<{ trpc: string }> }
 
 function route(req: NextRequest, context: RouteContext) {
-  return isOryAuthEnabled() ? oryHandler(req, context) : handler(req)
+  return oryHandler(req, context)
 }
 
 export { route as GET, route as POST }
