@@ -1,4 +1,4 @@
-import type { JSX } from 'react'
+import { JSX } from 'react'
 import {
   AccountSettingsIcon,
   CardIcon,
