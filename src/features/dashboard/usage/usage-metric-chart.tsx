@@ -61,10 +61,17 @@ function UsageMetricChartContent({
   return (
     <>
       <CardHeader className="space-y-2">
-        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-2">
-          <span className="prose-label-highlight uppercase max-md:text-sm">
-            {config.title}
-          </span>
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex min-w-0 flex-col gap-2">
+            <span className="prose-label-highlight uppercase max-md:text-sm">
+              {config.title}
+            </span>
+            <AnimatedMetricDisplay
+              value={displayValue}
+              label={label}
+              timestamp={timestamp}
+            />
+          </div>
           <UsageTimeRangeControls
             timeframe={timeframe}
             onTimeRangeChange={setTimeframe}
@@ -74,11 +81,6 @@ function UsageMetricChartContent({
             })}
           />
         </div>
-        <AnimatedMetricDisplay
-          value={displayValue}
-          label={label}
-          timestamp={timestamp}
-        />
       </CardHeader>
       <CardContent className="flex flex-col gap-4 flex-1 min-h-0">
         <div
