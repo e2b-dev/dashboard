@@ -38,6 +38,13 @@ export default function SandboxTerminalView({
     void refetchSandboxInfo()
   }
 
+  const finishSandboxResume = async () => {
+    const nextSandboxInfo = await refetchSandboxInfo()
+    if (nextSandboxInfo?.state === 'running') {
+      setShouldResumeSandbox(false)
+    }
+  }
+
   if (isSandboxInfoLoading && !sandboxInfo) {
     return <LoadingLayout />
   }
@@ -63,8 +70,7 @@ export default function SandboxTerminalView({
         autoStart
         launchTarget={launchTarget}
         onSandboxAttached={() => {
-          setShouldResumeSandbox(false)
-          refetchSandbox()
+          void finishSandboxResume()
         }}
         onSandboxAttachFailed={() => {
           refetchSandbox()

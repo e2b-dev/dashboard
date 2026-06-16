@@ -28,7 +28,7 @@ interface SandboxContextValue {
   isSandboxNotFound: boolean
 
   isSandboxInfoLoading: boolean
-  refetchSandboxInfo: () => Promise<void>
+  refetchSandboxInfo: () => Promise<SandboxDetailsModel | undefined>
 }
 
 const SandboxContext = createContext<SandboxContextValue | null>(null)
@@ -115,7 +115,8 @@ export function SandboxProvider({ children }: SandboxProviderProps) {
   )
 
   const refetchSandboxInfo = useCallback(async () => {
-    await refetch()
+    const result = await refetch()
+    return result.data
   }, [refetch])
 
   const sandboxState = sandboxInfoData?.state
