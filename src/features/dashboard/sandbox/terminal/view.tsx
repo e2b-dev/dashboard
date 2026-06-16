@@ -13,6 +13,8 @@ interface SandboxTerminalViewProps {
   sandboxManagementAuth: SandboxManagementAuth
 }
 
+const SANDBOX_TERMINAL_RESUME_TIMEOUT_MS = 70_000
+
 export default function SandboxTerminalView({
   sandboxManagementAuth,
 }: SandboxTerminalViewProps) {
@@ -67,6 +69,9 @@ export default function SandboxTerminalView({
         onSandboxAttachFailed={() => {
           refetchSandbox()
         }}
+        sandboxConnectRequestTimeoutMs={
+          shouldResumeSandbox ? SANDBOX_TERMINAL_RESUME_TIMEOUT_MS : undefined
+        }
         sandboxManagementAuth={sandboxManagementAuth}
         sandboxScoped
         teamSlug={team.slug}

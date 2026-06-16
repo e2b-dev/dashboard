@@ -38,6 +38,7 @@ interface DashboardTerminalProps {
   launchTarget?: TerminalLaunchTarget
   onSandboxAttached?: (sandboxId: string) => void
   onSandboxAttachFailed?: (target: TerminalLaunchTarget | undefined) => void
+  sandboxConnectRequestTimeoutMs?: number
   sandboxManagementAuth: SandboxManagementAuth
   sandboxScoped?: boolean
   teamSlug: string
@@ -49,6 +50,7 @@ export default function DashboardTerminal({
   launchTarget,
   onSandboxAttached,
   onSandboxAttachFailed,
+  sandboxConnectRequestTimeoutMs,
   sandboxManagementAuth,
   sandboxScoped = false,
   teamSlug,
@@ -335,7 +337,8 @@ export default function DashboardTerminal({
             forceNewSandbox: options.forceNewSandbox,
             onStatus: appendOutput,
             requestTimeoutMs: requestedSandboxId
-              ? TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS
+              ? (sandboxConnectRequestTimeoutMs ??
+                TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS)
               : undefined,
             sandboxManagementAuth,
             shouldStoreSession: !sandboxScoped,
@@ -443,6 +446,7 @@ export default function DashboardTerminal({
       runCommand,
       sandboxManagementAuth,
       sandboxScoped,
+      sandboxConnectRequestTimeoutMs,
       template,
       onSandboxAttached,
       onSandboxAttachFailed,

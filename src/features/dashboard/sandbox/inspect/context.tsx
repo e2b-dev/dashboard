@@ -19,7 +19,7 @@ import { createFilesystemStore, type FilesystemStore } from './filesystem/store'
 import type { FilesystemOperations } from './filesystem/types'
 import { SandboxManager } from './sandbox-manager'
 
-const SANDBOX_RESUME_TIMEOUT_MS = 5 * 60 * 1000
+const SANDBOX_RESUME_TIMEOUT_MS = 70_000
 
 interface SandboxInspectContextValue {
   store: FilesystemStore
