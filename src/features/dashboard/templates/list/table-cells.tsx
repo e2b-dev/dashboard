@@ -8,6 +8,7 @@ import { useMemo, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import type { DefaultTemplate, Template } from '@/core/modules/templates/models'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
+import { useRouteParams } from '@/lib/hooks/use-route-params'
 import {
   defaultErrorToast,
   defaultSuccessToast,

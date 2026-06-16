@@ -26,7 +26,6 @@ import {
 } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import type { TemplateTagAssignment } from '@/core/modules/templates/models'
-import { LoadMoreButton } from '@/features/dashboard/templates/builds/table-cells'
 import { getTemplateDisplayName } from '@/features/dashboard/templates/helpers'
 import { useFilterChangeTracking } from '@/lib/hooks/use-filter-change-tracking'
 import { cn, EASE_APPEAR } from '@/lib/utils/ui'
@@ -39,6 +38,7 @@ import {
   DataTableRow,
 } from '@/ui/data-table'
 import { HoverPrefetchLink } from '@/ui/hover-prefetch-link'
+import { LoadMoreButton } from '@/ui/pagination-buttons'
 import { TriangleRightIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
 import { RowHoverFrame } from '@/ui/row-hover-frame'

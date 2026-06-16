@@ -79,7 +79,6 @@ export function Duration({
   const duration = isBuilding
     ? now - createdAt
     : (finishedAt ?? now) - createdAt
-  const iso = finishedAt ? new Date(finishedAt).toISOString() : null
 
   return (
     <span className="text-fg-tertiary prose-table-numeric whitespace-nowrap">
@@ -89,7 +88,6 @@ export function Duration({
 }
 
 export function StartedAt({ timestamp }: { timestamp: number }) {
-  const iso = new Date(timestamp).toISOString()
   const elapsed = Date.now() - timestamp
 
   return (

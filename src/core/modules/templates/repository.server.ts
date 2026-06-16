@@ -9,6 +9,8 @@ import {
 } from '@/configs/mock-data'
 import type {
   DefaultTemplate,
+  ListTeamTemplatesOptions,
+  ListTeamTemplatesResult,
   Template,
   TemplateDetail,
   TemplateTagAssignment,
@@ -37,6 +39,9 @@ type TemplatesRepositoryDeps = {
 
 export interface TeamTemplatesRepository {
   getTeamTemplates(): Promise<RepoResult<{ templates: Template[] }>>
+  listTeamTemplates(
+    options: ListTeamTemplatesOptions
+  ): Promise<RepoResult<ListTeamTemplatesResult>>
   getTemplate(
     templateId: string
   ): Promise<RepoResult<{ template: TemplateDetail }>>
@@ -323,6 +328,57 @@ export function createTemplatesRepository(
           deps.resolveAuthUserEmailsById
         ),
       })
+    },
+    async listTeamTemplates(options) {
+      if (USE_MOCK_DATA) {
+        return ok({ data: MOCK_TEMPLATES_DATA, nextCursor: null })
+      }
+
+      const res = await deps.apiClient.GET('/templates', {
+        params: {
+          query: options,
+        },
+        headers: {
+          ...deps.authHeaders(scope.accessToken, scope.teamId),
+        },
+      })
+
+      if (!res.response.ok || res.error) {
+        return err(
+          repoErrorFromHttp(
+            res.response.status,
+            res.error?.message ?? 'Failed to fetch templates',
+            res.error
+          )
+        )
+      }
+
+      if (!res.data?.data?.length) {
+        return ok({ data: [], nextCursor: res.data?.nextCursor ?? null })
+      }
+
+      const data = res.data.data.map((t): Template | DefaultTemplate => ({
+        templateID: t.templateID,
+        buildID: t.buildID,
+        cpuCount: t.cpuCount,
+        memoryMB: t.memoryMB,
+        diskSizeMB: t.diskSizeMB ?? 0,
+        public: t.public,
+        aliases: t.aliases,
+        names: t.names,
+        createdAt: t.createdAt,
+        updatedAt: t.updatedAt,
+        lastSpawnedAt: t.lastSpawnedAt ?? null,
+        spawnCount: t.spawnCount,
+        buildCount: t.buildCount,
+        envdVersion: t.envdVersion ?? '',
+        ...(t.isDefault && {
+          isDefault: true as const,
+          defaultDescription: t.defaultDescription ?? undefined,
+        }),
+      }))
+
+      return ok({ data, nextCursor: res.data.nextCursor ?? null })
     },
     async assignTag({ templateName, buildId, tag }) {
       const res = await deps.infraClient.POST('/templates/tags', {

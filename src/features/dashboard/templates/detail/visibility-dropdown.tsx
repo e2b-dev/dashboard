@@ -1,7 +1,12 @@
 'use client'
 
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  type InfiniteData,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query'
 import posthog from 'posthog-js'
+import type { ListTeamTemplatesResult } from '@/core/modules/templates/models'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -54,7 +59,7 @@ export function TemplateVisibilityDropdown({
           public: variables.public,
         })
 
-        const listKey = trpc.templates.getTemplates.queryKey({ teamSlug })
+        const listKey = trpc.templates.getTemplates.pathKey()
         const detailKey = trpc.templates.getTemplate.queryKey({
           teamSlug,
           templateId,
@@ -65,17 +70,23 @@ export function TemplateVisibilityDropdown({
           queryClient.cancelQueries({ queryKey: detailKey }),
         ])
 
-        queryClient.setQueryData(listKey, (old) => {
-          if (!old?.templates) return old
-          return {
-            ...old,
-            templates: old.templates.map((t) =>
-              t.templateID === variables.templateId
-                ? { ...t, public: variables.public }
-                : t
-            ),
+        queryClient.setQueriesData<InfiniteData<ListTeamTemplatesResult>>(
+          { queryKey: listKey },
+          (old) => {
+            if (!old?.pages) return old
+            return {
+              ...old,
+              pages: old.pages.map((page) => ({
+                ...page,
+                data: page.data.map((t) =>
+                  t.templateID === variables.templateId
+                    ? { ...t, public: variables.public }
+                    : t
+                ),
+              })),
+            }
           }
-        })
+        )
 
         queryClient.setQueryData(detailKey, (old) => {
           if (!old?.template) return old
@@ -94,7 +105,7 @@ export function TemplateVisibilityDropdown({
       },
       onSettled: () => {
         queryClient.invalidateQueries({
-          queryKey: trpc.templates.getTemplates.queryKey({ teamSlug }),
+          queryKey: trpc.templates.getTemplates.pathKey(),
         })
         queryClient.invalidateQueries({
           queryKey: trpc.templates.getTemplate.queryKey({
