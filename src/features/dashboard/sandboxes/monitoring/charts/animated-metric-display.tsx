@@ -18,13 +18,13 @@ function AnimatedMetricDisplayComponent({
   timestamp,
 }: AnimatedMetricDisplayProps) {
   return (
-    <div className="inline-flex items-end gap-2 md:gap-3">
+    <div className="inline-flex max-w-full min-w-0 items-end gap-2 md:gap-3">
       <AnimatedNumber
         value={value}
-        className="prose-value-big max-md:text-2xl"
+        className="prose-value-big max-md:text-2xl shrink-0"
       />
 
-      <span className="text-fg-tertiary prose-label uppercase max-md:text-xs">
+      <span className="text-fg-tertiary prose-label uppercase max-md:text-xs shrink-0">
         <span className="max-md:hidden">{label}</span>
         <span className="md:hidden">{mobileLabel || label}</span>
       </span>
@@ -36,7 +36,7 @@ function AnimatedMetricDisplayComponent({
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -5 }}
             transition={{ duration: 0.1, ease: 'easeInOut' }}
-            className="text-fg prose-label-small"
+            className="text-fg prose-label-small min-w-0 truncate"
           >
             {timestamp}
           </motion.span>
