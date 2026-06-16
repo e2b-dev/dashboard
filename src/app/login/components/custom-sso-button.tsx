@@ -2,13 +2,28 @@
 
 import type { OryNodeSsoButtonProps } from '@ory/elements-react'
 import type { ComponentType, SVGProps } from 'react'
+import { GithubDark } from '@/components/ui/svgs/githubDark'
+import { GithubLight } from '@/components/ui/svgs/githubLight'
 import { Google } from '@/components/ui/svgs/google'
+import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
+
+// GitHub's mark is monochrome, so swap the dark/light variants per theme. The
+// `Google` SVG is full-color and needs no theme switch.
+function GitHubLogo({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return (
+    <>
+      <GithubLight className={cn('dark:hidden', className)} {...props} />
+      <GithubDark className={cn('hidden dark:block', className)} {...props} />
+    </>
+  )
+}
 
 const PROVIDERS: Record<
   string,
   { label: string; Logo: ComponentType<SVGProps<SVGSVGElement>> }
 > = {
+  github: { label: 'Continue with GitHub', Logo: GitHubLogo },
   google: { label: 'Continue with Google', Logo: Google },
 }
 
@@ -27,6 +42,7 @@ function resolveProvider({
     .join(' ')
     .toLowerCase()
 
+  if (haystack.includes('github')) return PROVIDERS.github
   if (haystack.includes('google')) return PROVIDERS.google
   return undefined
 }
