@@ -35,6 +35,7 @@ export async function openTerminalSandbox({
     })
 
     return {
+      created: false,
       sandbox,
     }
   }
@@ -61,12 +62,41 @@ export async function openTerminalSandbox({
       onStatus('Stored terminal sandbox is unavailable.\r\n')
       onStatus(`Starting ${template} terminal sandbox...\r\n`)
       sandbox = await createTerminalSandbox({ headers, template, userId })
+      return storeTerminalSandboxSession({
+        sandbox,
+        shouldStoreSession,
+        template,
+        userId,
+      })
     }
   } else {
     onStatus(`Starting ${template} terminal sandbox...\r\n`)
     sandbox = await createTerminalSandbox({ headers, template, userId })
+    return storeTerminalSandboxSession({
+      sandbox,
+      shouldStoreSession,
+      template,
+      userId,
+    })
   }
 
+  return {
+    created: false,
+    sandbox,
+  }
+}
+
+function storeTerminalSandboxSession({
+  sandbox,
+  shouldStoreSession,
+  template,
+  userId,
+}: {
+  sandbox: Sandbox
+  shouldStoreSession?: boolean
+  template: string
+  userId: string
+}) {
   if (shouldStoreSession ?? true) {
     writeStoredTerminalSession(userId, {
       sandboxId: sandbox.sandboxId,
@@ -75,6 +105,7 @@ export async function openTerminalSandbox({
   }
 
   return {
+    created: true,
     sandbox,
   }
 }

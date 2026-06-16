@@ -15,6 +15,7 @@ import {
 } from './constants'
 import DashboardTerminalCommandDialog from './dashboard-terminal-command-dialog'
 import { openTerminalSandbox } from './sandbox-session'
+import { clearStoredTerminalSession } from './storage'
 import {
   normalizeTerminalTemplate,
   resolveTerminalTemplateOverride,
@@ -32,6 +33,26 @@ import { useTerminalInstance } from './use-terminal-instance'
 const FLUSH_INPUT_INTERVAL_MS = 0
 const FLUSH_INPUT_RETRY_INTERVAL_MS = 250
 const MAX_INPUT_FLUSH_RETRIES = 2
+
+async function killAbortedStartupSandbox({
+  created,
+  sandbox,
+  userId,
+}: {
+  created: boolean
+  sandbox: Sandbox
+  userId: string
+}) {
+  if (!created) return
+
+  clearStoredTerminalSession(userId)
+
+  try {
+    await sandbox.kill()
+  } catch {
+    // The start was superseded or unmounted; best-effort sandbox cleanup.
+  }
+}
 
 interface DashboardTerminalProps {
   autoStart?: boolean
@@ -346,7 +367,8 @@ export default function DashboardTerminal({
       const openSandbox = async () => {
         if (getSandbox) {
           appendOutput('Connecting to sandbox...\r\n')
-          return getSandbox()
+          const sandbox = await getSandbox()
+          return { created: false, sandbox }
         }
 
         const terminalSandbox = await openTerminalSandbox({
@@ -361,13 +383,13 @@ export default function DashboardTerminal({
           template: nextTemplate,
         })
 
-        return terminalSandbox.sandbox
+        return terminalSandbox
       }
 
       const canRetrySandboxOpen = Boolean(requestedSandboxId || getSandbox)
 
       try {
-        const sandbox = await attachTerminalWithRetry({
+        const terminalSandbox = await attachTerminalWithRetry({
           canRetry: canRetrySandboxOpen,
           isCurrent: isCurrentStart,
           isRetryableError: (error) => error instanceof TimeoutError,
@@ -385,7 +407,18 @@ export default function DashboardTerminal({
           waitForRetry: waitForAttachRetry,
         })
 
-        if (!sandbox || !isCurrentStart()) return
+        if (!terminalSandbox) return
+
+        const { created, sandbox } = terminalSandbox
+
+        if (!isCurrentStart()) {
+          await killAbortedStartupSandbox({
+            created,
+            sandbox,
+            userId: sandboxManagementAuth.userId,
+          })
+          return
+        }
 
         appendOutput(`Sandbox ${sandbox.sandboxId} is running.\r\n`)
         appendOutput('Opening PTY...\r\n')
@@ -407,6 +440,11 @@ export default function DashboardTerminal({
           } catch {
             // The start was superseded or unmounted; best-effort PTY cleanup.
           }
+          await killAbortedStartupSandbox({
+            created,
+            sandbox,
+            userId: sandboxManagementAuth.userId,
+          })
           return
         }
 

@@ -22,7 +22,6 @@ import { useTRPC } from '@/trpc/client'
 import { AlertPopover } from '@/ui/alert-popover'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
-import { IconButton } from '@/ui/primitives/icon-button'
 import {
   ChevronDownIcon,
   ExternalLinkIcon,
@@ -61,6 +60,7 @@ type WindowSize = {
 }
 
 type AgentTerminalWindow = {
+  command?: string
   id: string
   forceNewSandbox?: boolean
   minimized: boolean
@@ -452,6 +452,7 @@ export function AgentsDashboard({
     setTerminalWindows((currentWindows) => [
       ...currentWindows,
       {
+        command: forceNewSandbox ? template.command : undefined,
         id: windowId,
         forceNewSandbox,
         minimized: false,
@@ -472,6 +473,7 @@ export function AgentsDashboard({
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {templates.map((template) => {
           const isExpanded = expandedAgentId === template.id
+          const historyPanelId = `agent-history-${template.id}`
           return (
             <section
               className="border-stroke bg-bg-1 flex min-h-48 flex-col overflow-hidden rounded-lg border"
@@ -507,6 +509,8 @@ export function AgentsDashboard({
                     <ExternalLinkIcon />
                   </Button>
                   <Button
+                    aria-controls={historyPanelId}
+                    aria-expanded={isExpanded}
                     className="w-full"
                     size="default"
                     variant="secondary"
@@ -533,7 +537,10 @@ export function AgentsDashboard({
       </div>
 
       {expandedTemplate ? (
-        <section className="border-stroke bg-bg-1 mt-4 overflow-hidden rounded-lg border">
+        <section
+          className="border-stroke bg-bg-1 mt-4 overflow-hidden rounded-lg border"
+          id={`agent-history-${expandedTemplate.id}`}
+        >
           <div className="border-stroke flex items-center justify-between gap-3 border-b px-4 py-3">
             <div className="min-w-0">
               <h3 className="prose-body-highlight text-fg truncate">
@@ -650,7 +657,12 @@ export function AgentsDashboard({
           setTerminalWindows((currentWindows) =>
             currentWindows.map((terminalWindow) =>
               terminalWindow.id === windowId
-                ? { ...terminalWindow, forceNewSandbox: false, sandboxId }
+                ? {
+                    ...terminalWindow,
+                    command: undefined,
+                    forceNewSandbox: false,
+                    sandboxId,
+                  }
                 : terminalWindow
             )
           )
@@ -804,7 +816,7 @@ function AgentTerminalWindowLayer({
   return (
     <div
       ref={layerRef}
-      className="pointer-events-none fixed top-18 right-2 bottom-4 left-2 z-40 md:right-4 md:bottom-10 md:left-[248px]"
+      className="pointer-events-none fixed top-18 right-2 bottom-4 left-2 z-40 md:right-4 md:bottom-10 md:left-[calc(var(--sidebar-width-active)+1rem)]"
     >
       {windows.map((terminalWindow) => {
         const isActive = activeWindowId === terminalWindow.id
@@ -853,7 +865,7 @@ function AgentTerminalWindowLayer({
               forceNewSandbox={terminalWindow.forceNewSandbox}
               isWindowMinimized={terminalWindow.minimized}
               launchTarget={{
-                command: terminalWindow.template.command,
+                command: terminalWindow.command,
                 sandboxId: terminalWindow.sandboxId,
                 template: terminalWindow.template.template,
               }}
@@ -877,10 +889,9 @@ function AgentTerminalWindowLayer({
               }}
             />
             {terminalWindow.minimized ? null : (
-              <IconButton
-                aria-label="Resize terminal window"
+              <div
+                aria-hidden
                 className="border-fg-tertiary/70 hover:border-fg-secondary focus-visible:ring-focus absolute right-1 bottom-1 hidden size-4 cursor-nwse-resize border-r border-b bg-transparent focus-visible:ring-2 focus-visible:outline-none md:block"
-                type="button"
                 onPointerDown={(event) =>
                   handleWindowResizeStart(event, terminalWindow)
                 }
