@@ -22,6 +22,7 @@ type _BuildStatusExhaustiveCheck = AssertTrue<
 // TypeCheck: End
 
 export const BuildStatusSchema = z.enum(BUILD_STATUS_VALUES)
+
 export interface ListedBuildModel {
   id: string
   // id or alias

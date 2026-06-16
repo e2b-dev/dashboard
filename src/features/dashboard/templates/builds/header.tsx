@@ -102,7 +102,7 @@ export default function BuildsHeader() {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-row items-center gap-1">
       <Input
         placeholder="Build ID, Template ID or Name"
         className="w-full max-w-62"
