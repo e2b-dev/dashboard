@@ -1,6 +1,7 @@
 import { getUsage } from '@/core/server/functions/usage/get-usage'
 import { UsageChartsProvider } from '@/features/dashboard/usage/usage-charts-context'
 import { UsageMetricChart } from '@/features/dashboard/usage/usage-metric-chart'
+import { UsageTopTimeRangeControls } from '@/features/dashboard/usage/usage-top-time-range-controls'
 import ErrorBoundary from '@/ui/error'
 import Frame from '@/ui/frame'
 
@@ -33,10 +34,13 @@ export default async function UsagePage({
           <Frame
             classNames={{
               wrapper: 'w-full lg:flex-1 lg:min-h-[700px] lg:max-h-full',
-              frame: 'lg:h-full max-lg:border-0',
+              frame: 'lg:h-full max-lg:border-0 lg:flex lg:flex-col',
             }}
           >
-            <div className="grid grid-cols-1 lg:grid-cols-2 lg:grid-rows-2 lg:h-full">
+            <div className="hidden lg:flex lg:justify-end lg:border-b lg:border-stroke lg:p-3">
+              <UsageTopTimeRangeControls />
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 lg:grid-rows-2 lg:min-h-0 lg:flex-1">
               <UsageMetricChart
                 metric="sandboxes"
                 className="min-h-[48svh] lg:min-h-0 lg:h-full"
@@ -45,7 +49,7 @@ export default async function UsagePage({
               <UsageMetricChart
                 metric="cost"
                 className="min-h-[48svh] lg:min-h-0 lg:h-full"
-                timeRangeControlsClassName="hidden lg:flex"
+                timeRangeControlsClassName="hidden"
               />
               <UsageMetricChart
                 metric="vcpu"
