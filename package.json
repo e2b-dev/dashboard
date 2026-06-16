@@ -118,6 +118,7 @@
     "pathe": "^2.0.3",
     "pino": "^9.7.0",
     "posthog-js": "^1.268.1",
+    "posthog-node": "^5.37.1",
     "react": "19.2.4",
     "react-day-picker": "^9.9.0",
     "react-dom": "19.2.4",

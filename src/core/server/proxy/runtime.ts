@@ -7,9 +7,9 @@ import {
   NextResponse,
 } from 'next/server'
 import { auth as authjsMiddleware } from '@/auth'
-import { isOryCustomUiEnabled } from '@/configs/flags'
 import oryConfig from '@/configs/ory'
 import { isOrySessionAuthenticated } from '@/core/server/auth/ory/authjs-session-boundary'
+import { isOryCustomUiEnabled } from '@/core/server/feature-flags/ory-custom-ui.server'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { getAuthRouteRedirect } from './auth-routes'
 import {
@@ -64,7 +64,12 @@ export async function runDashboardProxy(
   // breaking the custom UI's flow creation and form submits. Only the custom
   // Elements UI needs this same-origin proxy (gated, so production is
   // unaffected).
-  if (isOryCustomUiEnabled() && isOrySdkProxyPath(request.nextUrl.pathname)) {
+  // Path check first so the PostHog flag is only evaluated for the Ory SDK
+  // paths (the custom login flow), not on every matched middleware request.
+  if (
+    isOrySdkProxyPath(request.nextUrl.pathname) &&
+    (await isOryCustomUiEnabled())
+  ) {
     return oryProxy(request)
   }
 

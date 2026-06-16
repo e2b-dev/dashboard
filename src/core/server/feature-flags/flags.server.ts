@@ -6,6 +6,7 @@ import type {
 } from '@/configs/flags'
 import type { FeatureFlagContextInput } from '@/core/server/feature-flags/context'
 import { launchDarklyFeatureFlagProvider } from '@/core/server/feature-flags/launchdarkly'
+import { postHogFeatureFlagProvider } from '@/core/server/feature-flags/posthog'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 
 export type FeatureFlagProvider = {
@@ -60,3 +61,9 @@ export function createFeatureFlagService(
 }
 
 export const featureFlags = createFeatureFlagService()
+
+// PostHog-backed service for flags evaluated against PostHog release conditions
+// (e.g. environment-targeted, pre-auth gates) rather than LaunchDarkly.
+export const postHogFeatureFlags = createFeatureFlagService(
+  postHogFeatureFlagProvider
+)

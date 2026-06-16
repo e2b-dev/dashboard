@@ -1,16 +1,20 @@
 import { getRegistrationFlow, type OryPageParams } from '@ory/nextjs/app'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { isOryCustomUiEnabled } from '@/configs/flags'
 import oryConfig from '@/configs/ory'
 import { AUTH_URLS } from '@/configs/urls'
+import { isOryCustomUiEnabled } from '@/core/server/feature-flags/ory-custom-ui.server'
 import { RegistrationCard } from './registration-card'
+
+// Evaluate the PostHog `ory-custom-ui` flag per request (not at build time) so
+// the rollout can be flipped per environment without a redeploy.
+export const dynamic = 'force-dynamic'
 
 // Mirrors /login (see src/app/login/page.tsx for the flow-fetch and sdk.url reasoning).
 export default async function OryRegistrationPage(props: OryPageParams) {
   // The custom Elements UI is staging/preview-only; production uses Ory's
   // existing flow via /sign-up.
-  if (!isOryCustomUiEnabled()) {
+  if (!(await isOryCustomUiEnabled())) {
     redirect(AUTH_URLS.SIGN_UP)
   }
 

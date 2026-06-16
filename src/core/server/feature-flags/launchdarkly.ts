@@ -79,22 +79,26 @@ async function getInitializedLaunchDarklyClient() {
   return launchDarklyInitialization
 }
 
+const ANONYMOUS_USER_KEY = 'anonymous'
+
 export function createLaunchDarklyContext({
   userId,
   teamId,
 }: FeatureFlagContextInput): LDContext {
+  const userContext = userId
+    ? { key: userId }
+    : { key: ANONYMOUS_USER_KEY, anonymous: true as const }
+
   if (!teamId) {
     return {
       kind: 'user',
-      key: userId,
+      ...userContext,
     }
   }
 
   return {
     kind: 'multi',
-    user: {
-      key: userId,
-    },
+    user: userContext,
     team: {
       key: teamId,
     },

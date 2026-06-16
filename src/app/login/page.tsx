@@ -1,10 +1,14 @@
 import { getLoginFlow, type OryPageParams } from '@ory/nextjs/app'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { isOryCustomUiEnabled } from '@/configs/flags'
 import oryConfig from '@/configs/ory'
 import { AUTH_URLS } from '@/configs/urls'
+import { isOryCustomUiEnabled } from '@/core/server/feature-flags/ory-custom-ui.server'
 import { LoginCard } from './login-card'
+
+// Evaluate the PostHog `ory-custom-ui` flag per request (not at build time) so
+// the rollout can be flipped per environment without a redeploy.
+export const dynamic = 'force-dynamic'
 
 // Custom login page rendered with @ory/elements-react. This is the URL both
 // Hydra (`urls.login`) and Kratos (`flows.login.ui_url`) bounce the browser to
@@ -20,7 +24,7 @@ import { LoginCard } from './login-card'
 export default async function OryLoginPage(props: OryPageParams) {
   // The custom Elements UI is staging/preview-only; production uses Ory's
   // existing flow via /sign-in.
-  if (!isOryCustomUiEnabled()) {
+  if (!(await isOryCustomUiEnabled())) {
     redirect(AUTH_URLS.SIGN_IN)
   }
 

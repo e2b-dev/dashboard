@@ -32,17 +32,6 @@ export function isOryAuthEnabled() {
   return process.env.AUTH_PROVIDER === 'ory'
 }
 
-// The custom @ory/elements-react login/registration UI is opt-in via an explicit
-// flag, set in non-production environments (staging/preview) and by the local
-// dev harness. Production leaves it unset and keeps Ory auth on its existing
-// /sign-in flow. A NEXT_PUBLIC_ flag is used (rather than VERCEL_ENV) because it
-// is read in Edge middleware: VERCEL_ENV/AUTH_PROVIDER get inlined at build time,
-// so in a standalone/self-hosted build (anything but `next dev`) they resolve to
-// undefined and the gate would silently disable the proxy.
-export function isOryCustomUiEnabled() {
-  return isOryAuthEnabled() && process.env.NEXT_PUBLIC_ORY_CUSTOM_UI === '1'
-}
-
 // Freezes interactive auth entry points while we migrate identity stores.
 // When on: blocks sign-ups and sign-ins so OAuth callback URLs can move
 // between providers without sending users into broken provider flows.
@@ -85,3 +74,18 @@ export const FEATURE_FLAGS = {
     description: 'Test flag for validating LaunchDarkly team targeting.',
   },
 } as const satisfies Record<string, FeatureFlagDefinition>
+
+// PostHog-backed flag (evaluated server-side via postHogFeatureFlags, NOT
+// LaunchDarkly — kept out of FEATURE_FLAGS so the LaunchDarkly listing doesn't
+// try to resolve it). Gates the custom @ory/elements-react login/registration
+// UI and the Ory SDK proxy forwarding. Release conditions target the
+// `environment` person property (preview/staging + local dev → on, production →
+// off). Consumed via isOryCustomUiEnabled() in
+// core/server/feature-flags/ory-custom-ui.server.ts.
+export const ORY_CUSTOM_UI_FLAG = {
+  kind: 'boolean',
+  key: 'ory-custom-ui',
+  defaultValue: false,
+  description:
+    'Custom @ory/elements-react login/registration UI (staging/preview + local dev).',
+} as const satisfies BooleanFeatureFlagDefinition
