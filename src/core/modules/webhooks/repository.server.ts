@@ -159,7 +159,6 @@ export function createWebhooksRepository(
             query: {
               start: input.start,
               end: input.end,
-              bucketIntervalSeconds: input.bucketIntervalSeconds,
             },
           },
         }

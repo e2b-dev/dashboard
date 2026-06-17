@@ -15,6 +15,7 @@ import { StatsIntervalSelect } from './stats-interval-select'
 import {
   getValidWebhookStatsBounds,
   getWebhookStatsApiBounds,
+  getWebhookStatsBucketIntervalSeconds,
   getWebhookStatsRange,
   getWebhookStatsRangeFromBounds,
   type WebhookStatsRange,
@@ -99,7 +100,8 @@ export const WebhookOverviewContent = ({
     stats.total > 0
       ? `${((stats.failed / stats.total) * 100).toFixed(1)}%`
       : '0%'
-  const bucketIntervalSeconds = apiRangeBounds.bucketIntervalSeconds
+  const bucketIntervalSeconds =
+    getWebhookStatsBucketIntervalSeconds(rangeBounds)
   const rangeStartMs = rangeBounds.start
   const rangeEndMs = rangeBounds.end
   const hasFailedDeliveries = buckets.some((bucket) => bucket.failed > 0)

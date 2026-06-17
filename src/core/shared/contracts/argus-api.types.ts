@@ -679,8 +679,6 @@ export interface operations {
         start?: string
         /** @description Exclusive stats range end. Defaults to now. */
         end?: string
-        /** @description Stats bucket interval in seconds. Defaults based on the selected range. */
-        bucketIntervalSeconds?: 60 | 300 | 600 | 1800 | 3600 | 14400 | 86400
       }
       header?: never
       path: {

@@ -1,5 +1,4 @@
 import { createLoader, parseAsInteger } from 'nuqs/server'
-import type { WebhookStatsBucketIntervalSeconds } from '@/core/server/functions/webhooks/schema'
 
 type WebhookStatsRangeBounds = {
   start: number
@@ -7,7 +6,6 @@ type WebhookStatsRangeBounds = {
 }
 
 type WebhookStatsApiBounds = {
-  bucketIntervalSeconds: WebhookStatsBucketIntervalSeconds
   start: string
   end: string
 }
@@ -92,20 +90,19 @@ const getWebhookStatsApiBounds = ({
   start,
   end,
 }: WebhookStatsRangeBounds): WebhookStatsApiBounds => ({
-  bucketIntervalSeconds: getWebhookStatsBucketIntervalSeconds({ start, end }),
   start: new Date(start).toISOString(),
   end: new Date(end).toISOString(),
 })
 
-// Picks the API bucket size for a range, e.g. a 12h range -> 600 seconds.
+// Mirrors Belt's server-side webhook stats bucketing for frontend gap filling and tooltips.
 const getWebhookStatsBucketIntervalSeconds = ({
   start,
   end,
-}: WebhookStatsRangeBounds): WebhookStatsBucketIntervalSeconds => {
+}: WebhookStatsRangeBounds): number => {
   const rangeMs = end - start
-  if (rangeMs <= HOUR_MS) return 60
-  if (rangeMs <= 12 * HOUR_MS) return 600
-  if (rangeMs <= DAY_MS) return 1800
+  if (rangeMs <= 4 * HOUR_MS) return 300
+  if (rangeMs <= 12 * HOUR_MS) return 1800
+  if (rangeMs <= DAY_MS) return 3600
 
   return 86400
 }
