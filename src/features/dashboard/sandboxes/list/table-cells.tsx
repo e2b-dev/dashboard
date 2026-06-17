@@ -1,11 +1,10 @@
 'use client'
 
 import type { CellContext } from '@tanstack/react-table'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useMemo } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import ResourceUsage from '@/features/dashboard/common/resource-usage'
-import { useTemplateTableStore } from '@/features/dashboard/templates/list/stores/table-store'
 import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
 import { JsonPopover } from '@/ui/json-popover'
 import { Button } from '@/ui/primitives/button'
@@ -115,27 +114,25 @@ export function TemplateCell({
 }: CellContext<SandboxListRow, unknown>) {
   const templateIdentifier = (getValue() as string | undefined) ?? '--'
   const { team } = useDashboard()
-  const router = useRouter()
   const templateId = row.original.templateID
 
+  if (!templateId) {
+    return (
+      <span className="min-w-0 truncate text-fg-tertiary">
+        {templateIdentifier}
+      </span>
+    )
+  }
+
   return (
-    <Button
-      variant="link-table"
-      size="none"
-      onClick={(e) => {
-        e.stopPropagation()
-        e.preventDefault()
-
-        if (!templateId) {
-          return
-        }
-
-        useTemplateTableStore.getState().setGlobalFilter(templateId)
-        router.push(PROTECTED_URLS.TEMPLATES(team.slug))
-      }}
-    >
-      <span className="min-w-0 truncate">{templateIdentifier}</span>
-      <ExternalLinkIcon className="size-3 shrink-0" />
+    <Button asChild variant="link-table" size="none">
+      <Link
+        href={PROTECTED_URLS.TEMPLATE_OVERVIEW(team.slug, templateId)}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <span className="min-w-0 truncate">{templateIdentifier}</span>
+        <ExternalLinkIcon className="size-3 shrink-0" />
+      </Link>
     </Button>
   )
 }

@@ -1,13 +1,12 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { PROTECTED_URLS } from '@/configs/urls'
 import type {
   BuildStatus,
   ListedBuildModel,
 } from '@/core/modules/builds/models'
-import { useTemplateTableStore } from '@/features/dashboard/templates/list/stores/table-store'
+import { useNow } from '@/lib/hooks/use-now'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils'
 import {
@@ -47,23 +46,21 @@ export function Template({
   templateId: string
   className?: string
 }) {
-  const router = useRouter()
   const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
 
   return (
     <Button
+      asChild
       variant="link-table"
       size="none"
       className={cn('max-w-full', className)}
-      onClick={(e) => {
-        e.stopPropagation()
-        e.preventDefault()
-
-        useTemplateTableStore.getState().setGlobalFilter(templateId)
-        router.push(PROTECTED_URLS.TEMPLATES_LIST(teamSlug))
-      }}
     >
-      <p className="truncate">{template}</p>
+      <Link
+        href={PROTECTED_URLS.TEMPLATE_OVERVIEW(teamSlug, templateId)}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <p className="truncate">{template}</p>
+      </Link>
     </Button>
   )
 }
@@ -77,22 +74,11 @@ export function Duration({
   finishedAt: number | null
   isBuilding: boolean
 }) {
-  const [now, setNow] = useState(() => Date.now())
-
-  useEffect(() => {
-    if (!isBuilding) return
-
-    const interval = setInterval(() => {
-      setNow(Date.now())
-    }, 1000)
-
-    return () => clearInterval(interval)
-  }, [isBuilding])
+  const now = useNow(1000, isBuilding)
 
   const duration = isBuilding
     ? now - createdAt
     : (finishedAt ?? now) - createdAt
-  const iso = finishedAt ? new Date(finishedAt).toISOString() : null
 
   return (
     <span className="text-fg-tertiary prose-table-numeric whitespace-nowrap">
@@ -102,7 +88,6 @@ export function Duration({
 }
 
 export function StartedAt({ timestamp }: { timestamp: number }) {
-  const iso = new Date(timestamp).toISOString()
   const elapsed = Date.now() - timestamp
 
   return (
@@ -148,7 +133,7 @@ export function Status({ status, statusMessage }: StatusProps) {
   const badge = (
     <Badge
       variant={variant}
-      className={cn('select-none shrink-0 uppercase', {
+      className={cn('select-none shrink-0 uppercase cursor-pointer', {
         'bg-bg-inverted/10': variant === 'default',
       })}
     >

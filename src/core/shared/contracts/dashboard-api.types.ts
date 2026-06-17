@@ -848,6 +848,260 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/templates/{templateID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get template
+     * @description Returns a single template owned by the current team. Dashboard-shaped read, indexed by template ID.
+     */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          /** @description Identifier of the template. */
+          templateID: components['parameters']['templateID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned the template. */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['TemplateDetail']
+          }
+        }
+        401: components['responses']['401']
+        403: components['responses']['403']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/templates/{templateID}/tags/groups': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List template tag groups
+     * @description Returns ready template tag assignment groups with bounded per-tag history, paginated over tags with keyset cursor.
+     */
+    get: {
+      parameters: {
+        query?: {
+          /** @description Maximum number of ready assignment rows to return per tag. */
+          assignmentLimit?: components['parameters']['tag_assignment_limit']
+          /** @description Maximum number of distinct tags to return per page. */
+          tagsLimit?: components['parameters']['tag_groups_limit']
+          /** @description Cursor returned by the previous list response in `{sort}|{latest_assigned_at}|{tag}` format (sort-tagged, RFC3339Nano). */
+          tagsCursor?: components['parameters']['tag_groups_cursor']
+          /** @description Case-insensitive substring filter on tag name. Allowed characters are `a-z`, `0-9`, `.`, `_`, `-`. */
+          search?: components['parameters']['tag_groups_search']
+          /** @description Sort order for the returned tag groups. */
+          sort?: components['parameters']['tag_groups_sort']
+        }
+        header?: never
+        path: {
+          /** @description Identifier of the template. */
+          templateID: components['parameters']['templateID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned template tag groups. */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['TemplateTagGroupsResponse']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        403: components['responses']['403']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/templates/{templateID}/tags/count': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Count template tags
+     * @description Returns the total number of distinct ready tags for the template.
+     */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          /** @description Identifier of the template. */
+          templateID: components['parameters']['templateID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned tag count. */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['TemplateTagsCountResponse']
+          }
+        }
+        401: components['responses']['401']
+        403: components['responses']['403']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/templates/{templateID}/tags/exists': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Check ready template tag existence
+     * @description Checks whether a template tag has at least one ready assignment.
+     */
+    get: {
+      parameters: {
+        query: {
+          /** @description Template tag name to check. */
+          tag: components['parameters']['tag']
+        }
+        header?: never
+        path: {
+          /** @description Identifier of the template. */
+          templateID: components['parameters']['templateID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully checked template tag existence. */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['TemplateTagExistsResponse']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        403: components['responses']['403']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/templates/{templateID}/tags/{tag}/assignments': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List ready assignments for a single template tag
+     * @description Returns ready tag assignment events for a single tag, ordered newest first, with keyset cursor pagination.
+     */
+    get: {
+      parameters: {
+        query?: {
+          /** @description Cursor returned by the previous list response in `assigned_at|assignment_id` format. */
+          cursor?: components['parameters']['tag_assignments_cursor']
+          /** @description Maximum number of assignment rows to return per page. */
+          limit?: components['parameters']['tag_assignments_limit']
+        }
+        header?: never
+        path: {
+          /** @description Identifier of the template. */
+          templateID: components['parameters']['templateID']
+          /** @description Template tag name. */
+          tag: components['parameters']['tag_path']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned tag assignment page. */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['TemplateTagAssignmentsResponse']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        403: components['responses']['403']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -1158,6 +1412,114 @@ export interface components {
       /** @description Cursor to pass to the next list request, or `null` if there is no next page. */
       nextCursor: string | null
     }
+    /** @description Dashboard-shaped single-template read. Mirrors the infra-api `Template` schema fields the dashboard renders. */
+    TemplateDetail: {
+      /** @description Identifier of the template. */
+      templateID: string
+      /** @description Identifier of the latest ready build for the template, or the zero UUID when none. */
+      buildID: string
+      /** @description vCPU count of the latest ready default build, or `null` when none. */
+      cpuCount: components['schemas']['CPUCount'] | null
+      /** @description Memory in MiB of the latest ready default build, or `null` when none. */
+      memoryMB: components['schemas']['MemoryMB'] | null
+      /** @description Disk size in MiB of the latest ready default build, or `null` when none. */
+      diskSizeMB: components['schemas']['DiskSizeMB'] | null
+      /** @description Whether the template is public or only accessible by the team. */
+      public: boolean
+      /**
+       * @deprecated
+       * @description Aliases of the template.
+       */
+      aliases: string[]
+      /** @description Names of the template (namespace/alias format when namespaced). */
+      names: string[]
+      /**
+       * Format: date-time
+       * @description Time when the template was created.
+       */
+      createdAt: string
+      /**
+       * Format: date-time
+       * @description Time when the template was last updated.
+       */
+      updatedAt: string
+      /**
+       * Format: date-time
+       * @description Time when the template was last used.
+       */
+      lastSpawnedAt: string | null
+      /**
+       * Format: int64
+       * @description Number of times the template was used.
+       */
+      spawnCount: number
+      /**
+       * Format: int32
+       * @description Number of times the template was built.
+       */
+      buildCount: number
+      /** @description envd version of the latest ready default build, or `null` when none. */
+      envdVersion: string | null
+    }
+    TemplateTagAssignment: {
+      /**
+       * Format: uuid
+       * @description Identifier of the tag assignment event.
+       */
+      assignmentId: string
+      /**
+       * Format: uuid
+       * @description Identifier of the assigned build.
+       */
+      buildId: string
+      /**
+       * Format: date-time
+       * @description Time when the tag was assigned to the build.
+       */
+      assignedAt: string
+      /**
+       * Format: date-time
+       * @description Time when the assigned build was created.
+       */
+      buildCreatedAt: string
+      /**
+       * Format: date-time
+       * @description Time when the assigned build finished.
+       */
+      buildFinishedAt: string | null
+    }
+    TemplateTagGroup: {
+      /** @description Template tag name. */
+      tag: string
+      /** @description Ready assignment events for this tag, sorted latest first. */
+      assignments: components['schemas']['TemplateTagAssignment'][]
+      /** @description Whether more ready assignment events exist beyond the requested assignment limit. */
+      hasMore: boolean
+    }
+    TemplateTagGroupsResponse: {
+      tags: components['schemas']['TemplateTagGroup'][]
+      /** @description Cursor to pass as `tagsCursor` for the next page, or `null` if there is no next page. */
+      nextCursor: string | null
+    }
+    TemplateTagsCountResponse: {
+      /**
+       * Format: int64
+       * @description Total distinct ready tags for the template.
+       */
+      total: number
+    }
+    TemplateTagExistsResponse: {
+      /** @description Whether the template tag has at least one ready assignment. */
+      exists: boolean
+      /** @description Normalized template tag name. */
+      normalizedTag: string
+    }
+    TemplateTagAssignmentsResponse: {
+      /** @description Ready assignment events for the tag, sorted latest first. */
+      data: components['schemas']['TemplateTagAssignment'][]
+      /** @description Cursor to pass to the next list request, or `null` if there is no next page. */
+      nextCursor: string | null
+    }
     TeamResolveResponse: {
       /** Format: uuid */
       id: string
@@ -1255,6 +1617,26 @@ export interface components {
       | 'created_at_desc'
       | 'updated_at_asc'
       | 'updated_at_desc'
+    /** @description Identifier of the template. */
+    templateID: string
+    /** @description Template tag name to check. */
+    tag: string
+    /** @description Maximum number of ready assignment rows to return per tag. */
+    tag_assignment_limit: number
+    /** @description Template tag name. */
+    tag_path: string
+    /** @description Maximum number of assignment rows to return per page. */
+    tag_assignments_limit: number
+    /** @description Cursor returned by the previous list response in `assigned_at|assignment_id` format. */
+    tag_assignments_cursor: string
+    /** @description Maximum number of distinct tags to return per page. */
+    tag_groups_limit: number
+    /** @description Cursor returned by the previous list response in `{sort}|{latest_assigned_at}|{tag}` format (sort-tagged, RFC3339Nano). */
+    tag_groups_cursor: string
+    /** @description Case-insensitive substring filter on tag name. Allowed characters are `a-z`, `0-9`, `.`, `_`, `-`. */
+    tag_groups_search: string
+    /** @description Sort order for the returned tag groups. */
+    tag_groups_sort: 'latest_desc' | 'latest_asc' | 'name_asc' | 'name_desc'
   }
   requestBodies: never
   headers: never

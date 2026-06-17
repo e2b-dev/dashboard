@@ -1,6 +1,10 @@
 import { flexRender, type Table } from '@tanstack/react-table'
+import Link from 'next/link'
+import posthog from 'posthog-js'
 import type { RefObject } from 'react'
+import { PROTECTED_URLS } from '@/configs/urls'
 import type { Template } from '@/core/modules/templates/models'
+import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
 import { cn } from '@/lib/utils'
 import { DataTableBody, DataTableCell, DataTableRow } from '@/ui/data-table'
@@ -8,6 +12,7 @@ import Empty from '@/ui/empty'
 import { LoadMoreButton } from '@/ui/pagination-buttons'
 import { Button } from '@/ui/primitives/button'
 import { CloseIcon, ExternalLinkIcon } from '@/ui/primitives/icons'
+import { RowHoverFrame } from '@/ui/row-hover-frame'
 import { useTemplateTableStore } from './stores/table-store'
 
 const ROW_HEIGHT_PX = 32
@@ -35,6 +40,7 @@ export function TemplatesTableBody({
 }: TemplatesTableBodyProps) {
   'use no memo'
 
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
   const { resetFilters, globalFilter, isPublic } = useTemplateTableStore()
 
   const centerRows = table.getCenterRows()
@@ -98,19 +104,54 @@ export function TemplatesTableBody({
         className={cn(isRefetching && 'opacity-70 transition-opacity')}
       >
         {virtualPaddingTop > 0 && <div style={{ height: virtualPaddingTop }} />}
-        {rows.map((row) => (
-          <DataTableRow
-            key={row.id}
-            isSelected={row.getIsSelected()}
-            className="h-8 border-b"
-          >
-            {row.getVisibleCells().map((cell) => (
-              <DataTableCell key={cell.id} cell={cell}>
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-              </DataTableCell>
-            ))}
-          </DataTableRow>
-        ))}
+        {rows.map((row) => {
+          const template = row.original
+          const isDefault = 'isDefault' in template && template.isDefault
+          const primaryName =
+            template.names.find((name) => !name.includes('/')) ??
+            template.names[0]
+
+          return (
+            <DataTableRow
+              key={row.id}
+              isSelected={row.getIsSelected()}
+              className={cn(
+                'group/row relative h-8 min-w-full -mx-2 px-2 hover:bg-bg-1 border-b-0 transition-none w-[calc(100%+16px)]',
+                'border-stroke/80 hover:z-20 focus-within:z-10',
+                'has-[button[aria-haspopup=menu][data-state=open]]:z-10'
+              )}
+            >
+              {!isDefault && (
+                <Link
+                  href={PROTECTED_URLS.TEMPLATE_OVERVIEW(
+                    teamSlug,
+                    template.templateID
+                  )}
+                  prefetch={false}
+                  aria-label={`Open template ${primaryName ?? template.templateID}`}
+                  className="absolute inset-0 z-1"
+                  onClick={() =>
+                    posthog.capture('template detail opened', {
+                      templateId: template.templateID,
+                      fromTab: 'list',
+                    })
+                  }
+                />
+              )}
+              {row.getVisibleCells().map((cell) => (
+                <DataTableCell key={cell.id} cell={cell}>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </DataTableCell>
+              ))}
+              <RowHoverFrame
+                className={cn(
+                  'group-has-[button[aria-haspopup=menu][data-state=open]]/row:border-stroke',
+                  'group-has-[button[aria-haspopup=menu][data-state=open]]/row:[--corner-mark-color:var(--color-fg-tertiary)]'
+                )}
+              />
+            </DataTableRow>
+          )
+        })}
       </DataTableBody>
 
       {hasNextPage && (

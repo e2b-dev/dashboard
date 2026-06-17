@@ -44,6 +44,14 @@ export const PROTECTED_URLS = {
   TEMPLATES_LIST: (teamSlug: string) => `/dashboard/${teamSlug}/templates/list`,
   TEMPLATES_BUILDS: (teamSlug: string) =>
     `/dashboard/${teamSlug}/templates/builds`,
+  TEMPLATE_OVERVIEW: (teamSlug: string, templateId: string) =>
+    `/dashboard/${teamSlug}/templates/${templateId}/overview`,
+  TEMPLATE_DETAIL_BUILDS: (teamSlug: string, templateId: string) =>
+    `/dashboard/${teamSlug}/templates/${templateId}/builds`,
+  TEMPLATE_TAGS: (teamSlug: string, templateId: string) =>
+    `/dashboard/${teamSlug}/templates/${templateId}/tags`,
+  TEMPLATE_TAG_HISTORY: (teamSlug: string, templateId: string, tag: string) =>
+    `/dashboard/${teamSlug}/templates/${templateId}/tags/${encodeURIComponent(tag)}`,
   TEMPLATE_BUILD: (teamSlug: string, templateId: string, buildId: string) =>
     `/dashboard/${teamSlug}/templates/${templateId}/builds/${buildId}`,
 

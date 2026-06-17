@@ -11,12 +11,14 @@ import {
   flexRender,
   type TableOptions,
   useReactTable,
+  type VisibilityState,
 } from '@tanstack/react-table'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
 import { PROTECTED_URLS } from '@/configs/urls'
 import type {
+  BuildStatus,
   ListedBuildModel,
   RunningBuildStatusModel,
 } from '@/core/modules/builds/models'
@@ -41,13 +43,28 @@ import {
   fallbackData,
   isRightAlignedColumn,
 } from './table-config'
-import useFilters from './use-filters'
 
 const BUILDS_REFETCH_INTERVAL_MS = 15_000
 const RUNNING_BUILD_POLL_INTERVAL_MS = 3_000
 const MAX_CACHED_PAGES = 3
 
-const BuildsTable = () => {
+interface BuildsTableProps {
+  filters: {
+    statuses: BuildStatus[]
+    buildIdOrTemplate?: string
+  }
+  // Client-side row filter applied after fetch + live-status merge.
+  postFilter?: (build: ListedBuildModel) => boolean
+  showTemplateColumn?: boolean
+  disabled?: boolean
+}
+
+const BuildsTable = ({
+  filters,
+  postFilter,
+  showTemplateColumn = true,
+  disabled = false,
+}: BuildsTableProps) => {
   'use no memo'
 
   const trpc = useTRPC()
@@ -64,10 +81,16 @@ const BuildsTable = () => {
       serializer: (value) => JSON.stringify(value),
     }
   )
-  const { statuses, buildIdOrTemplate } = useFilters()
+
+  const { statuses, buildIdOrTemplate } = filters
   const { isFilterRefetching, clearFilterRefetching } = useFilterChangeTracking(
     statuses,
     buildIdOrTemplate
+  )
+
+  const columnVisibility = useMemo<VisibilityState>(
+    () => ({ template: showTemplateColumn }),
+    [showTemplateColumn]
   )
 
   const queryInput = {
@@ -93,6 +116,7 @@ const BuildsTable = () => {
       refetchInterval: BUILDS_REFETCH_INTERVAL_MS,
       refetchIntervalInBackground: false,
       maxPages: MAX_CACHED_PAGES,
+      enabled: !disabled,
     })
   )
 
@@ -109,6 +133,10 @@ const BuildsTable = () => {
       clearFilterRefetching()
     }
   }, [isFetchingBuilds, isFilterRefetching, clearFilterRefetching])
+
+  useEffect(() => {
+    if (disabled) clearFilterRefetching()
+  }, [disabled, clearFilterRefetching])
 
   // Running builds status polling
   const runningBuildIds = useMemo(
@@ -139,12 +167,21 @@ const BuildsTable = () => {
     [builds, runningStatusesData]
   )
 
+  const visibleBuilds = useMemo(
+    () =>
+      postFilter
+        ? buildsWithLiveStatus.filter(postFilter)
+        : buildsWithLiveStatus,
+    [buildsWithLiveStatus, postFilter]
+  )
+
   const table = useReactTable<ListedBuildModel>({
     ...buildsTableConfig,
-    data: buildsWithLiveStatus ?? fallbackData,
+    data: visibleBuilds ?? fallbackData,
     columns: buildsColumns,
     state: {
       columnSizing,
+      columnVisibility,
     },
     onColumnSizingChange: setColumnSizing,
   } as TableOptions<ListedBuildModel>)
@@ -175,27 +212,28 @@ const BuildsTable = () => {
   }, [statuses, buildIdOrTemplate])
 
   // Derived UI state
-  const hasData = buildsWithLiveStatus.length > 0
-  const showLoader = isInitialLoad && !hasData
-  const showEmpty = !isInitialLoad && !isFetchingBuilds && !hasData
+  const hasData = !disabled && visibleBuilds.length > 0
+  const showLoader = !disabled && isInitialLoad && !hasData
+  const showEmpty =
+    disabled || (!isInitialLoad && !isFetchingBuilds && !hasData)
   const showFilterRefetchingOverlay = isFilterRefetching && hasData
 
   return (
     <div
       className={cn(
-        'flex-1 min-h-0 w-full overflow-x-auto md:max-w-[calc(calc(100svw-48px)-var(--sidebar-width-active))]',
+        'flex-1 min-h-0 -mx-3 md:-mx-6 overflow-x-auto md:max-w-[calc(100svw-var(--sidebar-width-active))]',
         SIDEBAR_TRANSITION_CLASSNAMES
       )}
     >
       <DataTable
         ref={scrollContainerRef}
         className={cn(
-          'h-full overflow-y-auto md:min-w-[calc(100svw-48px-var(--sidebar-width-active))]',
+          'h-full overflow-y-auto px-3 md:px-6 md:min-w-[calc(100svw-var(--sidebar-width-active))]',
           SIDEBAR_TRANSITION_CLASSNAMES
         )}
         style={{ ...columnSizeVars }}
       >
-        <DataTableHeader className="sticky top-0 z-10 bg-bg">
+        <DataTableHeader className="sticky top-0 z-30 bg-bg">
           {table.getHeaderGroups().map((headerGroup) => (
             <DataTableRow key={headerGroup.id} className="border-b-0">
               {headerGroup.headers.map((header) => (
