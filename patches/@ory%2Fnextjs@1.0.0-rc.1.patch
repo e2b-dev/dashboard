@@ -1,0 +1,96 @@
+diff --git a/dist/app/index.js b/dist/app/index.js
+index d4ade92a6897ee5f111619b7daf0b6d0a761fded..be1017937cb9a72dbe66eec797336494465c5578 100644
+--- a/dist/app/index.js
++++ b/dist/app/index.js
+@@ -30,6 +30,9 @@ function isProduction() {
+   return ["production", "prod"].indexOf(env) > -1;
+ }
+ function guessPotentiallyProxiedOrySdkUrl(options) {
++  if (options == null ? void 0 : options.knownProxiedUrl) {
++    return options.knownProxiedUrl.replace(/\/$/, "");
++  }
+   if (getEnv("VERCEL_ENV")) {
+     if (!isProduction() && getEnv("VERCEL_URL")) {
+       return `https://${getEnv("VERCEL_URL")}`.replace(/\/$/, "");
+@@ -48,9 +51,6 @@ function guessPotentiallyProxiedOrySdkUrl(options) {
+   if (typeof window !== "undefined") {
+     return window.location.origin;
+   }
+-  if (options == null ? void 0 : options.knownProxiedUrl) {
+-    return options.knownProxiedUrl;
+-  }
+   const final = orySdkUrl();
+   console.warn(
+     `Unable to determine a suitable SDK URL for setting up the Next.js integration of Ory Elements. Will proceed using default Ory SDK URL "${final}". This is likely not what you want for local development and your authentication and login may not work.`
+diff --git a/dist/app/index.mjs b/dist/app/index.mjs
+index da6b25477c72c6e828734a05ede2979dc7fca911..913f32fec4718dfae9e8e31f25bac11c4ded2df1 100644
+--- a/dist/app/index.mjs
++++ b/dist/app/index.mjs
+@@ -28,6 +28,9 @@ function isProduction() {
+   return ["production", "prod"].indexOf(env) > -1;
+ }
+ function guessPotentiallyProxiedOrySdkUrl(options) {
++  if (options == null ? void 0 : options.knownProxiedUrl) {
++    return options.knownProxiedUrl.replace(/\/$/, "");
++  }
+   if (getEnv("VERCEL_ENV")) {
+     if (!isProduction() && getEnv("VERCEL_URL")) {
+       return `https://${getEnv("VERCEL_URL")}`.replace(/\/$/, "");
+@@ -46,9 +49,6 @@ function guessPotentiallyProxiedOrySdkUrl(options) {
+   if (typeof window !== "undefined") {
+     return window.location.origin;
+   }
+-  if (options == null ? void 0 : options.knownProxiedUrl) {
+-    return options.knownProxiedUrl;
+-  }
+   const final = orySdkUrl();
+   console.warn(
+     `Unable to determine a suitable SDK URL for setting up the Next.js integration of Ory Elements. Will proceed using default Ory SDK URL "${final}". This is likely not what you want for local development and your authentication and login may not work.`
+diff --git a/dist/pages/index.js b/dist/pages/index.js
+index a0a69f2a5e60d2e2a0b78bf35bec9715506543ad..b6cec5e8b455e38a8b1d8bd634bbe59e61ab1453 100644
+--- a/dist/pages/index.js
++++ b/dist/pages/index.js
+@@ -26,6 +26,9 @@ function isProduction() {
+   return ["production", "prod"].indexOf(env) > -1;
+ }
+ function guessPotentiallyProxiedOrySdkUrl(options) {
++  if (options == null ? void 0 : options.knownProxiedUrl) {
++    return options.knownProxiedUrl.replace(/\/$/, "");
++  }
+   if (getEnv("VERCEL_ENV")) {
+     if (!isProduction() && getEnv("VERCEL_URL")) {
+       return `https://${getEnv("VERCEL_URL")}`.replace(/\/$/, "");
+@@ -44,9 +47,6 @@ function guessPotentiallyProxiedOrySdkUrl(options) {
+   if (typeof window !== "undefined") {
+     return window.location.origin;
+   }
+-  if (options == null ? void 0 : options.knownProxiedUrl) {
+-    return options.knownProxiedUrl;
+-  }
+   const final = orySdkUrl();
+   console.warn(
+     `Unable to determine a suitable SDK URL for setting up the Next.js integration of Ory Elements. Will proceed using default Ory SDK URL "${final}". This is likely not what you want for local development and your authentication and login may not work.`
+diff --git a/dist/pages/index.mjs b/dist/pages/index.mjs
+index e3d4d2f4ca5c685439065c23dd23acd1ee05ca66..9e4ad2be788efd2c3210ec385e07e98308e8b758 100644
+--- a/dist/pages/index.mjs
++++ b/dist/pages/index.mjs
+@@ -24,6 +24,9 @@ function isProduction() {
+   return ["production", "prod"].indexOf(env) > -1;
+ }
+ function guessPotentiallyProxiedOrySdkUrl(options) {
++  if (options == null ? void 0 : options.knownProxiedUrl) {
++    return options.knownProxiedUrl.replace(/\/$/, "");
++  }
+   if (getEnv("VERCEL_ENV")) {
+     if (!isProduction() && getEnv("VERCEL_URL")) {
+       return `https://${getEnv("VERCEL_URL")}`.replace(/\/$/, "");
+@@ -42,9 +45,6 @@ function guessPotentiallyProxiedOrySdkUrl(options) {
+   if (typeof window !== "undefined") {
+     return window.location.origin;
+   }
+-  if (options == null ? void 0 : options.knownProxiedUrl) {
+-    return options.knownProxiedUrl;
+-  }
+   const final = orySdkUrl();
+   console.warn(
+     `Unable to determine a suitable SDK URL for setting up the Next.js integration of Ory Elements. Will proceed using default Ory SDK URL "${final}". This is likely not what you want for local development and your authentication and login may not work.`

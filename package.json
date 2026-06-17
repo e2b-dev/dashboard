@@ -171,5 +171,8 @@
     "@nodelib/fs.stat": "2.0.5",
     "@opentelemetry/exporter-prometheus": "^0.218.0"
   },
-  "packageManager": "bun@1.2.0"
+  "packageManager": "bun@1.2.0",
+  "patchedDependencies": {
+    "@ory/nextjs@1.0.0-rc.1": "patches/@ory%2Fnextjs@1.0.0-rc.1.patch"
+  }
 }
