@@ -1,6 +1,6 @@
 'use client'
 
-import { type CommandHandle, type Sandbox } from 'e2b'
+import type { CommandHandle, Sandbox } from 'e2b'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SandboxManagementAuth } from '@/core/shared/sandbox-management-auth'
 import {
@@ -462,48 +462,54 @@ export default function DashboardTerminal({
     [appendOutput, startTerminal, status, template]
   )
 
-  const confirmPendingLaunch = useCallback(() => {
-    if (!pendingLaunch) return
+  const confirmPendingLaunch = useCallback(
+    (command: string) => {
+      if (!pendingLaunch) return
 
-    const { command, target: launchTarget } = pendingLaunch
-    const launchTemplate = launchTarget?.template ?? 'base'
-    const launchSandboxId = launchTarget?.sandboxId
+      const normalizedCommand = command.trim()
+      if (!normalizedCommand) return
 
-    if (
-      status === 'ready' &&
-      template === launchTemplate &&
-      (!launchSandboxId || activeSandboxId === launchSandboxId)
-    ) {
-      setPendingLaunch(null)
-      runCommand(command)
-      if (activeSandboxId) {
-        updateTerminalUrl({
-          clearCommand: true,
-          sandboxId: activeSandboxId,
-        })
+      const { target: launchTarget } = pendingLaunch
+      const launchTemplate = launchTarget?.template ?? 'base'
+      const launchSandboxId = launchTarget?.sandboxId
+
+      if (
+        status === 'ready' &&
+        template === launchTemplate &&
+        (!launchSandboxId || activeSandboxId === launchSandboxId)
+      ) {
+        setPendingLaunch(null)
+        runCommand(normalizedCommand)
+        if (activeSandboxId) {
+          updateTerminalUrl({
+            clearCommand: true,
+            sandboxId: activeSandboxId,
+          })
+        }
+        return
       }
-      return
-    }
 
-    if (isStartingRef.current) {
-      return
-    }
+      if (isStartingRef.current) {
+        return
+      }
 
-    setPendingLaunch(null)
-    pendingCommandsRef.current = [command]
-    void startTerminal({
-      forceNewSandbox: !launchSandboxId && template !== launchTemplate,
-      target: launchTarget,
-    })
-  }, [
-    activeSandboxId,
-    pendingLaunch,
-    runCommand,
-    startTerminal,
-    status,
-    template,
-    updateTerminalUrl,
-  ])
+      setPendingLaunch(null)
+      pendingCommandsRef.current = [normalizedCommand]
+      void startTerminal({
+        forceNewSandbox: !launchSandboxId && template !== launchTemplate,
+        target: launchTarget,
+      })
+    },
+    [
+      activeSandboxId,
+      pendingLaunch,
+      runCommand,
+      startTerminal,
+      status,
+      template,
+      updateTerminalUrl,
+    ]
+  )
 
   const reconnectTarget = sandboxScoped
     ? launchTarget
