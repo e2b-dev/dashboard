@@ -35,7 +35,7 @@ vi.mock('@/core/modules/users/admin-repository.server', () => ({
   createAdminUsersRepository: mockCreateAdminUsersRepository,
 }))
 
-vi.mock('@/configs/flags', () => ({
+vi.mock('@/configs/env-flags', () => ({
   get ENABLE_USER_BOOTSTRAP() {
     return mockFlags.enableUserBootstrap
   },

@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server'
-import { ALLOW_SEO_INDEXING } from '@/configs/flags'
+import { ALLOW_SEO_INDEXING } from '@/configs/env-flags'
 import { BASE_URL } from '@/configs/urls'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import {

@@ -2,7 +2,7 @@ import 'server-only'
 
 import { authHeaders } from '@/configs/api'
 import { CACHE_TAGS } from '@/configs/cache'
-import { USE_MOCK_DATA } from '@/configs/flags'
+import { USE_MOCK_DATA } from '@/configs/env-flags'
 import {
   MOCK_DEFAULT_TEMPLATES_DATA,
   MOCK_TEMPLATES_DATA,

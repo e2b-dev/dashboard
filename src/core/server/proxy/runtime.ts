@@ -7,7 +7,7 @@ import {
   NextResponse,
 } from 'next/server'
 import { auth as authjsMiddleware } from '@/auth'
-import { isOryCustomUiEnabled } from '@/configs/flags'
+import { isOryCustomUiEnabled } from '@/configs/env-flags'
 import oryConfig from '@/configs/ory'
 import { isOrySessionAuthenticated } from '@/core/server/auth/ory/authjs-session-boundary'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'

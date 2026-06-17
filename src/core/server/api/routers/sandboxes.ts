@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { USE_MOCK_DATA } from '@/configs/flags'
+import { USE_MOCK_DATA } from '@/configs/env-flags'
 import {
   calculateTeamMetricsStep,
   MOCK_SANDBOXES_DATA,
