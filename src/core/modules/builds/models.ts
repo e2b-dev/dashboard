@@ -22,6 +22,7 @@ type _BuildStatusExhaustiveCheck = AssertTrue<
 // TypeCheck: End
 
 export const BuildStatusSchema = z.enum(BUILD_STATUS_VALUES)
+
 export interface ListedBuildModel {
   id: string
   // id or alias
@@ -31,6 +32,10 @@ export interface ListedBuildModel {
   statusMessage: string | null
   createdAt: number
   finishedAt: number | null
+  cpuCount: number
+  memoryMB: number
+  diskSizeMB: number | null
+  envdVersion: string | null
 }
 
 export interface RunningBuildStatusModel {

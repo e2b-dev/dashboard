@@ -43,6 +43,7 @@ export default function SandboxInspectView({
 
   return (
     <SandboxInspectProvider
+      key={`${sandboxInfo?.sandboxID ?? 'unknown'}:${rootPath}`}
       rootPath={rootPath}
       sandboxManagementAuth={sandboxManagementAuth}
     >

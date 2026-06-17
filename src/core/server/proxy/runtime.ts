@@ -1,11 +1,14 @@
 import 'server-cli-only'
 
+import { createOryMiddleware } from '@ory/nextjs/middleware'
 import {
   type NextFetchEvent,
   type NextRequest,
   NextResponse,
 } from 'next/server'
 import { auth as authjsMiddleware } from '@/auth'
+import { isOryCustomUiEnabled } from '@/configs/env-flags'
+import oryConfig from '@/configs/ory'
 import { isOrySessionAuthenticated } from '@/core/server/auth/ory/authjs-session-boundary'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { getAuthRouteRedirect } from './auth-routes'
@@ -25,10 +28,34 @@ type RunProxyOptions = {
   isAuthenticated?: boolean
 }
 
+// Same-origin paths the @ory/nextjs proxy forwards to Kratos (NEXT_PUBLIC_ORY_SDK_URL),
+// so the custom UI's flow cookies stay first-party.
+const ORY_SDK_PROXY_PREFIXES = [
+  '/self-service',
+  '/sessions/whoami',
+  '/ui',
+  '/.well-known/ory',
+  '/.ory',
+]
+
+// Pass oryConfig.project so the middleware rewrites Kratos redirects onto our UI URLs.
+const oryProxy = createOryMiddleware({ project: oryConfig.project })
+
+function isOrySdkProxyPath(pathname: string): boolean {
+  return ORY_SDK_PROXY_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+}
+
 export async function runDashboardProxy(
   request: NextRequest,
   event: NextFetchEvent
 ) {
+  // Forward Ory SDK traffic to Kratos before classification (it would otherwise
+  // classify as a bypass and go to Next). Gated, so production is unaffected;
+  // path check first so the gate runs only for these paths.
+  if (isOrySdkProxyPath(request.nextUrl.pathname) && isOryCustomUiEnabled()) {
+    return oryProxy(request)
+  }
+
   const plan = classifyProxyRequest(request.nextUrl.pathname)
 
   if (!planNeedsAuthJsSession(plan)) {

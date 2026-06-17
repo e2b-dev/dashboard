@@ -1,13 +1,12 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { PROTECTED_URLS } from '@/configs/urls'
 import type {
   BuildStatus,
   ListedBuildModel,
 } from '@/core/modules/builds/models'
-import { useTemplateTableStore } from '@/features/dashboard/templates/list/stores/table-store'
+import { useNow } from '@/lib/hooks/use-now'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils'
 import {
@@ -18,15 +17,22 @@ import CopyButtonInline from '@/ui/copy-button-inline'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import { CheckmarkIcon, CloseIcon } from '@/ui/primitives/icons'
-import { Loader } from '@/ui/primitives/loader'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/ui/primitives/tooltip'
+import { EnvdVersion } from '../../common/envd-version'
+import ResourceUsage from '../../common/resource-usage'
 
 export function BuildId({ id }: { id: string }) {
   return (
     <CopyButtonInline
       value={id}
+      truncate={false}
       className="w-full text-left text-fg-tertiary font-mono prose-table-numeric"
     >
-      {id.slice(0, 6)}...{id.slice(-6)}
+      {id.slice(0, 7)}...{id.slice(-5)}
     </CopyButtonInline>
   )
 }
@@ -40,23 +46,21 @@ export function Template({
   templateId: string
   className?: string
 }) {
-  const router = useRouter()
   const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
 
   return (
     <Button
+      asChild
       variant="link-table"
       size="none"
       className={cn('max-w-full', className)}
-      onClick={(e) => {
-        e.stopPropagation()
-        e.preventDefault()
-
-        useTemplateTableStore.getState().setGlobalFilter(templateId)
-        router.push(PROTECTED_URLS.TEMPLATES_LIST(teamSlug))
-      }}
     >
-      <p className="truncate">{template}</p>
+      <Link
+        href={PROTECTED_URLS.TEMPLATE_OVERVIEW(teamSlug, templateId)}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <p className="truncate">{template}</p>
+      </Link>
     </Button>
   )
 }
@@ -70,22 +74,11 @@ export function Duration({
   finishedAt: number | null
   isBuilding: boolean
 }) {
-  const [now, setNow] = useState(() => Date.now())
-
-  useEffect(() => {
-    if (!isBuilding) return
-
-    const interval = setInterval(() => {
-      setNow(Date.now())
-    }, 1000)
-
-    return () => clearInterval(interval)
-  }, [isBuilding])
+  const now = useNow(1000, isBuilding)
 
   const duration = isBuilding
     ? now - createdAt
     : (finishedAt ?? now) - createdAt
-  const iso = finishedAt ? new Date(finishedAt).toISOString() : null
 
   return (
     <span className="text-fg-tertiary prose-table-numeric whitespace-nowrap">
@@ -95,7 +88,6 @@ export function Duration({
 }
 
 export function StartedAt({ timestamp }: { timestamp: number }) {
-  const iso = new Date(timestamp).toISOString()
   const elapsed = Date.now() - timestamp
 
   return (
@@ -107,9 +99,10 @@ export function StartedAt({ timestamp }: { timestamp: number }) {
 
 interface StatusProps {
   status: BuildStatus
+  statusMessage?: ListedBuildModel['statusMessage']
 }
 
-export function Status({ status }: StatusProps) {
+export function Status({ status, statusMessage }: StatusProps) {
   const config: Record<
     BuildStatus,
     {
@@ -137,31 +130,70 @@ export function Status({ status }: StatusProps) {
 
   const { label, icon, variant } = config[status]!
 
+  const badge = (
+    <Badge
+      variant={variant}
+      className={cn('select-none shrink-0 uppercase cursor-pointer', {
+        'bg-bg-inverted/10': variant === 'default',
+      })}
+    >
+      {icon}
+      {label}
+    </Badge>
+  )
+
+  const showReason = status === 'failed' && Boolean(statusMessage)
+
   return (
-    <div className="flex items-center gap-3 min-w-0">
-      <Badge
-        variant={variant}
-        className={cn('select-none shrink-0 uppercase', {
-          'bg-bg-inverted/10': variant === 'default',
-        })}
-      >
-        {icon}
-        {label}
-      </Badge>
+    <div className="flex items-center gap-3 min-w-0 shrink-0">
+      {showReason ? (
+        <Tooltip>
+          <TooltipTrigger asChild>{badge}</TooltipTrigger>
+          <TooltipContent
+            align="start"
+            side="top"
+            sideOffset={8}
+            className="max-w-[360px] whitespace-pre-wrap break-words text-left font-mono text-xs normal-case text-fg-secondary"
+          >
+            {statusMessage}
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        badge
+      )}
     </div>
   )
 }
 
-export function Reason({
-  statusMessage,
-}: {
-  statusMessage: ListedBuildModel['statusMessage']
-}) {
-  if (!statusMessage) return null
-
+export function Cpu({ cpuCount }: { cpuCount: number }) {
   return (
-    <span className="block truncate max-w-0 min-w-full text-left text-fg-tertiary">
-      {statusMessage}
-    </span>
+    <div className="w-full flex justify-end">
+      <ResourceUsage type="cpu" total={cpuCount} mode="simple" />
+    </div>
+  )
+}
+
+export function Memory({ memoryMB }: { memoryMB: number }) {
+  return (
+    <div className="w-full flex justify-end">
+      <ResourceUsage type="mem" total={memoryMB} mode="simple" />
+    </div>
+  )
+}
+
+export function Storage({ diskSizeMB }: { diskSizeMB: number | null }) {
+  const diskSizeGB = diskSizeMB != null ? diskSizeMB / 1024 : null
+  return (
+    <div className="w-full flex justify-end">
+      <ResourceUsage type="disk" total={diskSizeGB} mode="simple" />
+    </div>
+  )
+}
+
+export function Envd({ version }: { version: string | null }) {
+  return (
+    <div className="w-full flex justify-end">
+      <EnvdVersion version={version} />
+    </div>
   )
 }

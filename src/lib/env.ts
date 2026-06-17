@@ -1,15 +1,11 @@
 import { z } from 'zod'
 
 export const serverSchema = z.object({
-  KV_REST_API_TOKEN: z.string().min(1).optional(),
-  KV_REST_API_URL: z.url().optional(),
-
   ENABLE_USER_BOOTSTRAP: z.string().optional(),
   DASHBOARD_API_ADMIN_TOKEN: z.string().min(1).optional(),
 
   BILLING_API_URL: z.url().optional(),
   PLAIN_API_KEY: z.string().min(1).optional(),
-  LAUNCHDARKLY_SDK_KEY: z.string().min(1).optional(),
 
   POSTHOG_API_KEY: z.string().min(1).optional(),
   POSTHOG_PROJECT_ID: z.string().min(1).optional(),
@@ -77,6 +73,11 @@ export const clientSchema = z.object({
   NEXT_PUBLIC_INFRA_API_URL: z.url().optional(),
   NEXT_PUBLIC_E2B_SANDBOX_URL: z.url().optional(),
   NEXT_PUBLIC_DASHBOARD_API_URL: z.url().optional(),
+
+  // Browser-facing Kratos public URL for the custom Ory UI; falls back to ORY_SDK_URL.
+  NEXT_PUBLIC_ORY_SDK_URL: z.url().optional(),
+  // Gates the custom Ory UI: 'true' on Preview/Staging, unset on Production.
+  NEXT_PUBLIC_ORY_CUSTOM_UI: z.string().optional(),
 })
 
 const merged = serverSchema.merge(clientSchema)

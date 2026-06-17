@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Fragment } from 'react'
 import { getDashboardLayoutConfig, type TitleSegment } from '@/configs/layout'
+import { usePageTitleStore } from '@/lib/hooks/use-page-title'
 import { cn } from '@/lib/utils'
 import ClientOnly from '@/ui/client-only'
 import CopyButton from '@/ui/copy-button'
@@ -21,7 +22,12 @@ export default function DashboardLayoutHeader({
 }: DashboardLayoutHeaderProps) {
   const pathname = usePathname()
   const config = getDashboardLayoutConfig(pathname)
-  const copyableValue = config.copyValue ?? null
+  const override = usePageTitleStore((state) => state.override)
+
+  const title = override?.title ?? config.title
+  const copyableValue = override
+    ? (override.copyValue ?? null)
+    : (config.copyValue ?? null)
 
   return (
     <div
@@ -43,7 +49,7 @@ export default function DashboardLayoutHeader({
 
         <div className="min-w-0 flex-1 flex items-center gap-2">
           <h1 className="truncate min-w-0">
-            <HeaderTitle title={config.title} />
+            <HeaderTitle title={title} />
           </h1>
           {copyableValue && (
             <CopyButton

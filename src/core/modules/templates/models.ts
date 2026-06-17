@@ -16,7 +16,24 @@ export type Template = Pick<
   | 'names'
   | 'createdAt'
   | 'updatedAt'
-  | 'createdBy'
+  | 'lastSpawnedAt'
+  | 'spawnCount'
+  | 'buildCount'
+  | 'envdVersion'
+>
+
+export type TemplateDetail = Pick<
+  DashboardComponents['schemas']['TemplateDetail'],
+  | 'templateID'
+  | 'buildID'
+  | 'cpuCount'
+  | 'memoryMB'
+  | 'diskSizeMB'
+  | 'public'
+  | 'aliases'
+  | 'names'
+  | 'createdAt'
+  | 'updatedAt'
   | 'lastSpawnedAt'
   | 'spawnCount'
   | 'buildCount'
@@ -38,3 +55,12 @@ export interface ListTeamTemplatesResult {
   data: Array<Template | DefaultTemplate>
   nextCursor: string | null
 }
+
+export type TemplateTag = InfraComponents['schemas']['TemplateTag']
+
+export type TemplateTagAssignment =
+  DashboardComponents['schemas']['TemplateTagAssignment']
+export type TemplateTagGroup =
+  DashboardComponents['schemas']['TemplateTagGroup']
+export type TemplateTagExistsResult =
+  DashboardComponents['schemas']['TemplateTagExistsResponse']

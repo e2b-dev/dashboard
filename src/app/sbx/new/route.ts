@@ -30,18 +30,19 @@ export const GET = async (req: NextRequest) => {
     }
 
     const sbx = await Sandbox.create('base', {
+      apiUrl: process.env.NEXT_PUBLIC_INFRA_API_URL,
       domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
       apiHeaders: {
         ...authHeaders(authContext.accessToken, team.id),
       },
     })
 
-    const filesystemUrl = PROTECTED_URLS.SANDBOX_FILESYSTEM(
+    const terminalUrl = PROTECTED_URLS.SANDBOX_TERMINAL(
       team.slug,
       sbx.sandboxId
     )
 
-    return NextResponse.redirect(new URL(filesystemUrl, req.url))
+    return NextResponse.redirect(new URL(terminalUrl, req.url))
   } catch (error) {
     l.warn(
       {
