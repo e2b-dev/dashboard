@@ -58,7 +58,7 @@
     "@opentelemetry/sdk-metrics": "^2.0.1",
     "@opentelemetry/sdk-node": "^0.218.0",
     "@opentelemetry/semantic-conventions": "^1.36.0",
-    "@ory/client-fetch": "^1.22.37",
+    "@ory/client-fetch": "1.22.22",
     "@ory/elements-react": "^1.2.0",
     "@ory/nextjs": "^1.0.0-rc.1",
     "@radix-ui/react-avatar": "^1.1.4",
