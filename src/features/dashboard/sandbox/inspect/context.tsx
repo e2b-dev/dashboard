@@ -7,6 +7,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -72,6 +73,7 @@ export default function SandboxInspectProvider({
   const { sandboxInfo, isRunning, refetchSandboxInfo } = useSandboxContext()
   const sandboxId = sandboxInfo?.sandboxID
   const sandboxState = sandboxInfo?.state
+  const storeInstanceKey = useId()
   const [store] = useState(() => createStoreWithRoot(rootPath))
   const sandboxManagerRef = useRef<SandboxManager | null>(null)
   const connectGenerationRef = useRef(0)
@@ -220,7 +222,11 @@ export default function SandboxInspectProvider({
   }
 
   useQuery({
-    queryKey: ['sandbox-inspect-connect', expectedConnectionKey],
+    queryKey: [
+      'sandbox-inspect-connect',
+      storeInstanceKey,
+      expectedConnectionKey,
+    ],
     queryFn: () => {
       if (!isRunning) {
         connectGenerationRef.current += 1
