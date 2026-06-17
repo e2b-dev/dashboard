@@ -1,6 +1,6 @@
 'use client'
 
-import { type ReactNode, useState } from 'react'
+import { type ReactNode, useMemo, useState } from 'react'
 import type { SandboxManagementAuth } from '@/core/shared/sandbox-management-auth'
 import LoadingLayout from '@/features/dashboard/loading-layout'
 import DashboardTerminal from '@/features/dashboard/terminal/dashboard-terminal'
@@ -34,11 +34,14 @@ export default function SandboxTerminalView({
     refetchSandboxInfo,
   } = useSandboxContext()
   const sandboxTemplateId = sandboxInfo?.templateID
-  const launchTarget = {
-    command,
-    sandboxId,
-    template: template ?? sandboxTemplateId,
-  }
+  const launchTarget = useMemo(
+    () => ({
+      command,
+      sandboxId,
+      template: template ?? sandboxTemplateId,
+    }),
+    [command, sandboxId, sandboxTemplateId, template]
+  )
 
   const finishSandboxResume = async () => {
     const nextSandboxInfo = await refetchSandboxInfo()
