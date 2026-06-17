@@ -240,7 +240,7 @@ export default function SandboxInspectProvider({
         !isSandboxResumePending
     ),
     retry: false,
-    refetchOnMount: false,
+    refetchOnMount: 'always',
     refetchOnReconnect: false,
     refetchOnWindowFocus: false,
     staleTime: Number.POSITIVE_INFINITY,
