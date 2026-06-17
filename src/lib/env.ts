@@ -74,6 +74,11 @@ export const clientSchema = z.object({
   NEXT_PUBLIC_INFRA_API_URL: z.url().optional(),
   NEXT_PUBLIC_E2B_SANDBOX_URL: z.url().optional(),
   NEXT_PUBLIC_DASHBOARD_API_URL: z.url().optional(),
+
+  // Browser-facing Kratos public URL for the custom Ory UI; falls back to ORY_SDK_URL.
+  NEXT_PUBLIC_ORY_SDK_URL: z.url().optional(),
+  // Gates the custom Ory UI: 'true' on Preview/Staging, unset on Production.
+  NEXT_PUBLIC_ORY_CUSTOM_UI: z.string().optional(),
 })
 
 const merged = serverSchema.merge(clientSchema)
