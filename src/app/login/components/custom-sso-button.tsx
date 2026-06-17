@@ -1,0 +1,65 @@
+'use client'
+
+import type { OryNodeSsoButtonProps } from '@ory/elements-react'
+import type { ComponentType, SVGProps } from 'react'
+import { GithubDark } from '@/components/ui/svgs/githubDark'
+import { GithubLight } from '@/components/ui/svgs/githubLight'
+import { Google } from '@/components/ui/svgs/google'
+import { cn } from '@/lib/utils'
+import { Button } from '@/ui/primitives/button'
+
+// GitHub's mark is monochrome, so swap the dark/light variants per theme. The
+// `Google` SVG is full-color and needs no theme switch.
+function GitHubLogo({ className, ...props }: SVGProps<SVGSVGElement>) {
+  return (
+    <>
+      <GithubLight className={cn('dark:hidden', className)} {...props} />
+      <GithubDark className={cn('hidden dark:block', className)} {...props} />
+    </>
+  )
+}
+
+const PROVIDERS: Record<
+  string,
+  { label: string; Logo: ComponentType<SVGProps<SVGSVGElement>> }
+> = {
+  github: { label: 'Continue with GitHub', Logo: GitHubLogo },
+  google: { label: 'Continue with Google', Logo: Google },
+}
+
+// Ory exposes the provider id on node.attributes.value (the value it submits);
+// match on it. Ory ships no brand logos, so the id→logo map above is ours.
+function resolveProvider(node: OryNodeSsoButtonProps['node']) {
+  const id =
+    typeof node.attributes.value === 'string'
+      ? node.attributes.value.toLowerCase()
+      : ''
+
+  if (id.includes('github')) return PROVIDERS.github
+  if (id.includes('google')) return PROVIDERS.google
+  return undefined
+}
+
+export function OrySsoButton({
+  node,
+  buttonProps,
+  isSubmitting,
+}: OryNodeSsoButtonProps) {
+  const known = resolveProvider(node)
+  const label = known?.label ?? node.meta?.label?.text
+  const Logo = known?.Logo
+
+  return (
+    <Button
+      variant="secondary"
+      className="flex items-center gap-2"
+      {...buttonProps}
+      loading={isSubmitting ? 'Redirecting…' : undefined}
+    >
+      {Logo && (
+        <Logo className="h-5 w-5" aria-hidden="true" focusable="false" />
+      )}
+      {label}
+    </Button>
+  )
+}
