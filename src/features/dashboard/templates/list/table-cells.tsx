@@ -181,6 +181,7 @@ export function ActionsCell({
           <IconButton
             className="size-5"
             disabled={isUpdating || isDeleting || 'isDefault' in template}
+            onClick={(e) => e.stopPropagation()}
           >
             {isUpdating ? (
               <Loader className="size-4" variant="square" size="lg" />
@@ -263,7 +264,8 @@ export function TemplateNameCell({
     }
   }
 
-  const handleNavigate = () => {
+  const handleNavigate = (e: React.MouseEvent) => {
+    e.stopPropagation()
     posthog.capture('template detail opened', {
       templateId: template.templateID,
       fromTab: 'list',
@@ -301,10 +303,9 @@ export function TemplateNameCell({
           type="button"
           onClick={handleCopy}
           className={cn(
-            'absolute right-0 p-1.5 rounded bg-bg',
+            'absolute right-0 p-1.5 rounded cursor-pointer',
             'opacity-0 group-hover/name:opacity-100',
-            'focus-visible:opacity-100 focus-visible:outline-none',
-            'hover:bg-bg-hover transition-colors'
+            'focus-visible:opacity-100 focus-visible:outline-none'
           )}
           aria-label={wasCopied ? 'Copied' : 'Copy template name'}
         >

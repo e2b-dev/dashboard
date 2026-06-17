@@ -8,6 +8,7 @@ import Empty from '@/ui/empty'
 import { LoadMoreButton } from '@/ui/pagination-buttons'
 import { Button } from '@/ui/primitives/button'
 import { CloseIcon, ExternalLinkIcon } from '@/ui/primitives/icons'
+import { RowHoverFrame } from '@/ui/row-hover-frame'
 import { useTemplateTableStore } from './stores/table-store'
 
 const ROW_HEIGHT_PX = 32
@@ -22,6 +23,7 @@ interface TemplatesTableBodyProps {
   isFetchingNextPage: boolean
   fetchNextPage: () => void
   isRefetching: boolean
+  onRowClick: (template: Template) => void
 }
 
 export function TemplatesTableBody({
@@ -32,6 +34,7 @@ export function TemplatesTableBody({
   isFetchingNextPage,
   fetchNextPage,
   isRefetching,
+  onRowClick,
 }: TemplatesTableBodyProps) {
   'use no memo'
 
@@ -98,19 +101,36 @@ export function TemplatesTableBody({
         className={cn(isRefetching && 'opacity-70 transition-opacity')}
       >
         {virtualPaddingTop > 0 && <div style={{ height: virtualPaddingTop }} />}
-        {rows.map((row) => (
-          <DataTableRow
-            key={row.id}
-            isSelected={row.getIsSelected()}
-            className="h-8 border-b"
-          >
-            {row.getVisibleCells().map((cell) => (
-              <DataTableCell key={cell.id} cell={cell}>
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-              </DataTableCell>
-            ))}
-          </DataTableRow>
-        ))}
+        {rows.map((row) => {
+          const isDefault =
+            'isDefault' in row.original && row.original.isDefault
+
+          return (
+            <DataTableRow
+              key={row.id}
+              isSelected={row.getIsSelected()}
+              onClick={isDefault ? undefined : () => onRowClick(row.original)}
+              className={cn(
+                'group/row relative h-8 min-w-full -mx-2 px-2 hover:bg-bg-1 border-b-0 transition-none w-[calc(100%+16px)]',
+                'border-stroke/80 hover:z-20 focus-within:z-10',
+                'has-[button[aria-haspopup=menu][data-state=open]]:z-10',
+                !isDefault && 'cursor-pointer'
+              )}
+            >
+              {row.getVisibleCells().map((cell) => (
+                <DataTableCell key={cell.id} cell={cell}>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </DataTableCell>
+              ))}
+              <RowHoverFrame
+                className={cn(
+                  'group-has-[button[aria-haspopup=menu][data-state=open]]/row:border-stroke',
+                  'group-has-[button[aria-haspopup=menu][data-state=open]]/row:[--corner-mark-color:var(--color-fg-tertiary)]'
+                )}
+              />
+            </DataTableRow>
+          )
+        })}
       </DataTableBody>
 
       {hasNextPage && (

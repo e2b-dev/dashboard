@@ -10,8 +10,10 @@ import {
   type TableOptions,
   useReactTable,
 } from '@tanstack/react-table'
+import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
+import { PROTECTED_URLS } from '@/configs/urls'
 import type {
   DefaultTemplate,
   Template,
@@ -50,7 +52,17 @@ export default function TemplatesTable() {
   'use no memo'
 
   const trpc = useTRPC()
+  const router = useRouter()
   const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
+
+  const handleRowClick = useCallback(
+    (template: Template) => {
+      router.push(
+        PROTECTED_URLS.TEMPLATE_OVERVIEW(teamSlug, template.templateID)
+      )
+    },
+    [router, teamSlug]
+  )
 
   const { sorting, setSorting, globalFilter, setGlobalFilter } =
     useTemplateTableStore()
@@ -170,19 +182,19 @@ export default function TemplatesTable() {
 
       <div
         className={cn(
-          'bg-bg flex-1 mt-4 overflow-x-auto w-full md:max-w-[calc(calc(100svw-48px)-var(--sidebar-width-active))]',
+          'bg-bg flex-1 mt-4 -mx-3 md:-mx-6 overflow-x-auto md:max-w-[calc(100svw-var(--sidebar-width-active))]',
           SIDEBAR_TRANSITION_CLASSNAMES
         )}
       >
         <DataTable
           className={cn(
-            'h-full overflow-y-auto md:min-w-[calc(100svw-48px-var(--sidebar-width-active))]',
+            'h-full overflow-y-auto px-3 md:px-6 md:min-w-[calc(100svw-var(--sidebar-width-active))]',
             SIDEBAR_TRANSITION_CLASSNAMES
           )}
           style={{ ...columnSizeVars }}
           ref={scrollRef}
         >
-          <DataTableHeader className="sticky top-0 shadow-xs bg-bg z-10">
+          <DataTableHeader className="sticky top-0 shadow-xs bg-bg z-30">
             {table.getHeaderGroups().map((headerGroup) => (
               <DataTableRow key={headerGroup.id} className="border-b-0">
                 {headerGroup.headers.map((header) => (
@@ -226,6 +238,7 @@ export default function TemplatesTable() {
             isFetchingNextPage={isFetchingNextPage}
             fetchNextPage={fetchNextPage}
             isRefetching={isListDimmed}
+            onRowClick={handleRowClick}
           />
         </DataTable>
       </div>
