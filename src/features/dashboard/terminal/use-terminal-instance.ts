@@ -1,10 +1,12 @@
 import { Terminal as GhosttyTerminal, init as initGhostty } from 'ghostty-web'
+import type { ClipboardEvent } from 'react'
 import { useCallback, useEffect, useRef } from 'react'
 import {
   DEFAULT_COLS,
   DEFAULT_ROWS,
   MAX_TERMINAL_TRANSCRIPT_CHARS,
 } from './constants'
+import { sanitizeTerminalPaste } from './terminal-paste'
 import { calculateTerminalSize } from './terminal-size'
 
 const INITIAL_TERMINAL_TEXT =
@@ -70,6 +72,23 @@ export function useTerminalInstance({
   const focusTerminal = useCallback(() => {
     terminalRef.current?.focus()
   }, [])
+
+  const pasteTerminalText = useCallback(
+    (event: ClipboardEvent<HTMLDivElement>) => {
+      const text = event.clipboardData.getData('text/plain')
+      if (!text) return
+
+      event.preventDefault()
+
+      const sanitizedText = sanitizeTerminalPaste(text)
+      if (sanitizedText) {
+        onInput(sanitizedText)
+      }
+
+      terminalRef.current?.focus()
+    },
+    [onInput]
+  )
 
   const copyTerminalText = useCallback(async () => {
     const value =
@@ -181,6 +200,7 @@ export function useTerminalInstance({
     appendOutput,
     copyTerminalText,
     focusTerminal,
+    pasteTerminalText,
     resetTerminal,
     resizeTerminal,
     terminalContainerRef,

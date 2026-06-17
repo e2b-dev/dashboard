@@ -1,4 +1,4 @@
-import type { RefObject } from 'react'
+import type { ClipboardEvent, RefObject } from 'react'
 import { IconButton } from '@/ui/primitives/icon-button'
 import { CopyIcon, RefreshIcon, TerminalIcon } from '@/ui/primitives/icons'
 
@@ -9,6 +9,7 @@ interface TerminalPanelProps {
   restartLabel: string
   terminalContainerRef: RefObject<HTMLDivElement | null>
   onFocusTerminal: () => void
+  onPasteTerminalText: (event: ClipboardEvent<HTMLDivElement>) => void
   onCopyTerminalText: () => void
   onRestartTerminal: () => void
 }
@@ -20,6 +21,7 @@ export default function TerminalPanel({
   restartLabel,
   terminalContainerRef,
   onFocusTerminal,
+  onPasteTerminalText,
   onCopyTerminalText,
   onRestartTerminal,
 }: TerminalPanelProps) {
@@ -41,6 +43,7 @@ export default function TerminalPanel({
         aria-label="Terminal"
         className="min-h-0 flex-1 cursor-text overflow-hidden bg-black p-3"
         onMouseDown={onFocusTerminal}
+        onPasteCapture={onPasteTerminalText}
       />
     </section>
   )

@@ -200,6 +200,7 @@ export default function DashboardTerminal({
     appendOutput,
     copyTerminalText,
     focusTerminal,
+    pasteTerminalText,
     resetTerminal,
     resizeTerminal,
     terminalContainerRef,
@@ -597,6 +598,7 @@ export default function DashboardTerminal({
         template={sandboxScoped ? undefined : template}
         terminalContainerRef={terminalContainerRef}
         onFocusTerminal={focusTerminal}
+        onPasteTerminalText={pasteTerminalText}
         onCopyTerminalText={() => void copyTerminalText()}
         onRestartTerminal={restartTerminal}
       />

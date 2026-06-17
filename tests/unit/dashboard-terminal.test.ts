@@ -15,6 +15,7 @@ import {
   normalizeTerminalTemplate,
   resolveTerminalTemplateOverride,
 } from '@/features/dashboard/terminal/template'
+import { sanitizeTerminalPaste } from '@/features/dashboard/terminal/terminal-paste'
 import { calculateTerminalSize } from '@/features/dashboard/terminal/terminal-size'
 
 const { mockCreateSandbox, mockConnectSandbox } = vi.hoisted(() => ({
@@ -199,6 +200,22 @@ describe('dashboard terminal helpers', () => {
         cols: 83,
         rows: 20,
       })
+    })
+  })
+
+  describe('sanitizeTerminalPaste', () => {
+    it('preserves printable shell input and common whitespace', () => {
+      expect(sanitizeTerminalPaste('echo hello\tworld\npwd\r\n')).toBe(
+        'echo hello\tworld\npwd\r\n'
+      )
+    })
+
+    it('strips escape sequences and non-whitespace control characters', () => {
+      expect(
+        sanitizeTerminalPaste(
+          '\x1b[200~echo nope\x1b[201~\x1b]0;title\x07\x9b31m\x00\x7f'
+        )
+      ).toBe('echo nope')
     })
   })
 
