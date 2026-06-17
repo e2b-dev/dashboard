@@ -10,13 +10,17 @@ import { useSandboxContext } from '../context'
 import SandboxInspectNotFound from '../inspect/not-found'
 
 interface SandboxTerminalViewProps {
+  command?: string
   sandboxManagementAuth: SandboxManagementAuth
+  template?: string
 }
 
 const SANDBOX_TERMINAL_RESUME_TIMEOUT_MS = 70_000
 
 export default function SandboxTerminalView({
+  command,
   sandboxManagementAuth,
+  template,
 }: SandboxTerminalViewProps) {
   const [shouldResumeSandbox, setShouldResumeSandbox] = useState(false)
   const [terminalResumeError, setTerminalResumeError] = useState<string>()
@@ -31,8 +35,9 @@ export default function SandboxTerminalView({
   } = useSandboxContext()
   const sandboxTemplateId = sandboxInfo?.templateID
   const launchTarget = {
+    command,
     sandboxId,
-    template: sandboxTemplateId,
+    template: template ?? sandboxTemplateId,
   }
 
   const finishSandboxResume = async () => {

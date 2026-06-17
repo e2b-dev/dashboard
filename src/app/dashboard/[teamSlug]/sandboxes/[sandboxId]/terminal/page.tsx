@@ -9,15 +9,18 @@ interface SandboxTerminalPageProps {
   params: Promise<{
     teamSlug: string
   }>
+  searchParams: Promise<{
+    command?: string
+    template?: string
+  }>
 }
 
 export default async function SandboxTerminalPage({
   params,
+  searchParams,
 }: SandboxTerminalPageProps) {
-  const [{ teamSlug }, authContext] = await Promise.all([
-    params,
-    getAuthContext(),
-  ])
+  const [{ teamSlug }, { command = '', template }, authContext] =
+    await Promise.all([params, searchParams, getAuthContext()])
 
   if (!authContext) {
     redirect(AUTH_URLS.SIGN_IN)
@@ -33,10 +36,12 @@ export default async function SandboxTerminalPage({
 
   return (
     <SandboxTerminalView
+      command={command}
       sandboxManagementAuth={createSandboxManagementAuth(
         authContext,
         teamId.data
       )}
+      template={template}
     />
   )
 }

@@ -18,11 +18,11 @@ const AGENT_ICONS = {
 >
 
 const NAME_VARIANT_MASK = 23
-const NAME_VARIANTS = {
+const NAME_VARIANTS: Partial<Record<string, number[]>> = {
   claude: [109, 114, 118, 123, 120, 99],
   codex: [122, 118, 101, 126, 121, 114],
   opencode: [109, 114, 101, 112, 123, 126, 121, 112],
-} satisfies Partial<Record<string, number[]>>
+}
 
 function getNameVariant(agentId: string) {
   const variant = NAME_VARIANTS[agentId]
