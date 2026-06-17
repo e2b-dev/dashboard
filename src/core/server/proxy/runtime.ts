@@ -28,14 +28,20 @@ type RunProxyOptions = {
   isAuthenticated?: boolean
 }
 
-// Same-origin paths the @ory/nextjs proxy forwards to Kratos (NEXT_PUBLIC_ORY_SDK_URL),
-// so the custom UI's flow cookies stay first-party.
+// Same-origin paths the @ory/nextjs proxy forwards to the Ory base
+// (NEXT_PUBLIC_ORY_SDK_URL), so the custom UI's flow cookies stay first-party.
+// `/oauth2/auth` is the Hydra authorize leg: proxying it keeps the OAuth2 login
+// on the visiting origin (the proxy rewrites Hydra's login_ui_url redirect back
+// here) instead of hopping to the Ory custom domain. On Ory Network Kratos +
+// Hydra share one base, so this resolves correctly; locally the authorize host
+// never points here (see same-origin-oauth.ts), so this prefix stays inert.
 const ORY_SDK_PROXY_PREFIXES = [
   '/self-service',
   '/sessions/whoami',
   '/ui',
   '/.well-known/ory',
   '/.ory',
+  '/oauth2/auth',
 ]
 
 // Pass oryConfig.project so the middleware rewrites Kratos redirects onto our UI URLs.

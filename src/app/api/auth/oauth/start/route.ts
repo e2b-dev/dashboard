@@ -6,6 +6,7 @@ import {
   readOryAuthIntent,
   shouldCaptureOrySignupMetadata,
 } from '@/core/server/auth/ory/build-start-url'
+import { rewriteAuthorizeToVisitingOrigin } from '@/core/server/auth/ory/same-origin-oauth'
 import {
   readOrySignupMetadataFromHeaders,
   setOrySignupMetadataCookie,
@@ -30,5 +31,18 @@ export async function GET(request: Request) {
     )
   }
 
-  await signIn('ory', { redirectTo }, authorizationParamsForOryIntent(intent))
+  // redirect:false so we get the authorize URL back (cookies are still set) and
+  // can keep it on the visiting origin for the custom same-origin UI.
+  const destination = await signIn(
+    'ory',
+    { redirectTo, redirect: false },
+    authorizationParamsForOryIntent(intent)
+  )
+
+  const target =
+    typeof destination === 'string'
+      ? await rewriteAuthorizeToVisitingOrigin(destination)
+      : destination
+
+  return NextResponse.redirect(target)
 }
