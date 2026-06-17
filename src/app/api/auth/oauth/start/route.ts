@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation'
 import { NextResponse } from 'next/server'
 import { signIn } from '@/auth'
 import {
@@ -44,5 +45,9 @@ export async function GET(request: Request) {
       ? await rewriteAuthorizeToVisitingOrigin(destination)
       : destination
 
-  return NextResponse.redirect(target)
+  // Use next/navigation redirect (not NextResponse.redirect) so the Set-Cookie
+  // headers signIn wrote via next/headers cookies() — Auth.js state/PKCE — are
+  // flushed onto the redirect. NextResponse.redirect() drops them, which breaks
+  // the callback (error=Configuration / "cookie doesn't stick").
+  redirect(typeof target === 'string' ? target : redirectTo)
 }
