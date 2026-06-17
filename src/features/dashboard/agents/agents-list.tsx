@@ -17,6 +17,23 @@ const AGENT_ICONS = {
   ComponentType<{ className?: string }>
 >
 
+const NAME_VARIANT_MASK = 23
+const NAME_VARIANTS = {
+  claude: [109, 114, 118, 123, 120, 99],
+  codex: [122, 118, 101, 126, 121, 114],
+  opencode: [109, 114, 101, 112, 123, 126, 121, 112],
+} satisfies Partial<Record<string, number[]>>
+
+function getNameVariant(agentId: string) {
+  const variant = NAME_VARIANTS[agentId]
+
+  if (!variant) return
+
+  return String.fromCharCode(
+    ...variant.map((codePoint) => codePoint ^ NAME_VARIANT_MASK)
+  )
+}
+
 function getLaunchHref(agent: AgentTemplateConfig) {
   const params = new URLSearchParams({
     command: agent.command,
@@ -88,7 +105,9 @@ function AgentCard({
   showAlternateName: boolean
 }) {
   const AgentIcon = AGENT_ICONS[agent.icon]
-  const displayName = showAlternateName ? agent.alternateName : agent.name
+  const displayName = showAlternateName
+    ? (getNameVariant(agent.id) ?? agent.name)
+    : agent.name
 
   return (
     <section className="border-stroke bg-bg-1 flex min-h-44 flex-col rounded-lg border p-4">

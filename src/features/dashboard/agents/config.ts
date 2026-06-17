@@ -4,7 +4,6 @@ export type AgentTemplateConfig = {
   command: string
   template: string
   icon: 'claude' | 'open' | 'openai'
-  alternateName: string
   description: string
 }
 
@@ -15,7 +14,6 @@ export const AGENT_TEMPLATES = [
     command: 'codex',
     template: 'codex',
     icon: 'openai',
-    alternateName: 'marine',
     description: 'Codex CLI for coding sessions.',
   },
   {
@@ -24,7 +22,6 @@ export const AGENT_TEMPLATES = [
     command: 'claude',
     template: 'claude',
     icon: 'claude',
-    alternateName: 'zealot',
     description: 'Claude Code for coding sessions.',
   },
   {
@@ -33,7 +30,6 @@ export const AGENT_TEMPLATES = [
     command: 'opencode',
     template: 'opencode',
     icon: 'open',
-    alternateName: 'zergling',
     description: 'OpenCode for coding sessions.',
   },
 ] satisfies AgentTemplateConfig[]
