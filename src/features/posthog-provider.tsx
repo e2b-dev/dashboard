@@ -3,8 +3,12 @@ import posthog, { type Survey } from 'posthog-js'
 import { PostHogProvider as PHProvider } from 'posthog-js/react'
 import { createContext, useContext, useEffect, useState } from 'react'
 
+export type PostHogEnvironment = 'production' | 'preview' | 'development'
+
 interface AppPostHogContextValue {
   enabled: boolean
+  environment: PostHogEnvironment
+  isLoaded: boolean
   isInitialized: boolean
   dashboardFeedbackSurvey: Survey | null
 }
@@ -28,13 +32,16 @@ export function useAppPostHogProvider() {
 export function PostHogProvider({
   children,
   enabled,
+  environment,
 }: {
   children: React.ReactNode
   enabled: boolean
+  environment: PostHogEnvironment
 }) {
   const pathname = usePathname()
   const [dashboardFeedbackSurvey, setDashboardFeedbackSurvey] =
     useState<Survey | null>(null)
+  const [isLoaded, setIsLoaded] = useState(() => posthog.__loaded)
   const [isInitialized, setIsInitialized] = useState(false)
 
   // Only track the dashboard app — not auth, marketing, or proxied (docs/blog)
@@ -45,7 +52,34 @@ export function PostHogProvider({
     if (!shouldInit || !process.env.NEXT_PUBLIC_POSTHOG_KEY) {
       return
     }
+
+    const registerEnvironment = () => {
+      posthog.register({
+        environment,
+      })
+    }
+
+    const loadDashboardFeedbackSurvey = () => {
+      posthog.getSurveys((surveys) => {
+        for (const survey of surveys) {
+          switch (survey.id) {
+            case process.env.NEXT_PUBLIC_POSTHOG_DASHBOARD_FEEDBACK_SURVEY_ID:
+              setDashboardFeedbackSurvey(survey)
+              break
+          }
+        }
+        setIsInitialized(true)
+      })
+    }
+
+    const finishLoading = () => {
+      registerEnvironment()
+      loadDashboardFeedbackSurvey()
+      setIsLoaded(true)
+    }
+
     if (posthog.__loaded) {
+      finishLoading()
       return
     }
 
@@ -68,28 +102,20 @@ export function PostHogProvider({
       opt_in_site_apps: true,
       loaded: (posthog) => {
         if (process.env.NODE_ENV === 'development') posthog.debug()
+        finishLoading()
       },
     })
-
-    posthog.register({
-      environment: process.env.NEXT_PUBLIC_VERCEL_ENV ?? 'development',
-    })
-
-    posthog.getSurveys((surveys) => {
-      for (const survey of surveys) {
-        switch (survey.id) {
-          case process.env.NEXT_PUBLIC_POSTHOG_DASHBOARD_FEEDBACK_SURVEY_ID:
-            setDashboardFeedbackSurvey(survey)
-            break
-        }
-      }
-      setIsInitialized(true)
-    })
-  }, [shouldInit])
+  }, [environment, shouldInit])
 
   return (
     <AppPostHogContext.Provider
-      value={{ enabled, dashboardFeedbackSurvey, isInitialized }}
+      value={{
+        enabled,
+        environment,
+        isLoaded,
+        dashboardFeedbackSurvey,
+        isInitialized,
+      }}
     >
       <PHProvider client={posthog}>{children}</PHProvider>
     </AppPostHogContext.Provider>

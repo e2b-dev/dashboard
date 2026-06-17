@@ -96,7 +96,7 @@ npm run dev
 ```
 src/
 ├── app/          # Next.js App Router pages and layouts
-├── configs/      # Global constants, feature flags, and URL maps
+├── configs/      # Global constants, env flags, and URL maps
 ├── core/         # Server-side logic: actions, adapters, modules, and shared clients
 ├── features/     # Domain-specific components (auth, dashboard, billing, etc.)
 ├── lib/          # Utility functions, hooks, and shared helpers

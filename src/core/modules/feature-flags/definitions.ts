@@ -1,0 +1,22 @@
+import type { FeatureFlagDefinition } from '@/core/modules/feature-flags/types'
+
+export const FEATURE_FLAGS = {
+  isAdmin: {
+    kind: 'boolean',
+    key: 'is_admin',
+    defaultValue: false,
+    description: 'Enables dashboard admin-only surfaces.',
+    exposure: 'server',
+  },
+} as const satisfies Record<string, FeatureFlagDefinition>
+
+export type FeatureFlagId = keyof typeof FEATURE_FLAGS
+
+export type FeatureFlagIdByKind<Kind extends FeatureFlagDefinition['kind']> = {
+  [Id in FeatureFlagId]: (typeof FEATURE_FLAGS)[Id]['kind'] extends Kind
+    ? Id
+    : never
+}[FeatureFlagId]
+
+export type BooleanFeatureFlagId = FeatureFlagIdByKind<'boolean'>
+export type PayloadFeatureFlagId = FeatureFlagIdByKind<'payload'>

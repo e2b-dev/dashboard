@@ -1,4 +1,4 @@
-import { INCLUDE_STATUS_INDICATOR } from '@/configs/flags'
+import { INCLUDE_STATUS_INDICATOR } from '@/configs/env-flags'
 import { LiveSandboxCounterServer } from '../sandboxes/live-counter.server'
 import DashboardLayoutFooter from './footer'
 import DashboardLayoutHeader from './header'

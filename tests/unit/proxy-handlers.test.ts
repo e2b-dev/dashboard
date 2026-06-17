@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const getMiddlewareRedirectMock = vi.hoisted(() => vi.fn())
 const getRewriteForPathMock = vi.hoisted(() => vi.fn())
 
-vi.mock('@/configs/flags', () => ({ ALLOW_SEO_INDEXING: false }))
+vi.mock('@/configs/env-flags', () => ({ ALLOW_SEO_INDEXING: false }))
 
 vi.mock('@/lib/utils/redirects', () => ({
   getMiddlewareRedirectFromPath: getMiddlewareRedirectMock,

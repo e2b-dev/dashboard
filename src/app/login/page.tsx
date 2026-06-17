@@ -1,6 +1,6 @@
 import { getLoginFlow, type OryPageParams } from '@ory/nextjs/app'
 import { redirect } from 'next/navigation'
-import { isOryCustomUiEnabled } from '@/configs/flags'
+import { isOryCustomUiEnabled } from '@/configs/env-flags'
 import oryConfig from '@/configs/ory'
 import { AUTH_URLS } from '@/configs/urls'
 import { getOryConfigForRequest } from '@/core/server/auth/ory/request-config'

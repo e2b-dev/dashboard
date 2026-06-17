@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { INCLUDE_ARGUS } from '@/configs/flags'
+import { INCLUDE_ARGUS } from '@/configs/env-flags'
 import { Page } from '@/features/dashboard/layouts/page'
 import { WebhooksPageContent } from '@/features/dashboard/settings/webhooks/webhooks-page-content'
 import { HydrateClient, prefetch, trpc } from '@/trpc/server'

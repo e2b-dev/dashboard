@@ -11,7 +11,7 @@ import {
   UsageIcon,
   WebhookIcon,
 } from '@/ui/primitives/icons'
-import { INCLUDE_ARGUS, INCLUDE_BILLING } from './flags'
+import { INCLUDE_ARGUS, INCLUDE_BILLING } from './env-flags'
 import { PROTECTED_URLS } from './urls'
 
 type SidebarNavArgs = {

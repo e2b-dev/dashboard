@@ -1,7 +1,7 @@
 import 'server-cli-only'
 
 import { type NextRequest, NextResponse } from 'next/server'
-import { ALLOW_SEO_INDEXING } from '@/configs/flags'
+import { ALLOW_SEO_INDEXING } from '@/configs/env-flags'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { getMiddlewareRedirectFromPath } from '@/lib/utils/redirects'
 import { getRewriteForPath } from '@/lib/utils/rewrites'

@@ -1,97 +1,99 @@
 import { describe, expect, it, vi } from 'vitest'
-import { z } from 'zod'
-import type {
-  BooleanFeatureFlagDefinition,
-  JsonFeatureFlagDefinition,
-} from '@/configs/flags'
-import { createFeatureFlagService } from '@/core/server/feature-flags/flags.server'
-import { createLaunchDarklyContext } from '@/core/server/feature-flags/launchdarkly'
+import type { FeatureFlagContext } from '@/core/modules/feature-flags/context'
+import { createFeatureFlagService } from '@/core/modules/feature-flags/feature-flags.server'
+import { createPostHogFlagEvaluationOptions } from '@/core/modules/feature-flags/posthog-provider.server'
 
 const context = {
-  userId: 'user-id',
-  teamId: 'team-id',
-}
+  user: {
+    id: 'user-id',
+    email: 'user@example.com',
+  },
+  team: {
+    id: 'team-id',
+    slug: 'team-slug',
+    name: 'Team Name',
+  },
+  environment: 'preview',
+} satisfies FeatureFlagContext
 
 describe('createFeatureFlagService', () => {
-  it('returns boolean values from the provider', async () => {
-    const flag = {
-      kind: 'boolean',
-      key: 'test-boolean',
-      defaultValue: false,
-    } satisfies BooleanFeatureFlagDefinition
+  it('evaluates boolean flags through the provider', async () => {
     const provider = {
-      getBoolean: vi.fn().mockResolvedValue(true),
-      getJson: vi.fn(),
+      evaluate: vi.fn().mockResolvedValue({
+        getFlagValue: vi.fn().mockReturnValue(true),
+        getPayload: vi.fn(),
+      }),
     }
 
-    const result = await createFeatureFlagService(provider).getBoolean(
-      flag,
+    const result = await createFeatureFlagService(provider).isEnabled(
+      'isAdmin',
       context
     )
 
     expect(result).toBe(true)
-    expect(provider.getBoolean).toHaveBeenCalledWith(flag, context)
+    expect(provider.evaluate).toHaveBeenCalledWith(context, ['is_admin'])
   })
 
-  it('parses JSON flag values through the flag definition schema', async () => {
-    const flag = {
-      kind: 'json',
-      key: 'test-json',
-      defaultValue: [],
-      schema: z.array(z.object({ name: z.string() })),
-    } satisfies JsonFeatureFlagDefinition<{ name: string }[]>
+  it('falls back to the flag default when PostHog has no value', async () => {
     const provider = {
-      getBoolean: vi.fn(),
-      getJson: vi.fn().mockResolvedValue([{ name: 'Codex' }]),
+      evaluate: vi.fn().mockResolvedValue({
+        getFlagValue: vi.fn().mockReturnValue(undefined),
+        getPayload: vi.fn(),
+      }),
     }
 
-    const result = await createFeatureFlagService(provider).getJson(
-      flag,
+    const result = await createFeatureFlagService(provider).isEnabled(
+      'isAdmin',
       context
     )
 
-    expect(result).toEqual([{ name: 'Codex' }])
-    expect(provider.getJson).toHaveBeenCalledWith(flag, context)
+    expect(result).toBe(false)
   })
 
-  it('returns the JSON fallback when provider data is invalid', async () => {
-    const flag = {
-      kind: 'json',
-      key: 'test-json',
-      defaultValue: [{ name: 'Fallback' }],
-      schema: z.array(z.object({ name: z.string() })),
-    } satisfies JsonFeatureFlagDefinition<{ name: string }[]>
+  it('evaluates the registry in a single provider call', async () => {
     const provider = {
-      getBoolean: vi.fn(),
-      getJson: vi.fn().mockResolvedValue([{ name: 123 }]),
+      evaluate: vi.fn().mockResolvedValue({
+        getFlagValue: vi.fn().mockReturnValue(true),
+        getPayload: vi.fn(),
+      }),
     }
 
-    const result = await createFeatureFlagService(provider).getJson(
-      flag,
-      context
-    )
+    const result = await createFeatureFlagService(provider).evaluateAll(context)
 
-    expect(result).toEqual([{ name: 'Fallback' }])
+    expect(provider.evaluate).toHaveBeenCalledTimes(1)
+    expect(provider.evaluate).toHaveBeenCalledWith(context, ['is_admin'])
+    expect(result).toEqual([
+      {
+        id: 'isAdmin',
+        key: 'is_admin',
+        kind: 'boolean',
+        description: 'Enables dashboard admin-only surfaces.',
+        defaultValue: false,
+        value: true,
+      },
+    ])
   })
 })
 
-describe('createLaunchDarklyContext', () => {
-  it('targets teams by stable team id', () => {
-    expect(createLaunchDarklyContext(context)).toEqual({
-      kind: 'multi',
-      user: {
-        key: 'user-id',
+describe('createPostHogFlagEvaluationOptions', () => {
+  it('maps dashboard users and teams to PostHog identity inputs', () => {
+    expect(createPostHogFlagEvaluationOptions(context, ['is_admin'])).toEqual({
+      flagKeys: ['is_admin'],
+      disableGeoip: true,
+      personProperties: {
+        email: 'user@example.com',
+        environment: 'preview',
       },
-      team: {
-        key: 'team-id',
+      groups: {
+        team: 'team-id',
       },
-    })
-  })
-
-  it('falls back to a user context when no team id is supplied', () => {
-    expect(createLaunchDarklyContext({ userId: 'user-id' })).toEqual({
-      kind: 'user',
-      key: 'user-id',
+      groupProperties: {
+        team: {
+          name: 'Team Name',
+          slug: 'team-slug',
+          environment: 'preview',
+        },
+      },
     })
   })
 })

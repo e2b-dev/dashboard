@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DOCUMENTATION_DOMAIN } from '@/configs/documentation'
 import { LANDING_PAGE_DOMAIN } from '@/configs/rewrites'
 
-vi.mock('@/configs/flags', () => ({
+vi.mock('@/configs/env-flags', () => ({
   ALLOW_SEO_INDEXING: true,
 }))
 
