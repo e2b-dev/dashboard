@@ -4,6 +4,7 @@ import type { ListedBuildModel } from '@/core/modules/builds/models'
 import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
 import { cn } from '@/lib/utils'
 import { DataTableBody, DataTableCell, DataTableRow } from '@/ui/data-table'
+import { RowHoverFrame } from '@/ui/row-hover-frame'
 import { isRightAlignedColumn } from './table-config'
 
 const ROW_HEIGHT_PX = 40
@@ -49,9 +50,11 @@ export function BuildsTableBody({
         return (
           <DataTableRow
             key={row.id}
-            className={cn('h-10 cursor-pointer hover:bg-bg-hover', {
-              'bg-bg-1 animate-pulse': isBuilding,
-            })}
+            className={cn(
+              'group/row relative h-10 min-w-full cursor-pointer -mx-2 px-2 hover:bg-bg-1 border-b-0 transition-none w-[calc(100%+16px)]',
+              'border-stroke/80 hover:z-20 focus-within:z-10',
+              { 'bg-bg-1 animate-pulse': isBuilding }
+            )}
             onClick={() => onRowClick(row.original)}
           >
             {row.getVisibleCells().map((cell) => (
@@ -66,6 +69,7 @@ export function BuildsTableBody({
                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
               </DataTableCell>
             ))}
+            <RowHoverFrame />
           </DataTableRow>
         )
       })}

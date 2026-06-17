@@ -133,7 +133,7 @@ export function Status({ status, statusMessage }: StatusProps) {
   const badge = (
     <Badge
       variant={variant}
-      className={cn('select-none shrink-0 uppercase', {
+      className={cn('select-none shrink-0 uppercase cursor-pointer', {
         'bg-bg-inverted/10': variant === 'default',
       })}
     >

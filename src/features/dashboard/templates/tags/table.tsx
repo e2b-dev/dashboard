@@ -396,7 +396,7 @@ function GroupSection({ row, teamSlug, templateId }: GroupSectionProps) {
         onClick={handleClick}
         onKeyDown={handleKeyDown}
         className={cn(
-          'group/row relative flex items-center gap-6 border-b-0 -mx-3 px-3 w-[calc(100%+24px)]',
+          'group/row relative flex items-center gap-6 border-b-0 -mx-3 px-3 w-[calc(100%+24px)] hover:bg-bg-1 transition-none',
           canExpand && 'cursor-pointer'
         )}
       >

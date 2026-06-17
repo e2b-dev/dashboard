@@ -221,19 +221,19 @@ const BuildsTable = ({
   return (
     <div
       className={cn(
-        'flex-1 min-h-0 w-full overflow-x-auto md:max-w-[calc(calc(100svw-48px)-var(--sidebar-width-active))]',
+        'flex-1 min-h-0 -mx-3 md:-mx-6 overflow-x-auto md:max-w-[calc(100svw-var(--sidebar-width-active))]',
         SIDEBAR_TRANSITION_CLASSNAMES
       )}
     >
       <DataTable
         ref={scrollContainerRef}
         className={cn(
-          'h-full overflow-y-auto md:min-w-[calc(100svw-48px-var(--sidebar-width-active))]',
+          'h-full overflow-y-auto px-3 md:px-6 md:min-w-[calc(100svw-var(--sidebar-width-active))]',
           SIDEBAR_TRANSITION_CLASSNAMES
         )}
         style={{ ...columnSizeVars }}
       >
-        <DataTableHeader className="sticky top-0 z-10 bg-bg">
+        <DataTableHeader className="sticky top-0 z-30 bg-bg">
           {table.getHeaderGroups().map((headerGroup) => (
             <DataTableRow key={headerGroup.id} className="border-b-0">
               {headerGroup.headers.map((header) => (
