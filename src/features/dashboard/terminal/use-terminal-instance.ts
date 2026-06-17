@@ -15,6 +15,8 @@ const TERMINAL_THEME = {
   foreground: '#ffffff',
   selectionBackground: '#ffffff40',
 }
+const TERMINAL_INIT_ERROR_TEXT =
+  '\r\nTerminal failed to load. Reload the page to try again.\r\n'
 
 const ghosttyReady = initGhostty()
 
@@ -92,34 +94,50 @@ export function useTerminalInstance({
     let dataSubscription: { dispose: () => void } | undefined
     let resizeTimer: number | undefined
 
-    void ghosttyReady.then(() => {
-      if (disposed || !terminalContainerRef.current) return
+    void ghosttyReady
+      .then(() => {
+        const currentContainer = terminalContainerRef.current
+        if (disposed || !currentContainer) return
 
-      terminal = new GhosttyTerminal({
-        cols: terminalSizeRef.current.cols,
-        rows: terminalSizeRef.current.rows,
-        cursorBlink: true,
-        cursorStyle: 'block',
-        fontFamily:
-          'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-        fontSize: 13,
-        scrollback: 10_000,
-        theme: TERMINAL_THEME,
+        terminal = new GhosttyTerminal({
+          cols: terminalSizeRef.current.cols,
+          rows: terminalSizeRef.current.rows,
+          cursorBlink: true,
+          cursorStyle: 'block',
+          fontFamily:
+            'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+          fontSize: 13,
+          scrollback: 10_000,
+          theme: TERMINAL_THEME,
+        })
+
+        terminalRef.current = terminal
+        terminal.open(currentContainer)
+        dataSubscription = terminal.onData(onInput)
+        terminal.write(terminalTranscriptRef.current, () => {
+          terminal?.scrollToBottom()
+        })
+
+        requestAnimationFrame(() => {
+          resizeTerminal()
+          terminal?.focus()
+          terminal?.scrollToBottom()
+        })
+        resizeTimer = window.setTimeout(() => {
+          resizeTerminal()
+          terminal?.scrollToBottom()
+        }, 100)
       })
+      .catch(() => {
+        const currentContainer = terminalContainerRef.current
+        if (disposed || !currentContainer) return
 
-      terminalRef.current = terminal
-      terminal.open(terminalContainerRef.current)
-      terminal.write(terminalTranscriptRef.current)
-      dataSubscription = terminal.onData(onInput)
-
-      requestAnimationFrame(() => {
-        resizeTerminal()
-        terminal?.focus()
+        terminalTranscriptRef.current = (
+          terminalTranscriptRef.current + TERMINAL_INIT_ERROR_TEXT
+        ).slice(-MAX_TERMINAL_TRANSCRIPT_CHARS)
+        currentContainer.style.color = TERMINAL_THEME.foreground
+        currentContainer.textContent = TERMINAL_INIT_ERROR_TEXT.trim()
       })
-      resizeTimer = window.setTimeout(() => {
-        resizeTerminal()
-      }, 100)
-    })
 
     return () => {
       disposed = true
