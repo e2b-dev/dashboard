@@ -58,7 +58,11 @@ const SESSION_COOKIE = required('ORY_KRATOS_SESSION_COOKIE')
 // Admin token: Ory Network co-locates the admin API on the SDK host. Used to
 // accept the login + consent challenges (the dashboard is the login provider).
 const ADMIN_URL = (process.env.ORY_HYDRA_ADMIN_URL ?? SDK_URL).replace(/\/$/, '')
-const PROJECT_API_TOKEN = required('ORY_PROJECT_API_TOKEN')
+// Optional: Ory Network needs a PAT; self-hosted loopback admin is open.
+const PROJECT_API_TOKEN = process.env.ORY_PROJECT_API_TOKEN
+// whoami runs against Kratos public. On Ory Network this equals ORY_SDK_URL;
+// self-hosted the ports split (Kratos 4433 vs Hydra/SDK 4444).
+const KRATOS_URL = (process.env.SPIKE_KRATOS_URL ?? SDK_URL).replace(/\/$/, '')
 const AUDIENCE = process.env.ORY_OAUTH2_AUDIENCE
 const REDIRECT_URI =
   process.env.SPIKE_REDIRECT_URI ??
@@ -140,7 +144,7 @@ type WhoamiSession = {
 }
 
 async function whoami(): Promise<{ subject: string; email?: string; name?: string }> {
-  const res = await fetch(`${SDK_URL}/sessions/whoami`, {
+  const res = await fetch(`${KRATOS_URL}/sessions/whoami`, {
     headers: { cookie: cookieHeader(), accept: 'application/json' },
   })
   if (!res.ok) {
@@ -165,7 +169,9 @@ async function adminPut(path: string, query: string, body: unknown): Promise<{ r
   const res = await fetch(`${ADMIN_URL}${path}?${query}`, {
     method: 'PUT',
     headers: {
-      authorization: `Bearer ${PROJECT_API_TOKEN}`,
+      ...(PROJECT_API_TOKEN
+        ? { authorization: `Bearer ${PROJECT_API_TOKEN}` }
+        : {}),
       'content-type': 'application/json',
       accept: 'application/json',
     },
@@ -182,7 +188,12 @@ async function adminPut(path: string, query: string, body: unknown): Promise<{ r
 
 async function adminGet(path: string, query: string): Promise<Record<string, unknown>> {
   const res = await fetch(`${ADMIN_URL}${path}?${query}`, {
-    headers: { authorization: `Bearer ${PROJECT_API_TOKEN}`, accept: 'application/json' },
+    headers: {
+      ...(PROJECT_API_TOKEN
+        ? { authorization: `Bearer ${PROJECT_API_TOKEN}` }
+        : {}),
+      accept: 'application/json',
+    },
   })
   if (!res.ok) {
     fail(`admin GET ${path} failed (${res.status})`, (await res.text().catch(() => '')).slice(0, 400))

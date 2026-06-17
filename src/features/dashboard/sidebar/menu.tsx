@@ -30,8 +30,11 @@ export default function DashboardSidebarMenu() {
   const { team } = useDashboard()
   const [createTeamOpen, setCreateTeamOpen] = useState(false)
 
-  const handleLogout = () => {
-    signOutAction()
+  const handleLogout = async () => {
+    // Hard navigation: the sign-out target is the proxied Kratos logout endpoint,
+    // which a soft RSC redirect can't execute (see signOutAction).
+    const { url } = await signOutAction()
+    window.location.href = url
   }
 
   return (

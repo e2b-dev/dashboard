@@ -19,6 +19,11 @@ export const serverSchema = z.object({
   ORY_OAUTH2_CLIENT_ID: z.string().min(1).optional(),
   ORY_OAUTH2_CLIENT_SECRET: z.string().min(1).optional(),
   ORY_OAUTH2_AUDIENCE: z.string().min(1).optional(),
+  // Optional override for the silent-grant redirect_uri. Must be a registered
+  // redirect_uri of the dashboard OAuth2 client. Defaults to the canonical
+  // https://${NEXT_PUBLIC_E2B_DOMAIN}/api/auth/oauth/callback/ory. Set this in
+  // local dev where Hydra registers http://localhost:<port>/... instead.
+  ORY_OAUTH2_REDIRECT_URI: z.url().optional(),
   ORY_PROJECT_API_TOKEN: z.string().min(1).optional(),
   ORY_KRATOS_ADMIN_URL: z.url().optional(),
   ORY_HYDRA_ADMIN_URL: z.url().optional(),

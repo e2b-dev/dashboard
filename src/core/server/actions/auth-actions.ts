@@ -411,11 +411,19 @@ export const forgotPasswordAction = actionClient
     }
   })
 
-export async function signOutAction(returnTo?: string) {
+// Returns the URL the client should HARD-navigate to rather than redirect()-ing
+// here: a server-action redirect is a soft RSC navigation, and the Ory sign-out
+// target is the proxied Kratos logout endpoint (/self-service/logout?token=…),
+// not an app page — a soft nav can't drive that side-effecting GET, so the
+// session is never cleared. A single window.location navigation runs it as a
+// real document request through the proxy. (Same reasoning as reauth below.)
+export async function signOutAction(
+  returnTo?: string
+): Promise<{ url: string }> {
   const origin = (await headers()).get('origin') ?? undefined
   const { redirectTo } = await auth.signOut({ origin, returnTo })
 
-  throw redirect(redirectTo)
+  return { url: redirectTo }
 }
 
 // Drives the account-settings re-authentication step and returns the URL the

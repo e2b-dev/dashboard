@@ -1,7 +1,6 @@
 import 'server-only'
 
 import { createHash, randomBytes } from 'node:crypto'
-import { headers } from 'next/headers'
 import { cache } from 'react'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { getOryOAuth2Api } from './client'
@@ -42,8 +41,18 @@ function sdkUrl(): string {
 // server-side — so any registered value works regardless of the visiting origin
 // (this is why ephemeral previews need no per-origin redirect_uri).
 function redirectUri(): string {
+  // Explicit override for environments whose registered redirect_uri isn't the
+  // canonical https://<domain> form — notably local dev, where Hydra only
+  // registers http://localhost:<port>/... (set ORY_OAUTH2_REDIRECT_URI there).
+  const override = process.env.ORY_OAUTH2_REDIRECT_URI
+  if (override) return override
+
   const domain = process.env.NEXT_PUBLIC_E2B_DOMAIN
-  if (!domain) throw new Error('NEXT_PUBLIC_E2B_DOMAIN is not configured')
+  if (!domain) {
+    throw new Error(
+      'ORY_OAUTH2_REDIRECT_URI or NEXT_PUBLIC_E2B_DOMAIN must be set'
+    )
+  }
   return `https://${domain}/api/auth/oauth/callback/ory`
 }
 
@@ -206,10 +215,12 @@ async function exchangeCode(
 export const mintBackendToken = cache(
   async (input: SilentGrantInput): Promise<SilentGrantResult | null> => {
     try {
-      const cookieHeader = (await headers()).get('cookie')
-      if (!cookieHeader) return null
-
-      const jar = new CookieJar(cookieHeader)
+      // Start with an EMPTY cookie jar. Hydra must NOT see the caller's browser
+      // cookies: a stale Hydra login session (ory_hydra_session_*, e.g. left over
+      // from the old Auth.js OAuth flow) would make Hydra skip the login_challenge
+      // we accept via the admin API, and the mint would fail. The jar only needs
+      // Hydra's own CSRF cookies, which it accumulates across the authorize hops.
+      const jar = new CookieJar(null)
       const codeVerifier = base64url(randomBytes(32))
       const codeChallenge = base64url(
         createHash('sha256').update(codeVerifier).digest()
