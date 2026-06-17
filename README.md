@@ -62,20 +62,7 @@ cp .env.example .env.local
 3. Enable the upstream identity providers you want in Ory (GitHub, Google, email/password, etc.).
 4. Ensure the Ory access-token audience matches the backend JWT audience setting.
 
-#### b. Key-Value Store Setup (Optional)
-Redis/KV is optional for standard dashboard deployments, including local, enterprise, and on-prem environments. The dashboard can boot and run core auth and dashboard workflows without KV configured.
-
-KV is currently used for optional health-check coverage. If you need that capability, configure a Vercel/Upstash Redis REST-compatible store:
-   ```
-   KV_REST_API_URL=your_redis_rest_api_url
-   KV_REST_API_TOKEN=your_redis_api_write_token
-   ```
-
-> **Note**: `@vercel/kv` expects a Redis REST API. A raw Redis server such as `redis://localhost:6379` is not compatible without an Upstash-compatible REST proxy.
-
-> **Health check**: When `KV_REST_API_URL` and `KV_REST_API_TOKEN` are set, `/api/health` will report `503 degraded` if KV is unreachable. Leave both unset to opt out of the KV health check entirely.
-
-#### c. Start the development server
+#### b. Start the development server
 ```bash
 # Using Bun (recommended)
 bun run dev

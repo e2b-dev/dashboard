@@ -48,7 +48,6 @@
         "@trpc/tanstack-react-query": "^11.7.1",
         "@types/micromatch": "^4.0.9",
         "@vercel/analytics": "^1.5.0",
-        "@vercel/kv": "^3.0.0",
         "@vercel/otel": "^2.1.2",
         "@vercel/speed-insights": "^1.2.0",
         "@xterm/xterm": "^6.0.0",
@@ -1008,11 +1007,7 @@
 
     "@ungap/structured-clone": ["@ungap/structured-clone@1.3.0", "", {}, "sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g=="],
 
-    "@upstash/redis": ["@upstash/redis@1.35.6", "", { "dependencies": { "uncrypto": "^0.1.3" } }, "sha512-aSEIGJgJ7XUfTYvhQcQbq835re7e/BXjs8Janq6Pvr6LlmTZnyqwT97RziZLO/8AVUL037RLXqqiQC6kCt+5pA=="],
-
     "@vercel/analytics": ["@vercel/analytics@1.5.0", "", { "peerDependencies": { "@remix-run/react": "^2", "@sveltejs/kit": "^1 || ^2", "next": ">= 13", "react": "^18 || ^19 || ^19.0.0-rc", "svelte": ">= 4", "vue": "^3", "vue-router": "^4" }, "optionalPeers": ["@remix-run/react", "@sveltejs/kit", "next", "react", "svelte", "vue", "vue-router"] }, "sha512-MYsBzfPki4gthY5HnYN7jgInhAZ7Ac1cYDoRWFomwGHWEX7odTEzbtg9kf/QSo7XEsEAqlQugA6gJ2WS2DEa3g=="],
-
-    "@vercel/kv": ["@vercel/kv@3.0.0", "", { "dependencies": { "@upstash/redis": "^1.34.0" } }, "sha512-pKT8fRnfyYk2MgvyB6fn6ipJPCdfZwiKDdw7vB+HL50rjboEBHDVBEcnwfkEpVSp2AjNtoaOUH7zG+bVC/rvSg=="],
 
     "@vercel/otel": ["@vercel/otel@2.1.2", "", { "peerDependencies": { "@opentelemetry/api": ">=1.9.0 <2.0.0", "@opentelemetry/api-logs": ">=0.200.0 <0.300.0", "@opentelemetry/instrumentation": ">=0.200.0 <0.300.0", "@opentelemetry/resources": ">=2.0.0 <3.0.0", "@opentelemetry/sdk-logs": ">=0.200.0 <0.300.0", "@opentelemetry/sdk-metrics": ">=2.0.0 <3.0.0", "@opentelemetry/sdk-trace-base": ">=2.0.0 <3.0.0" } }, "sha512-PbGyq1lLwWbnftylNcQ6KFxc7DLc8LJdnaU3snM43bgXiWkWsHrgaU/LdUD8sHaSgG8UKuydX/aymNt3J+hzuA=="],
 
@@ -1875,8 +1870,6 @@
     "typescript": ["typescript@5.7.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-84MVSjMEHP+FQRPy3pX9sTVV/INIex71s9TL2Gm5FG/WG1SqXeKyZ0k7/blY/4FdOzI12CBy1vGc4og/eus0fw=="],
 
     "unbash": ["unbash@3.0.0", "", {}, "sha512-FeFPZ/WFT0mbRCuydiZzpPFlrYN8ZUpphQKoq4EeElVIYjYyGzPMxQR/simUwCOJIyVhpFk4RbtyO7RuMpMnHA=="],
-
-    "uncrypto": ["uncrypto@0.1.3", "", {}, "sha512-Ql87qFHB3s/De2ClA9e0gsnS6zXG27SkTiSJwjCc9MebbfapQfuPzumMIUMi38ezPZVNFcHI9sUIepeQfw8J8Q=="],
 
     "undici": ["undici@7.16.0", "", {}, "sha512-QEg3HPMll0o3t2ourKwOeUAZ159Kn9mx5pnzHRQO8+Wixmh88YdZRiIwat0iNzNNXn0yoEtXJqFpyW7eM8BV7g=="],
 
