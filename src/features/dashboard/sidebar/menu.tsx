@@ -32,9 +32,13 @@ export default function DashboardSidebarMenu() {
 
   const handleLogout = async () => {
     // Hard navigation: the sign-out target is the proxied Kratos logout endpoint,
-    // which a soft RSC redirect can't execute (see signOutAction).
+    // which a soft RSC redirect can't execute (see signOutAction). The URL is
+    // server-generated (proxied logout flow / relative sign-in path) and always
+    // same-origin; validate before navigating to prevent an open redirect.
     const { url } = await signOutAction()
-    window.location.href = url
+    const target = new URL(url, window.location.origin)
+    window.location.href =
+      target.origin === window.location.origin ? target.href : '/'
   }
 
   return (
