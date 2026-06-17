@@ -1,6 +1,10 @@
 import { flexRender, type Table } from '@tanstack/react-table'
+import Link from 'next/link'
+import posthog from 'posthog-js'
 import type { RefObject } from 'react'
+import { PROTECTED_URLS } from '@/configs/urls'
 import type { Template } from '@/core/modules/templates/models'
+import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
 import { cn } from '@/lib/utils'
 import { DataTableBody, DataTableCell, DataTableRow } from '@/ui/data-table'
@@ -23,7 +27,6 @@ interface TemplatesTableBodyProps {
   isFetchingNextPage: boolean
   fetchNextPage: () => void
   isRefetching: boolean
-  onRowClick: (template: Template) => void
 }
 
 export function TemplatesTableBody({
@@ -34,10 +37,10 @@ export function TemplatesTableBody({
   isFetchingNextPage,
   fetchNextPage,
   isRefetching,
-  onRowClick,
 }: TemplatesTableBodyProps) {
   'use no memo'
 
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
   const { resetFilters, globalFilter, isPublic } = useTemplateTableStore()
 
   const centerRows = table.getCenterRows()
@@ -102,21 +105,39 @@ export function TemplatesTableBody({
       >
         {virtualPaddingTop > 0 && <div style={{ height: virtualPaddingTop }} />}
         {rows.map((row) => {
-          const isDefault =
-            'isDefault' in row.original && row.original.isDefault
+          const template = row.original
+          const isDefault = 'isDefault' in template && template.isDefault
+          const primaryName =
+            template.names.find((name) => !name.includes('/')) ??
+            template.names[0]
 
           return (
             <DataTableRow
               key={row.id}
               isSelected={row.getIsSelected()}
-              onClick={isDefault ? undefined : () => onRowClick(row.original)}
               className={cn(
                 'group/row relative h-8 min-w-full -mx-2 px-2 hover:bg-bg-1 border-b-0 transition-none w-[calc(100%+16px)]',
                 'border-stroke/80 hover:z-20 focus-within:z-10',
-                'has-[button[aria-haspopup=menu][data-state=open]]:z-10',
-                !isDefault && 'cursor-pointer'
+                'has-[button[aria-haspopup=menu][data-state=open]]:z-10'
               )}
             >
+              {!isDefault && (
+                <Link
+                  href={PROTECTED_URLS.TEMPLATE_OVERVIEW(
+                    teamSlug,
+                    template.templateID
+                  )}
+                  prefetch={false}
+                  aria-label={`Open template ${primaryName ?? template.templateID}`}
+                  className="absolute inset-0 z-1"
+                  onClick={() =>
+                    posthog.capture('template detail opened', {
+                      templateId: template.templateID,
+                      fromTab: 'list',
+                    })
+                  }
+                />
+              )}
               {row.getVisibleCells().map((cell) => (
                 <DataTableCell key={cell.id} cell={cell}>
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}

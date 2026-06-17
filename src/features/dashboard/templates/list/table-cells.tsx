@@ -2,13 +2,9 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { CellContext } from '@tanstack/react-table'
-import Link from 'next/link'
-import posthog from 'posthog-js'
 import { useMemo, useState } from 'react'
-import { PROTECTED_URLS } from '@/configs/urls'
 import type { DefaultTemplate, Template } from '@/core/modules/templates/models'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
-import { useRouteParams } from '@/lib/hooks/use-route-params'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -179,9 +175,8 @@ export function ActionsCell({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <IconButton
-            className="size-5"
+            className="size-5 relative z-10"
             disabled={isUpdating || isDeleting || 'isDefault' in template}
-            onClick={(e) => e.stopPropagation()}
           >
             {isUpdating ? (
               <Loader className="size-4" variant="square" size="lg" />
@@ -244,7 +239,6 @@ export function TemplateNameCell({
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const template = row.original
   const names = template.names
-  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
 
   // Prefer a name without "/" as the primary display name
   const primaryName = names.find((name) => !name.includes('/')) ?? names[0]
@@ -254,7 +248,6 @@ export function TemplateNameCell({
   const nameValue = (primaryName as string) ?? '--'
 
   const isDefault = 'isDefault' in template && template.isDefault
-  const isLinkable = !isDefault && nameValue !== '--'
 
   const handleCopy = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -264,21 +257,21 @@ export function TemplateNameCell({
     }
   }
 
-  const handleNavigate = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    posthog.capture('template detail opened', {
-      templateId: template.templateID,
-      fromTab: 'list',
-    })
-  }
-
-  const content = (
-    <>
+  // Navigation is handled by the row-level overlay link; interactive controls
+  // here sit above it via z-10 so they stay clickable.
+  return (
+    <div
+      className={cn(
+        'flex items-center gap-2 prose-body min-w-0 relative w-full h-9',
+        'group-hover/row:text-fg transition-colors',
+        { 'text-fg-tertiary': !primaryName }
+      )}
+    >
       <span className="truncate">{nameValue}</span>
       {additionalNames.length > 0 && (
         <HelpTooltip
           trigger={
-            <span className="text-fg-tertiary bg-bg-muted rounded px-1.5 py-0.5 text-xs font-medium">
+            <span className="relative z-10 text-fg-tertiary bg-bg-muted rounded px-1.5 py-0.5 text-xs font-medium">
               +{additionalNames.length}
             </span>
           }
@@ -303,8 +296,8 @@ export function TemplateNameCell({
           type="button"
           onClick={handleCopy}
           className={cn(
-            'absolute right-0 p-1.5 rounded cursor-pointer',
-            'opacity-0 group-hover/name:opacity-100',
+            'group/copy absolute right-0 z-10 p-1.5 rounded cursor-pointer',
+            'opacity-0 group-hover/row:opacity-100',
             'focus-visible:opacity-100 focus-visible:outline-none'
           )}
           aria-label={wasCopied ? 'Copied' : 'Copy template name'}
@@ -312,38 +305,10 @@ export function TemplateNameCell({
           {wasCopied ? (
             <CheckmarkIcon className="size-3 text-icon" />
           ) : (
-            <CopyIcon className="size-3 text-icon-secondary" />
+            <CopyIcon className="size-3 text-icon-tertiary group-hover/copy:text-icon" />
           )}
         </button>
       )}
-    </>
-  )
-
-  if (isLinkable) {
-    return (
-      <Link
-        href={PROTECTED_URLS.TEMPLATE_OVERVIEW(teamSlug, template.templateID)}
-        onClick={handleNavigate}
-        className={cn(
-          'flex items-center gap-2 prose-body min-w-0 relative group/name w-full h-9',
-          'hover:text-fg transition-colors focus-visible:outline-none'
-        )}
-      >
-        {content}
-      </Link>
-    )
-  }
-
-  return (
-    <div
-      className={cn(
-        'flex items-center gap-2 prose-body min-w-0 relative group/name w-full h-9',
-        {
-          'text-fg-tertiary': !primaryName,
-        }
-      )}
-    >
-      {content}
     </div>
   )
 }

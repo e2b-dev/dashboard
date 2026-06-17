@@ -10,10 +10,8 @@ import {
   type TableOptions,
   useReactTable,
 } from '@tanstack/react-table'
-import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
-import { PROTECTED_URLS } from '@/configs/urls'
 import type {
   DefaultTemplate,
   Template,
@@ -52,17 +50,7 @@ export default function TemplatesTable() {
   'use no memo'
 
   const trpc = useTRPC()
-  const router = useRouter()
   const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
-
-  const handleRowClick = useCallback(
-    (template: Template) => {
-      router.push(
-        PROTECTED_URLS.TEMPLATE_OVERVIEW(teamSlug, template.templateID)
-      )
-    },
-    [router, teamSlug]
-  )
 
   const { sorting, setSorting, globalFilter, setGlobalFilter } =
     useTemplateTableStore()
@@ -238,7 +226,6 @@ export default function TemplatesTable() {
             isFetchingNextPage={isFetchingNextPage}
             fetchNextPage={fetchNextPage}
             isRefetching={isListDimmed}
-            onRowClick={handleRowClick}
           />
         </DataTable>
       </div>
