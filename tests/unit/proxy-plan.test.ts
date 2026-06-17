@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   classifyProxyRequest,
-  planNeedsAuthJsSession,
+  planNeedsAuthSession,
 } from '@/core/server/proxy/classifier'
 
 describe('classifyProxyRequest', () => {
@@ -10,16 +10,15 @@ describe('classifyProxyRequest', () => {
     ['/sign-in', 'auth-page', true],
     ['/sign-up', 'auth-page', true],
     ['/api/trpc/user.update', 'trpc', false],
-    ['/api/auth/oauth/session', 'bypass', false],
-    ['/api/auth/oauth/start', 'bypass', false],
+    ['/api/auth/sign-out', 'bypass', false],
     ['/api/health', 'bypass', false],
     ['/docs/quickstart', 'rewrite', false],
     ['/', 'rewrite', false],
     ['/unknown-public-page', 'public', false],
-  ])('classifies %s', (pathname, kind, needsAuthJsSession) => {
+  ])('classifies %s', (pathname, kind, needsAuthSession) => {
     const plan = classifyProxyRequest(pathname)
 
     expect(plan.kind).toBe(kind)
-    expect(planNeedsAuthJsSession(plan)).toBe(needsAuthJsSession)
+    expect(planNeedsAuthSession(plan)).toBe(needsAuthSession)
   })
 })

@@ -11,16 +11,14 @@ export const serverSchema = z.object({
   POSTHOG_API_KEY: z.string().min(1).optional(),
   POSTHOG_PROJECT_ID: z.string().min(1).optional(),
 
-  AUTH_SECRET: z.string().min(1).optional(),
-  AUTH_TRUST_HOST: z.string().optional(),
-  // Prefix for Auth.js cookie names to disambiguate multiple local
-  // instances sharing localhost (cookies aren't scoped by port).
-  // Leave unset in prod/preview.
-  AUTH_COOKIE_PREFIX: z.string().min(1).optional(),
   ORY_SDK_URL: z.url().optional(),
   ORY_OAUTH2_CLIENT_ID: z.string().min(1).optional(),
   ORY_OAUTH2_CLIENT_SECRET: z.string().min(1).optional(),
   ORY_OAUTH2_AUDIENCE: z.string().min(1).optional(),
+  // Explicit override for the silent-grant redirect_uri, for environments whose
+  // registered redirect_uri isn't the canonical https://<domain> form (notably
+  // local dev). Falls back to NEXT_PUBLIC_E2B_DOMAIN when unset.
+  ORY_OAUTH2_REDIRECT_URI: z.url().optional(),
   ORY_PROJECT_API_TOKEN: z.string().min(1).optional(),
   ORY_KRATOS_ADMIN_URL: z.url().optional(),
   ORY_HYDRA_ADMIN_URL: z.url().optional(),
@@ -77,8 +75,6 @@ export const clientSchema = z.object({
 
   // Browser-facing Kratos public URL for the custom Ory UI; falls back to ORY_SDK_URL.
   NEXT_PUBLIC_ORY_SDK_URL: z.url().optional(),
-  // Gates the custom Ory UI: 'true' on Preview/Staging, unset on Production.
-  NEXT_PUBLIC_ORY_CUSTOM_UI: z.string().optional(),
 })
 
 const merged = serverSchema.merge(clientSchema)
@@ -86,7 +82,6 @@ const merged = serverSchema.merge(clientSchema)
 type MergedEnv = z.infer<typeof merged>
 
 const oryRequiredEnvVars = [
-  'AUTH_SECRET',
   'ORY_SDK_URL',
   'ORY_OAUTH2_CLIENT_ID',
   'ORY_OAUTH2_CLIENT_SECRET',
@@ -104,7 +99,7 @@ function requireEnvVars(
 
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: `Auth.js/Ory requires ${envVar}`,
+      message: `Ory requires ${envVar}`,
       path: [envVar],
     })
   }
@@ -132,7 +127,7 @@ function validateOryAdminEnv(data: MergedEnv, ctx: z.RefinementCtx) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message:
-        'Auth.js/Ory requires ORY_PROJECT_API_TOKEN (Ory Network) or both ORY_KRATOS_ADMIN_URL and ORY_HYDRA_ADMIN_URL (self-hosted)',
+        'Ory requires ORY_PROJECT_API_TOKEN (Ory Network) or both ORY_KRATOS_ADMIN_URL and ORY_HYDRA_ADMIN_URL (self-hosted)',
       path: ['ORY_PROJECT_API_TOKEN'],
     })
   }

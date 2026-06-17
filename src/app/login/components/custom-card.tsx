@@ -10,10 +10,9 @@ export function OryCard({ children }: PropsWithChildren) {
   return <div className="bg-bg flex w-full flex-col border p-6">{children}</div>
 }
 
-// Cross-flow links route through the legacy /sign-in & /sign-up start routes
-// (→ /api/auth/oauth/start), not the raw flow pages: linking straight to
-// /registration would drop the in-flight Hydra login_challenge and orphan the
-// OAuth transaction. The start route re-establishes a valid one.
+// Cross-flow links point at the legacy /sign-in & /sign-up entry paths, which
+// redirect to the same-origin Kratos flow pages (/login, /registration). Going
+// through them keeps a single canonical entry point for each flow.
 export function OryCardFooter() {
   const { flowType } = useOryFlow()
 

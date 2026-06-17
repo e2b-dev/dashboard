@@ -13,10 +13,10 @@ export type ProxyPlan =
   | { kind: 'public' }
 
 const TRPC_API_PREFIXES = ['/api/trpc'] as const
-const AUTHJS_ENDPOINT_PREFIXES = ['/api/auth'] as const
+const AUTH_ENDPOINT_PREFIXES = ['/api/auth'] as const
 
 export function classifyProxyRequest(pathname: string): ProxyPlan {
-  if (matchesAnyPrefix(pathname, AUTHJS_ENDPOINT_PREFIXES)) {
+  if (matchesAnyPrefix(pathname, AUTH_ENDPOINT_PREFIXES)) {
     return { kind: 'bypass' }
   }
 
@@ -47,7 +47,7 @@ export function classifyProxyRequest(pathname: string): ProxyPlan {
     : { kind: 'public' }
 }
 
-export function planNeedsAuthJsSession(plan: ProxyPlan): boolean {
+export function planNeedsAuthSession(plan: ProxyPlan): boolean {
   return plan.kind === 'auth-page' || plan.kind === 'dashboard-page'
 }
 

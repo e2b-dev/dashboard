@@ -5,7 +5,7 @@ import { expect, test } from '@playwright/test'
 const mode = process.env.PLAYWRIGHT_MODE === 'pr' ? 'pr' : 'dev'
 const authStatePath = resolve(`.playwright/.auth/${mode}-user.json`)
 
-test('sign in via Ory hosted UI and persist auth state', async ({
+test('sign in via Ory same-origin UI and persist auth state', async ({
   page,
   context,
   baseURL,
@@ -18,8 +18,8 @@ test('sign in via Ory hosted UI and persist auth state', async ({
   expect(email, 'TEST_USER_EMAIL must be set').toBeTruthy()
   expect(password, 'TEST_USER_PASSWORD must be set').toBeTruthy()
 
-  // /sign-in middleware redirects through /api/auth/oauth/start → Hydra →
-  // Kratos hosted UI on a different origin; Playwright follows the chain.
+  // /sign-in redirects to the same-origin Kratos login flow page (/login),
+  // which renders the Ory Elements form via the @ory/nextjs self-service proxy.
   await page.goto('/sign-in')
 
   const identifier = page.locator('input[name="identifier"]')

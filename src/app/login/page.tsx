@@ -1,21 +1,15 @@
 import { getLoginFlow, type OryPageParams } from '@ory/nextjs/app'
-import { redirect } from 'next/navigation'
-import { isOryCustomUiEnabled } from '@/configs/flags'
 import oryConfig from '@/configs/ory'
-import { AUTH_URLS } from '@/configs/urls'
 import { getOryConfigForRequest } from '@/core/server/auth/ory/request-config'
 import { LoginCard } from './login-card'
 
 // Dynamic: getLoginFlow reads per-request searchParams and headers.
 export const dynamic = 'force-dynamic'
 
-// getLoginFlow handles both legs of the OAuth2 login: a `login_challenge` from
-// Hydra (creates the Kratos flow) and the resulting `?flow=` from Kratos.
+// Same-origin Kratos login flow. The user authenticates here directly; the
+// backend's Hydra access token is minted server-side from the resulting Kratos
+// session (see silent-grant), so there's no user-facing OAuth2 bounce.
 export default async function OryLoginPage(props: OryPageParams) {
-  if (!isOryCustomUiEnabled()) {
-    redirect(AUTH_URLS.SIGN_IN)
-  }
-
   const flow = await getLoginFlow(oryConfig, props.searchParams)
 
   // null only on unrecoverable error (getLoginFlow has already redirected).

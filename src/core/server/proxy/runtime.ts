@@ -6,16 +6,13 @@ import {
   type NextRequest,
   NextResponse,
 } from 'next/server'
-import { auth as authjsMiddleware } from '@/auth'
-import { isOryCustomUiEnabled } from '@/configs/flags'
 import oryConfig from '@/configs/ory'
-import { isOrySessionAuthenticated } from '@/core/server/auth/ory/authjs-session-boundary'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { getAuthRouteRedirect } from './auth-routes'
 import {
   classifyProxyRequest,
   type ProxyPlan,
-  planNeedsAuthJsSession,
+  planNeedsAuthSession,
 } from './classifier'
 import {
   handleAuthGate,
@@ -45,32 +42,51 @@ function isOrySdkProxyPath(pathname: string): boolean {
   return ORY_SDK_PROXY_PREFIXES.some((prefix) => pathname.startsWith(prefix))
 }
 
+// Edge-safe session check for the middleware gate (getServerSession can't run in
+// middleware). Redirect gating only; real enforcement is server-side.
+async function isOrySessionActiveInProxy(
+  request: NextRequest
+): Promise<boolean> {
+  const sdkUrl = process.env.NEXT_PUBLIC_ORY_SDK_URL ?? process.env.ORY_SDK_URL
+  const cookie = request.headers.get('cookie')
+  if (!sdkUrl || !cookie) return false
+
+  try {
+    const res = await fetch(`${sdkUrl.replace(/\/$/, '')}/sessions/whoami`, {
+      headers: { cookie, accept: 'application/json' },
+    })
+    if (!res.ok) return false
+    const session = (await res.json()) as { active?: boolean }
+    return session.active === true
+  } catch {
+    return false
+  }
+}
+
 export async function runDashboardProxy(
   request: NextRequest,
-  event: NextFetchEvent
+  _event: NextFetchEvent
 ) {
   // Forward Ory SDK traffic to Kratos before classification (it would otherwise
-  // classify as a bypass and go to Next). Gated, so production is unaffected;
-  // path check first so the gate runs only for these paths.
-  if (isOrySdkProxyPath(request.nextUrl.pathname) && isOryCustomUiEnabled()) {
+  // classify as a bypass and go to Next). This keeps the same-origin Kratos
+  // self-service flow + whoami cookies first-party.
+  if (isOrySdkProxyPath(request.nextUrl.pathname)) {
     return oryProxy(request)
   }
 
   const plan = classifyProxyRequest(request.nextUrl.pathname)
 
-  if (!planNeedsAuthJsSession(plan)) {
+  if (!planNeedsAuthSession(plan)) {
     return runProxyConcerns(request, plan)
   }
 
-  const proxyWithAuth = authjsMiddleware((req, _event: NextFetchEvent) => {
-    const isAuthenticated = isOrySessionAuthenticated(req.auth)
-    const authRouteRedirect = getAuthRouteRedirect(req, isAuthenticated)
-    if (authRouteRedirect) return authRouteRedirect
+  // Auth/dashboard pages gate on a real Kratos session via whoami.
+  const isAuthenticated = await isOrySessionActiveInProxy(request)
 
-    return runProxyConcerns(req, plan, { isAuthenticated })
-  })
+  const authRouteRedirect = getAuthRouteRedirect(request, isAuthenticated)
+  if (authRouteRedirect) return authRouteRedirect
 
-  return proxyWithAuth(request, event)
+  return runProxyConcerns(request, plan, { isAuthenticated })
 }
 
 async function runProxyConcerns(

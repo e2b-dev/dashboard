@@ -1,18 +1,16 @@
-import type { Identity } from '@ory/client-fetch'
-import type { Session } from 'next-auth'
+import type { Identity, Session } from '@ory/client-fetch'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const authjsMock = vi.hoisted(() => vi.fn())
-const authjsSignOutMock = vi.hoisted(() => vi.fn())
+const getServerSessionMock = vi.hoisted(() => vi.fn())
+const getLogoutFlowMock = vi.hoisted(() => vi.fn())
 const getIdentityMock = vi.hoisted(() => vi.fn())
 const updateIdentityMock = vi.hoisted(() => vi.fn())
 const patchIdentityMock = vi.hoisted(() => vi.fn())
-const revokeOAuthSessionsMock = vi.hoisted(() => vi.fn())
 const revokeKratosSessionsMock = vi.hoisted(() => vi.fn())
 
-vi.mock('@/auth', () => ({
-  auth: authjsMock,
-  signOut: authjsSignOutMock,
+vi.mock('@ory/nextjs/app', () => ({
+  getServerSession: getServerSessionMock,
+  getLogoutFlow: getLogoutFlowMock,
 }))
 
 vi.mock('@/core/server/auth/ory/client', () => ({
@@ -21,10 +19,6 @@ vi.mock('@/core/server/auth/ory/client', () => ({
     updateIdentity: updateIdentityMock,
     patchIdentity: patchIdentityMock,
   }),
-}))
-
-vi.mock('@/core/server/auth/ory/oauth-session', () => ({
-  revokeOryOAuthSessionsForSubject: revokeOAuthSessionsMock,
 }))
 
 vi.mock('@/core/server/auth/ory/kratos-session', () => ({
@@ -40,29 +34,22 @@ const { handleCredentialChangeSuccess, updateUser } = await import(
   '@/core/server/auth/ory/session'
 )
 
-const nowSeconds = Math.floor(Date.now() / 1000)
-
-function makeIdToken(authTime: number): string {
-  return [
-    Buffer.from(JSON.stringify({ alg: 'RS256' })).toString('base64url'),
-    Buffer.from(JSON.stringify({ auth_time: authTime })).toString('base64url'),
-    'sig',
-  ].join('.')
-}
-
+// Kratos stamps `authenticated_at`; the session freshness check reads it.
 function makeSession({
-  idToken = makeIdToken(nowSeconds),
+  authenticatedAt = new Date().toISOString(),
   identityId = 'kratos-uuid',
 }: {
-  idToken?: string
+  authenticatedAt?: string
   identityId?: string
 } = {}): Session {
   return {
-    user: { id: 'e2b-user-id' },
-    accessToken: 'access-token',
-    idToken,
-    identityId,
-  } as Session
+    active: true,
+    authenticated_at: authenticatedAt,
+    identity: {
+      id: identityId,
+      traits: { email: 'ada@example.test', name: 'Ada' },
+    },
+  } as unknown as Session
 }
 
 const currentIdentity = {
@@ -77,18 +64,19 @@ const currentIdentity = {
 
 describe('Ory account security', () => {
   beforeEach(() => {
-    authjsMock.mockReset()
-    authjsSignOutMock.mockReset().mockResolvedValue(undefined)
+    getServerSessionMock.mockReset()
+    getLogoutFlowMock.mockReset()
     getIdentityMock.mockReset().mockResolvedValue(currentIdentity)
     updateIdentityMock.mockReset().mockResolvedValue(undefined)
     patchIdentityMock.mockReset().mockResolvedValue(undefined)
-    revokeOAuthSessionsMock.mockReset().mockResolvedValue(undefined)
     revokeKratosSessionsMock.mockReset().mockResolvedValue(undefined)
   })
 
   it('requires fresh authentication before credential changes', async () => {
-    authjsMock.mockResolvedValue(
-      makeSession({ idToken: makeIdToken(nowSeconds - 10_000) })
+    getServerSessionMock.mockResolvedValue(
+      makeSession({
+        authenticatedAt: new Date(Date.now() - 10_000_000).toISOString(),
+      })
     )
 
     const result = await updateUser({ password: 'new-secret' })
@@ -98,7 +86,7 @@ describe('Ory account security', () => {
   })
 
   it('uses Ory updateIdentity for fresh password changes', async () => {
-    authjsMock.mockResolvedValue(makeSession())
+    getServerSessionMock.mockResolvedValue(makeSession())
     getIdentityMock
       .mockResolvedValueOnce(currentIdentity)
       .mockResolvedValueOnce({
@@ -119,16 +107,14 @@ describe('Ory account security', () => {
         credentials: { password: { config: { password: 'new-secret' } } },
       }),
     })
-    expect(result).toMatchObject({ ok: true, user: { id: 'e2b-user-id' } })
+    expect(result).toMatchObject({ ok: true, user: { id: 'kratos-uuid' } })
   })
 
-  it('revokes Ory/Kratos sessions and clears Auth.js after credential changes', async () => {
-    authjsMock.mockResolvedValue(makeSession())
+  it('revokes Kratos sessions after credential changes', async () => {
+    getServerSessionMock.mockResolvedValue(makeSession())
 
     await handleCredentialChangeSuccess()
 
-    expect(revokeOAuthSessionsMock).toHaveBeenCalledWith('e2b-user-id')
     expect(revokeKratosSessionsMock).toHaveBeenCalledWith('kratos-uuid')
-    expect(authjsSignOutMock).toHaveBeenCalledWith({ redirect: false })
   })
 })

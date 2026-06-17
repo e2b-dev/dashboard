@@ -135,7 +135,7 @@ describe('Dashboard Route - Team Resolution Integration Tests', () => {
   describe('Authenticated Users - No Team Found (Unexpected State)', () => {
     it('should sign out and redirect with error when no team can be resolved', async () => {
       mockAuth.signOut.mockResolvedValue({
-        redirectTo: '/api/auth/oauth/signout-flow',
+        redirectTo: '/self-service/logout',
       })
 
       // resolveUserTeam returns null (no team found)
@@ -148,9 +148,7 @@ describe('Dashboard Route - Team Resolution Integration Tests', () => {
       // verify: user is signed out
       expect(mockAuth.signOut).toHaveBeenCalled()
 
-      expect(response.headers.get('location')).toContain(
-        '/api/auth/oauth/signout-flow'
-      )
+      expect(response.headers.get('location')).toContain('/self-service/logout')
     })
   })
 

@@ -1,11 +1,13 @@
 import { redirect } from 'next/navigation'
-import { buildOryStartURL } from '@/core/server/auth/ory/build-start-url'
 
 type PageProps = {
   searchParams: Promise<{ returnTo?: string }>
 }
 
+// Legacy entry path: forward to the same-origin Kratos recovery flow page,
+// preserving the post-login destination as Ory's `return_to`.
 export default async function Page({ searchParams }: PageProps) {
   const { returnTo } = await searchParams
-  redirect(buildOryStartURL('signin', returnTo))
+  const query = returnTo ? `?return_to=${encodeURIComponent(returnTo)}` : ''
+  redirect(`/recovery${query}`)
 }
