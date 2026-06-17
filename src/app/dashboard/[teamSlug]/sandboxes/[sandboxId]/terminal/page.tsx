@@ -1,0 +1,42 @@
+import { redirect } from 'next/navigation'
+import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
+import { getAuthContext } from '@/core/server/auth'
+import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
+import { createSandboxManagementAuth } from '@/core/shared/sandbox-management-auth.server'
+import SandboxTerminalView from '@/features/dashboard/sandbox/terminal/view'
+
+interface SandboxTerminalPageProps {
+  params: Promise<{
+    teamSlug: string
+  }>
+}
+
+export default async function SandboxTerminalPage({
+  params,
+}: SandboxTerminalPageProps) {
+  const [{ teamSlug }, authContext] = await Promise.all([
+    params,
+    getAuthContext(),
+  ])
+
+  if (!authContext) {
+    redirect(AUTH_URLS.SIGN_IN)
+  }
+
+  const teamId = await getTeamIdFromSlug(teamSlug, authContext.accessToken)
+  if (!teamId.ok) {
+    throw new Error('Failed to resolve team for sandbox terminal')
+  }
+  if (!teamId.data) {
+    redirect(PROTECTED_URLS.DASHBOARD)
+  }
+
+  return (
+    <SandboxTerminalView
+      sandboxManagementAuth={createSandboxManagementAuth(
+        authContext,
+        teamId.data
+      )}
+    />
+  )
+}

@@ -1,14 +1,15 @@
 'use client'
 
+import { useQuery } from '@tanstack/react-query'
 import Sandbox from 'e2b'
 import type { ReactNode } from 'react'
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from 'react'
 import type { SandboxManagementAuth } from '@/core/shared/sandbox-management-auth'
 import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
@@ -19,9 +20,14 @@ import { createFilesystemStore, type FilesystemStore } from './filesystem/store'
 import type { FilesystemOperations } from './filesystem/types'
 import { SandboxManager } from './sandbox-manager'
 
+const SANDBOX_RESUME_TIMEOUT_MS = 70_000
+
 interface SandboxInspectContextValue {
   store: FilesystemStore
   operations: FilesystemOperations
+  isSandboxResumePending: boolean
+  sandboxResumeError?: string
+  resumeSandbox: () => Promise<void>
 }
 
 const SandboxInspectContext = createContext<SandboxInspectContextValue | null>(
@@ -34,6 +40,27 @@ interface SandboxInspectProviderProps {
   sandboxManagementAuth: SandboxManagementAuth
 }
 
+function createStoreWithRoot(rootPath: string) {
+  const normalizedRootPath = normalizePath(rootPath)
+  const store = createFilesystemStore(rootPath)
+  const state = store.getState()
+  const rootName =
+    normalizedRootPath === '/' ? '/' : normalizedRootPath.split('/').pop() || ''
+
+  state.addNodes(getParentPath(normalizedRootPath), [
+    {
+      name: rootName,
+      path: normalizedRootPath,
+      type: 'dir',
+      isExpanded: true,
+      children: [],
+    },
+  ])
+  state.setLoaded(normalizedRootPath, false)
+
+  return store
+}
+
 export default function SandboxInspectProvider({
   children,
   rootPath,
@@ -42,52 +69,23 @@ export default function SandboxInspectProvider({
   const { team } = useDashboard()
   const teamId = team.id
 
-  const { sandboxInfo, isRunning } = useSandboxContext()
-  const storeRef = useRef<FilesystemStore | null>(null)
+  const { sandboxInfo, isRunning, refetchSandboxInfo } = useSandboxContext()
+  const sandboxId = sandboxInfo?.sandboxID
+  const sandboxState = sandboxInfo?.state
+  const [store] = useState(() => createStoreWithRoot(rootPath))
   const sandboxManagerRef = useRef<SandboxManager | null>(null)
+  const connectGenerationRef = useRef(0)
+  const connectAbortControllerRef = useRef<AbortController | null>(null)
+  const [isSandboxResumePending, setIsSandboxResumePending] = useState(false)
+  const [sandboxResumeError, setSandboxResumeError] = useState<string>()
+  const [connectionKey, setConnectionKey] = useState<string>()
 
   const { trackInteraction } = useSandboxInspectAnalytics()
-
-  // ---------- synchronous store initialisation ----------
-  {
-    const normalizedRoot = normalizePath(rootPath)
-    const needsNewStore =
-      !storeRef.current ||
-      storeRef.current.getState().rootPath !== normalizedRoot
-
-    if (needsNewStore) {
-      trackInteraction('initialized', {
-        sandbox_id: sandboxInfo?.sandboxID,
-        team_id: teamId,
-        root_path: rootPath,
-      })
-
-      // stop previous watcher (if any)
-      if (sandboxManagerRef.current) {
-        sandboxManagerRef.current.stopWatching()
-        sandboxManagerRef.current = null
-      }
-
-      storeRef.current = createFilesystemStore(rootPath)
-
-      const state = storeRef.current.getState()
-
-      const rootName =
-        normalizedRoot === '/' ? '/' : normalizedRoot.split('/').pop() || ''
-
-      state.addNodes(getParentPath(normalizedRoot), [
-        {
-          name: rootName,
-          path: normalizedRoot,
-          type: 'dir',
-          isExpanded: true,
-          children: [],
-        },
-      ])
-
-      state.setLoaded(normalizedRoot, false)
-    }
-  }
+  const normalizedRootPath = normalizePath(rootPath)
+  const expectedConnectionKey =
+    sandboxId && teamId && sandboxState
+      ? `${teamId}:${sandboxId}:${normalizedRootPath}:${sandboxState}`
+      : undefined
 
   // ---------- filesystem operations exposed via context ----------
   const operations = useMemo<FilesystemOperations>(
@@ -100,31 +98,31 @@ export default function SandboxInspectProvider({
         await sandboxManagerRef.current?.loadDirectory(path)
       },
       selectNode: async (path: string) => {
-        const node = storeRef.current!.getState().getNode(path)
+        const node = store.getState().getNode(path)
 
         if (!node) return
 
         if (
           isRunning &&
           node.type === 'file' &&
-          !storeRef.current!.getState().isLoaded(path)
+          !store.getState().isLoaded(path)
         ) {
           await sandboxManagerRef.current?.readFile(path)
         }
 
-        storeRef.current!.getState().setSelected(path)
+        store.getState().setSelected(path)
         if (node.type === 'file') {
           trackInteraction('selected_file', { path })
         }
       },
       resetSelected: () => {
-        storeRef.current!.setState((state) => {
+        store.setState((state) => {
           state.selectedPath = undefined
         })
       },
       toggleDirectory: async (path: string) => {
         const normalizedPath = normalizePath(path)
-        const state = storeRef.current!.getState()
+        const state = store.getState()
         const node = state.getNode(normalizedPath)
 
         if (!node || node.type !== 'dir') return
@@ -157,7 +155,7 @@ export default function SandboxInspectProvider({
 
         if (!downloadUrl) return
 
-        const node = storeRef.current!.getState().getNode(path)
+        const node = store.getState().getNode(path)
 
         const a = document.createElement('a')
         a.href = downloadUrl
@@ -168,72 +166,137 @@ export default function SandboxInspectProvider({
         trackInteraction('downloaded_file', { path })
       },
     }),
-    [isRunning, trackInteraction]
+    [isRunning, store, trackInteraction]
   )
 
-  const connectSandbox = useCallback(async () => {
-    if (!storeRef.current || !sandboxInfo || !teamId) return
+  const connectSandbox = async (options?: {
+    connectionKey?: string | null
+    requestTimeoutMs?: number
+    timeoutMs?: number
+  }) => {
+    if (!sandboxId || !teamId) return false
+    const generation = connectGenerationRef.current + 1
+    connectGenerationRef.current = generation
+    connectAbortControllerRef.current?.abort()
+    const abortController = new AbortController()
+    connectAbortControllerRef.current = abortController
 
     // (re)create the sandbox-manager when sandbox / team / root changes
     if (sandboxManagerRef.current) {
       sandboxManagerRef.current.stopWatching()
     }
 
-    const sandbox = await Sandbox.connect(sandboxInfo.sandboxID, {
+    const sandbox = await Sandbox.connect(sandboxId, {
       domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
       // Keep inspect connections from extending sandbox TTL via SDK default connect timeout.
-      timeoutMs: 1_000,
+      timeoutMs: options?.timeoutMs ?? 1_000,
+      requestTimeoutMs: options?.requestTimeoutMs,
+      signal: abortController.signal,
       apiHeaders: {
         ...sandboxManagementAuth.headers,
       },
     })
 
-    sandboxManagerRef.current = new SandboxManager(
-      storeRef.current,
-      sandbox,
-      rootPath
-    )
-    await sandboxManagerRef.current.loadDirectory(rootPath)
-
-    trackInteraction('started_watching', {
-      sandbox_id: sandboxInfo?.sandboxID,
-      team_id: teamId,
-      root_path: rootPath,
-    })
-  }, [sandboxInfo, teamId, rootPath, trackInteraction, sandboxManagementAuth])
-
-  // handle sandbox connection / disconnection
-  useEffect(() => {
-    if (isRunning) {
-      if (!sandboxManagerRef.current) {
-        connectSandbox()
+    if (connectGenerationRef.current !== generation) {
+      if (connectAbortControllerRef.current === abortController) {
+        connectAbortControllerRef.current = null
       }
-      return
+      return false
     }
 
-    sandboxManagerRef.current?.stopWatching()
+    connectAbortControllerRef.current = null
+    sandboxManagerRef.current = new SandboxManager(store, sandbox, rootPath)
+    await sandboxManagerRef.current.loadDirectory(rootPath)
+    if (options?.connectionKey !== null) {
+      setConnectionKey(options?.connectionKey ?? expectedConnectionKey)
+    }
 
-    trackInteraction('stopped_watching', {
-      sandbox_id: sandboxInfo?.sandboxID,
+    trackInteraction('started_watching', {
+      sandbox_id: sandboxId,
       team_id: teamId,
       root_path: rootPath,
     })
-  }, [
-    isRunning,
-    connectSandbox,
-    trackInteraction,
-    teamId,
-    sandboxInfo?.sandboxID,
-    rootPath,
-  ])
+    return true
+  }
 
-  if (!storeRef.current || !sandboxInfo) {
+  useQuery({
+    queryKey: ['sandbox-inspect-connect', expectedConnectionKey],
+    queryFn: () => {
+      if (!isRunning) {
+        connectGenerationRef.current += 1
+        connectAbortControllerRef.current?.abort()
+        connectAbortControllerRef.current = null
+        sandboxManagerRef.current?.stopWatching()
+        sandboxManagerRef.current = null
+        setConnectionKey(expectedConnectionKey)
+        return false
+      }
+
+      return connectSandbox({ connectionKey: expectedConnectionKey })
+    },
+    enabled: Boolean(
+      expectedConnectionKey &&
+        connectionKey !== expectedConnectionKey &&
+        !isSandboxResumePending
+    ),
+    retry: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+
+  const resumeSandbox = async () => {
+    setSandboxResumeError(undefined)
+    setIsSandboxResumePending(true)
+    try {
+      const didConnect = await connectSandbox({
+        connectionKey: null,
+        requestTimeoutMs: SANDBOX_RESUME_TIMEOUT_MS,
+        timeoutMs: SANDBOX_RESUME_TIMEOUT_MS,
+      })
+      if (!didConnect) {
+        setSandboxResumeError('Failed to resume sandbox. Please try again.')
+        setIsSandboxResumePending(false)
+        return
+      }
+      const nextSandboxInfo = await refetchSandboxInfo()
+      if (nextSandboxInfo?.state === 'running') {
+        setConnectionKey(
+          `${teamId}:${nextSandboxInfo.sandboxID}:${normalizedRootPath}:${nextSandboxInfo.state}`
+        )
+      }
+      setIsSandboxResumePending(false)
+    } catch (error) {
+      setSandboxResumeError(
+        error instanceof Error
+          ? error.message
+          : 'Failed to resume sandbox. Please try again.'
+      )
+      setIsSandboxResumePending(false)
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      connectGenerationRef.current += 1
+      connectAbortControllerRef.current?.abort()
+      connectAbortControllerRef.current = null
+      sandboxManagerRef.current?.stopWatching()
+      sandboxManagerRef.current = null
+    }
+  }, [])
+
+  if (!sandboxInfo) {
     return null // should never happen, but satisfies type-checker
   }
 
   const contextValue: SandboxInspectContextValue = {
-    store: storeRef.current,
+    store,
     operations,
+    isSandboxResumePending,
+    sandboxResumeError,
+    resumeSandbox,
   }
 
   return (
