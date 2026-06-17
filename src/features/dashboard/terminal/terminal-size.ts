@@ -1,4 +1,3 @@
-import type { Terminal as XTerm } from '@xterm/xterm'
 import { DEFAULT_COLS, DEFAULT_PANEL_HEIGHT, DEFAULT_ROWS } from './constants'
 
 const MIN_TERMINAL_COLS = 40
@@ -21,7 +20,22 @@ function getElementSize(element: Element | null) {
   return rect
 }
 
-function getMeasuredCellSize(terminal: XTerm | null) {
+type TerminalLike = {
+  element?: HTMLElement
+  renderer?: {
+    getMetrics?: () => { width: number; height: number }
+  }
+}
+
+function getMeasuredCellSize(terminal: TerminalLike | null) {
+  const rendererMetrics = terminal?.renderer?.getMetrics?.()
+  if (rendererMetrics?.width && rendererMetrics.height) {
+    return {
+      width: rendererMetrics.width,
+      height: rendererMetrics.height,
+    }
+  }
+
   const measureElement = terminal?.element?.querySelector(
     '.xterm-char-measure-element'
   )
@@ -52,7 +66,7 @@ function getMeasuredCellSize(terminal: XTerm | null) {
 
 export function calculateTerminalSize(
   container: HTMLDivElement | null,
-  terminal: XTerm | null
+  terminal: TerminalLike | null
 ) {
   if (!container) {
     return { cols: DEFAULT_COLS, rows: DEFAULT_ROWS }

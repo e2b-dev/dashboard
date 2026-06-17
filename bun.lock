@@ -1,5 +1,6 @@
 {
   "lockfileVersion": 1,
+  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "@e2b/dashboard",
@@ -62,6 +63,7 @@
         "echarts": "^6.0.0",
         "echarts-for-react": "^3.0.2",
         "fast-xml-parser": "^5.3.5",
+        "ghostty-web": "^0.4.0",
         "immer": "^10.1.1",
         "input-otp": "^1.4.2",
         "micromatch": "^4.0.8",
@@ -1374,6 +1376,8 @@
     "get-nonce": ["get-nonce@1.0.1", "", {}, "sha512-FJhYRoDaiatfEkUK8HKlicmu/3SGFD51q3itKDGoSTysQJBnfOcxU5GxnhE1E6soB76MbT0MBtnKJuXyAx+96Q=="],
 
     "get-tsconfig": ["get-tsconfig@4.14.0", "", { "dependencies": { "resolve-pkg-maps": "^1.0.0" } }, "sha512-yTb+8DXzDREzgvYmh6s9vHsSVCHeC0G3PI5bEXNBHtmshPnO+S5O7qgLEOn0I5QvMy6kpZN8K1NKGyilLb93wA=="],
+
+    "ghostty-web": ["ghostty-web@0.4.0", "", {}, "sha512-0puDBik2qapbD/QQBW9o5ZHfXnZBqZWx/ctBiVtKZ6ZLds4NYb+wZuw1cRLXZk9zYovIQ908z3rvFhexAvc5Hg=="],
 
     "glob": ["glob@11.1.0", "", { "dependencies": { "foreground-child": "^3.3.1", "jackspeak": "^4.1.1", "minimatch": "^10.1.1", "minipass": "^7.1.2", "package-json-from-dist": "^1.0.0", "path-scurry": "^2.0.0" }, "bin": { "glob": "dist/esm/bin.mjs" } }, "sha512-vuNwKSaKiqm7g0THUBu2x7ckSs3XJLXE+2ssL7/MfTGPLLcrJQ/4Uq1CjPTtO5cCIiRxqvN6Twy1qOwhL0Xjcw=="],
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { type CommandHandle, type Sandbox } from 'e2b'
+import type { CommandHandle, Sandbox } from 'e2b'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { SandboxManagementAuth } from '@/core/shared/sandbox-management-auth'
 import {

@@ -1,5 +1,4 @@
-import '@xterm/xterm/css/xterm.css'
-import { Terminal as XTerm } from '@xterm/xterm'
+import { Terminal as GhosttyTerminal, init as initGhostty } from 'ghostty-web'
 import { useCallback, useEffect, useRef } from 'react'
 import {
   DEFAULT_COLS,
@@ -17,6 +16,8 @@ const TERMINAL_THEME = {
   selectionBackground: '#ffffff40',
 }
 
+const ghosttyReady = initGhostty()
+
 interface UseTerminalInstanceOptions {
   onInput: (data: string) => void
   onResize: (size: { cols: number; rows: number }) => void
@@ -26,7 +27,7 @@ export function useTerminalInstance({
   onInput,
   onResize,
 }: UseTerminalInstanceOptions) {
-  const xtermRef = useRef<XTerm | null>(null)
+  const terminalRef = useRef<GhosttyTerminal | null>(null)
   const terminalContainerRef = useRef<HTMLDivElement | null>(null)
   const terminalTranscriptRef = useRef(INITIAL_TERMINAL_TEXT)
   const terminalSizeRef = useRef({ cols: DEFAULT_COLS, rows: DEFAULT_ROWS })
@@ -35,10 +36,10 @@ export function useTerminalInstance({
   const resizeTerminal = useCallback(() => {
     const nextSize = calculateTerminalSize(
       terminalContainerRef.current,
-      xtermRef.current
+      terminalRef.current
     )
     terminalSizeRef.current = nextSize
-    xtermRef.current?.resize(nextSize.cols, nextSize.rows)
+    terminalRef.current?.resize(nextSize.cols, nextSize.rows)
     onResize(nextSize)
 
     return nextSize
@@ -53,24 +54,24 @@ export function useTerminalInstance({
     terminalTranscriptRef.current = (
       terminalTranscriptRef.current + text
     ).slice(-MAX_TERMINAL_TRANSCRIPT_CHARS)
-    xtermRef.current?.write(chunk, () => {
-      xtermRef.current?.scrollToBottom()
+    terminalRef.current?.write(chunk, () => {
+      terminalRef.current?.scrollToBottom()
     })
   }, [])
 
   const resetTerminal = useCallback(() => {
     decoderRef.current = new TextDecoder()
     terminalTranscriptRef.current = ''
-    xtermRef.current?.reset()
+    terminalRef.current?.reset()
   }, [])
 
   const focusTerminal = useCallback(() => {
-    xtermRef.current?.focus()
+    terminalRef.current?.focus()
   }, [])
 
   const copyTerminalText = useCallback(async () => {
     const value =
-      xtermRef.current?.getSelection() || terminalTranscriptRef.current
+      terminalRef.current?.getSelection() || terminalTranscriptRef.current
     if (!value) return
 
     try {
@@ -86,38 +87,49 @@ export function useTerminalInstance({
     const container = terminalContainerRef.current
     if (!container) return
 
-    const terminal = new XTerm({
-      cols: terminalSizeRef.current.cols,
-      rows: terminalSizeRef.current.rows,
-      cursorBlink: true,
-      cursorStyle: 'block',
-      fontFamily:
-        'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-      fontSize: 13,
-      lineHeight: 1.54,
-      scrollback: 10_000,
-      theme: TERMINAL_THEME,
-    })
+    let disposed = false
+    let terminal: GhosttyTerminal | null = null
+    let dataSubscription: { dispose: () => void } | undefined
+    let resizeTimer: number | undefined
 
-    xtermRef.current = terminal
-    terminal.open(container)
-    terminal.write(terminalTranscriptRef.current)
-    const dataSubscription = terminal.onData(onInput)
+    void ghosttyReady.then(() => {
+      if (disposed || !terminalContainerRef.current) return
 
-    requestAnimationFrame(() => {
-      resizeTerminal()
-      terminal.focus()
+      terminal = new GhosttyTerminal({
+        cols: terminalSizeRef.current.cols,
+        rows: terminalSizeRef.current.rows,
+        cursorBlink: true,
+        cursorStyle: 'block',
+        fontFamily:
+          'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+        fontSize: 13,
+        scrollback: 10_000,
+        theme: TERMINAL_THEME,
+      })
+
+      terminalRef.current = terminal
+      terminal.open(terminalContainerRef.current)
+      terminal.write(terminalTranscriptRef.current)
+      dataSubscription = terminal.onData(onInput)
+
+      requestAnimationFrame(() => {
+        resizeTerminal()
+        terminal?.focus()
+      })
+      resizeTimer = window.setTimeout(() => {
+        resizeTerminal()
+      }, 100)
     })
-    const resizeTimer = window.setTimeout(() => {
-      resizeTerminal()
-    }, 100)
 
     return () => {
-      window.clearTimeout(resizeTimer)
-      dataSubscription.dispose()
-      terminal.dispose()
-      if (xtermRef.current === terminal) {
-        xtermRef.current = null
+      disposed = true
+      if (resizeTimer) {
+        window.clearTimeout(resizeTimer)
+      }
+      dataSubscription?.dispose()
+      terminal?.dispose()
+      if (terminalRef.current === terminal) {
+        terminalRef.current = null
       }
     }
   }, [onInput, resizeTerminal])

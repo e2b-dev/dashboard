@@ -103,6 +103,7 @@
     "echarts": "^6.0.0",
     "echarts-for-react": "^3.0.2",
     "fast-xml-parser": "^5.3.5",
+    "ghostty-web": "^0.4.0",
     "immer": "^10.1.1",
     "input-otp": "^1.4.2",
     "micromatch": "^4.0.8",
