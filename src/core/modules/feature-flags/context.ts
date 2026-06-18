@@ -8,16 +8,20 @@ export type FeatureFlagContext = {
     slug?: string
     name?: string
   }
-  environment?: 'production' | 'preview' | 'development'
+  environment?: 'production' | 'staging'
 }
 
 export function getFeatureFlagEnvironment(): FeatureFlagContext['environment'] {
+  switch (process.env.FEATURE_FLAG_ENVIRONMENT) {
+    case 'production':
+    case 'staging':
+      return process.env.FEATURE_FLAG_ENVIRONMENT
+  }
+
   switch (process.env.VERCEL_ENV) {
     case 'production':
-    case 'preview':
-    case 'development':
-      return process.env.VERCEL_ENV
+      return 'production'
     default:
-      return 'development'
+      return 'staging'
   }
 }

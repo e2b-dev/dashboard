@@ -1,7 +1,11 @@
-import { describe, expect, it, vi } from 'vitest'
-import type { FeatureFlagContext } from '@/core/modules/feature-flags/context'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import {
+  type FeatureFlagContext,
+  getFeatureFlagEnvironment,
+} from '@/core/modules/feature-flags/context'
+import { FEATURE_FLAGS } from '@/core/modules/feature-flags/definitions'
 import { createFeatureFlagService } from '@/core/modules/feature-flags/feature-flags.server'
-import { createPostHogFlagEvaluationOptions } from '@/core/modules/feature-flags/posthog-provider.server'
+import { createOpenFeatureEvaluationContext } from '@/core/modules/feature-flags/launchdarkly-openfeature-provider.server'
 
 const context = {
   user: {
@@ -13,8 +17,12 @@ const context = {
     slug: 'team-slug',
     name: 'Team Name',
   },
-  environment: 'preview',
+  environment: 'staging',
 } satisfies FeatureFlagContext
+
+afterEach(() => {
+  vi.unstubAllEnvs()
+})
 
 describe('createFeatureFlagService', () => {
   it('evaluates boolean flags through the provider', async () => {
@@ -31,10 +39,12 @@ describe('createFeatureFlagService', () => {
     )
 
     expect(result).toBe(true)
-    expect(provider.evaluate).toHaveBeenCalledWith(context, ['is_admin'])
+    expect(provider.evaluate).toHaveBeenCalledWith(context, [
+      FEATURE_FLAGS.isAdmin,
+    ])
   })
 
-  it('falls back to the flag default when PostHog has no value', async () => {
+  it('falls back to the flag default when the provider has no value', async () => {
     const provider = {
       evaluate: vi.fn().mockResolvedValue({
         getFlagValue: vi.fn().mockReturnValue(undefined),
@@ -61,7 +71,9 @@ describe('createFeatureFlagService', () => {
     const result = await createFeatureFlagService(provider).evaluateAll(context)
 
     expect(provider.evaluate).toHaveBeenCalledTimes(1)
-    expect(provider.evaluate).toHaveBeenCalledWith(context, ['is_admin'])
+    expect(provider.evaluate).toHaveBeenCalledWith(context, [
+      FEATURE_FLAGS.isAdmin,
+    ])
     expect(result).toEqual([
       {
         id: 'isAdmin',
@@ -75,25 +87,59 @@ describe('createFeatureFlagService', () => {
   })
 })
 
-describe('createPostHogFlagEvaluationOptions', () => {
-  it('maps dashboard users and teams to PostHog identity inputs', () => {
-    expect(createPostHogFlagEvaluationOptions(context, ['is_admin'])).toEqual({
-      flagKeys: ['is_admin'],
-      disableGeoip: true,
-      personProperties: {
+describe('createOpenFeatureEvaluationContext', () => {
+  it('maps dashboard users and teams to a LaunchDarkly multi-context', () => {
+    expect(createOpenFeatureEvaluationContext(context)).toEqual({
+      kind: 'multi',
+      user: {
+        targetingKey: 'user-id',
         email: 'user@example.com',
-        environment: 'preview',
+        environment: 'staging',
       },
-      groups: {
-        team: 'team-id',
-      },
-      groupProperties: {
-        team: {
-          name: 'Team Name',
-          slug: 'team-slug',
-          environment: 'preview',
-        },
+      team: {
+        targetingKey: 'team-id',
+        name: 'Team Name',
+        slug: 'team-slug',
+        environment: 'staging',
       },
     })
+  })
+
+  it('maps dashboard users without teams to a user context', () => {
+    expect(
+      createOpenFeatureEvaluationContext({
+        user: {
+          id: 'user-id',
+          email: 'user@example.com',
+        },
+      })
+    ).toEqual({
+      kind: 'user',
+      targetingKey: 'user-id',
+      email: 'user@example.com',
+      environment: 'staging',
+    })
+  })
+})
+
+describe('getFeatureFlagEnvironment', () => {
+  it('uses the explicit feature flag environment', () => {
+    vi.stubEnv('FEATURE_FLAG_ENVIRONMENT', 'production')
+
+    expect(getFeatureFlagEnvironment()).toBe('production')
+  })
+
+  it('maps production Vercel deployments to production', () => {
+    vi.stubEnv('FEATURE_FLAG_ENVIRONMENT', '')
+    vi.stubEnv('VERCEL_ENV', 'production')
+
+    expect(getFeatureFlagEnvironment()).toBe('production')
+  })
+
+  it('maps non-production deployments to staging', () => {
+    vi.stubEnv('FEATURE_FLAG_ENVIRONMENT', '')
+    vi.stubEnv('VERCEL_ENV', 'preview')
+
+    expect(getFeatureFlagEnvironment()).toBe('staging')
   })
 })
