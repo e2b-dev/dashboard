@@ -6,8 +6,10 @@ import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 
 const OPENFEATURE_DOMAIN = 'dashboard-feature-flags'
 const LAUNCHDARKLY_INIT_TIMEOUT_SECONDS = 3
+const LAUNCHDARKLY_INIT_RETRY_INTERVAL_MS = 60_000
 
 let openFeatureClientPromise: Promise<Client | null> | undefined
+let launchDarklyInitializationFailedAt: number | undefined
 let loggedMissingLaunchDarklyKey = false
 
 function getLaunchDarklySdkKey() {
@@ -26,9 +28,11 @@ async function initializeOpenFeatureClient(sdkKey: string) {
     )
 
     await OpenFeature.setProviderAndWait(OPENFEATURE_DOMAIN, provider)
+    launchDarklyInitializationFailedAt = undefined
 
     return OpenFeature.getClient(OPENFEATURE_DOMAIN)
   } catch (error) {
+    launchDarklyInitializationFailedAt = Date.now()
     l.warn(
       {
         key: 'feature_flags:launchdarkly_initialization_failed',
@@ -41,9 +45,22 @@ async function initializeOpenFeatureClient(sdkKey: string) {
   }
 }
 
+function shouldRetryFailedInitialization() {
+  return (
+    launchDarklyInitializationFailedAt !== undefined &&
+    Date.now() - launchDarklyInitializationFailedAt >=
+      LAUNCHDARKLY_INIT_RETRY_INTERVAL_MS
+  )
+}
+
 export function getOpenFeatureServerClient() {
   if (openFeatureClientPromise !== undefined) {
-    return openFeatureClientPromise
+    if (shouldRetryFailedInitialization()) {
+      openFeatureClientPromise = undefined
+      launchDarklyInitializationFailedAt = undefined
+    } else {
+      return openFeatureClientPromise
+    }
   }
 
   const sdkKey = getLaunchDarklySdkKey()
