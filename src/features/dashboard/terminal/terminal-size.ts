@@ -18,8 +18,8 @@ export function calculateTerminalSize(
 ) {
   if (terminal) {
     return {
-      cols: Math.max(MIN_TERMINAL_COLS, terminal.cols),
-      rows: Math.max(MIN_TERMINAL_ROWS, terminal.rows),
+      cols: terminal.cols,
+      rows: terminal.rows,
     }
   }
 

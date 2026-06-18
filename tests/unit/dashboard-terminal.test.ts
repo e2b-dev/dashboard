@@ -188,6 +188,23 @@ describe('dashboard terminal helpers', () => {
         rows: 32,
       })
     })
+
+    it('does not inflate fitted terminal dimensions to fallback minimums', () => {
+      const container = {
+        clientWidth: 200,
+        clientHeight: 120,
+        getBoundingClientRect: () => ({ width: 200, height: 120 }),
+      } as HTMLDivElement
+      const terminal = {
+        cols: 20,
+        rows: 6,
+      }
+
+      expect(calculateTerminalSize(container, terminal)).toEqual({
+        cols: 20,
+        rows: 6,
+      })
+    })
   })
 
   describe('sanitizeTerminalPaste', () => {
