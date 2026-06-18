@@ -125,7 +125,7 @@ Feature flags are evaluated server-side with LaunchDarkly via OpenFeature and hy
 3. Use `featureFlags.isEnabled(...)` on the server or `useFeatureFlag(...)` inside dashboard client components.
 4. Target users or teams in LaunchDarkly using the `user` and `team` contexts.
 
-Set `LAUNCHDARKLY_SDK_KEY` and `FEATURE_FLAG_ENVIRONMENT=staging|production` for environments that should use LaunchDarkly.
+Set `LAUNCHDARKLY_SDK_KEY` for environments that should use LaunchDarkly. The SDK key determines the LaunchDarkly environment.
 
 ## Production Deployment
 

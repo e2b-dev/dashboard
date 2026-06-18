@@ -5,10 +5,7 @@ import type {
   EvaluationDetails,
   JsonValue,
 } from '@openfeature/server-sdk'
-import {
-  type FeatureFlagContext,
-  getFeatureFlagEnvironment,
-} from '@/core/modules/feature-flags/context'
+import type { FeatureFlagContext } from '@/core/modules/feature-flags/context'
 import type { FeatureFlagDefinition } from '@/core/modules/feature-flags/types'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { getOpenFeatureServerClient } from './openfeature-client.server'
@@ -32,12 +29,10 @@ function definedStringAttributes(
 export function createOpenFeatureEvaluationContext(
   context: FeatureFlagContext
 ): EvaluationContext {
-  const environment = context.environment ?? getFeatureFlagEnvironment()
   const user = {
     targetingKey: context.user.id,
     ...definedStringAttributes({
       email: context.user.email,
-      environment,
     }),
   }
 
@@ -56,7 +51,6 @@ export function createOpenFeatureEvaluationContext(
       ...definedStringAttributes({
         name: context.team.name,
         slug: context.team.slug,
-        environment,
       }),
     },
   }
