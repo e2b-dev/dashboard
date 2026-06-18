@@ -8,7 +8,6 @@ import { useTRPC } from '@/trpc/client'
 import {
   getDeliveryCountSeriesData,
   getResponseTimeSeriesData,
-  hideInactiveZeroValuePoints,
 } from './chart-utils'
 import { StatsChart, type StatsChartSeries } from './stats-chart'
 import { StatsIntervalSelect } from './stats-interval-select'
@@ -105,15 +104,6 @@ export const WebhookOverviewContent = ({
   const rangeStartMs = rangeBounds.start
   const rangeEndMs = rangeBounds.end
   const hasFailedDeliveries = buckets.some((bucket) => bucket.failed > 0)
-  const failedDeliverySeriesData =
-    buckets.length > 0
-      ? getDeliveryCountSeriesData(
-          buckets,
-          rangeBounds,
-          bucketIntervalSeconds,
-          'failed'
-        )
-      : []
   const deliverySeries = [
     {
       name: 'Total deliveries',
@@ -131,7 +121,12 @@ export const WebhookOverviewContent = ({
       colorVar: '--accent-error-highlight',
       showSymbol: true,
       z: hasFailedDeliveries ? 3 : 1,
-      data: hideInactiveZeroValuePoints(failedDeliverySeriesData, [-1, 1]),
+      data: getDeliveryCountSeriesData(
+        buckets,
+        rangeBounds,
+        bucketIntervalSeconds,
+        'failed'
+      ),
     },
   ] satisfies StatsChartSeries[]
   const latencySeries = [
@@ -142,7 +137,12 @@ export const WebhookOverviewContent = ({
       lineWidth: 2,
       showSymbol: true,
       z: 1,
-      data: getResponseTimeSeriesData(buckets, rangeBounds, 'min'),
+      data: getResponseTimeSeriesData(
+        buckets,
+        rangeBounds,
+        bucketIntervalSeconds,
+        'min'
+      ),
     },
     {
       name: 'Avg',
@@ -151,7 +151,12 @@ export const WebhookOverviewContent = ({
       lineWidth: 2,
       showSymbol: true,
       z: 3,
-      data: getResponseTimeSeriesData(buckets, rangeBounds, 'avg'),
+      data: getResponseTimeSeriesData(
+        buckets,
+        rangeBounds,
+        bucketIntervalSeconds,
+        'avg'
+      ),
     },
     {
       name: 'Max',
@@ -160,7 +165,12 @@ export const WebhookOverviewContent = ({
       lineWidth: 2,
       showSymbol: true,
       z: 2,
-      data: getResponseTimeSeriesData(buckets, rangeBounds, 'max'),
+      data: getResponseTimeSeriesData(
+        buckets,
+        rangeBounds,
+        bucketIntervalSeconds,
+        'max'
+      ),
     },
   ] satisfies StatsChartSeries[]
   const handleRangeChange = (nextRange: WebhookStatsRange) => {
