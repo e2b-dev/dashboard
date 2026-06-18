@@ -41,9 +41,16 @@ export function useTerminalInstance({
       terminalContainerRef.current,
       xtermRef.current
     )
+    const currentSize = terminalSizeRef.current
+    const sizeChanged =
+      nextSize.cols !== currentSize.cols || nextSize.rows !== currentSize.rows
+
     terminalSizeRef.current = nextSize
-    xtermRef.current?.resize(nextSize.cols, nextSize.rows)
-    onResize(nextSize)
+
+    if (sizeChanged) {
+      xtermRef.current?.resize(nextSize.cols, nextSize.rows)
+      onResize(nextSize)
+    }
 
     return nextSize
   }, [onResize])
