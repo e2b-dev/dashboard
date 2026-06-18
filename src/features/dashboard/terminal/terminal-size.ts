@@ -12,6 +12,21 @@ const MAX_CELL_WIDTH_PX = 16
 const MIN_CELL_HEIGHT_PX = 8
 const MAX_CELL_HEIGHT_PX = 40
 
+type XTermWithRenderDimensions = XTerm & {
+  _core?: {
+    _renderService?: {
+      dimensions?: {
+        css?: {
+          cell?: {
+            width?: number
+            height?: number
+          }
+        }
+      }
+    }
+  }
+}
+
 function getElementSize(element: Element | null) {
   if (!element) return undefined
 
@@ -21,18 +36,41 @@ function getElementSize(element: Element | null) {
   return rect
 }
 
+function getRenderCellSize(terminal: XTerm | null) {
+  const cell = (terminal as XTermWithRenderDimensions | null)?._core
+    ?._renderService?.dimensions?.css?.cell
+
+  if (!cell?.width && !cell?.height) return undefined
+
+  return {
+    width: cell.width,
+    height: cell.height,
+  }
+}
+
 function getMeasuredCellSize(terminal: XTerm | null) {
+  const renderCellSize = getRenderCellSize(terminal)
   const measureElement = terminal?.element?.querySelector(
     '.xterm-char-measure-element'
   )
   const rowElement = terminal?.element?.querySelector('.xterm-rows > div')
+  const helperTextArea = terminal?.element?.querySelector(
+    '.xterm-helper-textarea'
+  )
   const measuredCharSize = getElementSize(measureElement ?? null)
   const rowSize = getElementSize(rowElement ?? null)
+  const helperSize = getElementSize(helperTextArea ?? null)
 
-  if (!measuredCharSize && !rowSize) return undefined
+  if (!renderCellSize && !measuredCharSize && !rowSize && !helperSize) {
+    return undefined
+  }
 
-  const measuredWidth = measuredCharSize?.width
-  const measuredHeight = rowSize?.height ?? measuredCharSize?.height
+  const measuredWidth = renderCellSize?.width ?? measuredCharSize?.width
+  const measuredHeight =
+    renderCellSize?.height ??
+    rowSize?.height ??
+    measuredCharSize?.height ??
+    helperSize?.height
 
   return {
     width:
@@ -78,9 +116,6 @@ export function calculateTerminalSize(
 
   return {
     cols: Math.max(MIN_TERMINAL_COLS, Math.floor(availableWidth / cellWidth)),
-    rows: Math.max(
-      MIN_TERMINAL_ROWS,
-      Math.floor(availableHeight / cellHeight) - 1
-    ),
+    rows: Math.max(MIN_TERMINAL_ROWS, Math.floor(availableHeight / cellHeight)),
   }
 }
