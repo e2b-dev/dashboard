@@ -10,6 +10,9 @@ export const serverSchema = z.object({
   POSTHOG_API_KEY: z.string().min(1).optional(),
   POSTHOG_PROJECT_ID: z.string().min(1).optional(),
 
+  LAUNCHDARKLY_SDK_KEY: z.string().min(1).optional(),
+  FEATURE_FLAG_ENVIRONMENT: z.enum(['production', 'staging']).optional(),
+
   AUTH_SECRET: z.string().min(1).optional(),
   AUTH_TRUST_HOST: z.string().optional(),
   // Prefix for Auth.js cookie names to disambiguate multiple local
