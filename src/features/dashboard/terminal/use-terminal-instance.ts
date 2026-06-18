@@ -55,19 +55,30 @@ export function useTerminalInstance({
     return nextSize
   }, [onResize])
 
-  const appendOutput = useCallback((chunk: string | Uint8Array) => {
-    const text =
-      typeof chunk === 'string'
-        ? chunk
-        : decoderRef.current.decode(chunk, { stream: true })
-
-    terminalTranscriptRef.current = (
-      terminalTranscriptRef.current + text
-    ).slice(-MAX_TERMINAL_TRANSCRIPT_CHARS)
-    xtermRef.current?.write(chunk, () => {
-      xtermRef.current?.scrollToBottom()
-    })
+  const scrollTerminalToBottom = useCallback((terminal = xtermRef.current) => {
+    try {
+      terminal?.scrollToBottom()
+    } catch {}
   }, [])
+
+  const appendOutput = useCallback(
+    (chunk: string | Uint8Array) => {
+      const text =
+        typeof chunk === 'string'
+          ? chunk
+          : decoderRef.current.decode(chunk, { stream: true })
+
+      terminalTranscriptRef.current = (
+        terminalTranscriptRef.current + text
+      ).slice(-MAX_TERMINAL_TRANSCRIPT_CHARS)
+
+      const terminal = xtermRef.current
+      terminal?.write(chunk, () => {
+        scrollTerminalToBottom(terminal)
+      })
+    },
+    [scrollTerminalToBottom]
+  )
 
   const resetTerminal = useCallback(() => {
     decoderRef.current = new TextDecoder()
@@ -144,6 +155,7 @@ export function useTerminalInstance({
         rendererAddon = webglAddon
         terminal.loadAddon(webglAddon)
         resizeTerminal()
+        scrollTerminalToBottom(terminal)
       } catch {
         contextLossSubscription?.dispose()
         contextLossSubscription = undefined
@@ -157,6 +169,7 @@ export function useTerminalInstance({
           rendererAddon = canvasAddon
           terminal.loadAddon(canvasAddon)
           resizeTerminal()
+          scrollTerminalToBottom(terminal)
         } catch {
           rendererAddon?.dispose()
           rendererAddon = undefined
@@ -166,21 +179,26 @@ export function useTerminalInstance({
 
     const dataSubscription = terminal.onData(onInput)
     terminal.write(terminalTranscriptRef.current, () => {
-      terminal.scrollToBottom()
+      scrollTerminalToBottom(terminal)
     })
 
-    requestAnimationFrame(() => {
+    const resizeFrame = requestAnimationFrame(() => {
+      if (disposed) return
+
       resizeTerminal()
       terminal.focus()
-      terminal.scrollToBottom()
+      scrollTerminalToBottom(terminal)
     })
     const resizeTimer = window.setTimeout(() => {
+      if (disposed) return
+
       resizeTerminal()
-      terminal.scrollToBottom()
+      scrollTerminalToBottom(terminal)
     }, 100)
 
     return () => {
       disposed = true
+      cancelAnimationFrame(resizeFrame)
       window.clearTimeout(resizeTimer)
       dataSubscription.dispose()
       contextLossSubscription?.dispose()
@@ -190,7 +208,7 @@ export function useTerminalInstance({
         xtermRef.current = null
       }
     }
-  }, [onInput, resizeTerminal])
+  }, [onInput, resizeTerminal, scrollTerminalToBottom])
 
   useEffect(() => {
     const container = terminalContainerRef.current
