@@ -7,9 +7,6 @@ export const serverSchema = z.object({
   BILLING_API_URL: z.url().optional(),
   PLAIN_API_KEY: z.string().min(1).optional(),
 
-  POSTHOG_API_KEY: z.string().min(1).optional(),
-  POSTHOG_PROJECT_ID: z.string().min(1).optional(),
-
   LAUNCHDARKLY_SDK_KEY: z.string().min(1).optional(),
   FEATURE_FLAG_ENVIRONMENT: z.enum(['production', 'staging']).optional(),
 
