@@ -72,4 +72,17 @@ describe('proxy handlers', () => {
 
     expect(response.headers.get('location')).toContain('/sign-in')
   })
+
+  it('preserves terminal paths and query params for sign-in', async () => {
+    for (const path of [
+      '/dashboard/terminal?template=base&command=ls',
+      '/dashboard/team-x/terminal?template=base&command=ls',
+    ]) {
+      const response = await handleAuthGate(request(path), false)
+
+      const location = response.headers.get('location')
+      expect(location).toContain('/sign-in')
+      expect(location).toContain(`returnTo=${encodeURIComponent(path)}`)
+    }
+  })
 })

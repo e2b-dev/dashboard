@@ -8,8 +8,10 @@ import { getRewriteForPath } from '@/lib/utils/rewrites'
 import { isProxyAuthRoute, isProxyDashboardRoute } from './classifier'
 
 function isDashboardTerminalRoute(pathname: string): boolean {
+  const normalizedPathname = pathname.replace(/\/+$/, '')
   return (
-    pathname === '/dashboard/terminal' || pathname === '/dashboard/terminal/'
+    normalizedPathname === '/dashboard/terminal' ||
+    /^\/dashboard\/[^/]+\/terminal$/.test(normalizedPathname)
   )
 }
 
@@ -17,12 +19,17 @@ export function getAuthRedirect(
   request: NextRequest,
   isAuthenticated: boolean
 ): NextResponse | null {
-  if (
-    isProxyDashboardRoute(request.nextUrl.pathname) &&
-    !isDashboardTerminalRoute(request.nextUrl.pathname) &&
-    !isAuthenticated
-  ) {
-    return NextResponse.redirect(new URL(AUTH_URLS.SIGN_IN, request.url))
+  if (isProxyDashboardRoute(request.nextUrl.pathname) && !isAuthenticated) {
+    const signInUrl = new URL(AUTH_URLS.SIGN_IN, request.url)
+
+    if (isDashboardTerminalRoute(request.nextUrl.pathname)) {
+      signInUrl.searchParams.set(
+        'returnTo',
+        `${request.nextUrl.pathname}${request.nextUrl.search}`
+      )
+    }
+
+    return NextResponse.redirect(signInUrl)
   }
 
   if (isProxyAuthRoute(request.nextUrl.pathname) && isAuthenticated) {
