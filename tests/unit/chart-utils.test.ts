@@ -131,11 +131,6 @@ describe('webhook chart utils', () => {
     expect(getDeliveryCountSeriesData(buckets, rangeBounds, 3600)).toEqual([
       {
         synthetic: true,
-        timestamp: new Date(Date.UTC(2026, 5, 3, 13)).toISOString(),
-        value: 0,
-      },
-      {
-        synthetic: true,
         timestamp: new Date(Date.UTC(2026, 5, 3, 14)).toISOString(),
         value: 0,
       },
@@ -159,8 +154,8 @@ describe('webhook chart utils', () => {
 
   it('maps response times from API bucket data', () => {
     const rangeBounds = {
-      start: Date.UTC(2026, 5, 3, 13, 30),
-      end: Date.UTC(2026, 5, 3, 17, 30),
+      start: Date.UTC(2026, 5, 3, 16, 30),
+      end: Date.UTC(2026, 5, 3, 17),
     }
     const buckets = [
       {
@@ -185,50 +180,77 @@ describe('webhook chart utils', () => {
       },
     ] satisfies Parameters<typeof getResponseTimeSeriesData>[0]
 
-    expect(getResponseTimeSeriesData(buckets, rangeBounds, 'avg')).toEqual([
-      {
-        synthetic: true,
-        timestamp: new Date(rangeBounds.start).toISOString(),
-        value: 0,
-      },
-      {
-        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 40)).toISOString(),
-        value: 82,
-      },
-      {
-        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 50)).toISOString(),
-        value: 100,
-      },
-    ])
-    expect(getResponseTimeSeriesData(buckets, rangeBounds, 'min')).toEqual([
-      {
-        synthetic: true,
-        timestamp: new Date(rangeBounds.start).toISOString(),
-        value: 0,
-      },
-      {
-        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 40)).toISOString(),
-        value: 65,
-      },
-      {
-        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 50)).toISOString(),
-        value: 50,
-      },
-    ])
-    expect(getResponseTimeSeriesData(buckets, rangeBounds, 'max')).toEqual([
-      {
-        synthetic: true,
-        timestamp: new Date(rangeBounds.start).toISOString(),
-        value: 0,
-      },
-      {
-        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 40)).toISOString(),
-        value: 99,
-      },
-      {
-        timestamp: new Date(Date.UTC(2026, 5, 3, 16, 50)).toISOString(),
-        value: 150,
-      },
-    ])
+    expect(getResponseTimeSeriesData(buckets, rangeBounds, 600, 'avg')).toEqual(
+      [
+        {
+          synthetic: true,
+          timestamp: new Date(Date.UTC(2026, 5, 3, 16, 30)).toISOString(),
+          value: 0,
+        },
+        {
+          synthetic: false,
+          timestamp: new Date(Date.UTC(2026, 5, 3, 16, 40)).toISOString(),
+          value: 82,
+        },
+        {
+          synthetic: false,
+          timestamp: new Date(Date.UTC(2026, 5, 3, 16, 50)).toISOString(),
+          value: 100,
+        },
+        {
+          synthetic: true,
+          timestamp: new Date(Date.UTC(2026, 5, 3, 17)).toISOString(),
+          value: 0,
+        },
+      ]
+    )
+    expect(getResponseTimeSeriesData(buckets, rangeBounds, 600, 'min')).toEqual(
+      [
+        {
+          synthetic: true,
+          timestamp: new Date(Date.UTC(2026, 5, 3, 16, 30)).toISOString(),
+          value: 0,
+        },
+        {
+          synthetic: false,
+          timestamp: new Date(Date.UTC(2026, 5, 3, 16, 40)).toISOString(),
+          value: 65,
+        },
+        {
+          synthetic: false,
+          timestamp: new Date(Date.UTC(2026, 5, 3, 16, 50)).toISOString(),
+          value: 50,
+        },
+        {
+          synthetic: true,
+          timestamp: new Date(Date.UTC(2026, 5, 3, 17)).toISOString(),
+          value: 0,
+        },
+      ]
+    )
+    expect(getResponseTimeSeriesData(buckets, rangeBounds, 600, 'max')).toEqual(
+      [
+        {
+          synthetic: true,
+          timestamp: new Date(Date.UTC(2026, 5, 3, 16, 30)).toISOString(),
+          value: 0,
+        },
+        {
+          synthetic: false,
+          timestamp: new Date(Date.UTC(2026, 5, 3, 16, 40)).toISOString(),
+          value: 99,
+        },
+        {
+          synthetic: false,
+          timestamp: new Date(Date.UTC(2026, 5, 3, 16, 50)).toISOString(),
+          value: 150,
+        },
+        {
+          synthetic: true,
+          timestamp: new Date(Date.UTC(2026, 5, 3, 17)).toISOString(),
+          value: 0,
+        },
+      ]
+    )
   })
 })
