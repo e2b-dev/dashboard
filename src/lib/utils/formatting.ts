@@ -344,19 +344,22 @@ export function formatDuration(durationMs: number): string {
 
 export function formatDurationCompact(
   ms: number,
-  showDecimalSeconds = false
+  showDecimalSeconds = false,
+  padTrailingField = false
 ): string {
   const seconds = Math.floor(ms / 1000)
   const minutes = Math.floor(seconds / 60)
   const hours = Math.floor(minutes / 60)
+  const pad = (n: number) =>
+    padTrailingField ? n.toString().padStart(2, '0') : `${n}`
 
   if (hours > 0) {
     const remainingMinutes = minutes % 60
-    return `${hours}h ${remainingMinutes}m`
+    return `${hours}h ${pad(remainingMinutes)}m`
   }
   if (minutes > 0) {
     const remainingSeconds = seconds % 60
-    return `${minutes}m ${remainingSeconds}s`
+    return `${minutes}m ${pad(remainingSeconds)}s`
   }
   return showDecimalSeconds
     ? `${seconds}.${Math.floor((ms % 1000) / 100)}s`

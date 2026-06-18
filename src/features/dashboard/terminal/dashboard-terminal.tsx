@@ -1,7 +1,7 @@
 'use client'
 
 import type { CommandHandle, Sandbox } from 'e2b'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react'
 import type { SandboxManagementAuth } from '@/core/shared/sandbox-management-auth'
 import {
   DEFAULT_CWD,
@@ -192,7 +192,7 @@ export default function DashboardTerminal({
 
   const resizePty = useCallback((size: { cols: number; rows: number }) => {
     if (sandboxRef.current && pidRef.current) {
-      void sandboxRef.current.pty.resize(pidRef.current, size)
+      void sandboxRef.current.pty.resize(pidRef.current, size).catch(() => {})
     }
   }, [])
 
@@ -378,7 +378,7 @@ export default function DashboardTerminal({
         })
         ptyRef.current = pty
         pidRef.current = pty.pid
-        resizeTerminal()
+        resizeTerminal({ force: true })
         setStatus('ready')
         appendOutput(`PTY ${pty.pid} attached.\r\n`)
         focusTerminal()
@@ -561,38 +561,37 @@ export default function DashboardTerminal({
     }
   }, [autoStart, launchTarget, queueTerminalCommand, status])
 
+  const handlePageHide = useEffectEvent((event: PageTransitionEvent) => {
+    if (event.persisted) return
+
+    abortCurrentStart()
+    void closeTerminal()
+  })
+
+  const handlePageShow = useEffectEvent((event: PageTransitionEvent) => {
+    if (!event.persisted || !ptyRef.current) return
+
+    resizeTerminal({ force: true })
+    focusTerminal()
+  })
+
+  const handleTerminalUnmount = useEffectEvent(() => {
+    startGenerationRef.current += 1
+    isStartingRef.current = false
+    clearPendingInput()
+    void closeTerminal()
+  })
+
   useEffect(() => {
-    const handlePageHide = (event: PageTransitionEvent) => {
-      if (event.persisted) return
-
-      abortCurrentStart()
-      void closeTerminal()
-    }
-
-    const handlePageShow = (event: PageTransitionEvent) => {
-      if (!event.persisted || !ptyRef.current) return
-
-      resizeTerminal()
-      focusTerminal()
-    }
-
     window.addEventListener('pagehide', handlePageHide)
     window.addEventListener('pageshow', handlePageShow)
 
     return () => {
       window.removeEventListener('pagehide', handlePageHide)
       window.removeEventListener('pageshow', handlePageShow)
-      abortCurrentStart()
-      clearPendingInput()
-      void closeTerminal()
+      handleTerminalUnmount()
     }
-  }, [
-    abortCurrentStart,
-    clearPendingInput,
-    closeTerminal,
-    focusTerminal,
-    resizeTerminal,
-  ])
+  }, [])
 
   return (
     <>
