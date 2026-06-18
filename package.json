@@ -46,7 +46,10 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
+    "@launchdarkly/node-server-sdk": "^9.11.2",
+    "@launchdarkly/openfeature-node-server": "^1.2.0",
     "@next/env": "^16.2.7",
+    "@openfeature/server-sdk": "^1.22.0",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/auto-instrumentations-node": "^0.77.0",
     "@opentelemetry/exporter-logs-otlp-http": "^0.203.0",
@@ -117,7 +120,6 @@
     "pathe": "^2.0.3",
     "pino": "^9.7.0",
     "posthog-js": "^1.268.1",
-    "posthog-node": "^5.38.0",
     "react": "19.2.4",
     "react-day-picker": "^9.9.0",
     "react-dom": "19.2.4",

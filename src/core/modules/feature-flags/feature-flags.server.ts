@@ -12,11 +12,11 @@ import type {
   PayloadFeatureFlagDefinition,
 } from '@/core/modules/feature-flags/types'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
-import {
-  type FeatureFlagProvider,
-  type FeatureFlagSnapshot,
-  postHogFeatureFlagProvider,
-} from './posthog-provider.server'
+import { launchDarklyOpenFeatureProvider } from './launchdarkly-openfeature-provider.server'
+import type {
+  FeatureFlagProvider,
+  FeatureFlagSnapshot,
+} from './provider.server'
 
 export type FeatureFlagService = {
   isEnabled(
@@ -89,12 +89,12 @@ function getEvaluatedValue(
 }
 
 export function createFeatureFlagService(
-  provider: FeatureFlagProvider = postHogFeatureFlagProvider
+  provider: FeatureFlagProvider = launchDarklyOpenFeatureProvider
 ): FeatureFlagService {
   return {
     async isEnabled(flagId, context) {
       const flag = FEATURE_FLAGS[flagId]
-      const snapshot = await provider.evaluate(context, [flag.key])
+      const snapshot = await provider.evaluate(context, [flag])
       const value = snapshot.getFlagValue(flag.key)
 
       if (typeof value === 'boolean') {
@@ -112,7 +112,7 @@ export function createFeatureFlagService(
       ][]
       const snapshot = await provider.evaluate(
         context,
-        flags.map(([, flag]) => flag.key)
+        flags.map(([, flag]) => flag)
       )
 
       return flags.map(([id, flag]) => ({
