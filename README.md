@@ -117,6 +117,16 @@ We use a layered testing strategy with Vitest and Playwright. For details on tes
 ### Environment Variables
 See [`src/lib/env.ts`](./src/lib/env.ts) for all required environment variables and their validation schemas.
 
+### Feature Flags
+Feature flags are evaluated server-side with LaunchDarkly via OpenFeature and hydrated into the dashboard client. To add a flag:
+
+1. Create it in LaunchDarkly `staging` and `production` with the same key.
+2. Add it to [`src/core/modules/feature-flags/definitions.ts`](./src/core/modules/feature-flags/definitions.ts) with a safe default value.
+3. Use `featureFlags.isEnabled(...)` on the server or `useFeatureFlag(...)` inside dashboard client components.
+4. Target users or teams in LaunchDarkly using the `user` and `team` contexts.
+
+Set `LAUNCHDARKLY_SDK_KEY` for environments that should use LaunchDarkly. The SDK key determines the LaunchDarkly environment.
+
 ## Production Deployment
 
 This application is optimized for deployment on Vercel:
