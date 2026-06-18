@@ -565,7 +565,7 @@ export default function DashboardTerminal({
   const handlePageShow = useEffectEvent((event: PageTransitionEvent) => {
     if (!event.persisted || !ptyRef.current) return
 
-    resizeTerminal()
+    resizeTerminal({ force: true })
     focusTerminal()
   })
 
