@@ -1,8 +1,5 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import {
-  type FeatureFlagContext,
-  getFeatureFlagEnvironment,
-} from '@/core/modules/feature-flags/context'
+import { describe, expect, it, vi } from 'vitest'
+import type { FeatureFlagContext } from '@/core/modules/feature-flags/context'
 import { FEATURE_FLAGS } from '@/core/modules/feature-flags/definitions'
 import { createFeatureFlagService } from '@/core/modules/feature-flags/feature-flags.server'
 import { createOpenFeatureEvaluationContext } from '@/core/modules/feature-flags/launchdarkly-openfeature-provider.server'
@@ -17,12 +14,7 @@ const context = {
     slug: 'team-slug',
     name: 'Team Name',
   },
-  environment: 'staging',
 } satisfies FeatureFlagContext
-
-afterEach(() => {
-  vi.unstubAllEnvs()
-})
 
 describe('createFeatureFlagService', () => {
   it('evaluates boolean flags through the provider', async () => {
@@ -103,13 +95,11 @@ describe('createOpenFeatureEvaluationContext', () => {
       user: {
         targetingKey: 'user-id',
         email: 'user@example.com',
-        environment: 'staging',
       },
       team: {
         targetingKey: 'team-id',
         name: 'Team Name',
         slug: 'team-slug',
-        environment: 'staging',
       },
     })
   })
@@ -126,29 +116,6 @@ describe('createOpenFeatureEvaluationContext', () => {
       kind: 'user',
       targetingKey: 'user-id',
       email: 'user@example.com',
-      environment: 'staging',
     })
-  })
-})
-
-describe('getFeatureFlagEnvironment', () => {
-  it('uses the explicit feature flag environment', () => {
-    vi.stubEnv('FEATURE_FLAG_ENVIRONMENT', 'production')
-
-    expect(getFeatureFlagEnvironment()).toBe('production')
-  })
-
-  it('maps production Vercel deployments to production', () => {
-    vi.stubEnv('FEATURE_FLAG_ENVIRONMENT', '')
-    vi.stubEnv('VERCEL_ENV', 'production')
-
-    expect(getFeatureFlagEnvironment()).toBe('production')
-  })
-
-  it('maps non-production deployments to staging', () => {
-    vi.stubEnv('FEATURE_FLAG_ENVIRONMENT', '')
-    vi.stubEnv('VERCEL_ENV', 'preview')
-
-    expect(getFeatureFlagEnvironment()).toBe('staging')
   })
 })

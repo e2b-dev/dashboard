@@ -34,19 +34,5 @@ const schema = appEnvSchema
       path: ['PLAIN_API_KEY'],
     }
   )
-  .refine(
-    (data) => {
-      if (data.LAUNCHDARKLY_SDK_KEY) {
-        return !!data.FEATURE_FLAG_ENVIRONMENT
-      }
-
-      return true
-    },
-    {
-      message:
-        'LAUNCHDARKLY_SDK_KEY is set, but FEATURE_FLAG_ENVIRONMENT is missing',
-      path: ['FEATURE_FLAG_ENVIRONMENT'],
-    }
-  )
 
 validateEnv(schema)
