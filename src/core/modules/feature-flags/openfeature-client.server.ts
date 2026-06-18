@@ -29,7 +29,6 @@ async function initializeOpenFeatureClient(sdkKey: string) {
 
     return OpenFeature.getClient(OPENFEATURE_DOMAIN)
   } catch (error) {
-    openFeatureClientPromise = undefined
     l.warn(
       {
         key: 'feature_flags:launchdarkly_initialization_failed',
