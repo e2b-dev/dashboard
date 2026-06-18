@@ -66,7 +66,7 @@ function AgentCard({ agent }: { agent: AgentTemplateConfig }) {
       </div>
 
       <Button asChild className="mt-3 w-full" variant="primary">
-        <Link href={getLaunchHref(agent)}>
+        <Link href={getLaunchHref(agent)} prefetch={false}>
           Start
           <ExternalLinkIcon />
         </Link>
