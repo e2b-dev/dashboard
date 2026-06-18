@@ -32,6 +32,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/ui/primitives/tooltip'
+import { RowHoverFrame } from '@/ui/row-hover-frame'
 import { useDashboard } from '../../context'
 import { UserAvatar } from '../../shared'
 import { WEBHOOK_EVENT_LABELS } from './constants'
@@ -217,10 +218,20 @@ export const WebhookTableRow = ({ webhook }: WebhookRowProps) => {
 
   return (
     <TableRow
-      className="cursor-pointer hover:bg-bg-hover"
+      className={cn(
+        'group/row relative cursor-pointer hover:bg-bg-1 border-b-0 transition-none',
+        'border-stroke/80 hover:z-20 focus-within:z-10',
+        'has-[button[aria-haspopup=menu][data-state=open]]:z-10'
+      )}
       onClick={handleRowClick}
     >
       <TableCell className={cn(rowCellClassName, 'max-w-0')}>
+        <RowHoverFrame
+          className={cn(
+            'group-has-[button[aria-haspopup=menu][data-state=open]]/row:border-stroke',
+            'group-has-[button[aria-haspopup=menu][data-state=open]]/row:[--corner-mark-color:var(--color-fg-tertiary)]'
+          )}
+        />
         <WebhookNameAndUrl name={webhook.name} url={webhook.url} />
       </TableCell>
 

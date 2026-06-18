@@ -61,6 +61,12 @@ export const WebhooksTable = ({
           webhooks.length > 0 && [
             '[&_tr]:border-stroke',
             '[&_tr:last-child]:border-b [&_tr:last-child]:border-stroke',
+            '[&_tr:hover]:border-b-transparent',
+            '[&_tr:last-child:hover]:border-b-transparent',
+            '[&_tr:has(+_tr:hover)]:border-b-transparent',
+            '[&_tr:has(button[aria-haspopup=menu][data-state=open])]:border-b-transparent',
+            '[&_tr:last-child:has(button[aria-haspopup=menu][data-state=open])]:border-b-transparent',
+            '[&_tr:has(+_tr_button[aria-haspopup=menu][data-state=open])]:border-b-transparent',
           ]
         )}
       >
