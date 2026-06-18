@@ -78,7 +78,7 @@ describe('createFeatureFlagService', () => {
     expect(result).toEqual([
       {
         id: 'agentsEnabled',
-        key: 'agents-enabled',
+        key: 'agents_enabled',
         kind: 'boolean',
         description: 'Enables the dashboard agents launcher.',
         defaultValue: false,
