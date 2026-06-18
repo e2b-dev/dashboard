@@ -36,24 +36,28 @@ export function useTerminalInstance({
   const terminalSizeRef = useRef({ cols: DEFAULT_COLS, rows: DEFAULT_ROWS })
   const decoderRef = useRef(new TextDecoder())
 
-  const resizeTerminal = useCallback(() => {
-    const nextSize = calculateTerminalSize(
-      terminalContainerRef.current,
-      xtermRef.current
-    )
-    const currentSize = terminalSizeRef.current
-    const sizeChanged =
-      nextSize.cols !== currentSize.cols || nextSize.rows !== currentSize.rows
+  const resizeTerminal = useCallback(
+    (options?: { force?: boolean }) => {
+      const nextSize = calculateTerminalSize(
+        terminalContainerRef.current,
+        xtermRef.current
+      )
+      const currentSize = terminalSizeRef.current
+      const sizeChanged =
+        nextSize.cols !== currentSize.cols || nextSize.rows !== currentSize.rows
+      const shouldResize = sizeChanged || options?.force
 
-    terminalSizeRef.current = nextSize
+      terminalSizeRef.current = nextSize
 
-    if (sizeChanged) {
-      xtermRef.current?.resize(nextSize.cols, nextSize.rows)
-      onResize(nextSize)
-    }
+      if (shouldResize) {
+        xtermRef.current?.resize(nextSize.cols, nextSize.rows)
+        onResize(nextSize)
+      }
 
-    return nextSize
-  }, [onResize])
+      return nextSize
+    },
+    [onResize]
+  )
 
   const scrollTerminalToBottom = useCallback((terminal = xtermRef.current) => {
     try {
@@ -154,7 +158,7 @@ export function useTerminalInstance({
         contextLossSubscription = webglContextLossSubscription
         rendererAddon = webglAddon
         terminal.loadAddon(webglAddon)
-        resizeTerminal()
+        resizeTerminal({ force: true })
         scrollTerminalToBottom(terminal)
       } catch {
         contextLossSubscription?.dispose()
@@ -168,7 +172,7 @@ export function useTerminalInstance({
           const canvasAddon = new CanvasAddon()
           rendererAddon = canvasAddon
           terminal.loadAddon(canvasAddon)
-          resizeTerminal()
+          resizeTerminal({ force: true })
           scrollTerminalToBottom(terminal)
         } catch {
           rendererAddon?.dispose()

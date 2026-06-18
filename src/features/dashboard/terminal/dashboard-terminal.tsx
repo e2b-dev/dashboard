@@ -192,7 +192,7 @@ export default function DashboardTerminal({
 
   const resizePty = useCallback((size: { cols: number; rows: number }) => {
     if (sandboxRef.current && pidRef.current) {
-      void sandboxRef.current.pty.resize(pidRef.current, size)
+      void sandboxRef.current.pty.resize(pidRef.current, size).catch(() => {})
     }
   }, [])
 
@@ -378,7 +378,7 @@ export default function DashboardTerminal({
         })
         ptyRef.current = pty
         pidRef.current = pty.pid
-        resizeTerminal()
+        resizeTerminal({ force: true })
         setStatus('ready')
         appendOutput(`PTY ${pty.pid} attached.\r\n`)
         focusTerminal()
