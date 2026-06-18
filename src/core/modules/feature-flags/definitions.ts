@@ -1,6 +1,13 @@
 import type { FeatureFlagDefinition } from '@/core/modules/feature-flags/types'
 
 export const FEATURE_FLAGS = {
+  agentsEnabled: {
+    kind: 'boolean',
+    key: 'agents-enabled',
+    defaultValue: false,
+    description: 'Enables the dashboard agents launcher.',
+    exposure: 'server',
+  },
   isAdmin: {
     kind: 'boolean',
     key: 'is_admin',

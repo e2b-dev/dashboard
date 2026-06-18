@@ -72,9 +72,18 @@ describe('createFeatureFlagService', () => {
 
     expect(provider.evaluate).toHaveBeenCalledTimes(1)
     expect(provider.evaluate).toHaveBeenCalledWith(context, [
+      FEATURE_FLAGS.agentsEnabled,
       FEATURE_FLAGS.isAdmin,
     ])
     expect(result).toEqual([
+      {
+        id: 'agentsEnabled',
+        key: 'agents-enabled',
+        kind: 'boolean',
+        description: 'Enables the dashboard agents launcher.',
+        defaultValue: false,
+        value: true,
+      },
       {
         id: 'isAdmin',
         key: 'is_admin',
