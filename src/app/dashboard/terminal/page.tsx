@@ -97,7 +97,7 @@ async function resolveSandboxTeam({
 
   const teamsRepository = createUserTeamsRepository({ accessToken })
   const teamsResult = await teamsRepository.listUserTeams()
-  if (!teamsResult.ok) return preferredTeam
+  if (!teamsResult.ok) return null
 
   const candidateTeams = teamsResult.data.filter(
     (team) => team.id !== preferredTeam?.id
