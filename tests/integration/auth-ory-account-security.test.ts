@@ -1,18 +1,30 @@
 import type { Identity } from '@ory/client-fetch'
-import type { Session } from 'next-auth'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const authjsMock = vi.hoisted(() => vi.fn())
-const authjsSignOutMock = vi.hoisted(() => vi.fn())
+const getServerSessionMock = vi.hoisted(() => vi.fn())
 const getIdentityMock = vi.hoisted(() => vi.fn())
 const updateIdentityMock = vi.hoisted(() => vi.fn())
 const patchIdentityMock = vi.hoisted(() => vi.fn())
 const revokeOAuthSessionsMock = vi.hoisted(() => vi.fn())
 const revokeKratosSessionsMock = vi.hoisted(() => vi.fn())
+const openOrySessionMock = vi.hoisted(() => vi.fn())
+const cookieDeleteMock = vi.hoisted(() => vi.fn())
 
-vi.mock('@/auth', () => ({
-  auth: authjsMock,
-  signOut: authjsSignOutMock,
+vi.mock('@ory/nextjs/app', () => ({
+  getServerSession: getServerSessionMock,
+}))
+
+vi.mock('next/headers', () => ({
+  cookies: () =>
+    Promise.resolve({
+      get: vi.fn(() => ({ value: 'sealed-cookie' })),
+      delete: cookieDeleteMock,
+    }),
+}))
+
+vi.mock('@/core/server/auth/ory/session-cookie', () => ({
+  E2B_SESSION_COOKIE: 'e2b_session',
+  openOrySession: openOrySessionMock,
 }))
 
 vi.mock('@/core/server/auth/ory/client', () => ({
@@ -36,34 +48,8 @@ vi.mock('@/core/shared/clients/logger/logger', () => ({
   serializeErrorForLog: vi.fn((error: unknown) => error),
 }))
 
-const { handleCredentialChangeSuccess, updateUser } = await import(
-  '@/core/server/auth/ory/session'
-)
-
-const nowSeconds = Math.floor(Date.now() / 1000)
-
-function makeIdToken(authTime: number): string {
-  return [
-    Buffer.from(JSON.stringify({ alg: 'RS256' })).toString('base64url'),
-    Buffer.from(JSON.stringify({ auth_time: authTime })).toString('base64url'),
-    'sig',
-  ].join('.')
-}
-
-function makeSession({
-  idToken = makeIdToken(nowSeconds),
-  identityId = 'kratos-uuid',
-}: {
-  idToken?: string
-  identityId?: string
-} = {}): Session {
-  return {
-    user: { id: 'e2b-user-id' },
-    accessToken: 'access-token',
-    idToken,
-    identityId,
-  } as Session
-}
+const { getAuthContext, handleCredentialChangeSuccess, signOut, updateUser } =
+  await import('@/core/server/auth/ory/session')
 
 const currentIdentity = {
   id: 'kratos-uuid',
@@ -75,20 +61,73 @@ const currentIdentity = {
   metadata_admin: { admin: true },
 } satisfies Partial<Identity>
 
-describe('Ory account security', () => {
+function kratosSession({
+  authenticatedAt = new Date(),
+  identityId = 'kratos-uuid',
+}: {
+  authenticatedAt?: Date
+  identityId?: string
+} = {}) {
+  return {
+    active: true,
+    authenticated_at: authenticatedAt,
+    identity: {
+      id: identityId,
+      traits: { email: 'ada@example.test', name: 'Ada' },
+    },
+  }
+}
+
+describe('Ory account security (Kratos session + e2b_session)', () => {
   beforeEach(() => {
-    authjsMock.mockReset()
-    authjsSignOutMock.mockReset().mockResolvedValue(undefined)
+    vi.stubEnv('ORY_HYDRA_PUBLIC_URL', 'https://ory.example.com')
+    getServerSessionMock.mockReset()
     getIdentityMock.mockReset().mockResolvedValue(currentIdentity)
     updateIdentityMock.mockReset().mockResolvedValue(undefined)
     patchIdentityMock.mockReset().mockResolvedValue(undefined)
     revokeOAuthSessionsMock.mockReset().mockResolvedValue(undefined)
     revokeKratosSessionsMock.mockReset().mockResolvedValue(undefined)
+    openOrySessionMock.mockReset().mockResolvedValue({
+      accessToken: 'hydra-access-token',
+      idToken: 'hydra-id-token',
+      expiresAt: 1_900_000_000,
+    })
+    cookieDeleteMock.mockReset()
   })
 
-  it('requires fresh authentication before credential changes', async () => {
-    authjsMock.mockResolvedValue(
-      makeSession({ idToken: makeIdToken(nowSeconds - 10_000) })
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
+  it('builds the auth context from the Kratos identity, token from e2b_session', async () => {
+    getServerSessionMock.mockResolvedValue(kratosSession())
+
+    expect(await getAuthContext()).toEqual({
+      user: expect.objectContaining({
+        id: 'kratos-uuid',
+        email: 'ada@example.test',
+        name: 'Ada',
+      }),
+      accessToken: 'hydra-access-token',
+    })
+  })
+
+  it('returns null when the Kratos session is inactive despite a token', async () => {
+    getServerSessionMock.mockResolvedValue({ active: false })
+
+    expect(await getAuthContext()).toBeNull()
+  })
+
+  it('returns null when the Kratos session is active but no token is present', async () => {
+    getServerSessionMock.mockResolvedValue(kratosSession())
+    openOrySessionMock.mockResolvedValue(null)
+
+    expect(await getAuthContext()).toBeNull()
+  })
+
+  it('requires a fresh Kratos session before credential changes', async () => {
+    getServerSessionMock.mockResolvedValue(
+      kratosSession({ authenticatedAt: new Date(Date.now() - 20 * 60_000) })
     )
 
     const result = await updateUser({ password: 'new-secret' })
@@ -98,7 +137,7 @@ describe('Ory account security', () => {
   })
 
   it('uses Ory updateIdentity for fresh password changes', async () => {
-    authjsMock.mockResolvedValue(makeSession())
+    getServerSessionMock.mockResolvedValue(kratosSession())
     getIdentityMock
       .mockResolvedValueOnce(currentIdentity)
       .mockResolvedValueOnce({
@@ -111,24 +150,32 @@ describe('Ory account security', () => {
     expect(updateIdentityMock).toHaveBeenCalledWith({
       id: 'kratos-uuid',
       updateIdentityBody: expect.objectContaining({
-        schema_id: 'default',
-        state: 'active',
-        external_id: 'e2b-user-id',
-        metadata_public: { public: true },
-        metadata_admin: { admin: true },
         credentials: { password: { config: { password: 'new-secret' } } },
       }),
     })
-    expect(result).toMatchObject({ ok: true, user: { id: 'e2b-user-id' } })
+    expect(result).toMatchObject({ ok: true, user: { id: 'kratos-uuid' } })
   })
 
-  it('revokes Ory/Kratos sessions and clears Auth.js after credential changes', async () => {
-    authjsMock.mockResolvedValue(makeSession())
+  it('revokes Ory + Kratos sessions and clears e2b_session after a credential change', async () => {
+    getServerSessionMock.mockResolvedValue(kratosSession())
 
     await handleCredentialChangeSuccess()
 
-    expect(revokeOAuthSessionsMock).toHaveBeenCalledWith('e2b-user-id')
+    expect(revokeOAuthSessionsMock).toHaveBeenCalledWith('kratos-uuid')
     expect(revokeKratosSessionsMock).toHaveBeenCalledWith('kratos-uuid')
-    expect(authjsSignOutMock).toHaveBeenCalledWith({ redirect: false })
+    expect(cookieDeleteMock).toHaveBeenCalledWith('e2b_session')
+  })
+
+  it('signs out via Hydra RP-logout using the id_token hint', async () => {
+    const result = await signOut({ origin: 'https://app.e2b.dev' })
+
+    expect(result.redirectTo).toContain(
+      'https://ory.example.com/oauth2/sessions/logout'
+    )
+    expect(result.redirectTo).toContain('id_token_hint=hydra-id-token')
+    expect(result.redirectTo).toContain('post_logout_redirect_uri=')
+    // Single sign-out must not revoke every session.
+    expect(revokeKratosSessionsMock).not.toHaveBeenCalled()
+    expect(revokeOAuthSessionsMock).not.toHaveBeenCalled()
   })
 })

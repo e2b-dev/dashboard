@@ -12,10 +12,10 @@ export async function GET(request: NextRequest) {
 
   l.error(
     {
-      key: 'oauth_recover:auth_js_error',
+      key: 'oauth_recover:flow_failed',
       context: { error_code: errorCode, already_attempted: alreadyAttempted },
     },
-    'Auth.js OAuth flow failed; recovering user'
+    'OAuth flow failed; recovering user once before bailing to home'
   )
 
   const destination = alreadyAttempted ? '/' : AUTH_URLS.SIGN_IN

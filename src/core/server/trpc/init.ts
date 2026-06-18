@@ -1,5 +1,4 @@
 import { initTRPC } from '@trpc/server'
-import type { Session } from 'next-auth'
 import superjson from 'superjson'
 import { flattenError, ZodError } from 'zod'
 import type { AuthUser } from '@/core/server/auth'
@@ -13,11 +12,11 @@ type AuthenticatedSession = {
 /**
  * TRPC Context Factory
  *
- * Factory function that creates a TRPC context. If a session exists, we are trying resolve the correct user data.
+ * Auth is resolved per-procedure by the auth middleware (Kratos whoami +
+ * e2b_session), not threaded through the context.
  */
 export const createTRPCContext = async (opts: {
   headers: Headers
-  authSession?: Session | null
   requestUrl?: string
   requestObservability?: RequestObservabilityContext
 }) => {

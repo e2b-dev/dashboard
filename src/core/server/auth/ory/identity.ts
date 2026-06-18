@@ -1,22 +1,27 @@
 import 'server-only'
 
 import type { Identity } from '@ory/client-fetch'
-import type { Session } from 'next-auth'
 import type { AuthUser } from '../types'
 
 type FromOryIdentityOptions = {
   userId?: string
 }
 
-// Cheap path: build the user from the Auth.js session alone (no Ory call). Used
-// at request time by getAuthContext. `providers` is empty because the session
-// doesn't carry credential info — use fromOryIdentity when that's needed.
-export function fromAuthSession(session: Session): AuthUser {
+// Build the user from a live Kratos session identity (whoami) — the source of
+// truth for getAuthContext. The session identity carries traits but not
+// credentials, so provider/credential flags stay false — use fromOryIdentity
+// with an admin lookup when those are needed (e.g. the profile query).
+export function fromKratosSessionIdentity(identity: {
+  id: string
+  traits?: unknown
+}): AuthUser {
+  const traits = (identity.traits ?? {}) as Record<string, unknown>
   return {
-    id: session.user.id,
-    email: session.user.email ?? null,
-    name: session.user.name ?? null,
-    avatarUrl: session.user.image ?? null,
+    id: identity.id,
+    email: readString(traits, 'email'),
+    name: readDisplayName(traits),
+    avatarUrl:
+      readString(traits, 'picture') ?? readString(traits, 'avatar_url'),
     providers: [],
     canChangeEmail: false,
     canChangePassword: false,

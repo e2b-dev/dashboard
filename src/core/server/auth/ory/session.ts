@@ -1,8 +1,8 @@
 import 'server-only'
 
-import type { Session } from 'next-auth'
+import { getServerSession } from '@ory/nextjs/app'
+import { cookies } from 'next/headers'
 import { cache } from 'react'
-import { auth as authjs, signOut as authjsSignOut } from '@/auth'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import type {
@@ -14,45 +14,51 @@ import type {
   UpdateUserInput,
   UpdateUserResult,
 } from '../types'
-import { readOrySessionFields } from './authjs-session-boundary'
 import { buildOryStartURL } from './build-start-url'
 import {
   ACCOUNT_IDENTITY_CREDENTIALS,
   resolveOryIdentity,
 } from './find-identity'
 import { oryAuthFlows } from './flows'
-import { isReauthFresh } from './freshness'
-import { fromAuthSession, fromOryIdentity } from './identity'
+import { isKratosSessionFresh } from './freshness'
+import { fromKratosSessionIdentity, fromOryIdentity } from './identity'
 import { revokeKratosSessionsForIdentity } from './kratos-session'
 import { revokeOryOAuthSessionsForSubject } from './oauth-session'
+import { E2B_SESSION_COOKIE, openOrySession } from './session-cookie'
 import { completeOrySignOut } from './signout-flow'
 
 const ACCOUNT_SETTINGS_REAUTH_RETURN_TO = `${PROTECTED_URLS.ACCOUNT_SETTINGS}?reauth=1`
 
-export async function getAuthContext(
-  authSession?: Session | null
-): Promise<AuthContext | null> {
-  return getAuthContextFromOrySession(await readCurrentSession(authSession))
+// Kratos owns the session. Identity (the gate) comes from `whoami`; the Hydra
+// access token (API access only) comes from the e2b_session cookie, which the
+// middleware keeps fresh. For E2B the OAuth subject equals the Kratos identity
+// id, so kratos.identity.id is both the dashboard user id and the Kratos id used
+// for admin operations. This module never refreshes — it is a pure reader.
+
+export async function getAuthContext(): Promise<AuthContext | null> {
+  const kratos = await readKratosSession()
+  if (!kratos?.active || !kratos.identity) return null
+
+  const tokens = await readOrySessionTokens()
+  if (!tokens?.accessToken) return null
+
+  return {
+    user: fromKratosSessionIdentity(kratos.identity),
+    accessToken: tokens.accessToken,
+  }
 }
 
-export async function getUserProfile(
-  authSession?: Session | null
-): Promise<AuthUser | null> {
-  const session = await readCurrentSession(authSession)
-  if (!session?.user?.id) return null
-  const serverFields = readOrySessionFields(session)
+export async function getUserProfile(): Promise<AuthUser | null> {
+  const identityId = (await readKratosSession())?.identity?.id
+  if (!identityId) return null
 
-  // The live profile needs the full Kratos identity (traits + credentials).
-  // The cached identity id hits directly; user.id and email are fallbacks.
+  // The rich profile needs the full identity (traits + credentials).
   const identity = await resolveOryIdentity({
-    subjects: [serverFields?.identityId, session.user.id],
-    email: session.user.email,
+    subjects: [identityId],
     includeCredential: ACCOUNT_IDENTITY_CREDENTIALS,
   })
 
-  return identity
-    ? fromOryIdentity(identity, { userId: session.user.id })
-    : null
+  return identity ? fromOryIdentity(identity, { userId: identityId }) : null
 }
 
 export async function signOut(
@@ -64,28 +70,21 @@ export async function signOut(
 }
 
 export async function updateUser(
-  input: UpdateUserInput,
-  authSession?: Session | null
+  input: UpdateUserInput
 ): Promise<UpdateUserResult> {
-  const session = await readCurrentSession(authSession)
-  if (!session?.user?.id) {
-    throw new Error('updateUser called without an authenticated Ory session')
+  const kratos = await readKratosSession()
+  const identityId = kratos?.identity?.id
+  if (!identityId) {
+    throw new Error('updateUser called without an authenticated Kratos session')
   }
-  const serverFields = readOrySessionFields(session)
 
-  // Changing the password OR the email is privileged: require a recent active
-  // login so a stolen dashboard session can't silently take over the account.
+  // Changing the password OR the email is privileged: the dashboard mutates
+  // credentials via the admin API, which bypasses Kratos's own privileged-
+  // session enforcement, so we mirror the freshness window here.
   const changesCredentials =
     input.password !== undefined || input.email !== undefined
-  if (changesCredentials && !isReauthFresh(serverFields?.idToken)) {
+  if (changesCredentials && !isKratosSessionFresh(kratos?.authenticated_at)) {
     return { ok: false, code: 'reauthentication_needed' }
-  }
-
-  const identityId = await resolveIdentityId(session)
-  if (!identityId) {
-    throw new Error(
-      'updateUser could not resolve an Ory identity for the session subject'
-    )
   }
 
   const result = await oryAuthFlows.updateUser({
@@ -97,13 +96,7 @@ export async function updateUser(
 
   if (!result.ok) return result
 
-  return {
-    ...result,
-    user: {
-      ...result.user,
-      id: session.user.id,
-    },
-  }
+  return { ...result, user: { ...result.user, id: identityId } }
 }
 
 export async function startReauthForAccountSettings(): Promise<ReauthDispatch> {
@@ -112,88 +105,51 @@ export async function startReauthForAccountSettings(): Promise<ReauthDispatch> {
   }
 }
 
-export async function handleCredentialChangeSuccess(
-  authSession?: Session | null
-): Promise<void> {
-  const session = await readCurrentSession(authSession)
-  if (!session?.user?.id) return
+export async function handleCredentialChangeSuccess(): Promise<void> {
+  const identityId = (await readKratosSession())?.identity?.id
+  if (!identityId) return
 
-  await revokeOryOAuthSessionsForSubject(session.user.id)
+  await Promise.all([
+    revokeOryOAuthSessionsForSubject(identityId),
+    revokeKratosSessionsForIdentity(identityId),
+  ])
 
-  const identityId = await resolveIdentityId(session)
-  if (identityId) {
-    await revokeKratosSessionsForIdentity(identityId)
-  }
+  await clearOrySessionCookie()
+}
 
+// Live Kratos session (whoami), memoized per request. The authority for "is
+// authenticated"; the e2b_session cookie only carries the API token.
+const readKratosSession = cache(async () => {
   try {
-    await authjsSignOut({ redirect: false })
-  } catch (error) {
-    l.warn(
-      {
-        key: 'auth_provider:ory_sign_out_after_credential_change:error',
-        error: serializeErrorForLog(error),
-      },
-      'failed to clear current Auth.js session after credential change'
-    )
-  }
-}
-
-export function getAuthContextFromOrySession(
-  session: Session | null | undefined
-): AuthContext | null {
-  if (!session?.user?.id) return null
-
-  const serverFields = readOrySessionFields(session)
-  if (!serverFields?.accessToken) return null
-
-  if (serverFields.error) {
-    l.warn(
-      {
-        key: 'auth_provider:ory_session_error',
-        user_id: session.user.id,
-        context: { error: serverFields.error },
-      },
-      `Auth.js session reports error '${serverFields.error}'; treating as unauthenticated`
-    )
-    return null
-  }
-
-  return {
-    user: fromAuthSession(session),
-    accessToken: serverFields.accessToken,
-  } satisfies AuthContext
-}
-
-async function resolveIdentityId(session: Session): Promise<string | null> {
-  const serverFields = readOrySessionFields(session)
-  if (serverFields?.identityId) return serverFields.identityId
-
-  const identity = await resolveOryIdentity({
-    subjects: [session.user.id],
-    email: session.user.email,
-  })
-  return identity?.id ?? null
-}
-
-function readCurrentSession(
-  authSession: Session | null | undefined
-): Promise<Session | null> {
-  return authSession === undefined
-    ? readSession()
-    : Promise.resolve(authSession)
-}
-
-const readSession = cache(async (): Promise<Session | null> => {
-  try {
-    return await authjs()
+    return await getServerSession()
   } catch (error) {
     l.error(
       {
-        key: 'auth_provider:ory_get_session:error',
+        key: 'auth_provider:kratos_get_session:error',
         error: serializeErrorForLog(error),
       },
-      'Auth.js auth() helper threw while reading session'
+      'getServerSession() threw while reading the Kratos session'
     )
     return null
   }
 })
+
+const readOrySessionTokens = cache(async () => {
+  const cookieStore = await cookies()
+  return openOrySession(cookieStore.get(E2B_SESSION_COOKIE)?.value)
+})
+
+async function clearOrySessionCookie(): Promise<void> {
+  try {
+    const cookieStore = await cookies()
+    cookieStore.delete(E2B_SESSION_COOKIE)
+  } catch (error) {
+    l.warn(
+      {
+        key: 'auth_provider:clear_session_cookie:error',
+        error: serializeErrorForLog(error),
+      },
+      'failed to clear the e2b_session cookie after credential change'
+    )
+  }
+}

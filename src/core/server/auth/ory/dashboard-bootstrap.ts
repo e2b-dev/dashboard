@@ -37,15 +37,6 @@ export async function ensureOryUserBootstrapped(
   return bootstrapOryUserWithRequest(body, input.provider)
 }
 
-export async function bootstrapOryUser(
-  input: BootstrapOryUserInput
-): Promise<boolean> {
-  const body = await createOryUserBootstrapRequest(input)
-  if (!body) return false
-
-  return bootstrapOryUserWithRequest(body, input.provider)
-}
-
 export async function createOryUserBootstrapRequest(
   input: BootstrapOryUserInput
 ): Promise<
@@ -71,20 +62,25 @@ export async function createOryUserBootstrapRequest(
   } satisfies DashboardApiComponents['schemas']['AdminAuthProviderUserBootstrapRequest']
 }
 
+// Profile claims (issuer/email/name) prefer the cryptographically validated
+// id_token, falling back to the access token. The OIDC subject, however, stays
+// sourced from the access token — it is the bearer token dashboard-api receives
+// and validates, and is the stable key for the (issuer, user_id) mapping.
 function readBootstrapClaims(
   input: BootstrapOryUserInput
 ): OryBootstrapClaims | null {
-  const accessClaims = decodeJwtClaims<OryTokenClaims>(input.accessToken)
   const idClaims = input.idToken
     ? decodeJwtClaims<OryTokenClaims>(input.idToken)
     : null
+  const accessClaims = decodeJwtClaims<OryTokenClaims>(input.accessToken)
   const oidcIssuer =
-    readStringClaim(accessClaims, 'iss') ?? readStringClaim(idClaims, 'iss')
-  const oidcUserId = readStringClaim(accessClaims, 'sub')
+    readStringClaim(idClaims, 'iss') ?? readStringClaim(accessClaims, 'iss')
+  const oidcUserId =
+    readStringClaim(accessClaims, 'sub') ?? readStringClaim(idClaims, 'sub')
   const oidcUserEmail =
-    readStringClaim(accessClaims, 'email') ?? readStringClaim(idClaims, 'email')
+    readStringClaim(idClaims, 'email') ?? readStringClaim(accessClaims, 'email')
   const oidcUserName =
-    readDisplayName(accessClaims) ?? readDisplayName(idClaims)
+    readDisplayName(idClaims) ?? readDisplayName(accessClaims)
 
   if (!oidcIssuer || !oidcUserId || !oidcUserEmail) {
     l.error(
