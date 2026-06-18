@@ -11,10 +11,11 @@ import * as echarts from 'echarts/core'
 import { SVGRenderer } from 'echarts/renderers'
 import ReactEChartsCore from 'echarts-for-react/lib/core'
 import { useTheme } from 'next-themes'
-import { memo, useEffect, useMemo, useRef } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useCssVars } from '@/lib/hooks/use-css-vars'
 import { cn } from '@/lib/utils'
 import { calculateAxisMax } from '@/lib/utils/chart'
+import { withOpacity } from '../../../sandbox/monitoring/utils/chart-colors'
 import type { WebhookStatsRange } from './stats-range'
 
 echarts.use([
@@ -35,19 +36,14 @@ type StatsChartPoint = {
 type StatsChartSeries = {
   name: string
   data: StatsChartPoint[]
+  areaFromVar?: StatsChartColorVar
+  areaToVar?: StatsChartColorVar
   connectNulls?: boolean
   lineWidth?: number
   showSymbol?: boolean
+  showArea?: boolean
   z?: number
-  colorVar:
-    | '--accent-main-highlight'
-    | '--accent-info-highlight'
-    | '--accent-error-highlight'
-    | '--accent-positive-highlight'
-    | '--accent-warning-highlight'
-    | '--fg'
-    | '--fg-secondary'
-    | '--fg-tertiary'
+  colorVar: StatsChartColorVar
 }
 
 type StatsChartProps = {
@@ -66,6 +62,48 @@ const HOUR_MS = 60 * 60 * 1000
 const DAY_MS = 24 * HOUR_MS
 const AXIS_LABEL_GRID_GAP = 8
 const MONO_AXIS_LABEL_CHAR_WIDTH = 7.2
+const CHART_LINE_WIDTH = 1
+const CHART_AREA_OPACITY = 1
+const CHART_FALLBACK_AREA_OPACITY = 0.18
+const CHART_AXIS_LABEL_FONT_SIZE = 12
+const MARKER_RIGHT_THRESHOLD_PX = 86
+const MARKER_OVERLAP_THRESHOLD_PX = 24
+const MARKER_LABEL_VERTICAL_GAP_PX = 20
+const MARKER_LABEL_MIN_GAP_PX = 24
+const MARKER_LABEL_TOP_CLEARANCE_PX = 28
+const MARKER_LABEL_BOTTOM_CLEARANCE_PX = 64
+
+type StatsChartColorVar =
+  | '--accent-main-highlight'
+  | '--accent-info-highlight'
+  | '--accent-error-highlight'
+  | '--accent-positive-highlight'
+  | '--accent-warning-highlight'
+  | '--fg'
+  | '--fg-secondary'
+  | '--fg-tertiary'
+  | '--graph-1'
+  | '--graph-2'
+  | '--graph-3'
+  | '--graph-area-1-from'
+  | '--graph-area-1-to'
+  | '--graph-area-2-from'
+  | '--graph-area-2-to'
+  | '--graph-area-3-from'
+  | '--graph-area-3-to'
+
+type ChartPointValue = [number, number]
+
+type CrosshairMarker = {
+  key: string
+  xPx: number
+  yPx: number
+  valueContent: string
+  dotColor: string
+  placeValueOnRight: boolean
+  labelOffsetYPx: number
+  labelYPx: number
+}
 
 const formatAxisLabel = (
   value: number,
@@ -116,6 +154,134 @@ const getXAxisInterval = ({
 
 const defaultValueFormatter = (value: number) => value.toLocaleString()
 
+const toChartPointValue = (point: StatsChartPoint): ChartPointValue | null => {
+  if (point.value === null) return null
+
+  return [new Date(point.timestamp).getTime(), point.value]
+}
+
+const getClosestPoint = (
+  points: StatsChartPoint[],
+  timestampMs: number
+): ChartPointValue | null => {
+  const values = points
+    .map(toChartPointValue)
+    .filter((point): point is ChartPointValue => Boolean(point))
+  if (values.length === 0) return null
+
+  return values.reduce((closest, point) =>
+    Math.abs(point[0] - timestampMs) < Math.abs(closest[0] - timestampMs)
+      ? point
+      : closest
+  )
+}
+
+const applyMarkerLabelOffsets = (
+  markers: CrosshairMarker[],
+  chartHeight: number
+): CrosshairMarker[] => {
+  const minLabelYPx = MARKER_LABEL_TOP_CLEARANCE_PX
+  const maxLabelYPx = Math.max(
+    minLabelYPx,
+    chartHeight - MARKER_LABEL_BOTTOM_CLEARANCE_PX
+  )
+  const clampLabelYPx = (value: number) =>
+    Math.min(Math.max(value, minLabelYPx), maxLabelYPx)
+  const spreadLabels = (nextMarkers: CrosshairMarker[]) => {
+    if (nextMarkers.length < 2) return nextMarkers
+
+    const sortedMarkers = [...nextMarkers].sort(
+      (a, b) => a.labelYPx - b.labelYPx
+    )
+
+    for (let index = 1; index < sortedMarkers.length; index += 1) {
+      const previousMarker = sortedMarkers[index - 1]
+      const currentMarker = sortedMarkers[index]
+      if (!previousMarker || !currentMarker) continue
+
+      currentMarker.labelYPx = Math.max(
+        currentMarker.labelYPx,
+        previousMarker.labelYPx + MARKER_LABEL_MIN_GAP_PX
+      )
+    }
+
+    const lastMarker = sortedMarkers.at(-1)
+    if (lastMarker && lastMarker.labelYPx > maxLabelYPx) {
+      const overflowYPx = lastMarker.labelYPx - maxLabelYPx
+      sortedMarkers.forEach((marker) => {
+        marker.labelYPx -= overflowYPx
+      })
+    }
+
+    const firstMarker = sortedMarkers[0]
+    if (firstMarker && firstMarker.labelYPx < minLabelYPx) {
+      const underflowYPx = minLabelYPx - firstMarker.labelYPx
+      sortedMarkers.forEach((marker) => {
+        marker.labelYPx += underflowYPx
+      })
+    }
+
+    const labelYPxByMarkerKey = new Map(
+      sortedMarkers.map((marker) => [marker.key, marker.labelYPx])
+    )
+
+    return nextMarkers.map((marker) => ({
+      ...marker,
+      labelYPx: labelYPxByMarkerKey.get(marker.key) ?? marker.labelYPx,
+    }))
+  }
+
+  if (markers.length < 2) {
+    return spreadLabels(
+      markers.map((marker) => ({
+        ...marker,
+        labelYPx: clampLabelYPx(marker.yPx + marker.labelOffsetYPx),
+      }))
+    )
+  }
+
+  const sortedMarkers = [...markers].sort((a, b) => a.yPx - b.yPx)
+  const offsetsByMarkerKey = new Map<string, number>()
+  let clusterStart = 0
+
+  for (let index = 1; index <= sortedMarkers.length; index += 1) {
+    const previousMarker = sortedMarkers[index - 1]
+    const currentMarker = sortedMarkers[index]
+    if (!previousMarker) continue
+
+    const shouldSplitCluster =
+      !currentMarker ||
+      Math.abs(currentMarker.yPx - previousMarker.yPx) >
+        MARKER_OVERLAP_THRESHOLD_PX
+    if (!shouldSplitCluster) continue
+
+    const cluster = sortedMarkers.slice(clusterStart, index)
+    const halfIndex = (cluster.length - 1) / 2
+
+    cluster.forEach((marker, clusterIndex) => {
+      offsetsByMarkerKey.set(
+        marker.key,
+        (clusterIndex - halfIndex) * MARKER_LABEL_VERTICAL_GAP_PX
+      )
+    })
+
+    clusterStart = index
+  }
+
+  return spreadLabels(
+    markers.map((marker) => {
+      const labelOffsetYPx =
+        offsetsByMarkerKey.get(marker.key) ?? marker.labelOffsetYPx
+
+      return {
+        ...marker,
+        labelOffsetYPx,
+        labelYPx: clampLabelYPx(marker.yPx + labelOffsetYPx),
+      }
+    })
+  )
+}
+
 const getTooltipDayLabel = (date: Date) => {
   const now = new Date()
   const yesterday = new Date()
@@ -165,15 +331,6 @@ const formatTooltipInterval = (
   return `${getTooltipDayLabel(startDate)}, ${startTime} — ${endTime}`
 }
 
-const getTooltipTimestampMs = (param: unknown) => {
-  if (!param || typeof param !== 'object') return null
-  if (!('value' in param)) return null
-  if (!Array.isArray(param.value)) return null
-
-  const [timestamp] = param.value
-  return typeof timestamp === 'number' ? timestamp : null
-}
-
 const getTooltipSyntheticValue = (param: unknown) => {
   if (!param || typeof param !== 'object') return false
   if (!('data' in param)) return false
@@ -195,6 +352,11 @@ const StatsChart = memo(function StatsChart({
   xAxisMin,
 }: StatsChartProps) {
   const chartRef = useRef<ReactEChartsCore | null>(null)
+  const chartInstanceRef = useRef<echarts.ECharts | null>(null)
+  const [hoveredTimestampMs, setHoveredTimestampMs] = useState<number | null>(
+    null
+  )
+  const [chartRevision, setChartRevision] = useState(0)
   const { resolvedTheme } = useTheme()
   const cssVars = useCssVars([
     '--accent-main-highlight',
@@ -202,6 +364,15 @@ const StatsChart = memo(function StatsChart({
     '--accent-error-highlight',
     '--accent-positive-highlight',
     '--accent-warning-highlight',
+    '--graph-1',
+    '--graph-2',
+    '--graph-3',
+    '--graph-area-1-from',
+    '--graph-area-1-to',
+    '--graph-area-2-from',
+    '--graph-area-2-to',
+    '--graph-area-3-from',
+    '--graph-area-3-to',
     '--fg',
     '--fg-secondary',
     '--fg-tertiary',
@@ -212,8 +383,41 @@ const StatsChart = memo(function StatsChart({
 
   const stroke = cssVars['--stroke'] || '#d4d4d4'
   const fgTertiary = cssVars['--fg-tertiary'] || '#666'
-  const bg = cssVars['--bg-1'] || '#fff'
   const fontMono = cssVars['--font-mono'] || 'monospace'
+  const axisPointerColor = stroke
+
+  const handleChartReady = useCallback((chart: echarts.ECharts) => {
+    chartInstanceRef.current = chart
+    chart.on('finished', () => setChartRevision((revision) => revision + 1))
+  }, [])
+
+  const handleUpdateAxisPointer = useCallback(
+    (params: {
+      axesInfo?: { value?: unknown }[]
+      xAxisInfo?: { value?: unknown }[]
+      value?: unknown
+    }) => {
+      const pointerValue =
+        params.axesInfo?.[0]?.value ??
+        params.xAxisInfo?.[0]?.value ??
+        params.value
+      const timestampMs =
+        typeof pointerValue === 'number' ? pointerValue : Number(pointerValue)
+      if (!Number.isFinite(timestampMs)) return
+
+      setHoveredTimestampMs(Math.floor(timestampMs))
+    },
+    []
+  )
+
+  const handleGlobalOut = useCallback(() => {
+    setHoveredTimestampMs(null)
+    chartInstanceRef.current?.dispatchAction({ type: 'hideTip' })
+    chartInstanceRef.current?.dispatchAction({
+      type: 'updateAxisPointer',
+      currTrigger: 'leave',
+    })
+  }, [])
 
   const option = useMemo<EChartsOption>(() => {
     const values = series.flatMap((item) =>
@@ -232,50 +436,15 @@ const StatsChart = memo(function StatsChart({
       xAxisMin,
     })
 
-    const getTooltipContent = (param: unknown) => {
-      if (getTooltipSyntheticValue(param)) return ''
-
-      const timestampMs = getTooltipTimestampMs(param)
-      if (timestampMs === null) return ''
-
-      const rows = series.flatMap((item) => {
-        const point = item.data.find(
-          (point) =>
-            !point.synthetic &&
-            point.value !== null &&
-            new Date(point.timestamp).getTime() === timestampMs
-        )
-        if (!point || point.value === null) return []
-
-        const color = cssVars[item.colorVar] || '#000'
-
-        return [
-          `<div style="display:table-row;">
-            <span style="display:table-cell;padding-right:4px;vertical-align:middle;">
-              <span style="display:inline-flex;align-items:center;gap:8px;">
-              <span style="width:10px;height:10px;border-radius:9999px;background:${color};display:inline-block;"></span>
-              ${item.name}
-              </span>
-            </span>
-            <strong style="color:${fgTertiary};display:table-cell;font-family:${fontMono};font-size:32px;font-weight:700;line-height:32px;text-align:right;vertical-align:middle;">${valueFormatter(point.value)}</strong>
-          </div>`,
-        ]
-      })
-
-      if (rows.length === 0) return ''
-
-      const tooltipTimestamp = bucketIntervalSeconds
-        ? formatTooltipInterval(timestampMs, bucketIntervalSeconds, xAxisRange)
-        : formatTooltipTimestamp(timestampMs, xAxisRange)
-
-      return `<div style="display:flex;flex-direction:column;gap:4px;">
-        <div>${tooltipTimestamp}</div>
-        <div style="display:table;border-spacing:0 4px;">${rows.join('')}</div>
-      </div>`
-    }
-
     const chartSeries: SeriesOption[] = series.map((item) => {
       const color = cssVars[item.colorVar] || '#000'
+      const areaFrom = item.areaFromVar
+        ? (cssVars[item.areaFromVar] ??
+          withOpacity(color, CHART_FALLBACK_AREA_OPACITY))
+        : withOpacity(color, CHART_FALLBACK_AREA_OPACITY)
+      const areaTo = item.areaToVar
+        ? (cssVars[item.areaToVar] ?? withOpacity(color, 0))
+        : withOpacity(color, 0)
 
       return {
         name: item.name,
@@ -285,17 +454,34 @@ const StatsChart = memo(function StatsChart({
           synthetic: point.synthetic,
           value: [new Date(point.timestamp).getTime(), point.value],
         })),
-        symbol: 'circle',
+        symbol: chartType === 'line' ? 'none' : 'circle',
         symbolSize: (_value: unknown, params: unknown) =>
-          getTooltipSyntheticValue(params) ? 0 : 7,
+          getTooltipSyntheticValue(params) ? 0 : 6,
         showSymbol: item.showSymbol ?? chartType === 'scatter',
         connectNulls: item.connectNulls,
+        smooth: false,
         itemStyle: {
           color,
         },
+        areaStyle: item.showArea
+          ? {
+              opacity: CHART_AREA_OPACITY,
+              color: {
+                type: 'linear',
+                x: 0,
+                y: 0,
+                x2: 0,
+                y2: 1,
+                colorStops: [
+                  { offset: 0, color: areaFrom },
+                  { offset: 1, color: areaTo },
+                ],
+              },
+            }
+          : undefined,
         lineStyle: {
           color,
-          width: item.lineWidth ?? 2,
+          width: item.lineWidth ?? CHART_LINE_WIDTH,
         },
         emphasis: {
           disabled: true,
@@ -313,29 +499,31 @@ const StatsChart = memo(function StatsChart({
         left: yAxisLabelGutter,
       },
       tooltip: {
-        trigger: 'item',
+        show: true,
+        trigger: 'axis',
         confine: true,
         transitionDuration: 0,
-        backgroundColor: bg,
-        borderColor: stroke,
-        borderWidth: 1,
+        enterable: false,
+        hideDelay: 0,
+        backgroundColor: 'transparent',
+        borderWidth: 0,
         textStyle: {
-          color: fgTertiary,
-          fontFamily: fontMono,
-          fontSize: 12,
+          color: 'transparent',
+          fontSize: 0,
         },
         axisPointer: {
           type: 'line',
           lineStyle: {
-            color: stroke,
+            color: axisPointerColor,
             type: 'solid',
-            width: 1,
+            width: CHART_LINE_WIDTH,
           },
           label: {
             show: false,
           },
         },
-        formatter: getTooltipContent,
+        formatter: () => '',
+        position: [-9999, -9999],
       },
       xAxis: {
         type: 'time',
@@ -348,7 +536,7 @@ const StatsChart = memo(function StatsChart({
         axisLabel: {
           color: fgTertiary,
           fontFamily: fontMono,
-          fontSize: 12,
+          fontSize: CHART_AXIS_LABEL_FONT_SIZE,
           hideOverlap: true,
           formatter: (value: number) =>
             formatAxisLabel(value, xAxisRange, { xAxisMax, xAxisMin }),
@@ -360,7 +548,7 @@ const StatsChart = memo(function StatsChart({
           lineStyle: {
             color: stroke,
             type: 'solid',
-            width: 1,
+            width: CHART_LINE_WIDTH,
           },
           snap: false,
           label: {
@@ -379,7 +567,7 @@ const StatsChart = memo(function StatsChart({
           align: 'left',
           color: fgTertiary,
           fontFamily: fontMono,
-          fontSize: 12,
+          fontSize: CHART_AXIS_LABEL_FONT_SIZE,
           interval: 0,
           margin: yAxisLabelGutter,
           formatter: (value: number) => yAxisValueFormatter(value),
@@ -387,7 +575,7 @@ const StatsChart = memo(function StatsChart({
         splitLine: {
           show: true,
           lineStyle: {
-            color: stroke,
+            color: withOpacity(stroke, 0.7),
             type: 'dashed',
           },
           interval: 0,
@@ -398,14 +586,12 @@ const StatsChart = memo(function StatsChart({
     }
   }, [
     series,
-    bucketIntervalSeconds,
     chartType,
     cssVars,
     stroke,
+    axisPointerColor,
     fgTertiary,
-    bg,
     fontMono,
-    valueFormatter,
     yAxisValueFormatter,
     xAxisRange,
     xAxisMax,
@@ -420,8 +606,123 @@ const StatsChart = memo(function StatsChart({
     return () => cancelAnimationFrame(frame)
   }, [])
 
+  const crosshairMarkers = useMemo<CrosshairMarker[]>(() => {
+    void chartRevision
+
+    const chart = chartInstanceRef.current
+    if (hoveredTimestampMs === null || !chart || chart.isDisposed()) {
+      return []
+    }
+    const chartHeight = chart.getHeight()
+
+    const markers = series.flatMap((item) => {
+      const closestPoint = getClosestPoint(item.data, hoveredTimestampMs)
+      if (!closestPoint) return []
+
+      const [timestampMs, value] = closestPoint
+      if (
+        (xAxisMin !== undefined && timestampMs < xAxisMin) ||
+        (xAxisMax !== undefined && timestampMs > xAxisMax)
+      ) {
+        return []
+      }
+
+      const pixel = chart.convertToPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [
+        timestampMs,
+        value,
+      ])
+      if (!Array.isArray(pixel) || pixel.length < 2) return []
+
+      const [xPx, yPx] = pixel
+      if (
+        typeof xPx !== 'number' ||
+        typeof yPx !== 'number' ||
+        !Number.isFinite(xPx) ||
+        !Number.isFinite(yPx)
+      ) {
+        return []
+      }
+
+      const firstPoint = item.data.map(toChartPointValue).find(Boolean)
+      const firstTimestampMs = firstPoint?.[0] ?? null
+      const firstPointPixel =
+        firstTimestampMs === null
+          ? null
+          : chart.convertToPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [
+              firstTimestampMs,
+              0,
+            ])
+      const firstPointXPx =
+        Array.isArray(firstPointPixel) && typeof firstPointPixel[0] === 'number'
+          ? firstPointPixel[0]
+          : null
+
+      return [
+        {
+          key: `${item.name}-${timestampMs}`,
+          xPx,
+          yPx,
+          valueContent: valueFormatter(value),
+          dotColor: cssVars[item.colorVar] || stroke,
+          placeValueOnRight:
+            firstPointXPx !== null &&
+            xPx - firstPointXPx <= MARKER_RIGHT_THRESHOLD_PX,
+          labelOffsetYPx: 0,
+          labelYPx: yPx,
+        },
+      ]
+    })
+
+    return applyMarkerLabelOffsets(markers, chartHeight)
+  }, [
+    chartRevision,
+    cssVars,
+    hoveredTimestampMs,
+    series,
+    stroke,
+    valueFormatter,
+    xAxisMax,
+    xAxisMin,
+  ])
+
+  const xAxisHoverBadge = useMemo(() => {
+    void chartRevision
+
+    const chart = chartInstanceRef.current
+    if (hoveredTimestampMs === null || !chart || chart.isDisposed()) {
+      return null
+    }
+
+    const pixel = chart.convertToPixel({ xAxisIndex: 0, yAxisIndex: 0 }, [
+      hoveredTimestampMs,
+      0,
+    ])
+    if (!Array.isArray(pixel) || typeof pixel[0] !== 'number') return null
+
+    return {
+      xPx: pixel[0],
+      label: bucketIntervalSeconds
+        ? formatTooltipInterval(
+            hoveredTimestampMs,
+            bucketIntervalSeconds,
+            xAxisRange
+          )
+        : formatTooltipTimestamp(hoveredTimestampMs, xAxisRange),
+    }
+  }, [bucketIntervalSeconds, chartRevision, hoveredTimestampMs, xAxisRange])
+
+  const onEvents = useMemo(
+    () => ({
+      globalout: handleGlobalOut,
+      updateAxisPointer: handleUpdateAxisPointer,
+    }),
+    [handleGlobalOut, handleUpdateAxisPointer]
+  )
+
   return (
-    <div className={cn('h-full min-h-[260px] min-w-0 w-full', className)}>
+    <div
+      className={cn('relative h-full min-h-[260px] min-w-0 w-full', className)}
+    >
       <ReactEChartsCore
         ref={chartRef}
         key={resolvedTheme}
@@ -430,8 +731,64 @@ const StatsChart = memo(function StatsChart({
         notMerge
         lazyUpdate={false}
         style={{ width: '100%', height: '100%' }}
-        className="h-full w-full cursor-crosshair"
+        onChartReady={handleChartReady}
+        onEvents={onEvents}
+        className="h-full w-full"
       />
+      {crosshairMarkers.length > 0 || xAxisHoverBadge ? (
+        <div className="pointer-events-none absolute inset-0">
+          {crosshairMarkers.map((marker) => (
+            <div key={marker.key}>
+              <div
+                className="absolute"
+                style={{
+                  left: marker.xPx,
+                  top: marker.yPx,
+                  zIndex: 30,
+                }}
+              >
+                <span
+                  className="absolute size-2 -translate-x-1/2 -translate-y-1/2 border border-bg-1"
+                  style={{ backgroundColor: marker.dotColor }}
+                />
+              </div>
+              <div
+                className="absolute"
+                style={{
+                  left: marker.xPx,
+                  top: marker.labelYPx,
+                  zIndex: 30,
+                }}
+              >
+                <div
+                  style={{
+                    backgroundColor: withOpacity(marker.dotColor, 0.1),
+                    borderColor: withOpacity(marker.dotColor, 0.12),
+                  }}
+                  className={cn(
+                    'absolute top-1/2 -translate-y-1/2 whitespace-nowrap border text-fg font-mono prose-label-numeric px-2 py-0.5 backdrop-blur-lg',
+                    marker.placeValueOnRight ? 'left-2' : 'right-2'
+                  )}
+                >
+                  {marker.valueContent}
+                </div>
+              </div>
+            </div>
+          ))}
+          {xAxisHoverBadge ? (
+            <div
+              className="bg-bg font-mono prose-label-numeric absolute bottom-2.75 -translate-x-1/2 whitespace-nowrap px-2 py-0.5 text-fg backdrop-blur-lg"
+              style={{
+                left: xAxisHoverBadge.xPx,
+                borderColor: axisPointerColor,
+                zIndex: 20,
+              }}
+            >
+              {xAxisHoverBadge.label}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   )
 })

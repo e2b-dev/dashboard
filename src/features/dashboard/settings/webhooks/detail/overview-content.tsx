@@ -36,7 +36,13 @@ type MetricPanelProps = {
 
 type ChartPanelProps = {
   children: ReactNode
+  legendItems: ChartLegendItem[]
   title: string
+}
+
+type ChartLegendItem = {
+  label: string
+  indicatorClassName: string
 }
 
 const MetricPanel = ({ label, value, description }: MetricPanelProps) => (
@@ -49,16 +55,56 @@ const MetricPanel = ({ label, value, description }: MetricPanelProps) => (
   </section>
 )
 
-const ChartPanel = ({ children, title }: ChartPanelProps) => (
+const ChartLegend = ({ items }: { items: ChartLegendItem[] }) => (
+  <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-fg-tertiary">
+    {items.map((item) => (
+      <div key={item.label} className="flex items-center gap-1.5">
+        <span
+          className={`h-px w-5 shrink-0 rounded-full ${item.indicatorClassName}`}
+        />
+        <span className="text-fg uppercase prose-label">{item.label}</span>
+      </div>
+    ))}
+  </div>
+)
+
+const ChartPanel = ({ children, legendItems, title }: ChartPanelProps) => (
   <section className="flex min-w-0 flex-col p-3 md:p-6">
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between text-fg uppercase prose-label-highlight max-md:text-sm">
+    <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+      <div className="text-fg uppercase prose-label-highlight max-md:text-sm">
         <span>{title}</span>
       </div>
+      <ChartLegend items={legendItems} />
     </div>
     <div className="mt-3 min-h-0 flex-1 md:mt-4">{children}</div>
   </section>
 )
+
+const deliveryLegendItems = [
+  {
+    label: 'Total',
+    indicatorClassName: 'bg-accent-info-highlight',
+  },
+  {
+    label: 'Failed',
+    indicatorClassName: 'bg-accent-error-highlight',
+  },
+] satisfies ChartLegendItem[]
+
+const latencyLegendItems = [
+  {
+    label: 'Min',
+    indicatorClassName: 'bg-accent-info-highlight',
+  },
+  {
+    label: 'Avg',
+    indicatorClassName: 'bg-accent-warning-highlight',
+  },
+  {
+    label: 'Max',
+    indicatorClassName: 'bg-accent-main-highlight',
+  },
+] satisfies ChartLegendItem[]
 
 export const WebhookOverviewContent = ({
   teamSlug,
@@ -108,7 +154,8 @@ export const WebhookOverviewContent = ({
     {
       name: 'Total deliveries',
       colorVar: '--accent-info-highlight',
-      showSymbol: true,
+      showArea: true,
+      showSymbol: false,
       z: 2,
       data: getDeliveryCountSeriesData(
         buckets,
@@ -119,7 +166,7 @@ export const WebhookOverviewContent = ({
     {
       name: 'Failed deliveries',
       colorVar: '--accent-error-highlight',
-      showSymbol: true,
+      showSymbol: false,
       z: hasFailedDeliveries ? 3 : 1,
       data: getDeliveryCountSeriesData(
         buckets,
@@ -133,9 +180,8 @@ export const WebhookOverviewContent = ({
     {
       name: 'Min',
       colorVar: '--accent-info-highlight',
-      connectNulls: true,
-      lineWidth: 2,
-      showSymbol: true,
+      connectNulls: false,
+      showSymbol: false,
       z: 1,
       data: getResponseTimeSeriesData(
         buckets,
@@ -146,10 +192,9 @@ export const WebhookOverviewContent = ({
     },
     {
       name: 'Avg',
-      colorVar: '--accent-main-highlight',
-      connectNulls: true,
-      lineWidth: 2,
-      showSymbol: true,
+      colorVar: '--accent-warning-highlight',
+      connectNulls: false,
+      showSymbol: false,
       z: 3,
       data: getResponseTimeSeriesData(
         buckets,
@@ -160,10 +205,9 @@ export const WebhookOverviewContent = ({
     },
     {
       name: 'Max',
-      colorVar: '--accent-warning-highlight',
-      connectNulls: true,
-      lineWidth: 2,
-      showSymbol: true,
+      colorVar: '--accent-main-highlight',
+      connectNulls: false,
+      showSymbol: false,
       z: 2,
       data: getResponseTimeSeriesData(
         buckets,
@@ -207,7 +251,7 @@ export const WebhookOverviewContent = ({
       </div>
 
       <div className="grid min-h-[360px] md:flex-1 md:grid-cols-2 md:divide-x md:divide-stroke max-md:divide-y max-md:divide-stroke">
-        <ChartPanel title="Event deliveries">
+        <ChartPanel title="Event deliveries" legendItems={deliveryLegendItems}>
           <StatsChart
             series={deliverySeries}
             bucketIntervalSeconds={bucketIntervalSeconds}
@@ -218,7 +262,7 @@ export const WebhookOverviewContent = ({
           />
         </ChartPanel>
 
-        <ChartPanel title="Response time">
+        <ChartPanel title="Response time" legendItems={latencyLegendItems}>
           <StatsChart
             series={latencySeries}
             bucketIntervalSeconds={bucketIntervalSeconds}
