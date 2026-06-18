@@ -34,7 +34,7 @@ import { useBuildLogs } from './use-build-logs'
 import useLogFilters from './use-log-filters'
 
 // Column width are calculated as max width of the content + padding
-const COLUMN_WIDTHS_PX = { timestamp: 176 + 16, level: 52 + 16 } as const
+const COLUMN_WIDTHS_PX = { timestamp: 204 + 16, level: 52 + 16 } as const
 const ROW_HEIGHT_PX = 26
 const LIVE_STATUS_ROW_HEIGHT_PX = ROW_HEIGHT_PX + 16
 const VIRTUAL_OVERSCAN = 16
