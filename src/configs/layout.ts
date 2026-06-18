@@ -104,23 +104,10 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
     title: 'Webhooks',
     type: 'default',
   }),
-  '/dashboard/*/webhooks/*/*': (pathname) => {
-    const parts = pathname.split('/')
-    const teamSlug = parts[2] ?? ''
-
-    return {
-      title: [
-        {
-          label: 'Webhooks',
-          href: PROTECTED_URLS.WEBHOOKS(teamSlug),
-        },
-      ],
-      type: 'custom',
-      custom: {
-        includeHeaderBottomStyles: true,
-      },
-    }
-  },
+  '/dashboard/*/webhooks/*/overview': (pathname) =>
+    webhookDetailLayoutConfig(pathname),
+  '/dashboard/*/webhooks/*/deliveries': (pathname) =>
+    webhookDetailLayoutConfig(pathname),
 
   // team
   '/dashboard/*/general': () => ({
@@ -209,6 +196,28 @@ function templateDetailLayoutConfig(pathname: string): DashboardLayoutConfig {
     ],
     type: 'custom',
     copyValue: templateId,
+  }
+}
+
+function webhookDetailLayoutConfig(pathname: string): DashboardLayoutConfig {
+  const parts = pathname.split('/')
+  const teamSlug = parts[2] ?? ''
+  const webhookId = parts[4] ?? ''
+  const webhookIdSliced = `${webhookId.slice(0, 6)}...${webhookId.slice(-6)}`
+
+  return {
+    title: [
+      {
+        label: 'Webhooks',
+        href: PROTECTED_URLS.WEBHOOKS(teamSlug),
+      },
+      { label: webhookIdSliced },
+    ],
+    type: 'custom',
+    copyValue: webhookId,
+    custom: {
+      includeHeaderBottomStyles: true,
+    },
   }
 }
 

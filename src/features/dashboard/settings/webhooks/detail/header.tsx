@@ -1,8 +1,12 @@
 'use client'
 
 import { useSuspenseQuery } from '@tanstack/react-query'
+import { useMemo } from 'react'
+import type { TitleSegment } from '@/configs/layout'
+import { PROTECTED_URLS } from '@/configs/urls'
 import { WebhookEventBadges } from '@/features/dashboard/settings/webhooks/event-badges'
 import { Timestamp } from '@/features/dashboard/shared'
+import { usePageTitle } from '@/lib/hooks/use-page-title'
 import { defaultSuccessToast, toast } from '@/lib/hooks/use-toast'
 import { useTRPC } from '@/trpc/client'
 import CopyButton from '@/ui/copy-button'
@@ -31,15 +35,22 @@ export const WebhookDetailHeader = ({
   const { webhook } = data
   const latestAttempt =
     latestDeliveryQuery.data?.groups[0]?.latestAttempt ?? null
+  const titleSegments = useMemo<TitleSegment[]>(
+    () => [
+      {
+        label: 'Webhooks',
+        href: PROTECTED_URLS.WEBHOOKS(teamSlug),
+      },
+      { label: webhook.name },
+    ],
+    [teamSlug, webhook.name]
+  )
+
+  usePageTitle(titleSegments, webhookId)
 
   return (
     <header className="bg-bg relative z-30 w-full p-3 md:p-6">
       <DetailsRow>
-        <DetailsItem label="Name" className="min-w-0 max-w-[240px]">
-          <p className="truncate" title={webhook.name}>
-            {webhook.name}
-          </p>
-        </DetailsItem>
         <DetailsItem label="URL" className="min-w-0 max-w-[360px]">
           <div className="flex min-w-0 items-center gap-1">
             <p
