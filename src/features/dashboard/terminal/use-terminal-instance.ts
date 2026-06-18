@@ -1,4 +1,8 @@
-import { Terminal as GhosttyTerminal, init as initGhostty } from 'ghostty-web'
+import {
+  FitAddon,
+  Terminal as GhosttyTerminal,
+  init as initGhostty,
+} from 'ghostty-web'
 import type { ClipboardEvent } from 'react'
 import { useCallback, useEffect, useRef } from 'react'
 import {
@@ -32,18 +36,19 @@ export function useTerminalInstance({
   onResize,
 }: UseTerminalInstanceOptions) {
   const terminalRef = useRef<GhosttyTerminal | null>(null)
+  const fitAddonRef = useRef<FitAddon | null>(null)
   const terminalContainerRef = useRef<HTMLDivElement | null>(null)
   const terminalTranscriptRef = useRef(INITIAL_TERMINAL_TEXT)
   const terminalSizeRef = useRef({ cols: DEFAULT_COLS, rows: DEFAULT_ROWS })
   const decoderRef = useRef(new TextDecoder())
 
   const resizeTerminal = useCallback(() => {
+    fitAddonRef.current?.fit()
     const nextSize = calculateTerminalSize(
       terminalContainerRef.current,
       terminalRef.current
     )
     terminalSizeRef.current = nextSize
-    terminalRef.current?.resize(nextSize.cols, nextSize.rows)
     onResize(nextSize)
 
     return nextSize
@@ -79,10 +84,15 @@ export function useTerminalInstance({
       if (!text) return
 
       event.preventDefault()
+      event.stopPropagation()
 
       const sanitizedText = sanitizeTerminalPaste(text)
       if (sanitizedText) {
-        onInput(sanitizedText)
+        if (terminalRef.current) {
+          terminalRef.current.paste(sanitizedText)
+        } else {
+          onInput(sanitizedText)
+        }
       }
 
       terminalRef.current?.focus()
@@ -110,6 +120,7 @@ export function useTerminalInstance({
 
     let disposed = false
     let terminal: GhosttyTerminal | null = null
+    let fitAddon: FitAddon | null = null
     let dataSubscription: { dispose: () => void } | undefined
     let resizeTimer: number | undefined
 
@@ -130,6 +141,9 @@ export function useTerminalInstance({
           theme: TERMINAL_THEME,
         })
 
+        fitAddon = new FitAddon()
+        fitAddonRef.current = fitAddon
+        terminal.loadAddon(fitAddon)
         terminalRef.current = terminal
         terminal.open(currentContainer)
         dataSubscription = terminal.onData(onInput)
@@ -164,9 +178,13 @@ export function useTerminalInstance({
         window.clearTimeout(resizeTimer)
       }
       dataSubscription?.dispose()
+      fitAddon?.dispose()
       terminal?.dispose()
       if (terminalRef.current === terminal) {
         terminalRef.current = null
+      }
+      if (fitAddonRef.current === fitAddon) {
+        fitAddonRef.current = null
       }
     }
   }, [onInput, resizeTerminal])

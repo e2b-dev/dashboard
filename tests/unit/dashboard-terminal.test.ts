@@ -172,33 +172,20 @@ describe('dashboard terminal helpers', () => {
       })
     })
 
-    it('honors measured xterm cell dimensions when available', () => {
+    it('uses terminal dimensions after the emulator has fit itself', () => {
       const container = {
         clientWidth: 900,
         clientHeight: 500,
         getBoundingClientRect: () => ({ width: 900, height: 500 }),
       } as HTMLDivElement
       const terminal = {
-        element: {
-          querySelector: (selector: string) => {
-            if (selector === '.xterm-char-measure-element') {
-              return {
-                getBoundingClientRect: () => ({ width: 10, height: 18 }),
-              }
-            }
-            if (selector === '.xterm-rows > div') {
-              return {
-                getBoundingClientRect: () => ({ width: 900, height: 22 }),
-              }
-            }
-            return null
-          },
-        },
-      } as never
+        cols: 120,
+        rows: 32,
+      }
 
       expect(calculateTerminalSize(container, terminal)).toEqual({
-        cols: 83,
-        rows: 20,
+        cols: 120,
+        rows: 32,
       })
     })
   })
