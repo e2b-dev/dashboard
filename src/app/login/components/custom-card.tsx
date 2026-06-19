@@ -14,6 +14,12 @@ export function OryCard({ children }: PropsWithChildren) {
 // (→ /api/auth/oauth/start), not the raw flow pages: linking straight to
 // /registration would drop the in-flight Hydra login_challenge and orphan the
 // OAuth transaction. The start route re-establishes a valid one.
+//
+// They are plain <a>, not next/link, on purpose: the start route 307-redirects
+// cross-origin to Hydra's /oauth2/auth. A soft navigation (or hover prefetch)
+// would chase that redirect with fetch(), turning it into a CORS request the
+// authorize endpoint rejects. A full document navigation keeps the redirect
+// chain top-level, where it belongs.
 export function OryCardFooter() {
   const { flowType } = useOryFlow()
 
@@ -21,9 +27,9 @@ export function OryCardFooter() {
     return (
       <p className="text-fg-secondary mt-6">
         Don't have an account?{' '}
-        <Link href={AUTH_URLS.SIGN_UP} className="text-fg underline">
+        <a href={AUTH_URLS.SIGN_UP} className="text-fg underline">
           Sign up
-        </Link>
+        </a>
         .
       </p>
     )
@@ -35,9 +41,9 @@ export function OryCardFooter() {
     return (
       <p className="text-fg-secondary mt-6">
         Remember your password?{' '}
-        <Link href={AUTH_URLS.SIGN_IN} className="text-fg underline">
+        <a href={AUTH_URLS.SIGN_IN} className="text-fg underline">
           Sign in
-        </Link>
+        </a>
         .
       </p>
     )
@@ -51,9 +57,9 @@ export function OryCardFooter() {
     <div className="text-fg-secondary mt-6 flex flex-col gap-4">
       <p>
         Already have an account?{' '}
-        <Link href={AUTH_URLS.SIGN_IN} className="text-fg underline">
+        <a href={AUTH_URLS.SIGN_IN} className="text-fg underline">
           Sign in
-        </Link>
+        </a>
         .
       </p>
       <p className="text-fg-tertiary">
