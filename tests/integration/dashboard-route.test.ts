@@ -21,7 +21,13 @@ import { PROTECTED_URLS } from '@/configs/urls'
  */
 
 // create hoisted mocks
-const { mockAuth, mockCookieStore, mockResolveUserTeam } = vi.hoisted(() => ({
+const {
+  mockAuth,
+  mockCookieStore,
+  mockInfraGet,
+  mockListUserTeams,
+  mockResolveUserTeam,
+} = vi.hoisted(() => ({
   mockAuth: {
     getAuthContext: vi.fn(),
     signOut: vi.fn(),
@@ -30,6 +36,8 @@ const { mockAuth, mockCookieStore, mockResolveUserTeam } = vi.hoisted(() => ({
     get: vi.fn(),
     set: vi.fn(),
   },
+  mockInfraGet: vi.fn(),
+  mockListUserTeams: vi.fn(),
   mockResolveUserTeam: vi.fn(),
 }))
 
@@ -54,6 +62,18 @@ vi.mock('@/core/server/functions/team/resolve-user-team', () => ({
   resolveUserTeam: mockResolveUserTeam,
 }))
 
+vi.mock('@/core/modules/teams/user-teams-repository.server', () => ({
+  createUserTeamsRepository: vi.fn(() => ({
+    listUserTeams: mockListUserTeams,
+  })),
+}))
+
+vi.mock('@/core/shared/clients/api', () => ({
+  infra: {
+    GET: mockInfraGet,
+  },
+}))
+
 vi.mock('@/lib/utils/cookies', () => ({
   setTeamCookies: vi.fn(),
   getTeamCookies: vi.fn(),
@@ -70,6 +90,14 @@ describe('Dashboard Route - Team Resolution Integration Tests', () => {
       user: { id: 'user-123' },
       accessToken: 'session-token',
     })
+    mockInfraGet.mockResolvedValue({
+      response: { ok: false },
+      data: undefined,
+    })
+    mockListUserTeams.mockResolvedValue({
+      ok: true,
+      data: [],
+    })
   })
 
   afterEach(() => {
@@ -80,9 +108,10 @@ describe('Dashboard Route - Team Resolution Integration Tests', () => {
    * Helper to create a NextRequest with optional query params
    */
   function createRequest(
-    searchParams: Record<string, string> = {}
+    searchParams: Record<string, string> = {},
+    pathname = '/dashboard'
   ): NextRequest {
-    const url = new URL('http://localhost:3000/dashboard')
+    const url = new URL(`http://localhost:3000${pathname}`)
     Object.entries(searchParams).forEach(([key, value]) => {
       url.searchParams.set(key, value)
     })
@@ -129,6 +158,69 @@ describe('Dashboard Route - Team Resolution Integration Tests', () => {
       expect(response.headers.get('location')).toContain(
         '/dashboard/my-team/billing'
       )
+    })
+
+    it('should redirect legacy terminal requests to the team terminal page', async () => {
+      mockResolveUserTeam.mockResolvedValue({
+        id: 'team-456',
+        slug: 'my-team',
+      })
+
+      const request = createRequest(
+        {
+          command: 'ls',
+          template: 'base',
+        },
+        '/dashboard/terminal'
+      )
+
+      const response = await GET(request)
+      const location = response.headers.get('location')
+
+      expect(location).toContain('/dashboard/my-team/terminal')
+      expect(location).toContain('command=ls')
+      expect(location).toContain('template=base')
+      expect(location).not.toContain('__terminal')
+    })
+
+    it('should redirect legacy terminal sandbox requests to the sandbox owner team', async () => {
+      mockResolveUserTeam.mockResolvedValue({
+        id: 'preferred-team',
+        slug: 'preferred',
+      })
+      mockListUserTeams.mockResolvedValue({
+        ok: true,
+        data: [
+          {
+            id: 'owner-team',
+            slug: 'owner',
+          },
+        ],
+      })
+      mockInfraGet
+        .mockResolvedValueOnce({
+          response: { ok: false },
+          data: undefined,
+        })
+        .mockResolvedValueOnce({
+          response: { ok: true },
+          data: { sandboxID: 'ih1km3nxsd8472pml1kkb' },
+        })
+
+      const request = createRequest(
+        {
+          sandboxId: 'ih1km3nxsd8472pml1kkb',
+          template: 'base',
+        },
+        '/dashboard/terminal'
+      )
+
+      const response = await GET(request)
+      const location = response.headers.get('location')
+
+      expect(location).toContain('/dashboard/owner/terminal')
+      expect(location).toContain('sandboxId=ih1km3nxsd8472pml1kkb')
+      expect(location).toContain('template=base')
     })
   })
 
