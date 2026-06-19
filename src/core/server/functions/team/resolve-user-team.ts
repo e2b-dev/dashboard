@@ -6,6 +6,7 @@ import { ENABLE_USER_BOOTSTRAP } from '@/configs/env-flags'
 import type { ResolvedTeam } from '@/core/modules/teams/models'
 import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
 import { createAdminUsersRepository } from '@/core/modules/users/admin-repository.server'
+import { createOryUserBootstrapRequest } from '@/core/server/auth/ory/dashboard-bootstrap'
 import { l } from '@/core/shared/clients/logger/logger'
 
 export async function resolveUserTeam(
@@ -71,8 +72,24 @@ export async function resolveUserTeam(
       return null
     }
 
+    const bootstrapRequest = await createOryUserBootstrapRequest({
+      accessToken,
+    })
+    if (!bootstrapRequest) {
+      l.error(
+        {
+          key: 'resolve_user_team:bootstrap_claims_error',
+          user_id: userId,
+        },
+        'Failed to build auth provider user bootstrap request'
+      )
+
+      return null
+    }
+
     const adminUsersRepository = createAdminUsersRepository()
-    const bootstrapResult = await adminUsersRepository.bootstrapUser(userId)
+    const bootstrapResult =
+      await adminUsersRepository.bootstrapAuthProviderUser(bootstrapRequest)
 
     if (!bootstrapResult.ok) {
       l.error(

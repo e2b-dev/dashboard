@@ -10,19 +10,8 @@ components:
       type: apiKey
       in: header
       name: X-Admin-Token
-    # Generated code uses security schemas in the alphabetical order.
-    # In order to check first the token, and then the team (so we can already use the user),
-    # there is a 1 and 2 present in the names of the security schemas.
-    Supabase1TokenAuth:
-      type: apiKey
-      in: header
-      name: X-Supabase-Token
-    Supabase2TeamAuth:
-      type: apiKey
-      in: header
-      name: X-Supabase-Team
     # AuthProviderBearerAuth / AuthProviderTeamAuth: B before T in the name
-    # so Bearer is validated before Team (same reason as Supabase1/2 above).
+    # so Bearer is validated before Team.
     AuthProviderBearerAuth:
       type: http
       scheme: bearer
@@ -132,42 +121,6 @@ components:
         minimum: 1
         maximum: 100
         default: 50
-    templates_cursor:
-      name: cursor
-      in: query
-      required: false
-      description: Cursor returned by the previous list response in `{sort}|{value}|{templateID}` format. Rejected if its sort does not match the request.
-      schema:
-        type: string
-    templates_public:
-      name: public
-      in: query
-      required: false
-      description: Filter templates by visibility (true = public, false = internal).
-      schema:
-        type: boolean
-    templates_search:
-      name: search
-      in: query
-      required: false
-      description: Case-insensitive substring match on template names, aliases, and template id.
-      schema:
-        type: string
-    templates_sort:
-      name: sort
-      in: query
-      required: false
-      description: Sort column and direction.
-      schema:
-        type: string
-        enum:
-          [
-            created_at_asc,
-            created_at_desc,
-            updated_at_asc,
-            updated_at_desc,
-          ]
-        default: updated_at_desc
     templateID:
       name: templateID
       in: path
@@ -213,6 +166,42 @@ components:
         minimum: 1
         maximum: 100
         default: 50
+    templates_cursor:
+      name: cursor
+      in: query
+      required: false
+      description: Cursor returned by the previous list response in `{sort}|{value}|{templateID}` format. Rejected if its sort does not match the request.
+      schema:
+        type: string
+    templates_public:
+      name: public
+      in: query
+      required: false
+      description: Filter templates by visibility (true = public, false = internal).
+      schema:
+        type: boolean
+    templates_search:
+      name: search
+      in: query
+      required: false
+      description: Case-insensitive substring match on template names, aliases, and template id.
+      schema:
+        type: string
+    templates_sort:
+      name: sort
+      in: query
+      required: false
+      description: Sort column and direction.
+      schema:
+        type: string
+        enum:
+          [
+            created_at_asc,
+            created_at_desc,
+            updated_at_asc,
+            updated_at_desc,
+          ]
+        default: created_at_desc
     tag_assignments_cursor:
       name: cursor
       in: query
@@ -278,6 +267,12 @@ components:
             $ref: "#/components/schemas/Error"
     "404":
       description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    "409":
+      description: Conflict
       content:
         application/json:
           schema:
@@ -1170,8 +1165,6 @@ paths:
       summary: List team builds
       tags: [builds]
       security:
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
         - AuthProviderBearerAuth: []
           AuthProviderTeamAuth: []
       parameters:
@@ -1200,8 +1193,6 @@ paths:
       summary: Get build statuses
       tags: [builds]
       security:
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
         - AuthProviderBearerAuth: []
           AuthProviderTeamAuth: []
       parameters:
@@ -1228,8 +1219,6 @@ paths:
       summary: Get build details
       tags: [builds]
       security:
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
         - AuthProviderBearerAuth: []
           AuthProviderTeamAuth: []
       parameters:
@@ -1255,8 +1244,6 @@ paths:
       summary: Get sandbox record
       tags: [sandboxes]
       security:
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
         - AuthProviderBearerAuth: []
           AuthProviderTeamAuth: []
       parameters:
@@ -1283,7 +1270,6 @@ paths:
       description: Returns all teams the authenticated user belongs to, with limits and default flag.
       tags: [teams]
       security:
-        - Supabase1TokenAuth: []
         - AuthProviderBearerAuth: []
       responses:
         "200":
@@ -1300,7 +1286,6 @@ paths:
       summary: Create team
       tags: [teams]
       security:
-        - Supabase1TokenAuth: []
         - AuthProviderBearerAuth: []
       requestBody:
         required: true
@@ -1317,26 +1302,6 @@ paths:
                 $ref: "#/components/schemas/TeamResolveResponse"
         "400":
           $ref: "#/components/responses/400"
-        "401":
-          $ref: "#/components/responses/401"
-        "500":
-          $ref: "#/components/responses/500"
-
-  /admin/users/{userId}/bootstrap:
-    post:
-      summary: Bootstrap user
-      tags: [teams]
-      security:
-        - AdminApiKeyAuth: []
-      parameters:
-        - $ref: "#/components/parameters/userId"
-      responses:
-        "200":
-          description: Successfully bootstrapped user.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TeamResolveResponse"
         "401":
           $ref: "#/components/responses/401"
         "500":
@@ -1471,13 +1436,35 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
+  /admin/users/{userId}:
+    delete:
+      summary: Delete user
+      description: Deletes a user by removing the identity provider record, user_identities mapping, and public.users row.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/userId"
+      responses:
+        "204":
+          description: Successfully deleted user.
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "409":
+          $ref: "#/components/responses/409"
+        "500":
+          $ref: "#/components/responses/500"
+
   /teams/resolve:
     get:
       summary: Resolve team identity
       description: Resolves a team slug to the team's identity, validating the user is a member.
       tags: [teams]
       security:
-        - Supabase1TokenAuth: []
         - AuthProviderBearerAuth: []
       parameters:
         - $ref: "#/components/parameters/teamSlug"
@@ -1502,8 +1489,6 @@ paths:
       summary: Update team
       tags: [teams]
       security:
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
         - AuthProviderBearerAuth: []
           AuthProviderTeamAuth: []
       parameters:
@@ -1535,8 +1520,6 @@ paths:
       summary: List team members
       tags: [teams]
       security:
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
         - AuthProviderBearerAuth: []
           AuthProviderTeamAuth: []
       parameters:
@@ -1558,8 +1541,6 @@ paths:
       summary: Add team member
       tags: [teams]
       security:
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
         - AuthProviderBearerAuth: []
           AuthProviderTeamAuth: []
       parameters:
@@ -1589,8 +1570,6 @@ paths:
       summary: Remove team member
       tags: [teams]
       security:
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
         - AuthProviderBearerAuth: []
           AuthProviderTeamAuth: []
       parameters:
@@ -1614,8 +1593,6 @@ paths:
       description: Returns a paginated list of the team's templates (and default templates inline, unless the team is on a dedicated cluster), with filtering, search, and column sorting via keyset cursor pagination.
       tags: [templates]
       security:
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
         - AuthProviderBearerAuth: []
           AuthProviderTeamAuth: []
       parameters:
@@ -1646,7 +1623,6 @@ paths:
       description: Returns the list of default templates with their latest build info and aliases.
       tags: [templates]
       security:
-        - Supabase1TokenAuth: []
         - AuthProviderBearerAuth: []
       responses:
         "200":
@@ -1666,8 +1642,6 @@ paths:
       description: Returns a single template owned by the current team. Dashboard-shaped read, indexed by template ID.
       tags: [templates]
       security:
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
         - AuthProviderBearerAuth: []
           AuthProviderTeamAuth: []
       parameters:
@@ -1694,8 +1668,6 @@ paths:
       description: Returns ready template tag assignment groups with bounded per-tag history, paginated over tags with keyset cursor.
       tags: [templates]
       security:
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
         - AuthProviderBearerAuth: []
           AuthProviderTeamAuth: []
       parameters:
@@ -1729,8 +1701,6 @@ paths:
       description: Returns the total number of distinct ready tags for the template.
       tags: [templates]
       security:
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
         - AuthProviderBearerAuth: []
           AuthProviderTeamAuth: []
       parameters:
@@ -1757,8 +1727,6 @@ paths:
       description: Checks whether a template tag has at least one ready assignment.
       tags: [templates]
       security:
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
         - AuthProviderBearerAuth: []
           AuthProviderTeamAuth: []
       parameters:
@@ -1788,8 +1756,6 @@ paths:
       description: Returns ready tag assignment events for a single tag, ordered newest first, with keyset cursor pagination.
       tags: [templates]
       security:
-        - Supabase1TokenAuth: []
-          Supabase2TeamAuth: []
         - AuthProviderBearerAuth: []
           AuthProviderTeamAuth: []
       parameters:

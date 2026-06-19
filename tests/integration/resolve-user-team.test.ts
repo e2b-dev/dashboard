@@ -5,7 +5,7 @@ const {
   mockFlags,
   mockCookieStore,
   mockListUserTeams,
-  mockBootstrapUser,
+  mockBootstrapAuthProviderUser,
   mockResolveTeamBySlug,
   mockCreateUserTeamsRepository,
   mockCreateAdminUsersRepository,
@@ -17,7 +17,7 @@ const {
     get: vi.fn(),
   },
   mockListUserTeams: vi.fn(),
-  mockBootstrapUser: vi.fn(),
+  mockBootstrapAuthProviderUser: vi.fn(),
   mockResolveTeamBySlug: vi.fn(),
   mockCreateUserTeamsRepository: vi.fn(),
   mockCreateAdminUsersRepository: vi.fn(),
@@ -44,7 +44,22 @@ vi.mock('@/configs/env-flags', () => ({
 import { resolveUserTeam } from '@/core/server/functions/team/resolve-user-team'
 
 const TEST_USER_ID = 'user-123'
-const TEST_ACCESS_TOKEN = 'access-token'
+const TEST_ACCESS_TOKEN = createTestJwt({
+  iss: 'https://auth.example.test',
+  sub: TEST_USER_ID,
+  email: 'user-123@example.test',
+  name: 'Ada Lovelace',
+})
+
+function createTestJwt(payload: Record<string, unknown>) {
+  return [
+    Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).toString(
+      'base64url'
+    ),
+    Buffer.from(JSON.stringify(payload)).toString('base64url'),
+    'signature',
+  ].join('.')
+}
 
 function setupCookies(cookieValues: Record<string, string | undefined>) {
   mockCookieStore.get.mockImplementation((key: string) => {
@@ -73,7 +88,7 @@ describe('resolveUserTeam', () => {
       resolveTeamBySlug: mockResolveTeamBySlug,
     })
     mockCreateAdminUsersRepository.mockReturnValue({
-      bootstrapUser: mockBootstrapUser,
+      bootstrapAuthProviderUser: mockBootstrapAuthProviderUser,
     })
   })
 
@@ -226,7 +241,7 @@ describe('resolveUserTeam', () => {
       ok: true,
       data: [],
     })
-    mockBootstrapUser.mockResolvedValue({
+    mockBootstrapAuthProviderUser.mockResolvedValue({
       ok: true,
       data: {
         id: 'bootstrapped-team',
@@ -241,8 +256,13 @@ describe('resolveUserTeam', () => {
       slug: 'bootstrapped-team',
     })
     expect(mockCreateAdminUsersRepository).toHaveBeenCalledTimes(1)
-    expect(mockBootstrapUser).toHaveBeenCalledTimes(1)
-    expect(mockBootstrapUser).toHaveBeenCalledWith(TEST_USER_ID)
+    expect(mockBootstrapAuthProviderUser).toHaveBeenCalledTimes(1)
+    expect(mockBootstrapAuthProviderUser).toHaveBeenCalledWith({
+      oidc_issuer: 'https://auth.example.test',
+      oidc_user_id: TEST_USER_ID,
+      oidc_user_email: 'user-123@example.test',
+      oidc_user_name: 'Ada Lovelace',
+    })
   })
 
   it('returns null when bootstrap fails after empty team lookup', async () => {
@@ -251,7 +271,7 @@ describe('resolveUserTeam', () => {
       ok: true,
       data: [],
     })
-    mockBootstrapUser.mockResolvedValue({
+    mockBootstrapAuthProviderUser.mockResolvedValue({
       ok: false,
       error: new Error('Failed to bootstrap user'),
     })
@@ -260,8 +280,13 @@ describe('resolveUserTeam', () => {
 
     expect(result).toBeNull()
     expect(mockCreateAdminUsersRepository).toHaveBeenCalledTimes(1)
-    expect(mockBootstrapUser).toHaveBeenCalledTimes(1)
-    expect(mockBootstrapUser).toHaveBeenCalledWith(TEST_USER_ID)
+    expect(mockBootstrapAuthProviderUser).toHaveBeenCalledTimes(1)
+    expect(mockBootstrapAuthProviderUser).toHaveBeenCalledWith({
+      oidc_issuer: 'https://auth.example.test',
+      oidc_user_id: TEST_USER_ID,
+      oidc_user_email: 'user-123@example.test',
+      oidc_user_name: 'Ada Lovelace',
+    })
   })
 
   it('returns null without bootstrapping when bootstrap is disabled', async () => {
@@ -276,7 +301,7 @@ describe('resolveUserTeam', () => {
 
     expect(result).toBeNull()
     expect(mockCreateAdminUsersRepository).not.toHaveBeenCalled()
-    expect(mockBootstrapUser).not.toHaveBeenCalled()
+    expect(mockBootstrapAuthProviderUser).not.toHaveBeenCalled()
   })
 
   it('returns null when listing teams fails', async () => {
@@ -289,6 +314,6 @@ describe('resolveUserTeam', () => {
     const result = await resolveUserTeam(TEST_USER_ID, TEST_ACCESS_TOKEN)
 
     expect(result).toBeNull()
-    expect(mockBootstrapUser).not.toHaveBeenCalled()
+    expect(mockBootstrapAuthProviderUser).not.toHaveBeenCalled()
   })
 })

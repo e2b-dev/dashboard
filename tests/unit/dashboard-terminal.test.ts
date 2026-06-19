@@ -167,7 +167,7 @@ describe('dashboard terminal helpers', () => {
 
       expect(calculateTerminalSize(container, null)).toEqual({
         cols: 104,
-        rows: 22,
+        rows: 23,
       })
     })
 
@@ -197,7 +197,66 @@ describe('dashboard terminal helpers', () => {
 
       expect(calculateTerminalSize(container, terminal)).toEqual({
         cols: 83,
-        rows: 20,
+        rows: 21,
+      })
+    })
+
+    it('uses xterm renderer dimensions for canvas renderers', () => {
+      const container = {
+        clientWidth: 900,
+        clientHeight: 500,
+        getBoundingClientRect: () => ({ width: 900, height: 500 }),
+      } as HTMLDivElement
+      const terminal = {
+        _core: {
+          _renderService: {
+            dimensions: {
+              css: {
+                cell: { width: 8, height: 24 },
+              },
+            },
+          },
+        },
+        element: {
+          querySelector: (selector: string) => {
+            if (selector === '.xterm-helper-textarea') {
+              return {
+                getBoundingClientRect: () => ({ width: 20, height: 24 }),
+              }
+            }
+            return null
+          },
+        },
+      } as never
+
+      expect(calculateTerminalSize(container, terminal)).toEqual({
+        cols: 104,
+        rows: 19,
+      })
+    })
+
+    it('does not use helper textarea width for columns', () => {
+      const container = {
+        clientWidth: 900,
+        clientHeight: 500,
+        getBoundingClientRect: () => ({ width: 900, height: 500 }),
+      } as HTMLDivElement
+      const terminal = {
+        element: {
+          querySelector: (selector: string) => {
+            if (selector === '.xterm-helper-textarea') {
+              return {
+                getBoundingClientRect: () => ({ width: 20, height: 24 }),
+              }
+            }
+            return null
+          },
+        },
+      } as never
+
+      expect(calculateTerminalSize(container, terminal)).toEqual({
+        cols: 104,
+        rows: 19,
       })
     })
   })
