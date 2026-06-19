@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
 
   // send everything to terminal if it's terminal
   if (tab === 'terminal') {
-    const terminalParams = ["template", "sandboxId", "command"]
+    const terminalParams = ['template', 'sandboxId', 'command']
     terminalParams.forEach((param) => {
       const value = searchParams.get(param)
       if (value) {
