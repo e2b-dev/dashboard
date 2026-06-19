@@ -94,11 +94,11 @@ const deliveryLegendItems = [
 const latencyLegendItems = [
   {
     label: 'Min',
-    indicatorClassName: 'bg-accent-info-highlight',
+    indicatorClassName: 'bg-accent-positive-highlight',
   },
   {
     label: 'Avg',
-    indicatorClassName: 'bg-accent-warning-highlight',
+    indicatorClassName: 'bg-bg-inverted',
   },
   {
     label: 'Max',
@@ -182,7 +182,7 @@ export const WebhookOverviewContent = ({
   const latencySeries = [
     {
       name: 'Min',
-      colorVar: '--accent-info-highlight',
+      colorVar: '--accent-positive-highlight',
       connectNulls: false,
       showSymbol: false,
       z: 1,
@@ -195,7 +195,7 @@ export const WebhookOverviewContent = ({
     },
     {
       name: 'Avg',
-      colorVar: '--accent-warning-highlight',
+      colorVar: '--bg-inverted',
       connectNulls: false,
       showSymbol: false,
       z: 3,

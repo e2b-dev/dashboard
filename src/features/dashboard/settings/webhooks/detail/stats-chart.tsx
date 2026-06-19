@@ -75,24 +75,22 @@ const MARKER_LABEL_MIN_GAP_PX = 24
 const MARKER_LABEL_TOP_CLEARANCE_PX = 28
 const MARKER_LABEL_BOTTOM_CLEARANCE_PX = 64
 
-type StatsChartColorVar =
-  | '--accent-main-highlight'
-  | '--accent-info-highlight'
-  | '--accent-error-highlight'
-  | '--accent-positive-highlight'
-  | '--accent-warning-highlight'
-  | '--fg'
-  | '--fg-secondary'
-  | '--fg-tertiary'
-  | '--graph-1'
-  | '--graph-2'
-  | '--graph-3'
-  | '--graph-area-1-from'
-  | '--graph-area-1-to'
-  | '--graph-area-2-from'
-  | '--graph-area-2-to'
-  | '--graph-area-3-from'
-  | '--graph-area-3-to'
+const STATS_CHART_COLOR_VARS = [
+  '--accent-info-highlight',
+  '--accent-error-highlight',
+  '--accent-positive-highlight',
+  '--accent-main-highlight',
+  '--bg-inverted',
+] as const
+
+const STATS_CHART_STYLE_VARS = [
+  '--stroke',
+  '--bg-1',
+  '--font-mono',
+  '--fg-tertiary',
+] as const
+
+type StatsChartColorVar = (typeof STATS_CHART_COLOR_VARS)[number]
 
 type ChartPointValue = [number, number]
 
@@ -361,26 +359,8 @@ const StatsChart = memo(function StatsChart({
   const [chartRevision, setChartRevision] = useState(0)
   const { resolvedTheme } = useTheme()
   const cssVars = useCssVars([
-    '--accent-main-highlight',
-    '--accent-info-highlight',
-    '--accent-error-highlight',
-    '--accent-positive-highlight',
-    '--accent-warning-highlight',
-    '--graph-1',
-    '--graph-2',
-    '--graph-3',
-    '--graph-area-1-from',
-    '--graph-area-1-to',
-    '--graph-area-2-from',
-    '--graph-area-2-to',
-    '--graph-area-3-from',
-    '--graph-area-3-to',
-    '--fg',
-    '--fg-secondary',
-    '--fg-tertiary',
-    '--stroke',
-    '--bg-1',
-    '--font-mono',
+    ...STATS_CHART_COLOR_VARS,
+    ...STATS_CHART_STYLE_VARS,
   ] as const)
 
   const stroke = cssVars['--stroke'] || '#d4d4d4'
