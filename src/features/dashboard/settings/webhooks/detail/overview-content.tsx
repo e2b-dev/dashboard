@@ -166,6 +166,9 @@ export const WebhookOverviewContent = ({
     {
       name: 'Failed deliveries',
       colorVar: '--accent-error-highlight',
+      showArea: true,
+      areaFromOpacity: 0.2,
+      areaToOpacity: 0.08,
       showSymbol: false,
       z: hasFailedDeliveries ? 3 : 1,
       data: getDeliveryCountSeriesData(

@@ -36,7 +36,9 @@ type StatsChartPoint = {
 type StatsChartSeries = {
   name: string
   data: StatsChartPoint[]
+  areaFromOpacity?: number
   areaFromVar?: StatsChartColorVar
+  areaToOpacity?: number
   areaToVar?: StatsChartColorVar
   connectNulls?: boolean
   lineWidth?: number
@@ -440,11 +442,18 @@ const StatsChart = memo(function StatsChart({
       const color = cssVars[item.colorVar] || '#000'
       const areaFrom = item.areaFromVar
         ? (cssVars[item.areaFromVar] ??
-          withOpacity(color, CHART_FALLBACK_AREA_OPACITY))
-        : withOpacity(color, CHART_FALLBACK_AREA_OPACITY)
+          withOpacity(
+            color,
+            item.areaFromOpacity ?? CHART_FALLBACK_AREA_OPACITY
+          ))
+        : withOpacity(
+            color,
+            item.areaFromOpacity ?? CHART_FALLBACK_AREA_OPACITY
+          )
       const areaTo = item.areaToVar
-        ? (cssVars[item.areaToVar] ?? withOpacity(color, 0))
-        : withOpacity(color, 0)
+        ? (cssVars[item.areaToVar] ??
+          withOpacity(color, item.areaToOpacity ?? 0))
+        : withOpacity(color, item.areaToOpacity ?? 0)
 
       return {
         name: item.name,
