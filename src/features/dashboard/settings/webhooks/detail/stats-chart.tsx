@@ -42,6 +42,7 @@ type StatsChartSeries = {
   areaToVar?: StatsChartColorVar
   connectNulls?: boolean
   lineWidth?: number
+  showTooltipMarker?: boolean
   showSymbol?: boolean
   showArea?: boolean
   z?: number
@@ -605,6 +606,8 @@ const StatsChart = memo(function StatsChart({
     const chartHeight = chart.getHeight()
 
     const markers = series.flatMap((item) => {
+      if (item.showTooltipMarker === false) return []
+
       const closestPoint = getClosestPoint(item.data, hoveredTimestampMs)
       if (!closestPoint) return []
 

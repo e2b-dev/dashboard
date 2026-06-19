@@ -150,6 +150,17 @@ export const WebhookOverviewContent = ({
   const rangeStartMs = rangeBounds.start
   const rangeEndMs = rangeBounds.end
   const hasFailedDeliveries = buckets.some((bucket) => bucket.failed > 0)
+  const totalDeliveryData = getDeliveryCountSeriesData(
+    buckets,
+    rangeBounds,
+    bucketIntervalSeconds
+  )
+  const failedDeliveryData = getDeliveryCountSeriesData(
+    buckets,
+    rangeBounds,
+    bucketIntervalSeconds,
+    'failed'
+  )
   const deliverySeries = [
     {
       name: 'Total deliveries',
@@ -157,11 +168,7 @@ export const WebhookOverviewContent = ({
       showArea: true,
       showSymbol: false,
       z: 2,
-      data: getDeliveryCountSeriesData(
-        buckets,
-        rangeBounds,
-        bucketIntervalSeconds
-      ),
+      data: totalDeliveryData,
     },
     {
       name: 'Failed deliveries',
@@ -171,12 +178,18 @@ export const WebhookOverviewContent = ({
       areaToOpacity: 0.08,
       showSymbol: false,
       z: hasFailedDeliveries ? 3 : 1,
-      data: getDeliveryCountSeriesData(
-        buckets,
-        rangeBounds,
-        bucketIntervalSeconds,
-        'failed'
-      ),
+      data: failedDeliveryData,
+    },
+    {
+      name: 'Total zero baseline',
+      colorVar: '--accent-info-highlight',
+      showSymbol: false,
+      showTooltipMarker: false,
+      z: 4,
+      data: totalDeliveryData.map((point) => ({
+        ...point,
+        value: point.value === 0 ? 0 : null,
+      })),
     },
   ] satisfies StatsChartSeries[]
   const latencySeries = [
