@@ -9,13 +9,18 @@ interface SandboxTerminalPageProps {
   params: Promise<{
     teamSlug: string
   }>
+  searchParams: Promise<{
+    command?: string
+  }>
 }
 
 export default async function SandboxTerminalPage({
   params,
+  searchParams,
 }: SandboxTerminalPageProps) {
-  const [{ teamSlug }, authContext] = await Promise.all([
+  const [{ teamSlug }, { command = '' }, authContext] = await Promise.all([
     params,
+    searchParams,
     getAuthContext(),
   ])
 
@@ -33,6 +38,7 @@ export default async function SandboxTerminalPage({
 
   return (
     <SandboxTerminalView
+      command={command}
       sandboxManagementAuth={createSandboxManagementAuth(
         authContext,
         teamId.data

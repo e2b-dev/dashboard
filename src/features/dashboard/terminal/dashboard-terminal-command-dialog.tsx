@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useId, useState } from 'react'
 import { Button } from '@/ui/primitives/button'
 import {
   Dialog,
@@ -10,12 +11,13 @@ import {
   DialogTitle,
 } from '@/ui/primitives/dialog'
 import { WarningIcon } from '@/ui/primitives/icons'
+import { Textarea } from '@/ui/primitives/textarea'
 import type { PendingTerminalLaunch } from './types'
 
 interface DashboardTerminalCommandDialogProps {
   launch: PendingTerminalLaunch | null
   onCancel: () => void
-  onConfirm: () => void
+  onConfirm: (command: string) => void
 }
 
 export default function DashboardTerminalCommandDialog({
@@ -23,6 +25,14 @@ export default function DashboardTerminalCommandDialog({
   onCancel,
   onConfirm,
 }: DashboardTerminalCommandDialogProps) {
+  const commandInputId = useId()
+  const [command, setCommand] = useState('')
+  const normalizedCommand = command.trim()
+
+  useEffect(() => {
+    setCommand(launch?.command ?? '')
+  }, [launch])
+
   return (
     <Dialog open={!!launch} onOpenChange={(open) => !open && onCancel()}>
       <DialogContent hideClose className="sm:max-w-xl">
@@ -54,10 +64,19 @@ export default function DashboardTerminalCommandDialog({
               </code>
             </div>
             <div className="space-y-1">
-              <p className="prose-label text-fg-tertiary">Command</p>
-              <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words border bg-bg p-3 font-mono text-xs text-fg">
-                <code>{launch.command}</code>
-              </pre>
+              <label
+                className="prose-label text-fg-tertiary"
+                htmlFor={commandInputId}
+              >
+                Command
+              </label>
+              <Textarea
+                className="max-h-48 min-h-24 font-mono text-xs"
+                id={commandInputId}
+                onChange={(event) => setCommand(event.target.value)}
+                spellCheck={false}
+                value={command}
+              />
             </div>
           </div>
         ) : null}
@@ -66,7 +85,11 @@ export default function DashboardTerminalCommandDialog({
           <Button type="button" variant="secondary" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="button" onClick={onConfirm}>
+          <Button
+            type="button"
+            disabled={!normalizedCommand}
+            onClick={() => onConfirm(normalizedCommand)}
+          >
             Run command
           </Button>
         </DialogFooter>
