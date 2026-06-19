@@ -3,8 +3,12 @@ import 'server-only'
 import { ADMIN_AUTH_HEADERS } from '@/configs/api'
 import type { ResolvedTeam } from '@/core/modules/teams/models'
 import { api } from '@/core/shared/clients/api'
+import type { components as DashboardApiComponents } from '@/core/shared/contracts/dashboard-api.types'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import { err, ok, type RepoResult } from '@/core/shared/result'
+
+export type AdminAuthProviderUserBootstrapRequest =
+  DashboardApiComponents['schemas']['AdminAuthProviderUserBootstrapRequest']
 
 type AdminUsersRepositoryDeps = {
   apiClient: typeof api
@@ -13,7 +17,9 @@ type AdminUsersRepositoryDeps = {
 }
 
 export interface AdminUsersRepository {
-  bootstrapUser(userId: string): Promise<RepoResult<ResolvedTeam>>
+  bootstrapAuthProviderUser(
+    body: AdminAuthProviderUserBootstrapRequest
+  ): Promise<RepoResult<ResolvedTeam>>
 }
 
 export function createAdminUsersRepository(
@@ -24,7 +30,7 @@ export function createAdminUsersRepository(
   }
 ): AdminUsersRepository {
   return {
-    async bootstrapUser(userId) {
+    async bootstrapAuthProviderUser(body) {
       if (!deps.adminToken) {
         return err(
           repoErrorFromHttp(
@@ -36,13 +42,9 @@ export function createAdminUsersRepository(
       }
 
       const { data, error, response } = await deps.apiClient.POST(
-        '/admin/users/{userId}/bootstrap',
+        '/admin/users/bootstrap',
         {
-          params: {
-            path: {
-              userId,
-            },
-          },
+          body,
           headers: deps.adminHeaders(deps.adminToken),
         }
       )

@@ -1,10 +1,8 @@
 import 'server-only'
 
-import { ADMIN_AUTH_HEADERS } from '@/configs/api'
-import { api } from '@/core/shared/clients/api'
+import { createAdminUsersRepository } from '@/core/modules/users/admin-repository.server'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import type { components as DashboardApiComponents } from '@/core/shared/contracts/dashboard-api.types'
-import { repoErrorFromHttp } from '@/core/shared/errors'
 import { decodeJwtClaims, readStringClaim, tokenFormat } from './jwt-claims'
 import { readOrySignupMetadataCookie } from './signup-metadata'
 
@@ -33,19 +31,44 @@ type OryTokenClaims = {
 export async function ensureOryUserBootstrapped(
   input: BootstrapOryUserInput
 ): Promise<boolean> {
-  const claims = readBootstrapClaims(input)
-  if (!claims) return false
+  const body = await createOryUserBootstrapRequest(input)
+  if (!body) return false
 
-  return bootstrapOryUserWithClaims(claims, input.provider)
+  return bootstrapOryUserWithRequest(body, input.provider)
 }
 
 export async function bootstrapOryUser(
   input: BootstrapOryUserInput
 ): Promise<boolean> {
-  const claims = readBootstrapClaims(input)
-  if (!claims) return false
+  const body = await createOryUserBootstrapRequest(input)
+  if (!body) return false
 
-  return bootstrapOryUserWithClaims(claims, input.provider)
+  return bootstrapOryUserWithRequest(body, input.provider)
+}
+
+export async function createOryUserBootstrapRequest(
+  input: BootstrapOryUserInput
+): Promise<
+  | DashboardApiComponents['schemas']['AdminAuthProviderUserBootstrapRequest']
+  | null
+> {
+  const claims = readBootstrapClaims(input)
+  if (!claims) return null
+
+  const signupMetadata = await readOrySignupMetadataCookie()
+
+  return {
+    oidc_issuer: claims.oidcIssuer,
+    oidc_user_id: claims.oidcUserId,
+    oidc_user_email: claims.oidcUserEmail,
+    oidc_user_name: claims.oidcUserName,
+    ...(signupMetadata?.signup_ip
+      ? { signup_ip: signupMetadata.signup_ip }
+      : {}),
+    ...(signupMetadata?.signup_user_agent
+      ? { signup_user_agent: signupMetadata.signup_user_agent }
+      : {}),
+  } satisfies DashboardApiComponents['schemas']['AdminAuthProviderUserBootstrapRequest']
 }
 
 function readBootstrapClaims(
@@ -94,61 +117,27 @@ function readBootstrapClaims(
   }
 }
 
-async function bootstrapOryUserWithClaims(
-  claims: OryBootstrapClaims,
+async function bootstrapOryUserWithRequest(
+  body: DashboardApiComponents['schemas']['AdminAuthProviderUserBootstrapRequest'],
   provider?: string
 ): Promise<boolean> {
   try {
-    const adminToken = process.env.DASHBOARD_API_ADMIN_TOKEN
-    if (!adminToken) {
-      l.error(
-        {
-          key: 'auth_events:bootstrap_user:missing_admin_token',
-          context: { provider },
-        },
-        'DASHBOARD_API_ADMIN_TOKEN is not configured'
-      )
-      return false
-    }
+    const bootstrapResult =
+      await createAdminUsersRepository().bootstrapAuthProviderUser(body)
 
-    const signupMetadata = await readOrySignupMetadataCookie()
-    const body = {
-      oidc_issuer: claims.oidcIssuer,
-      oidc_user_id: claims.oidcUserId,
-      oidc_user_email: claims.oidcUserEmail,
-      oidc_user_name: claims.oidcUserName,
-      ...(signupMetadata?.signup_ip
-        ? { signup_ip: signupMetadata.signup_ip }
-        : {}),
-      ...(signupMetadata?.signup_user_agent
-        ? { signup_user_agent: signupMetadata.signup_user_agent }
-        : {}),
-    } satisfies DashboardApiComponents['schemas']['AdminAuthProviderUserBootstrapRequest']
-
-    const { error, response } = await api.POST('/admin/users/bootstrap', {
-      body,
-      headers: ADMIN_AUTH_HEADERS(adminToken),
-    })
-
-    if (!response.ok || error) {
-      const repoError = repoErrorFromHttp(
-        response.status,
-        error?.message ?? 'Failed to bootstrap user',
-        error
-      )
+    if (!bootstrapResult.ok) {
       l.error(
         {
           key: 'auth_events:bootstrap_user:error',
           context: {
             provider,
-            error_status: response.status,
             has_oidc_issuer: body.oidc_issuer !== '',
             has_oidc_user_id: body.oidc_user_id !== '',
             has_oidc_user_email: body.oidc_user_email !== '',
             has_oidc_user_name: body.oidc_user_name !== null,
           },
         },
-        `bootstrap_user failed: ${repoError.message}`
+        `bootstrap_user failed: ${bootstrapResult.error.message}`
       )
       return false
     }
