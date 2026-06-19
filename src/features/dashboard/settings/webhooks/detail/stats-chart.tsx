@@ -36,15 +36,19 @@ type StatsChartPoint = {
 type StatsChartSeries = {
   name: string
   data: StatsChartPoint[]
+  alignAreaGradientToYAxis?: boolean
   areaFromOpacity?: number
   areaFromVar?: StatsChartColorVar
   areaToOpacity?: number
   areaToVar?: StatsChartColorVar
   connectNulls?: boolean
+  areaGradientData?: StatsChartPoint[]
   lineWidth?: number
+  lineOpacity?: number
   showTooltipMarker?: boolean
   showSymbol?: boolean
   showArea?: boolean
+  stack?: string
   z?: number
   colorVar: StatsChartColorVar
 }
@@ -365,6 +369,7 @@ const StatsChart = memo(function StatsChart({
   ] as const)
 
   const stroke = cssVars['--stroke'] || '#d4d4d4'
+  const bg1 = cssVars['--bg-1'] || '#fff'
   const fgTertiary = cssVars['--fg-tertiary'] || '#666'
   const fontMono = cssVars['--font-mono'] || 'monospace'
   const axisPointerColor = stroke
@@ -435,10 +440,21 @@ const StatsChart = memo(function StatsChart({
         ? (cssVars[item.areaToVar] ??
           withOpacity(color, item.areaToOpacity ?? 0))
         : withOpacity(color, item.areaToOpacity ?? 0)
+      const areaGradientData = item.areaGradientData ?? item.data
+      const itemMaxValue = Math.max(
+        ...areaGradientData.flatMap((point) =>
+          point.value === null ? [] : [point.value]
+        )
+      )
+      const areaGradientY =
+        item.alignAreaGradientToYAxis && itemMaxValue > 0
+          ? 1 - yAxisMax / itemMaxValue
+          : 0
 
       return {
         name: item.name,
         type: chartType,
+        stack: item.stack,
         z: item.z,
         data: item.data.map((point) => ({
           synthetic: point.synthetic,
@@ -459,7 +475,7 @@ const StatsChart = memo(function StatsChart({
               color: {
                 type: 'linear',
                 x: 0,
-                y: 0,
+                y: areaGradientY,
                 x2: 0,
                 y2: 1,
                 colorStops: [
@@ -471,6 +487,7 @@ const StatsChart = memo(function StatsChart({
           : undefined,
         lineStyle: {
           color,
+          opacity: item.lineOpacity ?? 1,
           width: item.lineWidth ?? CHART_LINE_WIDTH,
         },
         emphasis: {
@@ -754,8 +771,8 @@ const StatsChart = memo(function StatsChart({
               >
                 <div
                   style={{
-                    backgroundColor: withOpacity(marker.dotColor, 0.1),
-                    borderColor: withOpacity(marker.dotColor, 0.12),
+                    backgroundColor: `color-mix(in srgb, ${marker.dotColor} 10%, ${bg1})`,
+                    borderColor: `color-mix(in srgb, ${marker.dotColor} 22%, ${bg1})`,
                   }}
                   className={cn(
                     'absolute top-1/2 -translate-y-1/2 whitespace-nowrap border text-fg font-mono prose-label-numeric px-2 py-0.5 backdrop-blur-lg',

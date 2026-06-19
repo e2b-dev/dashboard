@@ -161,11 +161,49 @@ export const WebhookOverviewContent = ({
     bucketIntervalSeconds,
     'failed'
   )
+  const successfulDeliveryBandData = totalDeliveryData.map((point, index) => {
+    const failedValue = failedDeliveryData[index]?.value ?? 0
+    const totalValue = point.value ?? 0
+
+    return {
+      ...point,
+      value: Math.max(totalValue - failedValue, 0),
+    }
+  })
   const deliverySeries = [
+    {
+      name: 'Failed deliveries fill',
+      colorVar: '--accent-error-highlight',
+      alignAreaGradientToYAxis: true,
+      areaFromOpacity: 0.14,
+      areaGradientData: failedDeliveryData,
+      areaToOpacity: 0.04,
+      showArea: true,
+      lineOpacity: 0,
+      showSymbol: false,
+      showTooltipMarker: false,
+      stack: 'delivery-area',
+      z: 1,
+      data: failedDeliveryData,
+    },
+    {
+      name: 'Successful deliveries fill',
+      colorVar: '--accent-info-highlight',
+      alignAreaGradientToYAxis: true,
+      areaFromOpacity: 0.12,
+      areaGradientData: totalDeliveryData,
+      areaToOpacity: 0.03,
+      showArea: true,
+      lineOpacity: 0,
+      showSymbol: false,
+      showTooltipMarker: false,
+      stack: 'delivery-area',
+      z: 1,
+      data: successfulDeliveryBandData,
+    },
     {
       name: 'Total deliveries',
       colorVar: '--accent-info-highlight',
-      showArea: true,
       showSymbol: false,
       z: 2,
       data: totalDeliveryData,
@@ -173,9 +211,6 @@ export const WebhookOverviewContent = ({
     {
       name: 'Failed deliveries',
       colorVar: '--accent-error-highlight',
-      showArea: true,
-      areaFromOpacity: 0.2,
-      areaToOpacity: 0.08,
       showSymbol: false,
       z: hasFailedDeliveries ? 3 : 1,
       data: failedDeliveryData,
@@ -192,32 +227,101 @@ export const WebhookOverviewContent = ({
       })),
     },
   ] satisfies StatsChartSeries[]
+  const minLatencyData = getResponseTimeSeriesData(
+    buckets,
+    rangeBounds,
+    bucketIntervalSeconds,
+    'min'
+  )
+  const avgLatencyData = getResponseTimeSeriesData(
+    buckets,
+    rangeBounds,
+    bucketIntervalSeconds,
+    'avg'
+  )
+  const maxLatencyData = getResponseTimeSeriesData(
+    buckets,
+    rangeBounds,
+    bucketIntervalSeconds,
+    'max'
+  )
+  const getLatencyBandData = (
+    lowerData: typeof minLatencyData | null,
+    upperData: typeof minLatencyData
+  ) =>
+    upperData.map((point, index) => {
+      const lowerValue = lowerData?.[index]?.value ?? 0
+      const upperValue = point.value ?? 0
+
+      return {
+        ...point,
+        value: Math.max(upperValue - lowerValue, 0),
+      }
+    })
   const latencySeries = [
+    {
+      name: 'Min fill',
+      colorVar: '--accent-positive-highlight',
+      alignAreaGradientToYAxis: true,
+      areaGradientData: minLatencyData,
+      showArea: true,
+      areaFromOpacity: 0.08,
+      areaToOpacity: 0.018,
+      connectNulls: false,
+      lineOpacity: 0,
+      showTooltipMarker: false,
+      showSymbol: false,
+      stack: 'latency-area',
+      z: 1,
+      data: getLatencyBandData(null, minLatencyData),
+    },
+    {
+      name: 'Avg fill',
+      colorVar: '--bg-inverted',
+      alignAreaGradientToYAxis: true,
+      areaGradientData: avgLatencyData,
+      showArea: true,
+      areaFromOpacity: 0.08,
+      areaToOpacity: 0.018,
+      connectNulls: false,
+      lineOpacity: 0,
+      showTooltipMarker: false,
+      showSymbol: false,
+      stack: 'latency-area',
+      z: 1,
+      data: getLatencyBandData(minLatencyData, avgLatencyData),
+    },
+    {
+      name: 'Max fill',
+      colorVar: '--accent-main-highlight',
+      alignAreaGradientToYAxis: true,
+      areaGradientData: maxLatencyData,
+      showArea: true,
+      areaFromOpacity: 0.1,
+      areaToOpacity: 0.02,
+      connectNulls: false,
+      lineOpacity: 0,
+      showTooltipMarker: false,
+      showSymbol: false,
+      stack: 'latency-area',
+      z: 1,
+      data: getLatencyBandData(avgLatencyData, maxLatencyData),
+    },
     {
       name: 'Min',
       colorVar: '--accent-positive-highlight',
       connectNulls: false,
       showSymbol: false,
-      z: 1,
-      data: getResponseTimeSeriesData(
-        buckets,
-        rangeBounds,
-        bucketIntervalSeconds,
-        'min'
-      ),
+      z: 2,
+      data: minLatencyData,
     },
     {
       name: 'Avg',
       colorVar: '--bg-inverted',
       connectNulls: false,
       showSymbol: false,
-      z: 3,
-      data: getResponseTimeSeriesData(
-        buckets,
-        rangeBounds,
-        bucketIntervalSeconds,
-        'avg'
-      ),
+      z: 4,
+      data: avgLatencyData,
     },
     {
       name: 'Max',
@@ -225,12 +329,7 @@ export const WebhookOverviewContent = ({
       connectNulls: false,
       showSymbol: false,
       z: 2,
-      data: getResponseTimeSeriesData(
-        buckets,
-        rangeBounds,
-        bucketIntervalSeconds,
-        'max'
-      ),
+      data: maxLatencyData,
     },
   ] satisfies StatsChartSeries[]
   const handleRangeChange = (nextRange: WebhookStatsRange) => {
