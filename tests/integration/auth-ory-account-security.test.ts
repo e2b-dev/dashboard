@@ -20,11 +20,20 @@ vi.mock('next/headers', () => ({
       get: vi.fn(() => ({ value: 'sealed-cookie' })),
       delete: cookieDeleteMock,
     }),
+  headers: () =>
+    Promise.resolve({
+      get: vi.fn(() => 'app.e2b.dev'),
+    }),
 }))
 
 vi.mock('@/core/server/auth/ory/session-cookie', () => ({
   E2B_SESSION_COOKIE: 'e2b_session',
   openOrySession: openOrySessionMock,
+  orySessionCookieDeleteOptions: (host: string | null | undefined) => ({
+    name: 'e2b_session',
+    path: '/',
+    domain: host ? `.${host}` : undefined,
+  }),
 }))
 
 vi.mock('@/core/server/auth/ory/client', () => ({
@@ -163,7 +172,11 @@ describe('Ory account security (Kratos session + e2b_session)', () => {
 
     expect(revokeOAuthSessionsMock).toHaveBeenCalledWith('kratos-uuid')
     expect(revokeKratosSessionsMock).toHaveBeenCalledWith('kratos-uuid')
-    expect(cookieDeleteMock).toHaveBeenCalledWith('e2b_session')
+    expect(cookieDeleteMock).toHaveBeenCalledWith({
+      name: 'e2b_session',
+      path: '/',
+      domain: '.app.e2b.dev',
+    })
   })
 
   it('signs out via Hydra RP-logout using the id_token hint', async () => {

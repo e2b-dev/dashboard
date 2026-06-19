@@ -2,7 +2,7 @@ import 'server-only'
 
 import { type NextRequest, NextResponse } from 'next/server'
 import { signOut } from '@/core/server/auth'
-import { E2B_SESSION_COOKIE } from '@/core/server/auth/ory/session-cookie'
+import { orySessionCookieDeleteOptions } from '@/core/server/auth/ory/session-cookie'
 
 // Sign-out is a plain route handler. It reads the id_token from e2b_session to
 // build Hydra's RP-logout URL, then clears the cookie on the redirect it emits
@@ -14,6 +14,6 @@ export async function GET(request: NextRequest) {
   const response = NextResponse.redirect(
     new URL(redirectTo, request.nextUrl.origin)
   )
-  response.cookies.delete(E2B_SESSION_COOKIE)
+  response.cookies.delete(orySessionCookieDeleteOptions(request.nextUrl.host))
   return response
 }

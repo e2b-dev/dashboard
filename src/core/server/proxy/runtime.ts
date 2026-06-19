@@ -11,6 +11,7 @@ import { isKratosSessionActive } from '@/core/server/auth/ory/kratos-session-edg
 import {
   E2B_SESSION_COOKIE,
   openOrySession,
+  orySessionCookieDeleteOptions,
   orySessionCookieOptions,
   sealOrySession,
 } from '@/core/server/auth/ory/session-cookie'
@@ -119,7 +120,7 @@ async function refreshSessionCookie(
           response.cookies.set(
             E2B_SESSION_COOKIE,
             sealed,
-            orySessionCookieOptions()
+            orySessionCookieOptions(request.nextUrl.host)
           )
         }
         return response
@@ -135,7 +136,9 @@ async function refreshSessionCookie(
       hasToken: false,
       persist: (response) => {
         if (response instanceof NextResponse) {
-          response.cookies.delete(E2B_SESSION_COOKIE)
+          response.cookies.delete(
+            orySessionCookieDeleteOptions(request.nextUrl.host)
+          )
         }
         return response
       },

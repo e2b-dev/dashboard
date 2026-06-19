@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { getServerSession } from '@ory/nextjs/app'
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { cache } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
@@ -24,7 +24,11 @@ import { isKratosSessionFresh } from './freshness'
 import { fromKratosSessionIdentity, fromOryIdentity } from './identity'
 import { revokeKratosSessionsForIdentity } from './kratos-session'
 import { revokeOryOAuthSessionsForSubject } from './oauth-session'
-import { E2B_SESSION_COOKIE, openOrySession } from './session-cookie'
+import {
+  E2B_SESSION_COOKIE,
+  openOrySession,
+  orySessionCookieDeleteOptions,
+} from './session-cookie'
 import { completeOrySignOut } from './signout-flow'
 
 const ACCOUNT_SETTINGS_REAUTH_RETURN_TO = `${PROTECTED_URLS.ACCOUNT_SETTINGS}?reauth=1`
@@ -141,8 +145,8 @@ const readOrySessionTokens = cache(async () => {
 
 async function clearOrySessionCookie(): Promise<void> {
   try {
-    const cookieStore = await cookies()
-    cookieStore.delete(E2B_SESSION_COOKIE)
+    const [cookieStore, headerStore] = await Promise.all([cookies(), headers()])
+    cookieStore.delete(orySessionCookieDeleteOptions(headerStore.get('host')))
   } catch (error) {
     l.warn(
       {

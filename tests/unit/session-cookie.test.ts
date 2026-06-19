@@ -2,7 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   type OrySessionTokens,
   openOrySession,
+  orySessionCookieDeleteOptions,
   orySessionCookieOptions,
+  resolveSessionCookieDomain,
   sealOrySession,
 } from '@/core/server/auth/ory/session-cookie'
 
@@ -77,5 +79,58 @@ describe('e2b_session cookie', () => {
 
     vi.stubEnv('NODE_ENV', 'development')
     expect(orySessionCookieOptions().secure).toBe(false)
+  })
+})
+
+describe('e2b_session cookie domain', () => {
+  beforeEach(() => {
+    vi.stubEnv('NEXT_PUBLIC_E2B_DOMAIN', 'e2b-staging.dev')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
+  it('scopes a subdomain host to the parent domain', () => {
+    expect(resolveSessionCookieDomain('dashboard.e2b-staging.dev')).toBe(
+      '.e2b-staging.dev'
+    )
+  })
+
+  it('scopes the apex host to the parent domain', () => {
+    expect(resolveSessionCookieDomain('e2b-staging.dev')).toBe(
+      '.e2b-staging.dev'
+    )
+  })
+
+  it('ignores the port when matching', () => {
+    expect(resolveSessionCookieDomain('e2b-staging.dev:3000')).toBe(
+      '.e2b-staging.dev'
+    )
+  })
+
+  it('returns no domain for unrelated hosts (localhost, previews)', () => {
+    expect(resolveSessionCookieDomain('localhost')).toBeUndefined()
+    expect(resolveSessionCookieDomain('preview.vercel.app')).toBeUndefined()
+    // A suffix that is not a domain boundary must not match.
+    expect(resolveSessionCookieDomain('evil-e2b-staging.dev')).toBeUndefined()
+  })
+
+  it('returns no domain when the env is unset', () => {
+    vi.stubEnv('NEXT_PUBLIC_E2B_DOMAIN', '')
+    expect(
+      resolveSessionCookieDomain('dashboard.e2b-staging.dev')
+    ).toBeUndefined()
+  })
+
+  it('flows the resolved domain into set and delete options', () => {
+    expect(orySessionCookieOptions('app.e2b-staging.dev').domain).toBe(
+      '.e2b-staging.dev'
+    )
+    expect(orySessionCookieDeleteOptions('app.e2b-staging.dev')).toEqual({
+      name: 'e2b_session',
+      path: '/',
+      domain: '.e2b-staging.dev',
+    })
   })
 })

@@ -95,7 +95,11 @@ export async function GET(request: NextRequest) {
 
   const destination = flow.returnTo ?? PROTECTED_URLS.DASHBOARD
   const response = finalize(NextResponse.redirect(new URL(destination, origin)))
-  response.cookies.set(E2B_SESSION_COOKIE, sealed, orySessionCookieOptions())
+  response.cookies.set(
+    E2B_SESSION_COOKIE,
+    sealed,
+    orySessionCookieOptions(request.nextUrl.host)
+  )
   return response
 }
 

@@ -29,6 +29,13 @@ export type OrySessionCookieOptions = {
   path: '/'
   secure: boolean
   maxAge: number
+  domain?: string
+}
+
+export type OrySessionCookieDeleteOptions = {
+  name: typeof E2B_SESSION_COOKIE
+  path: '/'
+  domain?: string
 }
 
 // Cache the derived key per secret value so rotating E2B_SESSION_SECRET (and
@@ -78,7 +85,9 @@ export async function openOrySession(
   }
 }
 
-export function orySessionCookieOptions(): OrySessionCookieOptions {
+export function orySessionCookieOptions(
+  host?: string | null
+): OrySessionCookieOptions {
   return {
     httpOnly: true,
     sameSite: 'lax',
@@ -87,7 +96,39 @@ export function orySessionCookieOptions(): OrySessionCookieOptions {
     // and serve over HTTPS; local `next dev` is plain-HTTP loopback.
     secure: process.env.NODE_ENV === 'production',
     maxAge: SESSION_COOKIE_MAX_AGE_SECONDS,
+    domain: resolveSessionCookieDomain(host),
   }
+}
+
+// Deleting a domain-scoped cookie requires the same domain attribute, so the
+// clear paths must pass these options rather than the bare cookie name.
+export function orySessionCookieDeleteOptions(
+  host?: string | null
+): OrySessionCookieDeleteOptions {
+  return {
+    name: E2B_SESSION_COOKIE,
+    path: '/',
+    domain: resolveSessionCookieDomain(host),
+  }
+}
+
+// Scope the cookie to the parent domain (e.g. `.e2b-staging.dev`) so it is
+// shared across every subdomain of the deployment environment instead of being
+// pinned to the exact host. Hosts that don't belong to NEXT_PUBLIC_E2B_DOMAIN
+// (localhost, Vercel preview URLs) get a host-only cookie — a `.dev` domain
+// attribute there would be rejected by the browser.
+export function resolveSessionCookieDomain(
+  host: string | null | undefined
+): string | undefined {
+  const base = process.env.NEXT_PUBLIC_E2B_DOMAIN
+  if (!base || !host) return undefined
+
+  const hostname = host.split(':')[0] ?? host
+  if (hostname === base || hostname.endsWith(`.${base}`)) {
+    return `.${base}`
+  }
+
+  return undefined
 }
 
 function parseTokens(

@@ -23,6 +23,7 @@ vi.mock('@/core/server/auth/ory/session-cookie', () => ({
   openOrySession: openOrySessionMock,
   sealOrySession: sealOrySessionMock,
   orySessionCookieOptions: () => ({ httpOnly: true, path: '/' }),
+  orySessionCookieDeleteOptions: () => ({ name: 'e2b_session', path: '/' }),
 }))
 
 vi.mock('@/core/server/auth/ory/token-refresh', () => ({
