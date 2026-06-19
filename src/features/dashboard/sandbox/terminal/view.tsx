@@ -1,6 +1,6 @@
 'use client'
 
-import { type ReactNode, useState } from 'react'
+import { type ReactNode, useMemo, useState } from 'react'
 import type { SandboxManagementAuth } from '@/core/shared/sandbox-management-auth'
 import LoadingLayout from '@/features/dashboard/loading-layout'
 import DashboardTerminal from '@/features/dashboard/terminal/dashboard-terminal'
@@ -10,12 +10,14 @@ import { useSandboxContext } from '../context'
 import SandboxInspectNotFound from '../inspect/not-found'
 
 interface SandboxTerminalViewProps {
+  command?: string
   sandboxManagementAuth: SandboxManagementAuth
 }
 
 const SANDBOX_TERMINAL_RESUME_TIMEOUT_MS = 70_000
 
 export default function SandboxTerminalView({
+  command,
   sandboxManagementAuth,
 }: SandboxTerminalViewProps) {
   const [shouldResumeSandbox, setShouldResumeSandbox] = useState(false)
@@ -29,11 +31,15 @@ export default function SandboxTerminalView({
     isSandboxNotFound,
     refetchSandboxInfo,
   } = useSandboxContext()
-  const sandboxTemplateId = sandboxInfo?.templateID
-  const launchTarget = {
-    sandboxId,
-    template: sandboxTemplateId,
-  }
+  const sandboxTemplate = sandboxInfo?.alias ?? sandboxInfo?.templateID
+  const launchTarget = useMemo(
+    () => ({
+      command,
+      sandboxId,
+      template: sandboxTemplate,
+    }),
+    [command, sandboxId, sandboxTemplate]
+  )
 
   const finishSandboxResume = async () => {
     const nextSandboxInfo = await refetchSandboxInfo()

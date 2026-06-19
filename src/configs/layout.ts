@@ -122,6 +122,10 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
     title: 'Terminal',
     type: 'custom',
   }),
+  '/dashboard/*/agents': () => ({
+    title: 'Agents',
+    type: 'default',
+  }),
 
   // billing
   '/dashboard/*/usage': () => ({
