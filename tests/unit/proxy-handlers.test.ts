@@ -92,17 +92,4 @@ describe('proxy handlers', () => {
       expect(location).toContain(`returnTo=${encodeURIComponent(path)}`)
     }
   })
-
-  it('rewrites authenticated legacy terminal paths through the dashboard resolver', async () => {
-    const response = await handleAuthGate(
-      request('/dashboard/terminal?template=base&command=ls'),
-      true
-    )
-
-    const rewrite = response.headers.get('x-middleware-rewrite')
-    expect(rewrite).toContain('/dashboard?')
-    expect(rewrite).toContain('template=base')
-    expect(rewrite).toContain('command=ls')
-    expect(rewrite).toContain('__terminal=1')
-  })
 })

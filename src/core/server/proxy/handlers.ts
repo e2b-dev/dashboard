@@ -7,13 +7,6 @@ import { getMiddlewareRedirectFromPath } from '@/lib/utils/redirects'
 import { getRewriteForPath } from '@/lib/utils/rewrites'
 import { isProxyAuthRoute, isProxyDashboardRoute } from './classifier'
 
-const LEGACY_DASHBOARD_TERMINAL_PATH = '/dashboard/terminal'
-const TERMINAL_REDIRECT_PARAM = '__terminal'
-
-function isLegacyDashboardTerminalRoute(pathname: string): boolean {
-  return pathname.replace(/\/+$/, '') === LEGACY_DASHBOARD_TERMINAL_PATH
-}
-
 export function getAuthRedirect(
   request: NextRequest,
   isAuthenticated: boolean
@@ -33,26 +26,6 @@ export function getAuthRedirect(
   }
 
   return null
-}
-
-export function handleLegacyDashboardTerminalRewrite(
-  request: NextRequest,
-  isAuthenticated: boolean
-): NextResponse | null {
-  if (
-    !isAuthenticated ||
-    !isLegacyDashboardTerminalRoute(request.nextUrl.pathname)
-  ) {
-    return null
-  }
-
-  const rewriteUrl = new URL(PROTECTED_URLS.DASHBOARD, request.url)
-  request.nextUrl.searchParams.forEach((value, key) => {
-    rewriteUrl.searchParams.append(key, value)
-  })
-  rewriteUrl.searchParams.set(TERMINAL_REDIRECT_PARAM, '1')
-
-  return NextResponse.rewrite(rewriteUrl)
 }
 
 export function handleMiddlewareRedirect(
@@ -111,9 +84,5 @@ export function handleAuthGate(
   isAuthenticated: boolean
 ): Response {
   const response = NextResponse.next({ request })
-  return (
-    getAuthRedirect(request, isAuthenticated) ??
-    handleLegacyDashboardTerminalRewrite(request, isAuthenticated) ??
-    response
-  )
+  return getAuthRedirect(request, isAuthenticated) ?? response
 }
