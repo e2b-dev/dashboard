@@ -18,7 +18,7 @@ export const PROTECTED_URLS = {
   GENERAL: (teamSlug: string) => `/dashboard/${teamSlug}/general`,
   KEYS: (teamSlug: string) => `/dashboard/${teamSlug}/keys`,
   MEMBERS: (teamSlug: string) => `/dashboard/${teamSlug}/members`,
-  TEAM_TERMINAL: (teamSlug: string) => `/dashboard/${teamSlug}/terminal`,
+  TERMINAL: (teamSlug: string) => `/dashboard/${teamSlug}/terminal`,
 
   SANDBOXES: (teamSlug: string) =>
     `/dashboard/${teamSlug}/sandboxes/monitoring`,

@@ -48,7 +48,7 @@ export default async function TerminalPage({
   }
 
   redirect(
-    `${PROTECTED_URLS.TEAM_TERMINAL(team.slug)}${
+    `${PROTECTED_URLS.TERMINAL(team.slug)}${
       queryString ? `?${queryString}` : ''
     }`
   )

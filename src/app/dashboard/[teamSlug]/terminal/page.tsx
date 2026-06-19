@@ -228,7 +228,7 @@ function TerminalSignIn({
     ...(sandboxId ? { sandboxId } : {}),
     template,
   }).toString()
-  const returnTo = `${PROTECTED_URLS.TEAM_TERMINAL(teamSlug)}${
+  const returnTo = `${PROTECTED_URLS.TERMINAL(teamSlug)}${
     returnToQuery ? `?${returnToQuery}` : ''
   }`
   const signInHref = `${AUTH_URLS.SIGN_IN}?${new URLSearchParams({
