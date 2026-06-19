@@ -34,10 +34,10 @@ export default async function TerminalPage({
   searchParams,
 }: TerminalPageProps) {
   const { command = '', sandboxId, template } = await searchParams
-  const terminalTemplate = normalizeTerminalTemplate(template)
   const terminalSandboxId = normalizeTerminalSandboxId(sandboxId)
+  const requestedTemplate = normalizeTerminalTemplate(template)
 
-  if (!terminalTemplate) {
+  if (!terminalSandboxId && !requestedTemplate) {
     return <TerminalUnavailable message="The terminal template is invalid." />
   }
 
@@ -51,7 +51,7 @@ export default async function TerminalPage({
     return (
       <TerminalSignIn
         sandboxId={terminalSandboxId}
-        template={terminalTemplate}
+        template={requestedTemplate ?? 'base'}
       />
     )
   }
@@ -69,14 +69,18 @@ export default async function TerminalPage({
     authContext.user.id,
     authContext.accessToken
   )
-  const team = terminalSandboxId
-    ? await resolveTerminalSandboxTeam({
+  const terminalSandbox = terminalSandboxId
+    ? await resolveTerminalSandbox({
         accessToken: authContext.accessToken,
         preferredTeamId: resolvedTeam?.id,
         sandboxId: terminalSandboxId,
         teams: teamsResult.data,
       })
+    : null
+  const team = terminalSandbox
+    ? terminalSandbox.team
     : teamsResult.data.find((candidate) => candidate.id === resolvedTeam?.id)
+  const terminalTemplate = terminalSandbox?.template ?? requestedTemplate
 
   if (!team) {
     return (
@@ -95,7 +99,7 @@ export default async function TerminalPage({
     : await isTerminalTemplateAvailable({
         accessToken: authContext.accessToken,
         teamId: team.id,
-        template: terminalTemplate,
+        template: terminalTemplate ?? 'base',
       })
 
   if (!templateAvailable.ok) {
@@ -119,7 +123,7 @@ export default async function TerminalPage({
         launchTarget={{
           command,
           sandboxId: terminalSandboxId,
-          template: terminalTemplate,
+          template: terminalTemplate ?? 'base',
         }}
         sandboxManagementAuth={createSandboxManagementAuth(
           authContext,
@@ -139,7 +143,7 @@ function normalizeTerminalSandboxId(sandboxId?: string) {
   return parsedSandboxId.success ? parsedSandboxId.data : null
 }
 
-async function resolveTerminalSandboxTeam({
+async function resolveTerminalSandbox({
   accessToken,
   preferredTeamId,
   sandboxId,
@@ -152,34 +156,54 @@ async function resolveTerminalSandboxTeam({
 }) {
   if (preferredTeamId) {
     const preferredTeam = teams.find((team) => team.id === preferredTeamId)
-    if (
-      preferredTeam &&
-      (await hasSandboxInTeam({
+    if (preferredTeam) {
+      const preferredSandbox = await getSandboxInTeam({
         accessToken,
         sandboxId,
         teamId: preferredTeam.id,
-      }))
-    ) {
-      return preferredTeam
+      })
+
+      if (preferredSandbox) {
+        return {
+          team: preferredTeam,
+          template: getSandboxTemplate(preferredSandbox),
+        }
+      }
     }
   }
 
   const candidateTeams = teams.filter((team) => team.id !== preferredTeamId)
   const teamMatches = await Promise.all(
     candidateTeams.map(async (team) => ({
-      team,
-      ownsSandbox: await hasSandboxInTeam({
+      sandbox: await getSandboxInTeam({
         accessToken,
         sandboxId,
         teamId: team.id,
       }),
+      team,
     }))
   )
 
-  return teamMatches.find((match) => match.ownsSandbox)?.team ?? null
+  const match = teamMatches.find(({ sandbox }) => sandbox)
+
+  return match?.sandbox
+    ? {
+        team: match.team,
+        template: getSandboxTemplate(match.sandbox),
+      }
+    : null
 }
 
-async function hasSandboxInTeam({
+type TerminalSandbox = {
+  alias?: string
+  templateID: string
+}
+
+function getSandboxTemplate(sandbox: TerminalSandbox) {
+  return sandbox.alias ?? sandbox.templateID
+}
+
+async function getSandboxInTeam({
   accessToken,
   sandboxId,
   teamId,
@@ -201,9 +225,9 @@ async function hasSandboxInTeam({
       cache: 'no-store',
     })
 
-    return result.response.ok && Boolean(result.data)
+    return result.response.ok && result.data ? result.data : null
   } catch {
-    return false
+    return null
   }
 }
 
