@@ -12,7 +12,6 @@ import SandboxInspectNotFound from '../inspect/not-found'
 interface SandboxTerminalViewProps {
   command?: string
   sandboxManagementAuth: SandboxManagementAuth
-  template?: string
 }
 
 const SANDBOX_TERMINAL_RESUME_TIMEOUT_MS = 70_000
@@ -20,7 +19,6 @@ const SANDBOX_TERMINAL_RESUME_TIMEOUT_MS = 70_000
 export default function SandboxTerminalView({
   command,
   sandboxManagementAuth,
-  template,
 }: SandboxTerminalViewProps) {
   const [shouldResumeSandbox, setShouldResumeSandbox] = useState(false)
   const [terminalResumeError, setTerminalResumeError] = useState<string>()
@@ -33,14 +31,14 @@ export default function SandboxTerminalView({
     isSandboxNotFound,
     refetchSandboxInfo,
   } = useSandboxContext()
-  const sandboxTemplateId = sandboxInfo?.templateID
+  const sandboxTemplate = sandboxInfo?.alias ?? sandboxInfo?.templateID
   const launchTarget = useMemo(
     () => ({
       command,
       sandboxId,
-      template: template ?? sandboxTemplateId,
+      template: sandboxTemplate,
     }),
-    [command, sandboxId, sandboxTemplateId, template]
+    [command, sandboxId, sandboxTemplate]
   )
 
   const finishSandboxResume = async () => {
