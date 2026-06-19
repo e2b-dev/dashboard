@@ -9,6 +9,7 @@ import {
 } from '@/core/modules/templates/repository.server'
 import { getAuthContext } from '@/core/server/auth'
 import { infra } from '@/core/shared/clients/api'
+import type { components as InfraComponents } from '@/core/shared/contracts/infra-api.types'
 import { createSandboxManagementAuth } from '@/core/shared/sandbox-management-auth.server'
 import { SandboxIdSchema } from '@/core/shared/schemas/api'
 import DashboardTerminal from '@/features/dashboard/terminal/dashboard-terminal'
@@ -37,10 +38,10 @@ export default async function TeamTerminalPage({
 }: TeamTerminalPageProps) {
   const [{ teamSlug }, { command = '', sandboxId, template }] =
     await Promise.all([params, searchParams])
-  const terminalTemplate = normalizeTerminalTemplate(template)
+  const requestedTemplate = normalizeTerminalTemplate(template)
   const terminalSandboxId = normalizeTerminalSandboxId(sandboxId)
 
-  if (!terminalTemplate) {
+  if (!terminalSandboxId && !requestedTemplate) {
     return <TerminalUnavailable message="The terminal template is invalid." />
   }
 
@@ -56,7 +57,9 @@ export default async function TeamTerminalPage({
         command={command}
         sandboxId={terminalSandboxId}
         teamSlug={teamSlug}
-        template={terminalTemplate}
+        template={
+          terminalSandboxId ? template : (requestedTemplate ?? undefined)
+        }
       />
     )
   }
@@ -76,17 +79,26 @@ export default async function TeamTerminalPage({
     return <TerminalUnavailable />
   }
 
-  if (
-    terminalSandboxId &&
-    !(await hasSandboxInTeam({
-      accessToken: authContext.accessToken,
-      sandboxId: terminalSandboxId,
-      teamId: team.id,
-    }))
-  ) {
+  const terminalSandbox = terminalSandboxId
+    ? await getSandboxInTeam({
+        accessToken: authContext.accessToken,
+        sandboxId: terminalSandboxId,
+        teamId: team.id,
+      })
+    : undefined
+
+  if (terminalSandboxId && !terminalSandbox) {
     return (
       <TerminalUnavailable message="Sandbox not found or you do not have access to it." />
     )
+  }
+
+  const terminalTemplate = terminalSandbox
+    ? (terminalSandbox.alias ?? terminalSandbox.templateID)
+    : requestedTemplate
+
+  if (!terminalTemplate) {
+    return <TerminalUnavailable message="The terminal template is invalid." />
   }
 
   const templateAvailable = terminalSandboxId
@@ -138,7 +150,7 @@ function normalizeTerminalSandboxId(sandboxId?: string) {
   return parsedSandboxId.success ? parsedSandboxId.data : null
 }
 
-async function hasSandboxInTeam({
+async function getSandboxInTeam({
   accessToken,
   sandboxId,
   teamId,
@@ -146,7 +158,7 @@ async function hasSandboxInTeam({
   accessToken: string
   sandboxId: string
   teamId: string
-}) {
+}): Promise<InfraComponents['schemas']['SandboxDetail'] | null> {
   try {
     const result = await infra.GET('/sandboxes/{sandboxID}', {
       params: {
@@ -160,9 +172,10 @@ async function hasSandboxInTeam({
       cache: 'no-store',
     })
 
-    return result.response.ok && Boolean(result.data)
+    if (!result.response.ok || !result.data) return null
+    return result.data
   } catch {
-    return false
+    return null
   }
 }
 
@@ -221,12 +234,12 @@ function TerminalSignIn({
   command?: string
   sandboxId?: string
   teamSlug: string
-  template: string
+  template?: string
 }) {
   const returnToQuery = new URLSearchParams({
     ...(command ? { command } : {}),
     ...(sandboxId ? { sandboxId } : {}),
-    template,
+    ...(template ? { template } : {}),
   }).toString()
   const returnTo = `${PROTECTED_URLS.TERMINAL(teamSlug)}${
     returnToQuery ? `?${returnToQuery}` : ''
