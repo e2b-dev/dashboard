@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation'
+import { type NextRequest, NextResponse } from 'next/server'
 import { authHeaders } from '@/configs/api'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import type { ResolvedTeam, TeamModel } from '@/core/modules/teams/models'
@@ -8,26 +8,22 @@ import { resolveUserTeam } from '@/core/server/functions/team/resolve-user-team'
 import { infra } from '@/core/shared/clients/api'
 import { SandboxIdSchema } from '@/core/shared/schemas/api'
 
-interface TerminalPageProps {
-  searchParams: Promise<{
-    command?: string
-    sandboxId?: string
-    template?: string
-  }>
-}
-
-export default async function TerminalPage({
-  searchParams,
-}: TerminalPageProps) {
-  const { command, sandboxId, template } = await searchParams
+export async function GET(request: NextRequest) {
+  const { command, sandboxId, template } = Object.fromEntries(
+    request.nextUrl.searchParams
+  )
   const queryString = buildTerminalQueryString({ command, sandboxId, template })
 
   const authContext = await getAuthContext()
 
   if (!authContext) {
-    const returnTo = `/dashboard/terminal${queryString ? `?${queryString}` : ''}`
-    redirect(
-      `${AUTH_URLS.SIGN_IN}?${new URLSearchParams({ returnTo }).toString()}`
+    return NextResponse.redirect(
+      new URL(
+        `${AUTH_URLS.SIGN_IN}?${new URLSearchParams({
+          returnTo: `${request.nextUrl.pathname}${request.nextUrl.search}`,
+        }).toString()}`,
+        request.url
+      )
     )
   }
 
@@ -44,14 +40,14 @@ export default async function TerminalPage({
     : resolvedTeam
 
   if (!team) {
-    redirect(PROTECTED_URLS.DASHBOARD)
+    return NextResponse.redirect(new URL(PROTECTED_URLS.DASHBOARD, request.url))
   }
 
-  redirect(
-    `${PROTECTED_URLS.TERMINAL(team.slug)}${
-      queryString ? `?${queryString}` : ''
-    }`
-  )
+  const terminalUrl = `${PROTECTED_URLS.TERMINAL(team.slug)}${
+    queryString ? `?${queryString}` : ''
+  }`
+
+  return NextResponse.redirect(new URL(terminalUrl, request.url))
 }
 
 function buildTerminalQueryString({

@@ -7,27 +7,16 @@ import { getMiddlewareRedirectFromPath } from '@/lib/utils/redirects'
 import { getRewriteForPath } from '@/lib/utils/rewrites'
 import { isProxyAuthRoute, isProxyDashboardRoute } from './classifier'
 
-function isDashboardTerminalRoute(pathname: string): boolean {
-  const normalizedPathname = pathname.replace(/\/+$/, '')
-  return (
-    normalizedPathname === '/dashboard/terminal' ||
-    /^\/dashboard\/[^/]+\/terminal$/.test(normalizedPathname)
-  )
-}
-
 export function getAuthRedirect(
   request: NextRequest,
   isAuthenticated: boolean
 ): NextResponse | null {
   if (isProxyDashboardRoute(request.nextUrl.pathname) && !isAuthenticated) {
     const signInUrl = new URL(AUTH_URLS.SIGN_IN, request.url)
-
-    if (isDashboardTerminalRoute(request.nextUrl.pathname)) {
-      signInUrl.searchParams.set(
-        'returnTo',
-        `${request.nextUrl.pathname}${request.nextUrl.search}`
-      )
-    }
+    signInUrl.searchParams.set(
+      'returnTo',
+      `${request.nextUrl.pathname}${request.nextUrl.search}`
+    )
 
     return NextResponse.redirect(signInUrl)
   }
