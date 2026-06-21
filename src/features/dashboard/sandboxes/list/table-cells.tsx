@@ -170,7 +170,7 @@ export function StartedAtCell({
   const dateValue = (getValue() as string | undefined) ?? ''
 
   const formattedTimestamp = useMemo(() => {
-    return formatLocalLogStyleTimestamp(dateValue)
+    return formatLocalLogStyleTimestamp(dateValue, { includeTimezone: true })
   }, [dateValue])
 
   return (

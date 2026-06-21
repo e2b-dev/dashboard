@@ -322,6 +322,7 @@ export function CreatedAtCell({
     return formatLocalLogStyleTimestamp(dateValue, {
       includeSeconds: false,
       includeYear: true,
+      includeTimezone: true,
     })
   }, [dateValue])
 
@@ -351,6 +352,7 @@ export function UpdatedAtCell({
     return formatLocalLogStyleTimestamp(dateValue, {
       includeSeconds: false,
       includeYear: true,
+      includeTimezone: true,
     })
   }, [dateValue])
 

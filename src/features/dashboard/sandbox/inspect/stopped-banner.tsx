@@ -64,7 +64,7 @@ export function StoppedBanner({ rootNodeCount }: StoppedBannerProps) {
                 : 'Filesystem data is stale and is kept locally on your device.'}
               <span className="text-fg-tertiary">
                 {' '}
-                Last updated: {lastUpdated?.toLocaleTimeString()}
+                Last updated: {lastUpdated?.toLocaleTimeString('en-US')}
               </span>
             </CardDescription>
           </CardHeader>
