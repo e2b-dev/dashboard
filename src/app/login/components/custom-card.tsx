@@ -27,9 +27,13 @@ export function OryCardFooter() {
     return (
       <p className="text-fg-secondary mt-6">
         Don't have an account?{' '}
-        <a href={AUTH_URLS.SIGN_UP} className="text-fg underline">
+        <Link
+          prefetch={false}
+          href={AUTH_URLS.SIGN_UP}
+          className="text-fg underline"
+        >
           Sign up
-        </a>
+        </Link>
         .
       </p>
     )
@@ -41,9 +45,13 @@ export function OryCardFooter() {
     return (
       <p className="text-fg-secondary mt-6">
         Remember your password?{' '}
-        <a href={AUTH_URLS.SIGN_IN} className="text-fg underline">
+        <Link
+          prefetch={false}
+          href={AUTH_URLS.SIGN_IN}
+          className="text-fg underline"
+        >
           Sign in
-        </a>
+        </Link>
         .
       </p>
     )
@@ -57,9 +65,13 @@ export function OryCardFooter() {
     <div className="text-fg-secondary mt-6 flex flex-col gap-4">
       <p>
         Already have an account?{' '}
-        <a href={AUTH_URLS.SIGN_IN} className="text-fg underline">
+        <Link
+          prefetch={false}
+          href={AUTH_URLS.SIGN_IN}
+          className="text-fg underline"
+        >
           Sign in
-        </a>
+        </Link>
         .
       </p>
       <p className="text-fg-tertiary">
