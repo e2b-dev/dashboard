@@ -6,6 +6,7 @@ import {
   getOryIdentityApi,
   getOryOAuth2Api,
 } from '@/core/server/auth/ory/client'
+import type { OryIdentityTraits } from '@/core/server/auth/ory/identity'
 import { ORY_POST_LOGOUT_PATH } from '@/core/server/auth/ory/signout'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 
@@ -74,10 +75,7 @@ async function profileClaimsForSubject(
     return {}
   }
 
-  const traits = (identity.traits ?? {}) as {
-    email?: string
-    name?: string | { first?: string; last?: string }
-  }
+  const traits = (identity.traits ?? {}) as Partial<OryIdentityTraits>
   const claims: Record<string, unknown> = {}
 
   if (grantScope.includes('email') && traits.email) {
@@ -85,18 +83,9 @@ async function profileClaimsForSubject(
   }
 
   if (grantScope.includes('profile')) {
-    const name = fullName(traits.name)
+    const name = traits.name?.trim()
     if (name) claims.name = name
   }
 
   return claims
-}
-
-function fullName(
-  name: string | { first?: string; last?: string } | undefined
-): string | null {
-  if (!name) return null
-  if (typeof name === 'string') return name.trim() || null
-  const joined = [name.first, name.last].filter(Boolean).join(' ').trim()
-  return joined || null
 }

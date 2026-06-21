@@ -1,10 +1,55 @@
 import 'server-only'
 
 import type { Identity } from '@ory/client-fetch'
+import { z } from 'zod'
+import { l } from '@/core/shared/clients/logger/logger'
 import type { AuthUser } from '../types'
 
 type FromOryIdentityOptions = {
   userId?: string
+}
+
+export const oryIdentityTraitsSchema = z
+  .object({
+    email: z.email().max(320),
+    name: z.string().max(320).optional(),
+  })
+  .strict()
+
+export type OryIdentityTraits = z.infer<typeof oryIdentityTraitsSchema>
+
+type TraitSource = 'kratos_session' | 'admin_identity'
+
+function parseOryTraits(
+  raw: unknown,
+  ctx: { identityId: string; source: TraitSource }
+): Record<string, unknown> {
+  const traits = (raw ?? {}) as Record<string, unknown>
+  const result = oryIdentityTraitsSchema.safeParse(traits)
+
+  if (!result.success) {
+    l.error(
+      {
+        key: 'auth_events:identity_traits:schema_drift',
+        context: {
+          identity_id: ctx.identityId,
+          source: ctx.source,
+          issues: result.error.issues.map((issue) => ({
+            path: issue.path.join('.'),
+            code: issue.code,
+          })),
+        },
+      },
+      'Ory identity traits failed schema validation (possible schema drift)'
+    )
+  }
+
+  return traits
+}
+
+function readPublicPicture(metadataPublic: unknown): string | null {
+  const meta = (metadataPublic ?? {}) as Record<string, unknown>
+  return readString(meta, 'picture')
 }
 
 // Build the user from a live Kratos session identity (whoami) — the source of
@@ -14,14 +59,17 @@ type FromOryIdentityOptions = {
 export function fromKratosSessionIdentity(identity: {
   id: string
   traits?: unknown
+  metadata_public?: unknown
 }): AuthUser {
-  const traits = (identity.traits ?? {}) as Record<string, unknown>
+  const traits = parseOryTraits(identity.traits, {
+    identityId: identity.id,
+    source: 'kratos_session',
+  })
   return {
     id: identity.id,
     email: readString(traits, 'email'),
-    name: readDisplayName(traits),
-    avatarUrl:
-      readString(traits, 'picture') ?? readString(traits, 'avatar_url'),
+    name: readString(traits, 'name'),
+    avatarUrl: readPublicPicture(identity.metadata_public),
     providers: [],
     canChangeEmail: false,
     canChangePassword: false,
@@ -35,11 +83,13 @@ export function fromOryIdentity(
   identity: Identity,
   options: FromOryIdentityOptions = {}
 ): AuthUser {
-  const traits = (identity.traits ?? {}) as Record<string, unknown>
+  const traits = parseOryTraits(identity.traits, {
+    identityId: identity.id,
+    source: 'admin_identity',
+  })
   const email = readString(traits, 'email')
-  const name = readDisplayName(traits)
-  const avatarUrl =
-    readString(traits, 'picture') ?? readString(traits, 'avatar_url')
+  const name = readString(traits, 'name')
+  const avatarUrl = readPublicPicture(identity.metadata_public)
   const providers = normalizeProviders(identity.credentials)
   const hasPasswordCredential = hasUsablePasswordCredential(
     identity.credentials?.password
@@ -104,21 +154,4 @@ function readString(
 ): string | null {
   const value = traits[key]
   return typeof value === 'string' && value.length > 0 ? value : null
-}
-
-function readDisplayName(traits: Record<string, unknown>): string | null {
-  // ory's default schema nests name as { first, last } or stores it flat
-  const flat = readString(traits, 'name')
-  if (flat) return flat
-
-  const nested = traits.name
-  if (nested && typeof nested === 'object') {
-    const obj = nested as Record<string, unknown>
-    const first = readString(obj, 'first')
-    const last = readString(obj, 'last')
-    const composite = [first, last].filter(Boolean).join(' ').trim()
-    if (composite) return composite
-  }
-
-  return null
 }
