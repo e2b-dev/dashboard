@@ -1,7 +1,7 @@
 import { flexRender, type Table } from '@tanstack/react-table'
 import Link from 'next/link'
 import posthog from 'posthog-js'
-import type { RefObject } from 'react'
+import { type RefObject, useEffect } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import type { Template } from '@/core/modules/templates/models'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
@@ -18,6 +18,7 @@ import { useTemplateTableStore } from './stores/table-store'
 const ROW_HEIGHT_PX = 32
 const VIRTUAL_OVERSCAN = 8
 const INITIAL_FALLBACK_ROW_COUNT = 100
+const PREFETCH_THRESHOLD = 8
 
 interface TemplatesTableBodyProps {
   templates: Template[] | undefined
@@ -46,6 +47,7 @@ export function TemplatesTableBody({
   const centerRows = table.getCenterRows()
   const {
     virtualRows,
+    virtualizer,
     totalHeight: virtualizedTotalHeight,
     paddingTop: virtualPaddingTop,
   } = useVirtualRows<Template>({
@@ -54,6 +56,26 @@ export function TemplatesTableBody({
     estimateSizePx: ROW_HEIGHT_PX,
     overscan: VIRTUAL_OVERSCAN,
   })
+
+  const lastVisibleIndex = virtualizer.getVirtualItems().at(-1)?.index ?? -1
+
+  useEffect(() => {
+    if (
+      hasNextPage &&
+      !isFetchingNextPage &&
+      !isRefetching &&
+      lastVisibleIndex >= centerRows.length - PREFETCH_THRESHOLD
+    ) {
+      fetchNextPage()
+    }
+  }, [
+    hasNextPage,
+    isFetchingNextPage,
+    isRefetching,
+    lastVisibleIndex,
+    centerRows.length,
+    fetchNextPage,
+  ])
 
   const rows =
     virtualRows.length > 0
