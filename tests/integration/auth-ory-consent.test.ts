@@ -39,7 +39,7 @@ describe('Ory consent provider', () => {
     getIdentityMock.mockReset().mockResolvedValue({
       traits: {
         email: 'local-dev@e2b.dev',
-        name: { first: 'Local', last: 'Dev' },
+        name: 'Local Dev',
       },
     })
     acceptConsentMock
