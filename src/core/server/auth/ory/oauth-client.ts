@@ -1,4 +1,5 @@
 import * as oauth from 'oauth4webapi'
+import { isLoopbackUrl } from '@/core/shared/schemas/url'
 import {
   authorizationParamsForOryIntent,
   type OryAuthIntent,
@@ -33,7 +34,8 @@ type OryOAuthEnv = {
   clientSecret: string
   audience?: string
   // Hydra runs on plain HTTP loopback in local dev; oauth4webapi rejects
-  // non-HTTPS endpoints unless explicitly allowed.
+  // non-HTTPS endpoints unless explicitly allowed. Restricted to loopback so a
+  // non-local HTTP issuer can never silently disable TLS — it fails closed.
   insecure: boolean
 }
 
@@ -55,7 +57,7 @@ export function readOryOAuthEnv(): OryOAuthEnv {
     clientId,
     clientSecret,
     audience: process.env.ORY_OAUTH2_AUDIENCE,
-    insecure: issuer.protocol === 'http:',
+    insecure: issuer.protocol === 'http:' && isLoopbackUrl(issuer.href),
   }
 }
 
