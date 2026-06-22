@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   E2B_OAUTH_FLOW_COOKIE,
-  serializeOryFlowState,
+  sealOryFlowState,
 } from '@/core/server/auth/ory/oauth-flow'
 import {
   E2B_SESSION_COOKIE,
@@ -35,16 +35,16 @@ const tokens = {
   expiresAt: 1_900_000_000,
 }
 
-function callbackRequest({
+async function callbackRequest({
   withFlow = true,
   returnTo,
 }: {
   withFlow?: boolean
   returnTo?: string
-} = {}): NextRequest {
+} = {}): Promise<NextRequest> {
   const headers: Record<string, string> = {}
   if (withFlow) {
-    const flow = serializeOryFlowState({
+    const flow = await sealOryFlowState({
       state: 'state-value',
       nonce: 'nonce-value',
       codeVerifier: 'verifier-value',
@@ -71,7 +71,9 @@ describe('Ory OAuth callback', () => {
   })
 
   it('seals e2b_session and redirects to returnTo on success', async () => {
-    const response = await GET(callbackRequest({ returnTo: '/dashboard/team' }))
+    const response = await GET(
+      await callbackRequest({ returnTo: '/dashboard/team' })
+    )
 
     expect(response.headers.get('location')).toBe(
       'https://app.e2b.dev/dashboard/team'
@@ -86,7 +88,7 @@ describe('Ory OAuth callback', () => {
   })
 
   it('defaults to the dashboard when no returnTo is present', async () => {
-    const response = await GET(callbackRequest())
+    const response = await GET(await callbackRequest())
 
     expect(response.headers.get('location')).toBe(
       'https://app.e2b.dev/dashboard'
@@ -94,7 +96,7 @@ describe('Ory OAuth callback', () => {
   })
 
   it('routes to recover when the flow-state cookie is missing', async () => {
-    const response = await GET(callbackRequest({ withFlow: false }))
+    const response = await GET(await callbackRequest({ withFlow: false }))
 
     expect(response.headers.get('location')).toBe(
       'https://app.e2b.dev/api/auth/oauth/recover'
@@ -106,7 +108,7 @@ describe('Ory OAuth callback', () => {
   it('routes to recover when the code exchange fails', async () => {
     exchangeMock.mockRejectedValueOnce(new Error('state mismatch'))
 
-    const response = await GET(callbackRequest())
+    const response = await GET(await callbackRequest())
 
     expect(response.headers.get('location')).toBe(
       'https://app.e2b.dev/api/auth/oauth/recover'
@@ -117,7 +119,7 @@ describe('Ory OAuth callback', () => {
   it('RP-logs-out (no dashboard cookie) when bootstrap fails', async () => {
     bootstrapMock.mockResolvedValueOnce(false)
 
-    const response = await GET(callbackRequest())
+    const response = await GET(await callbackRequest())
     const location = response.headers.get('location') ?? ''
 
     expect(location).toContain('https://ory.example.com/oauth2/sessions/logout')
