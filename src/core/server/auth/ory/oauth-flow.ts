@@ -1,8 +1,12 @@
 // Transient state bridging the authorization request (start route) and the
 // callback: the PKCE code_verifier plus the state/nonce the callback validates,
-// and the post-login destination. Lives in a short-lived httpOnly cookie. Its
-// secrecy is not the security boundary — state/nonce/PKCE validation at the
-// callback is — so it is stored as plain JSON, not encrypted.
+// and the post-login destination. Lives in a short-lived httpOnly cookie, sealed
+// as a JWE via the shared cookie crypto. Its secrecy is not the security
+// boundary — state/nonce/PKCE validation at the callback is — encryption only
+// adds tamper-resistance and keeps one sealing convention with e2b_session.
+
+import { EncryptJWT, jwtDecrypt } from 'jose'
+import { CONTENT_ENCRYPTION, deriveKey, KEY_ALGORITHM } from './cookie-crypto'
 
 export const E2B_OAUTH_FLOW_COOKIE = 'e2b_oauth_flow'
 
@@ -27,34 +31,39 @@ export type OryFlowCookieOptions = {
   maxAge: number
 }
 
-// base64url so the JSON survives as a cookie value — Next's cookie helpers do
-// not encode/decode, and raw JSON contains characters illegal in cookie values.
-export function serializeOryFlowState(flow: OryFlowState): string {
-  return Buffer.from(JSON.stringify(flow), 'utf8').toString('base64url')
+export async function sealOryFlowState(flow: OryFlowState): Promise<string> {
+  return new EncryptJWT({
+    state: flow.state,
+    nonce: flow.nonce,
+    codeVerifier: flow.codeVerifier,
+    returnTo: flow.returnTo,
+  })
+    .setProtectedHeader({ alg: KEY_ALGORITHM, enc: CONTENT_ENCRYPTION })
+    .setIssuedAt()
+    .encrypt(await deriveKey())
 }
 
-export function parseOryFlowState(
+export async function openOryFlowState(
   value: string | undefined | null
-): OryFlowState | null {
+): Promise<OryFlowState | null> {
   if (!value) return null
 
   try {
-    const json = Buffer.from(value, 'base64url').toString('utf8')
-    const parsed = JSON.parse(json) as Partial<OryFlowState>
+    const { payload } = await jwtDecrypt(value, await deriveKey())
+    const { state, nonce, codeVerifier, returnTo } = payload
     if (
-      typeof parsed.state !== 'string' ||
-      typeof parsed.nonce !== 'string' ||
-      typeof parsed.codeVerifier !== 'string'
+      typeof state !== 'string' ||
+      typeof nonce !== 'string' ||
+      typeof codeVerifier !== 'string'
     ) {
       return null
     }
 
     return {
-      state: parsed.state,
-      nonce: parsed.nonce,
-      codeVerifier: parsed.codeVerifier,
-      returnTo:
-        typeof parsed.returnTo === 'string' ? parsed.returnTo : undefined,
+      state,
+      nonce,
+      codeVerifier,
+      returnTo: typeof returnTo === 'string' ? returnTo : undefined,
     }
   } catch {
     return null

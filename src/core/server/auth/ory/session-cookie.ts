@@ -1,4 +1,5 @@
 import { EncryptJWT, jwtDecrypt } from 'jose'
+import { CONTENT_ENCRYPTION, deriveKey, KEY_ALGORITHM } from './cookie-crypto'
 
 // The single encrypted cookie that carries the Hydra OIDC tokens for API
 // access. Kratos owns the session; this cookie is never the auth gate — it is
@@ -11,9 +12,6 @@ export const E2B_SESSION_COOKIE = 'e2b_session'
 // expired cookie is re-minted from the live Kratos session, so the lifetime is
 // intentionally generous and not the security boundary.
 const SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30
-
-const KEY_ALGORITHM = 'dir'
-const CONTENT_ENCRYPTION = 'A256GCM'
 
 export type OrySessionTokens = {
   accessToken: string
@@ -36,26 +34,6 @@ export type OrySessionCookieDeleteOptions = {
   name: typeof E2B_SESSION_COOKIE
   path: '/'
   domain?: string
-}
-
-// Cache the derived key per secret value so rotating E2B_SESSION_SECRET (and
-// test env stubbing) takes effect without a stale key lingering.
-let cached: { secret: string; key: Promise<Uint8Array> } | null = null
-
-function deriveKey(): Promise<Uint8Array> {
-  const secret = process.env.E2B_SESSION_SECRET
-  if (!secret) {
-    return Promise.reject(new Error('E2B_SESSION_SECRET is not configured'))
-  }
-
-  if (cached?.secret === secret) return cached.key
-
-  const key = crypto.subtle
-    .digest('SHA-256', new TextEncoder().encode(secret))
-    .then((digest) => new Uint8Array(digest))
-
-  cached = { secret, key }
-  return key
 }
 
 export async function sealOrySession(

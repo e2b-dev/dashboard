@@ -7,7 +7,7 @@ import { exchangeOryCallback } from '@/core/server/auth/ory/oauth-client'
 import {
   E2B_OAUTH_FLOW_COOKIE,
   OAUTH_CALLBACK_PATH,
-  parseOryFlowState,
+  openOryFlowState,
 } from '@/core/server/auth/ory/oauth-flow'
 import {
   E2B_SESSION_COOKIE,
@@ -32,7 +32,7 @@ const ORY_RECOVER_PATH = '/api/auth/oauth/recover'
 // session at this point — this cookie only carries tokens for API access.
 export async function GET(request: NextRequest) {
   const origin = request.nextUrl.origin
-  const flow = parseOryFlowState(
+  const flow = await openOryFlowState(
     request.cookies.get(E2B_OAUTH_FLOW_COOKIE)?.value
   )
 

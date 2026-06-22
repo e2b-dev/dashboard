@@ -10,7 +10,7 @@ import {
   E2B_OAUTH_FLOW_COOKIE,
   OAUTH_CALLBACK_PATH,
   oryFlowCookieOptions,
-  serializeOryFlowState,
+  sealOryFlowState,
 } from '@/core/server/auth/ory/oauth-flow'
 import {
   encodeOrySignupMetadata,
@@ -50,16 +50,30 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL(AUTH_URLS.SIGN_IN, origin))
   }
 
-  const response = NextResponse.redirect(authorization.url)
-
-  response.cookies.set(
-    E2B_OAUTH_FLOW_COOKIE,
-    serializeOryFlowState({
+  let sealedFlow: string
+  try {
+    sealedFlow = await sealOryFlowState({
       state: authorization.state,
       nonce: authorization.nonce,
       codeVerifier: authorization.codeVerifier,
       returnTo,
-    }),
+    })
+  } catch (error) {
+    l.error(
+      {
+        key: 'oauth_start:seal_flow_failed',
+        error: serializeErrorForLog(error),
+      },
+      'failed to seal the Ory flow-state cookie'
+    )
+    return NextResponse.redirect(new URL(AUTH_URLS.SIGN_IN, origin))
+  }
+
+  const response = NextResponse.redirect(authorization.url)
+
+  response.cookies.set(
+    E2B_OAUTH_FLOW_COOKIE,
+    sealedFlow,
     oryFlowCookieOptions()
   )
 
