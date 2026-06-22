@@ -7,6 +7,7 @@ const updateIdentityMock = vi.hoisted(() => vi.fn())
 const patchIdentityMock = vi.hoisted(() => vi.fn())
 const revokeOAuthSessionsMock = vi.hoisted(() => vi.fn())
 const revokeKratosSessionsMock = vi.hoisted(() => vi.fn())
+const revokeKratosSessionMock = vi.hoisted(() => vi.fn())
 const openOrySessionMock = vi.hoisted(() => vi.fn())
 const cookieDeleteMock = vi.hoisted(() => vi.fn())
 
@@ -50,6 +51,7 @@ vi.mock('@/core/server/auth/ory/oauth-session', () => ({
 
 vi.mock('@/core/server/auth/ory/kratos-session', () => ({
   revokeKratosSessionsForIdentity: revokeKratosSessionsMock,
+  revokeKratosSession: revokeKratosSessionMock,
 }))
 
 vi.mock('@/core/shared/clients/logger/logger', () => ({
@@ -73,11 +75,14 @@ const currentIdentity = {
 function kratosSession({
   authenticatedAt = new Date(),
   identityId = 'kratos-uuid',
+  sessionId = 'kratos-session-id',
 }: {
   authenticatedAt?: Date
   identityId?: string
+  sessionId?: string
 } = {}) {
   return {
+    id: sessionId,
     active: true,
     authenticated_at: authenticatedAt,
     identity: {
@@ -96,6 +101,7 @@ describe('Ory account security (Kratos session + e2b_session)', () => {
     patchIdentityMock.mockReset().mockResolvedValue(undefined)
     revokeOAuthSessionsMock.mockReset().mockResolvedValue(undefined)
     revokeKratosSessionsMock.mockReset().mockResolvedValue(undefined)
+    revokeKratosSessionMock.mockReset().mockResolvedValue(undefined)
     openOrySessionMock.mockReset().mockResolvedValue({
       accessToken: 'hydra-access-token',
       idToken: 'hydra-id-token',
@@ -179,7 +185,9 @@ describe('Ory account security (Kratos session + e2b_session)', () => {
     })
   })
 
-  it('signs out via Hydra RP-logout using the id_token hint', async () => {
+  it('signs out via Hydra RP-logout and revokes only the current Kratos session', async () => {
+    getServerSessionMock.mockResolvedValue(kratosSession())
+
     const result = await signOut({ origin: 'https://app.e2b.dev' })
 
     expect(result.redirectTo).toContain(
@@ -187,8 +195,22 @@ describe('Ory account security (Kratos session + e2b_session)', () => {
     )
     expect(result.redirectTo).toContain('id_token_hint=hydra-id-token')
     expect(result.redirectTo).toContain('post_logout_redirect_uri=')
-    // Single sign-out must not revoke every session.
+    // Revoke this session server-side so logout works even when Hydra skips the
+    // /logout -> Kratos bridge (no active authentication session in production).
+    expect(revokeKratosSessionMock).toHaveBeenCalledWith('kratos-session-id')
+    // ...but single sign-out must not revoke every device's session.
     expect(revokeKratosSessionsMock).not.toHaveBeenCalled()
     expect(revokeOAuthSessionsMock).not.toHaveBeenCalled()
+  })
+
+  it('still signs out via Hydra RP-logout when no Kratos session is readable', async () => {
+    getServerSessionMock.mockResolvedValue(undefined)
+
+    const result = await signOut({ origin: 'https://app.e2b.dev' })
+
+    expect(result.redirectTo).toContain(
+      'https://ory.example.com/oauth2/sessions/logout'
+    )
+    expect(revokeKratosSessionMock).not.toHaveBeenCalled()
   })
 })

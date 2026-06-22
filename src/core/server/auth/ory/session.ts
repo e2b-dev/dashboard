@@ -22,7 +22,10 @@ import {
 import { oryAuthFlows } from './flows'
 import { isKratosSessionFresh } from './freshness'
 import { fromKratosSessionIdentity, fromOryIdentity } from './identity'
-import { revokeKratosSessionsForIdentity } from './kratos-session'
+import {
+  revokeKratosSession,
+  revokeKratosSessionsForIdentity,
+} from './kratos-session'
 import { revokeOryOAuthSessionsForSubject } from './oauth-session'
 import {
   E2B_SESSION_COOKIE,
@@ -68,6 +71,19 @@ export async function getUserProfile(): Promise<AuthUser | null> {
 export async function signOut(
   options?: SignOutOptions
 ): Promise<SignOutResult> {
+  // Hydra's RP-initiated logout only runs the /logout -> Kratos bridge when
+  // Hydra still holds an active authentication session. In production the login
+  // is accepted with remember=false (non-persistent sessions), so Hydra
+  // short-circuits to post_logout_redirect_uri and the bridge never fires,
+  // leaving the Kratos identity session alive. Revoke just this session
+  // server-side here so sign-out is deterministic across environments without
+  // signing the user out of their other devices; the redirect below still ends
+  // Hydra's OAuth2 session.
+  const sessionId = (await readKratosSession())?.id
+  if (sessionId) {
+    await revokeKratosSession(sessionId)
+  }
+
   return {
     redirectTo: await completeOrySignOut(options?.origin),
   }
