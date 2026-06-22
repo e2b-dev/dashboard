@@ -193,18 +193,17 @@ export function parsePickerDateTime(
 }
 
 function formatBoundaryDateTime(date: Date, hideTime: boolean): string {
+  const datePart = formatDateValue(date)
   if (hideTime) {
-    return date.toLocaleDateString()
+    return datePart
   }
 
-  return date.toLocaleString(undefined, {
-    year: 'numeric',
-    month: 'numeric',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  })
+  const timePart = formatTimeValue(
+    date.getHours(),
+    date.getMinutes(),
+    date.getSeconds()
+  )
+  return `${datePart} ${timePart}`
 }
 
 function normalizeTimeValue(time: string | null): string | null {

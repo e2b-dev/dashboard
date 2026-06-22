@@ -7,13 +7,13 @@ import * as chrono from 'chrono-node'
 import { format, isThisYear, isValid } from 'date-fns'
 import { formatInTimeZone } from 'date-fns-tz'
 
-const LOCAL_LOG_STYLE_DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
+const LOCAL_LOG_STYLE_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
   month: 'short',
   day: '2-digit',
 })
 
 const LOCAL_LOG_STYLE_DATE_WITH_YEAR_FORMATTER = new Intl.DateTimeFormat(
-  undefined,
+  'en-US',
   {
     month: 'short',
     day: '2-digit',
@@ -21,7 +21,7 @@ const LOCAL_LOG_STYLE_DATE_WITH_YEAR_FORMATTER = new Intl.DateTimeFormat(
   }
 )
 
-const LOCAL_LOG_STYLE_TIME_FORMATTER = new Intl.DateTimeFormat(undefined, {
+const LOCAL_LOG_STYLE_TIME_FORMATTER = new Intl.DateTimeFormat('en-US', {
   hour: '2-digit',
   minute: '2-digit',
   second: '2-digit',
@@ -29,7 +29,7 @@ const LOCAL_LOG_STYLE_TIME_FORMATTER = new Intl.DateTimeFormat(undefined, {
 })
 
 const LOCAL_LOG_STYLE_TIME_NO_SECONDS_FORMATTER = new Intl.DateTimeFormat(
-  undefined,
+  'en-US',
   {
     hour: '2-digit',
     minute: '2-digit',
@@ -37,7 +37,7 @@ const LOCAL_LOG_STYLE_TIME_NO_SECONDS_FORMATTER = new Intl.DateTimeFormat(
   }
 )
 
-const LOCAL_LOG_STYLE_TIMEZONE_FORMATTER = new Intl.DateTimeFormat(undefined, {
+const LOCAL_LOG_STYLE_TIMEZONE_FORMATTER = new Intl.DateTimeFormat('en-US', {
   timeZoneName: 'short',
 })
 
@@ -55,16 +55,18 @@ export function formatLocalLogStyleTimestamp(
     includeSeconds = true,
     includeYear = false,
     includeCentiseconds = false,
+    includeTimezone = false,
   }: {
     includeSeconds?: boolean
     includeYear?: boolean
     includeCentiseconds?: boolean
+    includeTimezone?: boolean
   } = {}
 ): {
   datePart: string
   timePart: string
   subsecondPart: string | null
-  timezonePart: string
+  timezonePart: string | null
   iso: string
 } | null {
   const date = new Date(timestamp)
@@ -73,12 +75,13 @@ export function formatLocalLogStyleTimestamp(
     return null
   }
 
-  const timezonePart =
-    LOCAL_LOG_STYLE_TIMEZONE_FORMATTER.formatToParts(date).find(
-      (part) => part.type === 'timeZoneName'
-    )?.value ??
-    Intl.DateTimeFormat().resolvedOptions().timeZone ??
-    'Local'
+  const timezonePart = includeTimezone
+    ? (LOCAL_LOG_STYLE_TIMEZONE_FORMATTER.formatToParts(date).find(
+        (part) => part.type === 'timeZoneName'
+      )?.value ??
+      Intl.DateTimeFormat().resolvedOptions().timeZone ??
+      'Local')
+    : null
 
   return {
     datePart: (includeYear
@@ -148,8 +151,8 @@ export const formatDisplayTimestamp = (value: string | number | Date) => {
     ? 'Today'
     : isYesterday
       ? 'Yesterday'
-      : date.toLocaleDateString()
-  const timeStr = date.toLocaleTimeString([], {
+      : date.toLocaleDateString('en-US')
+  const timeStr = date.toLocaleTimeString('en-US', {
     hour: 'numeric',
     minute: '2-digit',
     second: '2-digit',
