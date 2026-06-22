@@ -39,7 +39,7 @@ import useLogFilters from './use-log-filters'
 import { useSandboxLogs } from './use-sandbox-logs'
 
 // column widths are calculated as max width of the content + padding
-const COLUMN_WIDTHS_PX = { timestamp: 148 + 16, level: 48 + 16 } as const
+const COLUMN_WIDTHS_PX = { timestamp: 190, level: 48 + 16 } as const
 const ROW_HEIGHT_PX = 26
 const LIVE_STATUS_ROW_HEIGHT_PX = ROW_HEIGHT_PX + 16
 const VIRTUAL_OVERSCAN = 16

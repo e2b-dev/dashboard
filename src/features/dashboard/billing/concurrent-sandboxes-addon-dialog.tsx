@@ -142,11 +142,11 @@ function DialogContent_Inner({
   const limitIncreaseText = currentConcurrentSandboxesLimit ? (
     <>
       Increases total concurrent sandbox limit from{' '}
-      <b>{currentConcurrentSandboxesLimit.toLocaleString()}</b> to{' '}
+      <b>{currentConcurrentSandboxesLimit.toLocaleString('en-US')}</b> to{' '}
       <b>
-        {(
-          currentConcurrentSandboxesLimit + SANDBOXES_PER_ADDON
-        ).toLocaleString()}
+        {(currentConcurrentSandboxesLimit + SANDBOXES_PER_ADDON).toLocaleString(
+          'en-US'
+        )}
       </b>
     </>
   ) : (

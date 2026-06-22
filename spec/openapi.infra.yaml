@@ -787,6 +787,20 @@ components:
           type: string
           description: Optional name for the snapshot template. If a snapshot template with this name already exists, a new build will be assigned to the existing template instead of creating a new one.
 
+    SandboxPauseRequest:
+      type: object
+      properties:
+        memory:
+          type: boolean
+          default: true
+          description: >-
+            Whether to capture a full memory snapshot. When false, only the
+            filesystem is persisted and resuming the sandbox cold-boots
+            (reboots) it from disk, losing in-memory state, running processes,
+            and open connections. Resume it with an explicit request (connect or
+            resume); auto-resume, which can be triggered by arbitrary traffic,
+            refuses such a sandbox. Defaults to true.
+
     TeamMetric:
       description: Team metric with timestamp
       required:
@@ -1568,6 +1582,7 @@ components:
         - serviceInstanceID
         - clusterID
         - status
+        - statusChangedAt
         - sandboxCount
         - metrics
         - createSuccesses
@@ -1596,6 +1611,10 @@ components:
           $ref: "#/components/schemas/MachineInfo"
         status:
           $ref: "#/components/schemas/NodeStatus"
+        statusChangedAt:
+          type: string
+          format: date-time
+          description: Time when the node status was last changed
         sandboxCount:
           type: integer
           format: uint32
@@ -1621,6 +1640,7 @@ components:
         - serviceInstanceID
         - clusterID
         - status
+        - statusChangedAt
         - sandboxCount
         - cachedBuilds
         - createSuccesses
@@ -1649,6 +1669,10 @@ components:
           $ref: "#/components/schemas/MachineInfo"
         status:
           $ref: "#/components/schemas/NodeStatus"
+        statusChangedAt:
+          type: string
+          format: date-time
+          description: Time when the node status was last changed
         sandboxCount:
           type: integer
           format: uint32
@@ -2396,6 +2420,12 @@ paths:
           AdminTeamAuth: []
       parameters:
         - $ref: "#/components/parameters/sandboxID"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SandboxPauseRequest"
       responses:
         "204":
           description: The sandbox was paused successfully and can be resumed
