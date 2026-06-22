@@ -21,6 +21,7 @@ import {
 } from '@/core/server/auth/ory/signout'
 import { ORY_SIGNUP_METADATA_COOKIE } from '@/core/server/auth/ory/signup-metadata'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
+import { relativeUrlSchema } from '@/core/shared/schemas/url'
 
 // Hydra redirects here with ?code after Kratos created the session. We exchange
 // the code (validating state/nonce/PKCE), provision the dashboard user from the
@@ -89,7 +90,12 @@ export async function GET(request: NextRequest) {
     expiresAt: tokens.expiresAt,
   })
 
-  const destination = flow.returnTo ?? PROTECTED_URLS.DASHBOARD
+  // Re-validate here too: the flow cookie is read back as a raw string, and
+  // `new URL()` would otherwise escape the origin on a crafted returnTo.
+  const parsedReturnTo = relativeUrlSchema.safeParse(flow.returnTo)
+  const destination = parsedReturnTo.success
+    ? parsedReturnTo.data
+    : PROTECTED_URLS.DASHBOARD
   const response = finalize(NextResponse.redirect(new URL(destination, origin)))
   response.cookies.set(
     E2B_SESSION_COOKIE,
