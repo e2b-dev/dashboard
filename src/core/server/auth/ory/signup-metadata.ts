@@ -3,8 +3,7 @@ import 'server-only'
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { cookies } from 'next/headers'
 import { l } from '@/core/shared/clients/logger/logger'
-
-export const ORY_SIGNUP_METADATA_COOKIE = 'e2b-ory-signup-metadata'
+import { ORY_SIGNUP_METADATA_COOKIE } from './session-cookie'
 
 const SIGNUP_METADATA_COOKIE_MAX_AGE_SECONDS = 30 * 60
 const MAX_IP_LENGTH = 128

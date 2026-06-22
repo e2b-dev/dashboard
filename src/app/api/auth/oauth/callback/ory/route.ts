@@ -12,6 +12,7 @@ import {
 } from '@/core/server/auth/ory/oauth-flow'
 import {
   E2B_SESSION_COOKIE,
+  ORY_SIGNUP_METADATA_COOKIE,
   orySessionCookieOptions,
   sealOrySession,
 } from '@/core/server/auth/ory/session-cookie'
@@ -19,7 +20,6 @@ import {
   buildOryLogoutUrl,
   ORY_POST_LOGOUT_PATH,
 } from '@/core/server/auth/ory/signout'
-import { ORY_SIGNUP_METADATA_COOKIE } from '@/core/server/auth/ory/signup-metadata'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { relativeUrlSchema } from '@/core/shared/schemas/url'
 

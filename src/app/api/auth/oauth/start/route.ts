@@ -12,9 +12,9 @@ import {
   oryFlowCookieOptions,
   sealOryFlowState,
 } from '@/core/server/auth/ory/oauth-flow'
+import { ORY_SIGNUP_METADATA_COOKIE } from '@/core/server/auth/ory/session-cookie'
 import {
   encodeOrySignupMetadata,
-  ORY_SIGNUP_METADATA_COOKIE,
   readOrySignupMetadataFromHeaders,
   signupMetadataCookieOptions,
 } from '@/core/server/auth/ory/signup-metadata'

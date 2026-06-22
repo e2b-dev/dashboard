@@ -6,9 +6,9 @@ import {
 } from '@/core/server/auth/ory/oauth-flow'
 import {
   E2B_SESSION_COOKIE,
+  ORY_SIGNUP_METADATA_COOKIE,
   openOrySession,
 } from '@/core/server/auth/ory/session-cookie'
-import { ORY_SIGNUP_METADATA_COOKIE } from '@/core/server/auth/ory/signup-metadata'
 
 const exchangeMock = vi.hoisted(() => vi.fn())
 const bootstrapMock = vi.hoisted(() => vi.fn())

@@ -56,6 +56,35 @@ describe('isKratosSessionActive', () => {
     )
   })
 
+  it('strips app-owned cookies before forwarding to whoami', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ active: true }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await isKratosSessionActive(
+      requestWithCookie(
+        'ory_session=abc; e2b_session=secret; e2b-ory-signup-metadata=meta'
+      )
+    )
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://ory.example.com/sessions/whoami',
+      { headers: { cookie: 'ory_session=abc', accept: 'application/json' } }
+    )
+  })
+
+  it('returns false when only app-owned cookies are present', async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    expect(
+      await isKratosSessionActive(requestWithCookie('e2b_session=secret'))
+    ).toBe(false)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
   it('returns false for an inactive session', async () => {
     vi.stubGlobal(
       'fetch',

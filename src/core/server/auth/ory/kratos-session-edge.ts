@@ -1,4 +1,5 @@
 import type { NextRequest } from 'next/server'
+import { APP_OWNED_COOKIES } from './session-cookie'
 
 // Edge-safe Kratos session check for the middleware gate. getServerSession()
 // reads next/headers and can't run in the edge runtime, so we hit Kratos
@@ -8,7 +9,11 @@ export async function isKratosSessionActive(
   request: NextRequest
 ): Promise<boolean> {
   const sdkUrl = process.env.NEXT_PUBLIC_ORY_SDK_URL ?? process.env.ORY_SDK_URL
-  const cookie = request.headers.get('cookie')
+  const cookie = request.cookies
+    .getAll()
+    .filter((c) => !APP_OWNED_COOKIES.has(c.name))
+    .map((c) => `${c.name}=${c.value}`)
+    .join('; ')
   if (!sdkUrl || !cookie) return false
 
   try {

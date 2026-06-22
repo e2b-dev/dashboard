@@ -8,6 +8,14 @@ import { CONTENT_ENCRYPTION, deriveKey, KEY_ALGORITHM } from './cookie-crypto'
 
 export const E2B_SESSION_COOKIE = 'e2b_session'
 
+export const ORY_SIGNUP_METADATA_COOKIE = 'e2b-ory-signup-metadata'
+
+// Cookies the dashboard owns — never forwarded across the Ory trust boundary.
+export const APP_OWNED_COOKIES = new Set<string>([
+  E2B_SESSION_COOKIE,
+  ORY_SIGNUP_METADATA_COOKIE,
+])
+
 // Persist across browser restarts. The cookie only caches tokens — a stale or
 // expired cookie is re-minted from the live Kratos session, so the lifetime is
 // intentionally generous and not the security boundary.

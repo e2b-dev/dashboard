@@ -20,6 +20,7 @@ vi.mock('@/core/server/auth/ory/kratos-session-edge', () => ({
 
 vi.mock('@/core/server/auth/ory/session-cookie', () => ({
   E2B_SESSION_COOKIE: 'e2b_session',
+  ORY_SIGNUP_METADATA_COOKIE: 'e2b-ory-signup-metadata',
   openOrySession: openOrySessionMock,
   sealOrySession: sealOrySessionMock,
   orySessionCookieOptions: () => ({ httpOnly: true, path: '/' }),
@@ -36,7 +37,6 @@ vi.mock('@/core/server/auth/ory/oauth-client', () => ({
 }))
 
 vi.mock('@/core/server/auth/ory/signup-metadata', () => ({
-  ORY_SIGNUP_METADATA_COOKIE: 'e2b-ory-signup-metadata',
   readOrySignupMetadataFromHeaders: readSignupMetadataMock,
   encodeOrySignupMetadata: encodeSignupMetadataMock,
   signupMetadataCookieOptions: () => ({ httpOnly: true, path: '/' }),
