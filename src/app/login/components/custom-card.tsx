@@ -15,11 +15,12 @@ export function OryCard({ children }: PropsWithChildren) {
 // /registration would drop the in-flight Hydra login_challenge and orphan the
 // OAuth transaction. The start route re-establishes a valid one.
 //
-// They are plain <a>, not next/link, on purpose: the start route 307-redirects
-// cross-origin to Hydra's /oauth2/auth. A soft navigation (or hover prefetch)
-// would chase that redirect with fetch(), turning it into a CORS request the
-// authorize endpoint rejects. A full document navigation keeps the redirect
-// chain top-level, where it belongs.
+// They force a full top-level document navigation via target="_top" (and skip
+// prefetch): the start route 307-redirects cross-origin to Hydra's /oauth2/auth.
+// A soft navigation or hover prefetch would chase that redirect with fetch(),
+// turning it into a CORS request the authorize endpoint rejects. target="_top"
+// makes next/link fall back to a browser navigation, keeping the redirect chain
+// top-level where it belongs.
 export function OryCardFooter() {
   const { flowType } = useOryFlow()
 
@@ -29,6 +30,7 @@ export function OryCardFooter() {
         Don't have an account?{' '}
         <Link
           prefetch={false}
+          target="_top"
           href={AUTH_URLS.SIGN_UP}
           className="text-fg underline"
         >
@@ -47,6 +49,7 @@ export function OryCardFooter() {
         Remember your password?{' '}
         <Link
           prefetch={false}
+          target="_top"
           href={AUTH_URLS.SIGN_IN}
           className="text-fg underline"
         >
@@ -67,6 +70,7 @@ export function OryCardFooter() {
         Already have an account?{' '}
         <Link
           prefetch={false}
+          target="_top"
           href={AUTH_URLS.SIGN_IN}
           className="text-fg underline"
         >
