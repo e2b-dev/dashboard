@@ -23,6 +23,7 @@ import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { getAuthRouteRedirect } from './auth-routes'
 import {
   classifyProxyRequest,
+  isAuthEndpointRoute,
   type ProxyPlan,
   planNeedsAuthGate,
 } from './classifier'
@@ -64,11 +65,20 @@ export async function runDashboardProxy(
     return oryProxy(request)
   }
 
-  // Pattern B: refresh the e2b_session up front and propagate it to the same
+  const plan = classifyProxyRequest(request.nextUrl.pathname)
+
+  // refresh the e2b_session up front and propagate it to the same
   // request (request.cookies) so RSC/route handlers and the gate below read the
   // fresh token, then persist it on the outgoing response for the browser.
-  const session = await refreshSessionCookie(request)
-  const plan = classifyProxyRequest(request.nextUrl.pathname)
+  //
+  // Auth endpoints own their session lifecycle: sign-out reads the id_token from
+  // e2b_session before clearing it, the OAuth callback mints a fresh session. A
+  // dead refresh here would delete the cookie out of the propagated request
+  // before the handler reads it, breaking RP-initiated logout (Kratos/Hydra
+  // would never end the session), so skip the refresh for them.
+  const session = isAuthEndpointRoute(request.nextUrl.pathname)
+    ? skipRefresh
+    : await refreshSessionCookie(request)
 
   if (!planNeedsAuthGate(plan)) {
     return session.persist(await runProxyConcerns(request, plan))
@@ -95,6 +105,8 @@ type SessionRefresh = {
 }
 
 const noPersist: SessionRefresh['persist'] = (response) => response
+
+const skipRefresh: SessionRefresh = { hasToken: false, persist: noPersist }
 
 async function refreshSessionCookie(
   request: NextRequest

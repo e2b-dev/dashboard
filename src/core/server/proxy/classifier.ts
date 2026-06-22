@@ -51,6 +51,10 @@ export function planNeedsAuthGate(plan: ProxyPlan): boolean {
   return plan.kind === 'auth-page' || plan.kind === 'dashboard-page'
 }
 
+export function isAuthEndpointRoute(pathname: string): boolean {
+  return matchesAnyPrefix(pathname, AUTH_ENDPOINT_PREFIXES)
+}
+
 export function isProxyAuthRoute(pathname: string): boolean {
   const normalizedPath = normalizePath(pathname)
   return (

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   classifyProxyRequest,
+  isAuthEndpointRoute,
   planNeedsAuthGate,
 } from '@/core/server/proxy/classifier'
 
@@ -21,5 +22,18 @@ describe('classifyProxyRequest', () => {
 
     expect(plan.kind).toBe(kind)
     expect(planNeedsAuthGate(plan)).toBe(needsAuthGate)
+  })
+})
+
+describe('isAuthEndpointRoute', () => {
+  it.each([
+    ['/api/auth/sign-out', true],
+    ['/api/auth/oauth/start', true],
+    ['/api/auth', true],
+    ['/api/health', false],
+    ['/api/trpc/user.update', false],
+    ['/dashboard/team/sandboxes', false],
+  ])('%s -> %s', (pathname, expected) => {
+    expect(isAuthEndpointRoute(pathname)).toBe(expected)
   })
 })

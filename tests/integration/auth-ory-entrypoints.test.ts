@@ -187,6 +187,22 @@ describe('Ory auth entrypoints — middleware refresh (Pattern B)', () => {
     expect(sealOrySessionMock).not.toHaveBeenCalled()
     expect(response.cookies.get('e2b_session')).toBeUndefined()
   })
+
+  it('skips the refresh for auth endpoints so sign-out keeps its id_token', async () => {
+    // A dead refresh would otherwise delete e2b_session out of the propagated
+    // request before the sign-out handler reads the id_token from it, dropping
+    // RP-initiated logout so Kratos/Hydra never end the session.
+    refreshOrySessionMock.mockResolvedValue({ status: 'dead' })
+
+    const response = await proxy(
+      request('/api/auth/sign-out'),
+      {} as NextFetchEvent
+    )
+
+    expect(openOrySessionMock).not.toHaveBeenCalled()
+    expect(refreshOrySessionMock).not.toHaveBeenCalled()
+    expect(response.cookies.get('e2b_session')).toBeUndefined()
+  })
 })
 
 describe('Ory OAuth start route', () => {
