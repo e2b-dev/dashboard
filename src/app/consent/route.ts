@@ -7,6 +7,7 @@ import {
   getOryOAuth2Api,
 } from '@/core/server/auth/ory/client'
 import type { OryIdentityTraits } from '@/core/server/auth/ory/identity'
+import { readOryOAuthEnv } from '@/core/server/auth/ory/oauth-client'
 import { ORY_POST_LOGOUT_PATH } from '@/core/server/auth/ory/signout'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 
@@ -26,6 +27,19 @@ export async function GET(request: NextRequest) {
   try {
     const oauth2 = getOryOAuth2Api()
     const consent = await oauth2.getOAuth2ConsentRequest({ consentChallenge })
+
+    const { clientId } = readOryOAuthEnv()
+    if (consent.client?.client_id !== clientId) {
+      l.warn(
+        {
+          key: 'oauth_consent:unexpected_client',
+          clientId: consent.client?.client_id,
+        },
+        'refusing to auto-consent for unexpected OAuth client'
+      )
+      return NextResponse.redirect(home)
+    }
+
     const grantScope = consent.requested_scope ?? []
 
     const idTokenClaims = consent.subject
