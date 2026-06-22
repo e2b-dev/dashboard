@@ -7,6 +7,7 @@ import { exchangeOryCallback } from '@/core/server/auth/ory/oauth-client'
 import {
   E2B_OAUTH_FLOW_COOKIE,
   OAUTH_CALLBACK_PATH,
+  ORY_RECOVER_PATH,
   openOryFlowState,
 } from '@/core/server/auth/ory/oauth-flow'
 import {
@@ -20,11 +21,6 @@ import {
 } from '@/core/server/auth/ory/signout'
 import { ORY_SIGNUP_METADATA_COOKIE } from '@/core/server/auth/ory/signup-metadata'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
-
-// Failures land on the recover route, whose one-shot guard retries the flow
-// once (via /sign-in → /start, which mints a fresh flow cookie) before bailing
-// to home — so a stale/invalid callback can't loop.
-const ORY_RECOVER_PATH = '/api/auth/oauth/recover'
 
 // Hydra redirects here with ?code after Kratos created the session. We exchange
 // the code (validating state/nonce/PKCE), provision the dashboard user from the

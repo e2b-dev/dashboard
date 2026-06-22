@@ -1,5 +1,4 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { AUTH_URLS } from '@/configs/urls'
 import {
   normalizeOryReturnTo,
   readOryAuthIntent,
@@ -9,6 +8,7 @@ import { buildOryAuthorizationRequest } from '@/core/server/auth/ory/oauth-clien
 import {
   E2B_OAUTH_FLOW_COOKIE,
   OAUTH_CALLBACK_PATH,
+  ORY_RECOVER_PATH,
   oryFlowCookieOptions,
   sealOryFlowState,
 } from '@/core/server/auth/ory/oauth-flow'
@@ -47,7 +47,9 @@ export async function GET(request: NextRequest) {
       },
       'failed to build the Ory authorization request'
     )
-    return NextResponse.redirect(new URL(AUTH_URLS.SIGN_IN, origin))
+    return NextResponse.redirect(
+      new URL(`${ORY_RECOVER_PATH}?error=oauth_start_failed`, origin)
+    )
   }
 
   let sealedFlow: string
@@ -66,7 +68,9 @@ export async function GET(request: NextRequest) {
       },
       'failed to seal the Ory flow-state cookie'
     )
-    return NextResponse.redirect(new URL(AUTH_URLS.SIGN_IN, origin))
+    return NextResponse.redirect(
+      new URL(`${ORY_RECOVER_PATH}?error=oauth_start_failed`, origin)
+    )
   }
 
   const response = NextResponse.redirect(authorization.url)

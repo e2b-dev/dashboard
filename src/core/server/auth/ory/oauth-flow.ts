@@ -14,6 +14,11 @@ export const E2B_OAUTH_FLOW_COOKIE = 'e2b_oauth_flow'
 // request and the token exchange, so both routes derive it from this constant.
 export const OAUTH_CALLBACK_PATH = '/api/auth/oauth/callback/ory'
 
+// Failures across the OAuth flow land here. The recover route's one-shot guard
+// retries once (via /sign-in → /start, minting a fresh flow cookie) before
+// bailing to home, so a persistent failure can't loop the browser.
+export const ORY_RECOVER_PATH = '/api/auth/oauth/recover'
+
 const FLOW_COOKIE_MAX_AGE_SECONDS = 60 * 10
 
 export type OryFlowState = {
