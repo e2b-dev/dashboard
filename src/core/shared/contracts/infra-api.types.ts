@@ -3166,6 +3166,11 @@ export interface components {
       machineInfo: components['schemas']['MachineInfo']
       status: components['schemas']['NodeStatus']
       /**
+       * Format: date-time
+       * @description Time when the node status was last changed
+       */
+      statusChangedAt: string
+      /**
        * Format: uint32
        * @description Number of sandboxes running on the node
        */
@@ -3200,6 +3205,11 @@ export interface components {
       serviceInstanceID: string
       machineInfo: components['schemas']['MachineInfo']
       status: components['schemas']['NodeStatus']
+      /**
+       * Format: date-time
+       * @description Time when the node status was last changed
+       */
+      statusChangedAt: string
       /**
        * Format: uint32
        * @description Number of sandboxes running on the node
