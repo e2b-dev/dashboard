@@ -46,6 +46,8 @@ export const PROTECTED_URLS = {
   WEBHOOK_DELIVERIES: (teamSlug: string, webhookId: string) =>
     `/dashboard/${teamSlug}/webhooks/${webhookId}/deliveries`,
 
+  BYOC: (teamSlug: string) => `/dashboard/${teamSlug}/byoc`,
+
   TEMPLATES: (teamSlug: string) => `/dashboard/${teamSlug}/templates/list`,
   TEMPLATES_LIST: (teamSlug: string) => `/dashboard/${teamSlug}/templates/list`,
   TEMPLATES_BUILDS: (teamSlug: string) =>

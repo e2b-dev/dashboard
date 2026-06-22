@@ -1,6 +1,7 @@
 import {
   AccountSettingsIcon,
   CardIcon,
+  CloudIcon,
   GaugeIcon,
   type Icon,
   KeyIcon,
@@ -54,6 +55,13 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
         },
       ]
     : []),
+  {
+    label: 'BYOC',
+    group: 'integration',
+    href: (args) => PROTECTED_URLS.BYOC(args.teamSlug ?? ''),
+    icon: CloudIcon,
+    activeMatch: `/dashboard/*/byoc/**`,
+  },
 
   // Team
   {

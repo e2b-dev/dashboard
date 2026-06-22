@@ -108,6 +108,10 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
     webhookDetailLayoutConfig(pathname),
   '/dashboard/*/webhooks/*/deliveries': (pathname) =>
     webhookDetailLayoutConfig(pathname),
+  '/dashboard/*/byoc': () => ({
+    title: 'BYOC',
+    type: 'default',
+  }),
 
   // team
   '/dashboard/*/general': () => ({

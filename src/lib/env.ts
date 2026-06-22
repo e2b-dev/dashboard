@@ -6,6 +6,9 @@ export const serverSchema = z.object({
 
   BILLING_API_URL: z.url().optional(),
   PLAIN_API_KEY: z.string().min(1).optional(),
+  BYOC_DEPLOYMENTS_API_URL: z.url().optional(),
+  BYOC_DEPLOYMENTS_API_TOKEN: z.string().min(1).optional(),
+  DEPLOYMENT_MOCK: z.string().optional(),
 
   POSTHOG_API_KEY: z.string().min(1).optional(),
   POSTHOG_PROJECT_ID: z.string().min(1).optional(),
