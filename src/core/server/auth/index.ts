@@ -5,6 +5,7 @@ export {
   getAuthContext,
   getUserProfile,
   handleCredentialChangeSuccess,
+  revokeCurrentSession,
   signOut,
   startReauthForAccountSettings,
   updateUser,

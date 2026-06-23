@@ -2,6 +2,7 @@ export const AUTH_URLS = {
   FORGOT_PASSWORD: '/recovery',
   SIGN_IN: '/sign-in',
   SIGN_UP: '/sign-up',
+  SWITCH_ACCOUNT: '/api/auth/switch-account',
   CLI: '/auth/cli',
 }
 

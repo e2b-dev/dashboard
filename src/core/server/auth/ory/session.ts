@@ -33,6 +33,7 @@ import {
   sessionCookieDeleteOptions,
 } from './session-cookie'
 import { completeOrySignOut } from './signout-flow'
+import { revokeSessionTokens } from './token-revoke'
 
 const ACCOUNT_SETTINGS_REAUTH_RETURN_TO = `${PROTECTED_URLS.ACCOUNT_SETTINGS}?reauth=1`
 
@@ -84,21 +85,32 @@ export async function getUserProfile(): Promise<AuthUser | null> {
   return identity ? fromOryIdentity(identity) : null
 }
 
-export async function signOut(
-  options?: SignOutOptions
-): Promise<SignOutResult> {
-  // Hydra's RP-initiated logout only runs the /logout -> Kratos bridge when
-  // Hydra still holds an active authentication session. In production the login
-  // is accepted with remember=false (non-persistent sessions), so Hydra
-  // short-circuits to post_logout_redirect_uri and the bridge never fires,
-  // leaving the Kratos identity session alive. Revoke just this session
-  // server-side here so sign-out is deterministic across environments without
-  // signing the user out of their other devices; the redirect below still ends
-  // Hydra's OAuth2 session.
+// Tears down the current login: revokes the OAuth tokens and the Kratos
+// identity session for this device. Hydra's RP-initiated logout only runs the
+// /logout -> Kratos bridge when Hydra still holds an active authentication
+// session; in production the login is accepted with remember=false, so Hydra
+// short-circuits and the bridge never fires — leaving both the refresh token
+// and the Kratos session alive (the latter surfaces "Reauthenticate as <last
+// user>"). Revoking here makes teardown deterministic across environments
+// without signing the user out of their other devices.
+export async function revokeCurrentSession(): Promise<void> {
+  const tokens = await openSessionCookie(
+    (await cookies()).get(E2B_SESSION_COOKIE)?.value
+  )
+  if (tokens) {
+    await revokeSessionTokens(tokens)
+  }
+
   const sessionId = (await readKratosSession())?.id
   if (sessionId) {
     await revokeKratosSession(sessionId)
   }
+}
+
+export async function signOut(
+  options?: SignOutOptions
+): Promise<SignOutResult> {
+  await revokeCurrentSession()
 
   return {
     redirectTo: await completeOrySignOut(options?.origin),

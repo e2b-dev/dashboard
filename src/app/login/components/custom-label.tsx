@@ -16,13 +16,22 @@ export function OryLabel({ node, children, fieldError }: OryNodeLabelProps) {
       ? String((fieldError as { text: unknown }).text)
       : undefined
 
-  const isPasswordOnLogin =
-    flowType === FlowType.Login && node.attributes.name === 'password'
+  // identifier_first login splits the credential across steps, so the recovery
+  // link rides whichever field is on screen: the email on step one, the
+  // password on step two.
+  const recoverLabel =
+    flowType === FlowType.Login
+      ? node.attributes.name === 'identifier'
+        ? 'Recover Account'
+        : node.attributes.name === 'password'
+          ? 'Forgot password?'
+          : null
+      : null
 
   return (
     <div className="flex w-full flex-col gap-2">
       {label &&
-        (isPasswordOnLogin ? (
+        (recoverLabel ? (
           <div className="flex w-full items-center justify-between">
             <Label htmlFor={node.attributes.name}>{label}</Label>
             <Link
@@ -32,7 +41,7 @@ export function OryLabel({ node, children, fieldError }: OryNodeLabelProps) {
               tabIndex={-1}
               className="prose-label text-fg-secondary hover:text-fg underline underline-offset-[3px]"
             >
-              Forgot password?
+              {recoverLabel}
             </Link>
           </div>
         ) : (

@@ -5,6 +5,7 @@ import { useOryFlow } from '@ory/elements-react'
 import Link from 'next/link'
 import type { PropsWithChildren } from 'react'
 import { AUTH_URLS } from '@/configs/urls'
+import { getReauthInfo } from './reauth'
 
 export function OryCard({ children }: PropsWithChildren) {
   return <div className="bg-bg flex w-full flex-col border p-6">{children}</div>
@@ -22,9 +23,31 @@ export function OryCard({ children }: PropsWithChildren) {
 // makes next/link fall back to a browser navigation, keeping the redirect chain
 // top-level where it belongs.
 export function OryCardFooter() {
-  const { flowType } = useOryFlow()
+  const oryFlow = useOryFlow()
+  const { flowType } = oryFlow
 
   if (flowType === FlowType.Login) {
+    const { flow } = oryFlow
+
+    // The reauth screen is pinned to the current identity; "Sign up" is noise
+    // there. Offer only the escape hatch — logging out drops the pinned session
+    // and lands on a clean sign-in (see the switch-account route).
+    if (getReauthInfo(oryFlow).isReauthLogin) {
+      return (
+        <p className="text-fg-secondary mt-6">
+          Something isn't working?{' '}
+          <Link
+            prefetch={false}
+            target="_top"
+            href={switchAccountHref(flow.return_to)}
+            className="text-fg underline"
+          >
+            Logout
+          </Link>
+        </p>
+      )
+    }
+
     return (
       <p className="text-fg-secondary mt-6">
         Don't have an account?{' '}
@@ -99,4 +122,26 @@ export function OryCardFooter() {
       </p>
     </div>
   )
+}
+
+// The switch-account route 307s into the OAuth start route, so it needs a
+// relative returnTo (its `normalizeOryReturnTo` rejects absolute URLs). Reduce
+// the flow's stored return_to to a path without relying on `window`, so this
+// stays correct during SSR of the client component.
+function switchAccountHref(returnTo?: string): string {
+  const relative = toRelativeReturnTo(returnTo)
+  return relative
+    ? `${AUTH_URLS.SWITCH_ACCOUNT}?returnTo=${encodeURIComponent(relative)}`
+    : AUTH_URLS.SWITCH_ACCOUNT
+}
+
+function toRelativeReturnTo(returnTo?: string): string | undefined {
+  if (!returnTo) return undefined
+  try {
+    const url = new URL(returnTo, 'http://relative.invalid')
+    const path = `${url.pathname}${url.search}`
+    return path.startsWith('/') ? path : undefined
+  } catch {
+    return undefined
+  }
 }
