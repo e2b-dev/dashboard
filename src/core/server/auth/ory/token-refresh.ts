@@ -1,7 +1,7 @@
 import * as oauth from 'oauth4webapi'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { absoluteExpiry, readOryOAuthEnv } from './oauth-client'
-import type { OrySessionTokens } from './session-cookie'
+import type { SessionTokens } from './session-cookie'
 
 // Refresh the Hydra access token. Runs in the edge middleware, so it talks to
 // the token endpoint directly (no discovery, no JWKS round-trip) and parses the
@@ -12,7 +12,7 @@ import type { OrySessionTokens } from './session-cookie'
 const REFRESH_SKEW_SECONDS = 60
 
 export type TokenRefreshResult =
-  | { status: 'refreshed'; tokens: OrySessionTokens }
+  | { status: 'refreshed'; tokens: SessionTokens }
   // The refresh token is unusable (rotated out / revoked / expired). The caller
   // clears the cookie and re-mints from the live Kratos session.
   | { status: 'dead' }
@@ -27,8 +27,8 @@ export function isAccessTokenExpiring(
   return nowSeconds >= expiresAt - REFRESH_SKEW_SECONDS
 }
 
-export async function refreshOrySession(
-  current: OrySessionTokens
+export async function refreshSessionTokens(
+  current: SessionTokens
 ): Promise<TokenRefreshResult> {
   if (!current.refreshToken) return { status: 'dead' }
 

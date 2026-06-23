@@ -3,7 +3,7 @@ import 'server-only'
 import { cookies } from 'next/headers'
 import { BASE_URL } from '@/configs/urls'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
-import { E2B_SESSION_COOKIE, openOrySession } from './session-cookie'
+import { E2B_SESSION_COOKIE, openSessionCookie } from './session-cookie'
 import { buildOryLogoutUrl, ORY_POST_LOGOUT_PATH } from './signout'
 
 // RP-initiated logout: hand Hydra the id_token so it ends its own OAuth2 session
@@ -16,7 +16,7 @@ export async function completeOrySignOut(origin = BASE_URL): Promise<string> {
   let idToken: string | undefined
   try {
     const cookieStore = await cookies()
-    const tokens = await openOrySession(
+    const tokens = await openSessionCookie(
       cookieStore.get(E2B_SESSION_COOKIE)?.value
     )
     idToken = tokens?.idToken

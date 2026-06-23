@@ -8,7 +8,7 @@ const patchIdentityMock = vi.hoisted(() => vi.fn())
 const revokeOAuthSessionsMock = vi.hoisted(() => vi.fn())
 const revokeKratosSessionsMock = vi.hoisted(() => vi.fn())
 const revokeKratosSessionMock = vi.hoisted(() => vi.fn())
-const openOrySessionMock = vi.hoisted(() => vi.fn())
+const openSessionCookieMock = vi.hoisted(() => vi.fn())
 const cookieDeleteMock = vi.hoisted(() => vi.fn())
 
 vi.mock('@ory/nextjs/app', () => ({
@@ -29,8 +29,8 @@ vi.mock('next/headers', () => ({
 
 vi.mock('@/core/server/auth/ory/session-cookie', () => ({
   E2B_SESSION_COOKIE: 'e2b_session',
-  openOrySession: openOrySessionMock,
-  orySessionCookieDeleteOptions: (host: string | null | undefined) => ({
+  openSessionCookie: openSessionCookieMock,
+  sessionCookieDeleteOptions: (host: string | null | undefined) => ({
     name: 'e2b_session',
     path: '/',
     domain: host ? `.${host}` : undefined,
@@ -103,7 +103,7 @@ describe('Ory account security (Kratos session + e2b_session)', () => {
     revokeOAuthSessionsMock.mockReset().mockResolvedValue(undefined)
     revokeKratosSessionsMock.mockReset().mockResolvedValue(undefined)
     revokeKratosSessionMock.mockReset().mockResolvedValue(undefined)
-    openOrySessionMock.mockReset().mockResolvedValue({
+    openSessionCookieMock.mockReset().mockResolvedValue({
       accessToken: 'hydra-access-token',
       idToken: 'hydra-id-token',
       expiresAt: 1_900_000_000,
@@ -148,7 +148,7 @@ describe('Ory account security (Kratos session + e2b_session)', () => {
 
   it('returns null when the Kratos session is active but no token is present', async () => {
     getServerSessionMock.mockResolvedValue(kratosSession())
-    openOrySessionMock.mockResolvedValue(null)
+    openSessionCookieMock.mockResolvedValue(null)
 
     expect(await getAuthContext()).toBeNull()
   })

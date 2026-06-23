@@ -13,8 +13,8 @@ import { resolveOryRedirectUri } from '@/core/server/auth/ory/oauth-relay'
 import {
   E2B_SESSION_COOKIE,
   ORY_SIGNUP_METADATA_COOKIE,
-  orySessionCookieOptions,
-  sealOrySession,
+  sealSessionCookie,
+  sessionCookieOptions,
 } from '@/core/server/auth/ory/session-cookie'
 import {
   buildOryLogoutUrl,
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  const sealed = await sealOrySession({
+  const sealed = await sealSessionCookie({
     accessToken: tokens.accessToken,
     refreshToken: tokens.refreshToken,
     idToken: tokens.idToken,
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
   response.cookies.set(
     E2B_SESSION_COOKIE,
     sealed,
-    orySessionCookieOptions(request.nextUrl.host)
+    sessionCookieOptions(request.nextUrl.host)
   )
   return response
 }

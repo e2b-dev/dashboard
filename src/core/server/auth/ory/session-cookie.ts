@@ -21,7 +21,7 @@ export const APP_OWNED_COOKIES = new Set<string>([
 // intentionally generous and not the security boundary.
 const SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30
 
-export type OrySessionTokens = {
+export type SessionTokens = {
   accessToken: string
   refreshToken?: string
   idToken?: string
@@ -29,7 +29,7 @@ export type OrySessionTokens = {
   expiresAt: number
 }
 
-export type OrySessionCookieOptions = {
+export type SessionCookieOptions = {
   httpOnly: true
   sameSite: 'lax'
   path: '/'
@@ -38,14 +38,14 @@ export type OrySessionCookieOptions = {
   domain?: string
 }
 
-export type OrySessionCookieDeleteOptions = {
+export type SessionCookieDeleteOptions = {
   name: typeof E2B_SESSION_COOKIE
   path: '/'
   domain?: string
 }
 
-export async function sealOrySession(
-  tokens: OrySessionTokens
+export async function sealSessionCookie(
+  tokens: SessionTokens
 ): Promise<string> {
   return new EncryptJWT({
     accessToken: tokens.accessToken,
@@ -58,9 +58,9 @@ export async function sealOrySession(
     .encrypt(await deriveKey())
 }
 
-export async function openOrySession(
+export async function openSessionCookie(
   value: string | undefined | null
-): Promise<OrySessionTokens | null> {
+): Promise<SessionTokens | null> {
   if (!value) return null
 
   try {
@@ -71,9 +71,9 @@ export async function openOrySession(
   }
 }
 
-export function orySessionCookieOptions(
+export function sessionCookieOptions(
   host?: string | null
-): OrySessionCookieOptions {
+): SessionCookieOptions {
   return {
     httpOnly: true,
     sameSite: 'lax',
@@ -88,9 +88,9 @@ export function orySessionCookieOptions(
 
 // Deleting a domain-scoped cookie requires the same domain attribute, so the
 // clear paths must pass these options rather than the bare cookie name.
-export function orySessionCookieDeleteOptions(
+export function sessionCookieDeleteOptions(
   host?: string | null
-): OrySessionCookieDeleteOptions {
+): SessionCookieDeleteOptions {
   return {
     name: E2B_SESSION_COOKIE,
     path: '/',
@@ -119,7 +119,7 @@ export function resolveSessionCookieDomain(
 
 function parseTokens(
   payload: Record<string, unknown>
-): OrySessionTokens | null {
+): SessionTokens | null {
   const { accessToken, refreshToken, idToken, expiresAt } = payload
   if (typeof accessToken !== 'string' || typeof expiresAt !== 'number') {
     return null

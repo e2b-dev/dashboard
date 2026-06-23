@@ -7,7 +7,7 @@ import {
 import {
   E2B_SESSION_COOKIE,
   ORY_SIGNUP_METADATA_COOKIE,
-  openOrySession,
+  openSessionCookie,
 } from '@/core/server/auth/ory/session-cookie'
 
 const exchangeMock = vi.hoisted(() => vi.fn())
@@ -80,7 +80,7 @@ describe('Ory OAuth callback', () => {
     )
 
     const sealed = response.cookies.get(E2B_SESSION_COOKIE)?.value
-    expect(await openOrySession(sealed)).toEqual(tokens)
+    expect(await openSessionCookie(sealed)).toEqual(tokens)
 
     // The transient cookies are cleared on the way out.
     expect(response.cookies.get(E2B_OAUTH_FLOW_COOKIE)?.value).toBe('')

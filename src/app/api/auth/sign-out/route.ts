@@ -3,7 +3,7 @@ import 'server-only'
 import { type NextRequest, NextResponse } from 'next/server'
 import { signOut } from '@/core/server/auth'
 import {
-  orySessionCookieDeleteOptions,
+  sessionCookieDeleteOptions,
   resolveSessionCookieDomain,
 } from '@/core/server/auth/ory/session-cookie'
 
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
   const response = NextResponse.redirect(
     new URL(redirectTo, request.nextUrl.origin)
   )
-  response.cookies.delete(orySessionCookieDeleteOptions(request.nextUrl.host))
+  response.cookies.delete(sessionCookieDeleteOptions(request.nextUrl.host))
   clearOryIdentitySessionCookies(request, response)
   return response
 }

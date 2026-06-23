@@ -1,14 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-  type OrySessionTokens,
-  openOrySession,
-  orySessionCookieDeleteOptions,
-  orySessionCookieOptions,
+  openSessionCookie,
   resolveSessionCookieDomain,
-  sealOrySession,
+  sealSessionCookie,
+  sessionCookieDeleteOptions,
+  sessionCookieOptions,
+  type SessionTokens,
 } from '@/core/server/auth/ory/session-cookie'
 
-const tokens: OrySessionTokens = {
+const tokens: SessionTokens = {
   accessToken: 'access-token',
   refreshToken: 'refresh-token',
   idToken: 'id-token',
@@ -25,52 +25,52 @@ describe('e2b_session cookie', () => {
   })
 
   it('round-trips all token fields through seal/open', async () => {
-    const sealed = await sealOrySession(tokens)
+    const sealed = await sealSessionCookie(tokens)
 
     expect(sealed).not.toContain('access-token')
-    expect(await openOrySession(sealed)).toEqual(tokens)
+    expect(await openSessionCookie(sealed)).toEqual(tokens)
   })
 
   it('preserves a session without optional tokens', async () => {
-    const minimal: OrySessionTokens = {
+    const minimal: SessionTokens = {
       accessToken: 'only-access',
       expiresAt: 123,
     }
 
-    expect(await openOrySession(await sealOrySession(minimal))).toEqual(minimal)
+    expect(await openSessionCookie(await sealSessionCookie(minimal))).toEqual(minimal)
   })
 
   it('returns null for missing or empty values', async () => {
-    expect(await openOrySession(undefined)).toBeNull()
-    expect(await openOrySession(null)).toBeNull()
-    expect(await openOrySession('')).toBeNull()
+    expect(await openSessionCookie(undefined)).toBeNull()
+    expect(await openSessionCookie(null)).toBeNull()
+    expect(await openSessionCookie('')).toBeNull()
   })
 
   it('returns null for a tampered token', async () => {
-    const sealed = await sealOrySession(tokens)
+    const sealed = await sealSessionCookie(tokens)
 
-    expect(await openOrySession(`${sealed}tamper`)).toBeNull()
+    expect(await openSessionCookie(`${sealed}tamper`)).toBeNull()
   })
 
   it('returns null when sealed under a different secret', async () => {
-    const sealed = await sealOrySession(tokens)
+    const sealed = await sealSessionCookie(tokens)
 
     vi.stubEnv('E2B_SESSION_SECRET', 'a-different-secret')
 
-    expect(await openOrySession(sealed)).toBeNull()
+    expect(await openSessionCookie(sealed)).toBeNull()
   })
 
   it('rejects sealing without a configured secret', async () => {
     vi.stubEnv('E2B_SESSION_SECRET', '')
 
-    await expect(sealOrySession(tokens)).rejects.toThrow(
+    await expect(sealSessionCookie(tokens)).rejects.toThrow(
       'E2B_SESSION_SECRET is not configured'
     )
   })
 
   it('marks the cookie httpOnly + lax and toggles secure on NODE_ENV', () => {
     vi.stubEnv('NODE_ENV', 'production')
-    expect(orySessionCookieOptions()).toMatchObject({
+    expect(sessionCookieOptions()).toMatchObject({
       httpOnly: true,
       sameSite: 'lax',
       path: '/',
@@ -78,7 +78,7 @@ describe('e2b_session cookie', () => {
     })
 
     vi.stubEnv('NODE_ENV', 'development')
-    expect(orySessionCookieOptions().secure).toBe(false)
+    expect(sessionCookieOptions().secure).toBe(false)
   })
 })
 
@@ -124,10 +124,10 @@ describe('e2b_session cookie domain', () => {
   })
 
   it('flows the resolved domain into set and delete options', () => {
-    expect(orySessionCookieOptions('app.e2b-staging.dev').domain).toBe(
+    expect(sessionCookieOptions('app.e2b-staging.dev').domain).toBe(
       '.e2b-staging.dev'
     )
-    expect(orySessionCookieDeleteOptions('app.e2b-staging.dev')).toEqual({
+    expect(sessionCookieDeleteOptions('app.e2b-staging.dev')).toEqual({
       name: 'e2b_session',
       path: '/',
       domain: '.e2b-staging.dev',

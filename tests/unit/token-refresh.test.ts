@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { OrySessionTokens } from '@/core/server/auth/ory/session-cookie'
+import type { SessionTokens } from '@/core/server/auth/ory/session-cookie'
 import {
   isAccessTokenExpiring,
-  refreshOrySession,
+  refreshSessionTokens,
 } from '@/core/server/auth/ory/token-refresh'
 
 vi.mock('@/core/shared/clients/logger/logger', () => ({
@@ -10,7 +10,7 @@ vi.mock('@/core/shared/clients/logger/logger', () => ({
   serializeErrorForLog: vi.fn((error: unknown) => error),
 }))
 
-const current: OrySessionTokens = {
+const current: SessionTokens = {
   accessToken: 'old-access',
   refreshToken: 'old-refresh',
   idToken: 'old-id',
@@ -33,7 +33,7 @@ describe('isAccessTokenExpiring', () => {
   })
 })
 
-describe('refreshOrySession', () => {
+describe('refreshSessionTokens', () => {
   beforeEach(() => {
     vi.stubEnv('ORY_HYDRA_PUBLIC_URL', 'https://ory.example.com')
     vi.stubEnv('ORY_OAUTH2_CLIENT_ID', 'dashboard-client')
@@ -49,7 +49,7 @@ describe('refreshOrySession', () => {
     const fetchMock = vi.fn()
     vi.stubGlobal('fetch', fetchMock)
 
-    expect(await refreshOrySession({ accessToken: 'a', expiresAt: 1 })).toEqual(
+    expect(await refreshSessionTokens({ accessToken: 'a', expiresAt: 1 })).toEqual(
       {
         status: 'dead',
       }
@@ -65,13 +65,13 @@ describe('refreshOrySession', () => {
       })
     )
 
-    expect(await refreshOrySession(current)).toEqual({ status: 'dead' })
+    expect(await refreshSessionTokens(current)).toEqual({ status: 'dead' })
   })
 
   it('is unchanged on a transient server error', async () => {
     stubTokenResponse(new Response('upstream down', { status: 503 }))
 
-    expect(await refreshOrySession(current)).toEqual({ status: 'unchanged' })
+    expect(await refreshSessionTokens(current)).toEqual({ status: 'unchanged' })
   })
 
   it('refreshes and returns rotated tokens', async () => {
@@ -84,7 +84,7 @@ describe('refreshOrySession', () => {
       })
     )
 
-    const result = await refreshOrySession(current)
+    const result = await refreshSessionTokens(current)
 
     expect(result.status).toBe('refreshed')
     if (result.status !== 'refreshed') throw new Error('unreachable')
@@ -101,7 +101,7 @@ describe('refreshOrySession', () => {
       Response.json({ access_token: 'new-access', expires_in: 3600 })
     )
 
-    const result = await refreshOrySession(current)
+    const result = await refreshSessionTokens(current)
 
     if (result.status !== 'refreshed') throw new Error('expected refreshed')
     expect(result.tokens.refreshToken).toBe('old-refresh')

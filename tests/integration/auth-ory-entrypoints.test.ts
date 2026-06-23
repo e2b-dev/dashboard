@@ -2,10 +2,10 @@ import { type NextFetchEvent, NextRequest } from 'next/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const isKratosSessionActiveMock = vi.hoisted(() => vi.fn())
-const openOrySessionMock = vi.hoisted(() => vi.fn())
+const openSessionCookieMock = vi.hoisted(() => vi.fn())
 const isAccessTokenExpiringMock = vi.hoisted(() => vi.fn())
-const refreshOrySessionMock = vi.hoisted(() => vi.fn())
-const sealOrySessionMock = vi.hoisted(() => vi.fn())
+const refreshSessionTokensMock = vi.hoisted(() => vi.fn())
+const sealSessionCookieMock = vi.hoisted(() => vi.fn())
 const buildAuthorizationRequestMock = vi.hoisted(() => vi.fn())
 const readSignupMetadataMock = vi.hoisted(() => vi.fn())
 const encodeSignupMetadataMock = vi.hoisted(() => vi.fn())
@@ -21,15 +21,15 @@ vi.mock('@/core/server/auth/ory/kratos-session-edge', () => ({
 vi.mock('@/core/server/auth/ory/session-cookie', () => ({
   E2B_SESSION_COOKIE: 'e2b_session',
   ORY_SIGNUP_METADATA_COOKIE: 'e2b-ory-signup-metadata',
-  openOrySession: openOrySessionMock,
-  sealOrySession: sealOrySessionMock,
-  orySessionCookieOptions: () => ({ httpOnly: true, path: '/' }),
-  orySessionCookieDeleteOptions: () => ({ name: 'e2b_session', path: '/' }),
+  openSessionCookie: openSessionCookieMock,
+  sealSessionCookie: sealSessionCookieMock,
+  sessionCookieOptions: () => ({ httpOnly: true, path: '/' }),
+  sessionCookieDeleteOptions: () => ({ name: 'e2b_session', path: '/' }),
 }))
 
 vi.mock('@/core/server/auth/ory/token-refresh', () => ({
   isAccessTokenExpiring: isAccessTokenExpiringMock,
-  refreshOrySession: refreshOrySessionMock,
+  refreshSessionTokens: refreshSessionTokensMock,
 }))
 
 vi.mock('@/core/server/auth/ory/oauth-client', () => ({
@@ -57,9 +57,9 @@ function request(path: string): NextRequest {
 describe('Ory auth entrypoints — proxy gate', () => {
   beforeEach(() => {
     isKratosSessionActiveMock.mockReset().mockResolvedValue(false)
-    openOrySessionMock.mockReset().mockResolvedValue(null)
+    openSessionCookieMock.mockReset().mockResolvedValue(null)
     isAccessTokenExpiringMock.mockReset().mockReturnValue(false)
-    refreshOrySessionMock.mockReset()
+    refreshSessionTokensMock.mockReset()
   })
 
   afterEach(() => {
@@ -92,7 +92,7 @@ describe('Ory auth entrypoints — proxy gate', () => {
   })
 
   it('treats a token without a live Kratos session as unauthenticated', async () => {
-    openOrySessionMock.mockResolvedValue({
+    openSessionCookieMock.mockResolvedValue({
       accessToken: 'a',
       expiresAt: 1_900_000_000,
     })
@@ -107,7 +107,7 @@ describe('Ory auth entrypoints — proxy gate', () => {
   })
 
   it('redirects authenticated users away from auth pages', async () => {
-    openOrySessionMock.mockResolvedValue({
+    openSessionCookieMock.mockResolvedValue({
       accessToken: 'a',
       expiresAt: 1_900_000_000,
     })
@@ -137,15 +137,15 @@ describe('Ory auth entrypoints — middleware refresh (Pattern B)', () => {
   }
 
   beforeEach(() => {
-    openOrySessionMock.mockReset().mockResolvedValue(expiring)
+    openSessionCookieMock.mockReset().mockResolvedValue(expiring)
     isKratosSessionActiveMock.mockReset().mockResolvedValue(true)
     isAccessTokenExpiringMock.mockReset().mockReturnValue(true)
-    refreshOrySessionMock.mockReset()
-    sealOrySessionMock.mockReset().mockResolvedValue('sealed-new')
+    refreshSessionTokensMock.mockReset()
+    sealSessionCookieMock.mockReset().mockResolvedValue('sealed-new')
   })
 
   it('refreshes an expiring token and persists it on the response', async () => {
-    refreshOrySessionMock.mockResolvedValue({
+    refreshSessionTokensMock.mockResolvedValue({
       status: 'refreshed',
       tokens: { accessToken: 'new-access', expiresAt: 2_000 },
     })
@@ -155,14 +155,14 @@ describe('Ory auth entrypoints — middleware refresh (Pattern B)', () => {
       {} as NextFetchEvent
     )
 
-    expect(refreshOrySessionMock).toHaveBeenCalledWith(expiring)
+    expect(refreshSessionTokensMock).toHaveBeenCalledWith(expiring)
     expect(response.cookies.get('e2b_session')?.value).toBe('sealed-new')
     // Authenticated dashboard request is served (not redirected away).
     expect(response.headers.get('location')).toBeNull()
   })
 
   it('clears the cookie and redirects when the refresh is dead', async () => {
-    refreshOrySessionMock.mockResolvedValue({ status: 'dead' })
+    refreshSessionTokensMock.mockResolvedValue({ status: 'dead' })
 
     const response = await proxy(
       request('/dashboard/acme/sandboxes'),
@@ -183,8 +183,8 @@ describe('Ory auth entrypoints — middleware refresh (Pattern B)', () => {
       {} as NextFetchEvent
     )
 
-    expect(refreshOrySessionMock).not.toHaveBeenCalled()
-    expect(sealOrySessionMock).not.toHaveBeenCalled()
+    expect(refreshSessionTokensMock).not.toHaveBeenCalled()
+    expect(sealSessionCookieMock).not.toHaveBeenCalled()
     expect(response.cookies.get('e2b_session')).toBeUndefined()
   })
 
@@ -192,15 +192,15 @@ describe('Ory auth entrypoints — middleware refresh (Pattern B)', () => {
     // A dead refresh would otherwise delete e2b_session out of the propagated
     // request before the sign-out handler reads the id_token from it, dropping
     // RP-initiated logout so Kratos/Hydra never end the session.
-    refreshOrySessionMock.mockResolvedValue({ status: 'dead' })
+    refreshSessionTokensMock.mockResolvedValue({ status: 'dead' })
 
     const response = await proxy(
       request('/api/auth/sign-out'),
       {} as NextFetchEvent
     )
 
-    expect(openOrySessionMock).not.toHaveBeenCalled()
-    expect(refreshOrySessionMock).not.toHaveBeenCalled()
+    expect(openSessionCookieMock).not.toHaveBeenCalled()
+    expect(refreshSessionTokensMock).not.toHaveBeenCalled()
     expect(response.cookies.get('e2b_session')).toBeUndefined()
   })
 })

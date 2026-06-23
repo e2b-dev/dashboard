@@ -29,8 +29,8 @@ import {
 import { revokeOryOAuthSessionsForSubject } from './oauth-session'
 import {
   E2B_SESSION_COOKIE,
-  openOrySession,
-  orySessionCookieDeleteOptions,
+  openSessionCookie,
+  sessionCookieDeleteOptions,
 } from './session-cookie'
 import { completeOrySignOut } from './signout-flow'
 
@@ -62,7 +62,7 @@ export async function getAuthContext(): Promise<AuthContext | null> {
     return null
   }
 
-  const tokens = await readOrySessionTokens()
+  const tokens = await readSessionTokens()
   if (!tokens?.accessToken) return null
 
   return {
@@ -148,7 +148,7 @@ export async function handleCredentialChangeSuccess(): Promise<void> {
     revokeKratosSessionsForIdentity(identityId),
   ])
 
-  await clearOrySessionCookie()
+  await clearSessionCookie()
 }
 
 // Live Kratos session (whoami), memoized per request. The authority for "is
@@ -168,15 +168,15 @@ const readKratosSession = cache(async () => {
   }
 })
 
-const readOrySessionTokens = cache(async () => {
+const readSessionTokens = cache(async () => {
   const cookieStore = await cookies()
-  return openOrySession(cookieStore.get(E2B_SESSION_COOKIE)?.value)
+  return openSessionCookie(cookieStore.get(E2B_SESSION_COOKIE)?.value)
 })
 
-async function clearOrySessionCookie(): Promise<void> {
+async function clearSessionCookie(): Promise<void> {
   try {
     const [cookieStore, headerStore] = await Promise.all([cookies(), headers()])
-    cookieStore.delete(orySessionCookieDeleteOptions(headerStore.get('host')))
+    cookieStore.delete(sessionCookieDeleteOptions(headerStore.get('host')))
   } catch (error) {
     l.warn(
       {

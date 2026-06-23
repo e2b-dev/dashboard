@@ -10,14 +10,14 @@ import oryConfig from '@/configs/ory'
 import { isKratosSessionActive } from '@/core/server/auth/ory/kratos-session-edge'
 import {
   E2B_SESSION_COOKIE,
-  openOrySession,
-  orySessionCookieDeleteOptions,
-  orySessionCookieOptions,
-  sealOrySession,
+  openSessionCookie,
+  sealSessionCookie,
+  sessionCookieDeleteOptions,
+  sessionCookieOptions,
 } from '@/core/server/auth/ory/session-cookie'
 import {
   isAccessTokenExpiring,
-  refreshOrySession,
+  refreshSessionTokens,
 } from '@/core/server/auth/ory/token-refresh'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { getAuthRouteRedirect } from './auth-routes'
@@ -121,7 +121,7 @@ const skipRefresh: SessionRefresh = { hasToken: false, persist: noPersist }
 async function refreshSessionCookie(
   request: NextRequest
 ): Promise<SessionRefresh> {
-  const tokens = await openOrySession(
+  const tokens = await openSessionCookie(
     request.cookies.get(E2B_SESSION_COOKIE)?.value
   )
 
@@ -130,10 +130,10 @@ async function refreshSessionCookie(
     return { hasToken: true, persist: noPersist }
   }
 
-  const result = await refreshOrySession(tokens)
+  const result = await refreshSessionTokens(tokens)
 
   if (result.status === 'refreshed') {
-    const sealed = await sealOrySession(result.tokens)
+    const sealed = await sealSessionCookie(result.tokens)
     request.cookies.set(E2B_SESSION_COOKIE, sealed)
     return {
       hasToken: true,
@@ -142,7 +142,7 @@ async function refreshSessionCookie(
           response.cookies.set(
             E2B_SESSION_COOKIE,
             sealed,
-            orySessionCookieOptions(request.nextUrl.host)
+            sessionCookieOptions(request.nextUrl.host)
           )
         }
         return response
@@ -159,7 +159,7 @@ async function refreshSessionCookie(
       persist: (response) => {
         if (response instanceof NextResponse) {
           response.cookies.delete(
-            orySessionCookieDeleteOptions(request.nextUrl.host)
+            sessionCookieDeleteOptions(request.nextUrl.host)
           )
         }
         return response
