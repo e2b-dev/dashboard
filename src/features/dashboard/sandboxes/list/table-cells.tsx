@@ -96,7 +96,12 @@ export const CpuUsageCell = ({ row }: CellContext<SandboxListRow, unknown>) => (
         totalCpu={row.original.cpuCount}
       />
     ) : (
-      <ResourceUsage type="cpu" mode="simple" total={row.original.cpuCount} />
+      <ResourceUsage
+        type="cpu"
+        mode="simple"
+        total={row.original.cpuCount}
+        classNames={{ wrapper: USAGE_TEXT_CLASSNAME }}
+      />
     )}
   </div>
 )
@@ -109,7 +114,12 @@ export const RamUsageCell = ({ row }: CellContext<SandboxListRow, unknown>) => (
         totalMem={row.original.memoryMB}
       />
     ) : (
-      <ResourceUsage type="mem" mode="simple" total={row.original.memoryMB} />
+      <ResourceUsage
+        type="mem"
+        mode="simple"
+        total={row.original.memoryMB}
+        classNames={{ wrapper: USAGE_TEXT_CLASSNAME }}
+      />
     )}
   </div>
 )
@@ -128,6 +138,7 @@ export const DiskUsageCell = ({
         type="disk"
         mode="simple"
         total={row.original.diskSizeMB / 1024}
+        classNames={{ wrapper: USAGE_TEXT_CLASSNAME }}
       />
     )}
   </div>
@@ -206,7 +217,7 @@ export function MetadataCell({
   }, [value])
 
   if (!parsedValue || value.trim() === '{}') {
-    return <span className="text-fg-tertiary block w-full truncate">n/a</span>
+    return <span className="text-fg-tertiary block w-full truncate">--</span>
   }
 
   return (

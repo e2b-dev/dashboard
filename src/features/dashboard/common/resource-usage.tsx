@@ -29,7 +29,12 @@ const ResourceUsage: React.FC<ResourceUsageProps> = ({
     const hasValue = total !== null && total !== undefined && total !== 0
     const displayTotal = hasValue ? formatNumber(total) : '--'
     return (
-      <p className="flex justify-end gap-1 prose-table">
+      <p
+        className={cn(
+          'flex justify-end gap-1 prose-table',
+          classNames?.wrapper
+        )}
+      >
         <span
           className={cn(
             'prose-table-numeric',
@@ -63,8 +68,8 @@ const ResourceUsage: React.FC<ResourceUsageProps> = ({
         : 'text-fg'
   )
 
-  const displayValue = hasMetrics ? formatNumber(metrics) : 'n/a'
-  const totalValue = total ? formatNumber(total) : 'n/a'
+  const displayValue = hasMetrics ? formatNumber(metrics) : '--'
+  const totalValue = total ? formatNumber(total) : '--'
 
   return (
     <span
@@ -85,7 +90,7 @@ const ResourceUsage: React.FC<ResourceUsageProps> = ({
         </>
       ) : (
         <>
-          <span className="text-fg-tertiary">n/a </span>
+          <span className="text-fg-tertiary">-- </span>
           <span className="text-fg-tertiary mx-1">·</span>
         </>
       )}
