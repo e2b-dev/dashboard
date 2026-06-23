@@ -39,7 +39,7 @@ export function OryCardHeader() {
 
   return (
     <div className="mb-6 flex flex-col gap-8">
-      <E2BLogoSmall className="text-fg h-[18px] w-fit self-start" />
+      <E2BLogoSmall className="text-fg h-[18px] self-start" />
       <div className="flex flex-col gap-1">
         <h1 className="prose-headline-small">{title}</h1>
         {description && <p className="text-fg-secondary">{description}</p>}
