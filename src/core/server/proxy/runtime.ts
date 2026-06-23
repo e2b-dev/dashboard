@@ -59,6 +59,16 @@ export async function runDashboardProxy(
   request: NextRequest,
   _event: NextFetchEvent
 ) {
+  if (request.nextUrl.pathname.startsWith('/oauth2/')) {
+    const hydra = process.env.ORY_HYDRA_PUBLIC_URL ?? process.env.ORY_SDK_URL
+    if (hydra) {
+      return NextResponse.redirect(
+        new URL(request.nextUrl.pathname + request.nextUrl.search, hydra),
+        307
+      )
+    }
+  }
+
   // Forward Ory SDK traffic to Kratos before classification (it would otherwise
   // classify as a bypass and go to Next).
   if (isOrySdkProxyPath(request.nextUrl.pathname)) {
