@@ -41,7 +41,7 @@ describe('isKratosSessionActive', () => {
   it('calls whoami with the request cookie and returns true for an active session', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ active: true }),
+      json: async () => ({ active: true, identity: { external_id: 'ext-1' } }),
     })
     vi.stubGlobal('fetch', fetchMock)
 
