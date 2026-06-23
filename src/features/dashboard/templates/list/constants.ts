@@ -3,6 +3,8 @@ import type { TemplatesSort } from '@/core/modules/templates/models'
 
 export const TEMPLATES_PAGE_SIZE = 50
 
+export const TEMPLATES_REFETCH_INTERVAL_MS = 15_000
+
 export const TEMPLATES_DEFAULT_SORT_COLUMN_ID = 'updatedAt'
 export const TEMPLATES_DEFAULT_SORT_BASE = 'updated_at'
 export const TEMPLATES_DEFAULT_SORT_DESC = true

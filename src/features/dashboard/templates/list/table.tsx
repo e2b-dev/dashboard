@@ -35,6 +35,7 @@ import {
   TEMPLATES_DEFAULT_SORT_BASE,
   TEMPLATES_DEFAULT_SORT_DESC,
   TEMPLATES_PAGE_SIZE,
+  TEMPLATES_REFETCH_INTERVAL_MS,
 } from './constants'
 import TemplatesHeader from './header'
 import { useTemplateTableStore } from './stores/table-store'
@@ -92,6 +93,9 @@ export default function TemplatesTable() {
         getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
         initialCursor: undefined,
         placeholderData: keepPreviousData,
+        refetchInterval: TEMPLATES_REFETCH_INTERVAL_MS,
+        refetchIntervalInBackground: false,
+        refetchOnWindowFocus: true,
       }
     )
   )
