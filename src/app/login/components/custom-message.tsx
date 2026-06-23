@@ -12,7 +12,7 @@ export function OryMessageContent({ message }: OryMessageContentProps) {
   return (
     <span
       className={cn(
-        'prose-label',
+        'pb-5 text-sm',
         message.type === 'error'
           ? 'text-accent-error-highlight'
           : 'text-fg-tertiary'
