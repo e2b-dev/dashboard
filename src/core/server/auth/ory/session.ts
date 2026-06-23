@@ -46,6 +46,22 @@ export async function getAuthContext(): Promise<AuthContext | null> {
   const kratos = await readKratosSession()
   if (!kratos?.active || !kratos.identity) return null
 
+  // public.users.id lives only on the Kratos identity's external_id. Without it
+  // the dashboard can't key the user to its own records (PostHog, telemetry,
+  // team membership), so we refuse the half-provisioned session. The edge gate
+  // (isKratosSessionActive) rejects it too, so the user is routed to /sign-in
+  // where a fresh login re-runs bootstrap and backfills external_id.
+  if (!kratos.identity.external_id) {
+    l.error(
+      {
+        key: 'auth_provider:identity_missing_external_id',
+        context: { identity_id: kratos.identity.id },
+      },
+      'Kratos identity has no external_id; treating the session as unauthenticated'
+    )
+    return null
+  }
+
   const tokens = await readOrySessionTokens()
   if (!tokens?.accessToken) return null
 
@@ -65,7 +81,7 @@ export async function getUserProfile(): Promise<AuthUser | null> {
     includeCredential: ACCOUNT_IDENTITY_CREDENTIALS,
   })
 
-  return identity ? fromOryIdentity(identity, { userId: identityId }) : null
+  return identity ? fromOryIdentity(identity) : null
 }
 
 export async function signOut(
@@ -114,9 +130,7 @@ export async function updateUser(
     password: input.password,
   })
 
-  if (!result.ok) return result
-
-  return { ...result, user: { ...result.user, id: identityId } }
+  return result
 }
 
 export async function startReauthForAccountSettings(): Promise<ReauthDispatch> {

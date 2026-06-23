@@ -87,6 +87,7 @@ function kratosSession({
     authenticated_at: authenticatedAt,
     identity: {
       id: identityId,
+      external_id: 'e2b-user-id',
       traits: { email: 'ada@example.test', name: 'Ada' },
     },
   }
@@ -119,7 +120,8 @@ describe('Ory account security (Kratos session + e2b_session)', () => {
 
     expect(await getAuthContext()).toEqual({
       user: expect.objectContaining({
-        id: 'kratos-uuid',
+        id: 'e2b-user-id',
+        identityId: 'kratos-uuid',
         email: 'ada@example.test',
         name: 'Ada',
       }),
@@ -129,6 +131,17 @@ describe('Ory account security (Kratos session + e2b_session)', () => {
 
   it('returns null when the Kratos session is inactive despite a token', async () => {
     getServerSessionMock.mockResolvedValue({ active: false })
+
+    expect(await getAuthContext()).toBeNull()
+  })
+
+  it('returns null when the Kratos identity has no external_id', async () => {
+    getServerSessionMock.mockResolvedValue({
+      id: 'kratos-session-id',
+      active: true,
+      authenticated_at: new Date(),
+      identity: { id: 'kratos-uuid', traits: { email: 'ada@example.test' } },
+    })
 
     expect(await getAuthContext()).toBeNull()
   })
@@ -168,7 +181,10 @@ describe('Ory account security (Kratos session + e2b_session)', () => {
         credentials: { password: { config: { password: 'new-secret' } } },
       }),
     })
-    expect(result).toMatchObject({ ok: true, user: { id: 'kratos-uuid' } })
+    expect(result).toMatchObject({
+      ok: true,
+      user: { id: 'e2b-user-id', identityId: 'kratos-uuid' },
+    })
   })
 
   it('revokes Ory + Kratos sessions and clears e2b_session after a credential change', async () => {

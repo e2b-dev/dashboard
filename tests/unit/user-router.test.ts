@@ -26,6 +26,7 @@ const createCaller = createCallerFactory(userRouter)
 
 const authUser = {
   id: 'user-1',
+  identityId: 'identity-1',
   email: 'old@example.test',
   name: 'Ada',
   avatarUrl: null,

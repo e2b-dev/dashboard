@@ -32,15 +32,50 @@ function sessionIdentity(overrides: {
   traits?: unknown
   metadata_public?: unknown
 }) {
-  return { id: 'identity-1', ...overrides }
+  return { id: 'identity-1', external_id: 'e2b-user-1', ...overrides }
 }
 
 function adminIdentity(overrides: {
   traits?: unknown
   metadata_public?: unknown
 }): Identity {
-  return { id: 'identity-1', ...overrides } as Identity
+  return {
+    id: 'identity-1',
+    external_id: 'e2b-user-1',
+    ...overrides,
+  } as Identity
 }
+
+describe('AuthUser id sourcing', () => {
+  it('sets id from external_id and identityId from the Kratos id', () => {
+    const fromSession = fromKratosSessionIdentity(
+      sessionIdentity({ traits: { email: 'jane@e2b.dev' } })
+    )
+    const fromAdmin = fromOryIdentity(
+      adminIdentity({ traits: { email: 'jane@e2b.dev' } })
+    )
+
+    for (const user of [fromSession, fromAdmin]) {
+      expect(user.id).toBe('e2b-user-1')
+      expect(user.identityId).toBe('identity-1')
+    }
+  })
+
+  it('throws when the identity has no external_id', () => {
+    expect(() =>
+      fromKratosSessionIdentity({
+        id: 'identity-1',
+        traits: { email: 'jane@e2b.dev' },
+      })
+    ).toThrow(/external_id/)
+    expect(() =>
+      fromOryIdentity({
+        id: 'identity-1',
+        traits: { email: 'jane@e2b.dev' },
+      } as Identity)
+    ).toThrow(/external_id/)
+  })
+})
 
 describe('parseOryTraits via identity mappers', () => {
   it('accepts valid traits without logging drift', () => {

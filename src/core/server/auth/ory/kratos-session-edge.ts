@@ -5,6 +5,10 @@ import { APP_OWNED_COOKIES } from './session-cookie'
 // reads next/headers and can't run in the edge runtime, so we hit Kratos
 // directly with the request's cookies. This gates redirects only —
 // authoritative enforcement happens server-side in getAuthContext.
+//
+// external_id is required so this gate agrees with getAuthContext: a session
+// without it is half-provisioned and getAuthContext rejects it, so we must too,
+// otherwise the user loops between /sign-in and /dashboard.
 export async function isKratosSessionActive(
   request: NextRequest
 ): Promise<boolean> {
@@ -22,8 +26,11 @@ export async function isKratosSessionActive(
       { headers: { cookie, accept: 'application/json' } }
     )
     if (!response.ok) return false
-    const session = (await response.json()) as { active?: boolean }
-    return session.active === true
+    const session = (await response.json()) as {
+      active?: boolean
+      identity?: { external_id?: string | null }
+    }
+    return session.active === true && !!session.identity?.external_id
   } catch {
     return false
   }

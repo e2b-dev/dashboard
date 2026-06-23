@@ -5,8 +5,18 @@ import { z } from 'zod'
 import { l } from '@/core/shared/clients/logger/logger'
 import type { AuthUser } from '../types'
 
-type FromOryIdentityOptions = {
-  userId?: string
+// AuthUser.id is always public.users.id (the identity's external_id), never the
+// Kratos identity id. A provisioned user always has one; getAuthContext refuses
+// sessions without it, so reaching here without an external_id is an invariant
+// violation we fail loudly on rather than mislabel the user.
+function requireExternalId(identity: {
+  id: string
+  external_id?: string | null
+}): string {
+  if (!identity.external_id) {
+    throw new Error(`Ory identity ${identity.id} has no external_id`)
+  }
+  return identity.external_id
 }
 
 export const oryIdentityTraitsSchema = z
@@ -58,6 +68,7 @@ function readPublicPicture(metadataPublic: unknown): string | null {
 // with an admin lookup when those are needed (e.g. the profile query).
 export function fromKratosSessionIdentity(identity: {
   id: string
+  external_id?: string | null
   traits?: unknown
   metadata_public?: unknown
 }): AuthUser {
@@ -66,7 +77,8 @@ export function fromKratosSessionIdentity(identity: {
     source: 'kratos_session',
   })
   return {
-    id: identity.id,
+    id: requireExternalId(identity),
+    identityId: identity.id,
     email: readString(traits, 'email'),
     name: readString(traits, 'name'),
     avatarUrl: readPublicPicture(identity.metadata_public),
@@ -79,10 +91,7 @@ export function fromKratosSessionIdentity(identity: {
 // Rich path: build the user from a full Kratos Identity (traits + credentials).
 // Used wherever we've fetched the identity via the admin API — admin lookups and
 // the live profile query.
-export function fromOryIdentity(
-  identity: Identity,
-  options: FromOryIdentityOptions = {}
-): AuthUser {
+export function fromOryIdentity(identity: Identity): AuthUser {
   const traits = parseOryTraits(identity.traits, {
     identityId: identity.id,
     source: 'admin_identity',
@@ -98,7 +107,8 @@ export function fromOryIdentity(
   const canChangePassword = hasPasswordCredential && !hasOidcCredential
 
   return {
-    id: options.userId ?? identity.id,
+    id: requireExternalId(identity),
+    identityId: identity.id,
     email,
     name,
     avatarUrl,
