@@ -3,6 +3,7 @@ export type AgentTemplateConfig = {
   name: string
   command: string
   template: string
+  templateName: string
   icon: 'claude' | 'open' | 'openai'
   description: string
 }

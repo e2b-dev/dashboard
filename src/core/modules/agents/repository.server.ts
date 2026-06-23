@@ -56,7 +56,8 @@ export function createAgentsRepository(
         id: agent.id,
         name: agent.name,
         command: agent.command,
-        template: agent.template,
+        template: agent.aliasId,
+        templateName: agent.aliasName,
         icon: mapIcon(agent.icon),
         description: agent.description,
       }))

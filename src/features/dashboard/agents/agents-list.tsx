@@ -75,7 +75,7 @@ function AgentCard({ agent }: { agent: AgentTemplateConfig }) {
       </div>
 
       <div className="prose-label text-fg-tertiary mt-auto pt-4 uppercase">
-        {agent.template}
+        {agent.templateName}
       </div>
 
       <Button asChild className="mt-3 w-full" variant="primary">
