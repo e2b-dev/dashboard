@@ -17,7 +17,10 @@ const { GET } = await import('@/app/api/auth/switch-account/route')
 function switchRequest({
   returnTo,
   cookie = 'e2b_session=tokencache; ory_kratos_session=session-token',
-}: { returnTo?: string | null; cookie?: string } = {}): NextRequest {
+}: {
+  returnTo?: string | null
+  cookie?: string
+} = {}): NextRequest {
   const url = new URL('https://app.e2b.dev/api/auth/switch-account')
   if (returnTo != null) url.searchParams.set('returnTo', returnTo)
   return new NextRequest(url, { headers: { cookie } })

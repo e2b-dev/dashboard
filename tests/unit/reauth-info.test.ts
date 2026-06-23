@@ -32,7 +32,9 @@ describe('getReauthInfo', () => {
 
   it('detects a refresh flow and its password credential', () => {
     expect(
-      getReauthInfo(loginFlow({ refresh: true, groups: ['default', 'password'] }))
+      getReauthInfo(
+        loginFlow({ refresh: true, groups: ['default', 'password'] })
+      )
     ).toEqual({ isReauthLogin: true, credential: 'password' })
   })
 
@@ -44,9 +46,8 @@ describe('getReauthInfo', () => {
 
   it('prefers password when the identity has both', () => {
     expect(
-      getReauthInfo(
-        loginFlow({ refresh: true, groups: ['password', 'oidc'] })
-      ).credential
+      getReauthInfo(loginFlow({ refresh: true, groups: ['password', 'oidc'] }))
+        .credential
     ).toBe('password')
   })
 
