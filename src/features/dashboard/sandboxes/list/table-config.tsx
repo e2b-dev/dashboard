@@ -104,8 +104,22 @@ export const templateIdentifierFilter: FilterFn<SandboxListRow> = (
 
 export const sandboxListColumns: ColumnDef<SandboxListRow>[] = [
   {
+    id: 'startedAt',
+    accessorKey: 'startedAt',
+    header: 'Started At',
+    cell: StartedAtCell,
+    size: 150,
+    enableResizing: false,
+    filterFn: startedAtDateRangeFilter,
+    enableColumnFilter: true,
+    enableGlobalFilter: false,
+    sortingFn: (rowA, rowB) => {
+      return rowA.original.startedAt.localeCompare(rowB.original.startedAt)
+    },
+  },
+  {
     accessorKey: 'sandboxID',
-    header: 'ID',
+    header: 'Instance',
     cell: IdCell,
     size: 165,
     minSize: 100,
@@ -113,18 +127,6 @@ export const sandboxListColumns: ColumnDef<SandboxListRow>[] = [
     enableColumnFilter: false,
     enableSorting: false,
     enableGlobalFilter: true,
-  },
-  {
-    accessorFn: (row) => row.alias || row.templateID,
-    id: 'template',
-    header: 'TEMPLATE',
-    cell: TemplateCell,
-    size: 250,
-    minSize: 100,
-    maxSize: 350,
-    enableResizing: true,
-    filterFn: templateIdentifierFilter,
-    enableGlobalFilter: false,
   },
   {
     accessorKey: 'state',
@@ -137,6 +139,18 @@ export const sandboxListColumns: ColumnDef<SandboxListRow>[] = [
     enableSorting: false,
     enableColumnFilter: true,
     filterFn: 'equalsString',
+    enableGlobalFilter: false,
+  },
+  {
+    accessorFn: (row) => row.alias || row.templateID,
+    id: 'template',
+    header: 'TEMPLATE',
+    cell: TemplateCell,
+    size: 250,
+    minSize: 100,
+    maxSize: 350,
+    enableResizing: true,
+    filterFn: templateIdentifierFilter,
     enableGlobalFilter: false,
   },
   {
@@ -179,19 +193,5 @@ export const sandboxListColumns: ColumnDef<SandboxListRow>[] = [
     minSize: 160,
     enableResizing: true,
     enableSorting: false,
-  },
-  {
-    id: 'startedAt',
-    accessorKey: 'startedAt',
-    header: 'Started At',
-    cell: StartedAtCell,
-    size: 150,
-    enableResizing: false,
-    filterFn: startedAtDateRangeFilter,
-    enableColumnFilter: true,
-    enableGlobalFilter: false,
-    sortingFn: (rowA, rowB) => {
-      return rowA.original.startedAt.localeCompare(rowB.original.startedAt)
-    },
   },
 ]
