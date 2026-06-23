@@ -3,8 +3,8 @@ import 'server-only'
 import { type NextRequest, NextResponse } from 'next/server'
 import { signOut } from '@/core/server/auth'
 import {
-  sessionCookieDeleteOptions,
   resolveSessionCookieDomain,
+  sessionCookieDeleteOptions,
 } from '@/core/server/auth/ory/session-cookie'
 
 // Ory's identity session cookie: `ory_kratos_session` self-hosted,

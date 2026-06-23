@@ -2,10 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   openSessionCookie,
   resolveSessionCookieDomain,
+  type SessionTokens,
   sealSessionCookie,
   sessionCookieDeleteOptions,
   sessionCookieOptions,
-  type SessionTokens,
 } from '@/core/server/auth/ory/session-cookie'
 
 const tokens: SessionTokens = {
@@ -37,7 +37,9 @@ describe('e2b_session cookie', () => {
       expiresAt: 123,
     }
 
-    expect(await openSessionCookie(await sealSessionCookie(minimal))).toEqual(minimal)
+    expect(await openSessionCookie(await sealSessionCookie(minimal))).toEqual(
+      minimal
+    )
   })
 
   it('returns null for missing or empty values', async () => {

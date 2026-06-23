@@ -49,11 +49,11 @@ describe('refreshSessionTokens', () => {
     const fetchMock = vi.fn()
     vi.stubGlobal('fetch', fetchMock)
 
-    expect(await refreshSessionTokens({ accessToken: 'a', expiresAt: 1 })).toEqual(
-      {
-        status: 'dead',
-      }
-    )
+    expect(
+      await refreshSessionTokens({ accessToken: 'a', expiresAt: 1 })
+    ).toEqual({
+      status: 'dead',
+    })
     expect(fetchMock).not.toHaveBeenCalled()
   })
 

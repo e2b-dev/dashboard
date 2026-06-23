@@ -117,9 +117,7 @@ export function resolveSessionCookieDomain(
   return undefined
 }
 
-function parseTokens(
-  payload: Record<string, unknown>
-): SessionTokens | null {
+function parseTokens(payload: Record<string, unknown>): SessionTokens | null {
   const { accessToken, refreshToken, idToken, expiresAt } = payload
   if (typeof accessToken !== 'string' || typeof expiresAt !== 'number') {
     return null
