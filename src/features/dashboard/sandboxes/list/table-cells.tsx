@@ -17,6 +17,10 @@ import type { SandboxListRow } from './table-config'
 const USAGE_TEXT_CLASSNAME = 'prose-table-numeric text-right'
 const MONO_NUMERIC_TEXT_CLASSNAME =
   'overflow-x-hidden whitespace-nowrap font-mono prose-table-numeric'
+// Started At needs to fit the date, time, and timezone (e.g. "GMT+2") within a
+// fixed-width column, so it drops font-mono for the narrower tabular figures.
+const TIMESTAMP_TEXT_CLASSNAME =
+  'overflow-hidden whitespace-nowrap prose-table-numeric'
 
 // Live usage is only available for running sandboxes; paused sandboxes fall
 // back to their allocated specs.
@@ -225,7 +229,7 @@ export function StartedAtCell({
   }, [dateValue])
 
   return (
-    <div className={`h-full ${MONO_NUMERIC_TEXT_CLASSNAME}`}>
+    <div className={`h-full ${TIMESTAMP_TEXT_CLASSNAME}`}>
       <span className="text-fg-tertiary">
         {formattedTimestamp?.datePart ?? '--'}
       </span>{' '}
