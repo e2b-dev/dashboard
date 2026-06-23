@@ -4,6 +4,45 @@
  */
 
 export interface paths {
+  '/agents': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List configured dashboard agents */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned configured agents. */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['AgentsResponse']
+          }
+        }
+        401: components['responses']['401']
+        403: components['responses']['403']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/health': {
     parameters: {
       query?: never
@@ -1378,6 +1417,18 @@ export interface components {
     }
     DefaultTemplatesResponse: {
       templates: components['schemas']['DefaultTemplate'][]
+    }
+    Agent: {
+      /** Format: uuid */
+      id: string
+      name: string
+      command: string
+      template: string
+      icon: string
+      description: string
+    }
+    AgentsResponse: {
+      agents: components['schemas']['Agent'][]
     }
     TeamTemplate: {
       templateID: string

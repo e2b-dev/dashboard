@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import { AUTH_URLS } from '@/configs/urls'
+import { createAgentsRepository } from '@/core/modules/agents/repository.server'
 import { featureFlags } from '@/core/modules/feature-flags/feature-flags.server'
 import { getAuthContext } from '@/core/server/auth'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
 import { AgentsList } from '@/features/dashboard/agents/agents-list'
-import { AGENT_TEMPLATES } from '@/features/dashboard/agents/config'
 import { Page } from '@/features/dashboard/layouts/page'
 
 export const metadata: Metadata = {
@@ -49,6 +49,16 @@ export default async function AgentsPage({ params }: AgentsPageProps) {
     notFound()
   }
 
+  const agentsRepository = createAgentsRepository({
+    accessToken: authContext.accessToken,
+    teamId: teamId.data,
+  })
+  const agentsResult = await agentsRepository.listAgents()
+
+  if (!agentsResult.ok) {
+    throw new Error(agentsResult.error.message)
+  }
+
   return (
     <Page className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
@@ -58,7 +68,7 @@ export default async function AgentsPage({ params }: AgentsPageProps) {
         </p>
       </div>
 
-      <AgentsList agents={AGENT_TEMPLATES} />
+      <AgentsList agents={agentsResult.data.agents} />
     </Page>
   )
 }

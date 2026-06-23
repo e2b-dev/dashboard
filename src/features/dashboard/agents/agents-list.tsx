@@ -33,6 +33,19 @@ export function AgentsList({
   agents: AgentTemplateConfig[]
   className?: string
 }) {
+  if (agents.length === 0) {
+    return (
+      <div
+        className={cn(
+          'border-stroke bg-bg-1 prose-body text-fg-tertiary rounded-lg border p-4',
+          className
+        )}
+      >
+        No agents are configured.
+      </div>
+    )
+  }
+
   return (
     <div className={cn('grid gap-3 sm:grid-cols-2 xl:grid-cols-3', className)}>
       {agents.map((agent) => (
