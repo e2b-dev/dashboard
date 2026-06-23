@@ -1,10 +1,14 @@
 'use client'
 
-import type { OryNodeLabelProps } from '@ory/elements-react'
+import { FlowType } from '@ory/client-fetch'
+import { type OryNodeLabelProps, useOryFlow } from '@ory/elements-react'
+import Link from 'next/link'
+import { AUTH_URLS } from '@/configs/urls'
 import { cn } from '@/lib/utils'
 import { Label } from '@/ui/primitives/label'
 
 export function OryLabel({ node, children, fieldError }: OryNodeLabelProps) {
+  const { flowType } = useOryFlow()
   const label = node.meta?.label?.text
   const messages = node.messages ?? []
   const fieldErrorText =
@@ -12,9 +16,28 @@ export function OryLabel({ node, children, fieldError }: OryNodeLabelProps) {
       ? String((fieldError as { text: unknown }).text)
       : undefined
 
+  const isPasswordOnLogin =
+    flowType === FlowType.Login && node.attributes.name === 'password'
+
   return (
     <div className="flex w-full flex-col gap-2">
-      {label && <Label htmlFor={node.attributes.name}>{label}</Label>}
+      {label &&
+        (isPasswordOnLogin ? (
+          <div className="flex w-full items-center justify-between">
+            <Label htmlFor={node.attributes.name}>{label}</Label>
+            <Link
+              prefetch={false}
+              target="_top"
+              href={AUTH_URLS.FORGOT_PASSWORD}
+              tabIndex={-1}
+              className="prose-label text-fg-secondary hover:text-fg underline underline-offset-[3px]"
+            >
+              Forgot password?
+            </Link>
+          </div>
+        ) : (
+          <Label htmlFor={node.attributes.name}>{label}</Label>
+        ))}
       {children}
       {messages.map((message) => (
         <span
