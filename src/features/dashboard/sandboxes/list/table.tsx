@@ -1,6 +1,9 @@
 'use client'
 
-import { keepPreviousData, useSuspenseQuery } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useSuspenseInfiniteQuery,
+} from '@tanstack/react-query'
 import {
   type ColumnFiltersState,
   type ColumnSizingState,
@@ -77,6 +80,8 @@ function buildColumnFilters({
   return filters
 }
 
+const SANDBOXES_PAGE_SIZE = 50
+
 export default function SandboxesTable() {
   'use no memo'
 
@@ -94,17 +99,6 @@ export default function SandboxesTable() {
     }
   )
 
-  const { data, refetch, isFetching } = useSuspenseQuery(
-    trpc.sandboxes.getSandboxes.queryOptions(
-      { teamSlug },
-      {
-        refetchOnMount: 'always',
-        refetchOnWindowFocus: true,
-        placeholderData: keepPreviousData,
-      }
-    )
-  )
-
   const {
     startedAtFilter,
     templateFilters,
@@ -112,9 +106,36 @@ export default function SandboxesTable() {
     memoryMB,
     sorting,
     globalFilter,
+    pollingInterval,
     setSorting,
     setGlobalFilter,
   } = useSandboxListTableStore()
+
+  const {
+    data,
+    refetch,
+    isFetching,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useSuspenseInfiniteQuery(
+    trpc.sandboxes.getSandboxes.infiniteQueryOptions(
+      { teamSlug, limit: SANDBOXES_PAGE_SIZE },
+      {
+        getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+        initialCursor: undefined,
+        refetchOnMount: 'always',
+        refetchOnWindowFocus: true,
+        refetchInterval: pollingInterval > 0 ? pollingInterval * 1_000 : false,
+        placeholderData: keepPreviousData,
+      }
+    )
+  )
+
+  const sandboxes = useMemo(
+    () => data.pages.flatMap((page) => page.sandboxes),
+    [data]
+  )
 
   const columnFilters = useMemo(
     () =>
@@ -131,7 +152,7 @@ export default function SandboxesTable() {
 
   const table = useReactTable<SandboxListRow>({
     columns: sandboxListColumns,
-    data: data.sandboxes,
+    data: sandboxes,
     state: {
       globalFilter,
       sorting: activeSorting,
@@ -215,7 +236,13 @@ export default function SandboxesTable() {
               </DataTableRow>
             ))}
           </DataTableHeader>
-          <SandboxesTableBody table={table} scrollRef={scrollRef} />
+          <SandboxesTableBody
+            table={table}
+            scrollRef={scrollRef}
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+            fetchNextPage={fetchNextPage}
+          />
         </DataTable>
       </div>
     </ClientOnly>

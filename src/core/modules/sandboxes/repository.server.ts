@@ -6,7 +6,7 @@ import type { components as InfraComponents } from '@/contracts/infra-api'
 import type {
   SandboxEventModel,
   Sandboxes,
-  SandboxesMetricsRecord,
+  SandboxState,
   TeamMetric,
 } from '@/core/modules/sandboxes/models'
 import { api, infra } from '@/core/shared/clients/api'
@@ -36,6 +36,18 @@ export interface GetSandboxMetricsOptions {
   endUnixMs: number
 }
 
+export interface ListSandboxesOptions {
+  cursor?: string
+  limit: number
+}
+
+export interface ListSandboxesResult {
+  sandboxes: Sandboxes
+  nextCursor: string | null
+}
+
+const DEFAULT_SANDBOX_STATES: SandboxState[] = ['running', 'paused']
+
 export interface SandboxesRepository {
   getSandboxLogs(
     sandboxId: string,
@@ -60,10 +72,9 @@ export interface SandboxesRepository {
     sandboxId: string,
     options: GetSandboxMetricsOptions
   ): Promise<RepoResult<InfraComponents['schemas']['SandboxMetric'][]>>
-  listSandboxes(): Promise<RepoResult<Sandboxes>>
-  getSandboxesMetrics(
-    sandboxIds: string[]
-  ): Promise<RepoResult<SandboxesMetricsRecord>>
+  listSandboxes(
+    options: ListSandboxesOptions
+  ): Promise<RepoResult<ListSandboxesResult>>
   getTeamMetricsRange(
     startUnixSeconds: number,
     endUnixSeconds: number
@@ -356,8 +367,15 @@ export function createSandboxesRepository(
 
       return ok(result.data)
     },
-    async listSandboxes() {
-      const result = await deps.infraClient.GET('/sandboxes', {
+    async listSandboxes(options) {
+      const result = await deps.infraClient.GET('/v2/sandboxes', {
+        params: {
+          query: {
+            state: DEFAULT_SANDBOX_STATES,
+            nextToken: options.cursor,
+            limit: options.limit,
+          },
+        },
         headers: {
           ...deps.authHeaders(scope.accessToken, scope.teamId),
         },
@@ -371,7 +389,7 @@ export function createSandboxesRepository(
           team_id: scope.teamId,
           context: {
             status: result.response.status,
-            path: '/sandboxes',
+            path: '/v2/sandboxes',
           },
         })
         return err(
@@ -383,42 +401,10 @@ export function createSandboxesRepository(
         )
       }
 
-      return ok(result.data)
-    },
-    async getSandboxesMetrics(sandboxIds) {
-      const result = await deps.infraClient.GET('/sandboxes/metrics', {
-        params: {
-          query: {
-            sandbox_ids: sandboxIds,
-          },
-        },
-        headers: {
-          ...deps.authHeaders(scope.accessToken, scope.teamId),
-        },
-        cache: 'no-store',
+      return ok({
+        sandboxes: result.data ?? [],
+        nextCursor: result.response.headers.get('x-next-token') || null,
       })
-
-      if (!result.response.ok || result.error) {
-        l.error({
-          key: 'repositories:sandboxes:get_sandboxes_metrics:infra_error',
-          error: result.error,
-          team_id: scope.teamId,
-          context: {
-            status: result.response.status,
-            path: '/sandboxes/metrics',
-            sandbox_ids: sandboxIds,
-          },
-        })
-        return err(
-          repoErrorFromHttp(
-            result.response.status,
-            result.error?.message ?? 'Failed to fetch sandboxes metrics',
-            result.error
-          )
-        )
-      }
-
-      return ok(result.data.sandboxes)
     },
     async getTeamMetricsRange(startUnixSeconds, endUnixSeconds) {
       const result = await deps.infraClient.GET('/teams/{teamID}/metrics', {

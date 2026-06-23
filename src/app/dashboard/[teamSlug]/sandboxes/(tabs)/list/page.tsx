@@ -9,8 +9,9 @@ export default async function SandboxesListPage({
   const { teamSlug } = await params
 
   prefetch(
-    trpc.sandboxes.getSandboxes.queryOptions({
+    trpc.sandboxes.getSandboxes.infiniteQueryOptions({
       teamSlug,
+      limit: 50,
     })
   )
 

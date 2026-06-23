@@ -13,10 +13,7 @@ import {
 } from '@/core/modules/sandboxes/schemas'
 import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/errors'
 import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
-import {
-  fillTeamMetricsWithZeros,
-  transformMetricsToClientMetrics,
-} from '@/core/server/functions/sandboxes/utils'
+import { fillTeamMetricsWithZeros } from '@/core/server/functions/sandboxes/utils'
 import { createTRPCRouter } from '@/core/server/trpc/init'
 import { protectedTeamProcedure } from '@/core/server/trpc/procedures'
 
@@ -31,52 +28,34 @@ const sandboxesRepositoryProcedure = protectedTeamProcedure.use(
 
 export const sandboxesRouter = createTRPCRouter({
   // QUERIES
-  getSandboxes: sandboxesRepositoryProcedure.query(async ({ ctx }) => {
-    if (USE_MOCK_DATA) {
-      await new Promise((resolve) => setTimeout(resolve, 200))
-
-      const sandboxes = MOCK_SANDBOXES_DATA()
-
-      return {
-        sandboxes,
-      }
-    }
-
-    const sandboxesResult = await ctx.sandboxesRepository.listSandboxes()
-    if (!sandboxesResult.ok) {
-      throwTRPCErrorFromRepoError(sandboxesResult.error)
-    }
-
-    return {
-      sandboxes: sandboxesResult.data,
-    }
-  }),
-
-  getSandboxesMetrics: sandboxesRepositoryProcedure
+  getSandboxes: sandboxesRepositoryProcedure
     .input(
       z.object({
-        sandboxIds: z.array(z.string()),
+        cursor: z.string().optional(),
+        limit: z.number().int().min(1).max(100).default(50),
       })
     )
     .query(async ({ ctx, input }) => {
-      const { sandboxIds } = input
+      if (USE_MOCK_DATA) {
+        await new Promise((resolve) => setTimeout(resolve, 200))
 
-      if (sandboxIds.length === 0 || USE_MOCK_DATA) {
         return {
-          metrics: {},
+          sandboxes: MOCK_SANDBOXES_DATA(),
+          nextCursor: null,
         }
       }
 
-      const metricsDataResult =
-        await ctx.sandboxesRepository.getSandboxesMetrics(sandboxIds)
-      if (!metricsDataResult.ok) {
-        throwTRPCErrorFromRepoError(metricsDataResult.error)
+      const sandboxesResult = await ctx.sandboxesRepository.listSandboxes({
+        cursor: input.cursor,
+        limit: input.limit,
+      })
+      if (!sandboxesResult.ok) {
+        throwTRPCErrorFromRepoError(sandboxesResult.error)
       }
-      const metricsData = metricsDataResult.data
-      const metrics = transformMetricsToClientMetrics(metricsData)
 
       return {
-        metrics,
+        sandboxes: sandboxesResult.data.sandboxes,
+        nextCursor: sandboxesResult.data.nextCursor,
       }
     }),
 

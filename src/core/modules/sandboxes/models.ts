@@ -5,8 +5,7 @@ import type { components as InfraComponents } from '@/contracts/infra-api'
 export type SandboxLogLevel = InfraComponents['schemas']['LogLevel']
 export type Sandbox = InfraComponents['schemas']['ListedSandbox']
 export type Sandboxes = InfraComponents['schemas']['ListedSandbox'][]
-export type SandboxesMetricsRecord =
-  InfraComponents['schemas']['SandboxesWithMetrics']['sandboxes']
+export type SandboxState = InfraComponents['schemas']['SandboxState']
 export type TeamMetric = InfraComponents['schemas']['TeamMetric']
 export type SandboxInfo = InfraComponents['schemas']['SandboxDetail']
 

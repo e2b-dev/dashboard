@@ -13,6 +13,7 @@ import {
   MetadataCell,
   RamUsageCell,
   StartedAtCell,
+  StateCell,
   TemplateCell,
 } from './table-cells'
 
@@ -123,6 +124,19 @@ export const sandboxListColumns: ColumnDef<SandboxListRow>[] = [
     maxSize: 350,
     enableResizing: true,
     filterFn: templateIdentifierFilter,
+    enableGlobalFilter: false,
+  },
+  {
+    accessorKey: 'state',
+    id: 'state',
+    header: 'State',
+    cell: StateCell,
+    size: 120,
+    minSize: 100,
+    enableResizing: false,
+    enableSorting: false,
+    enableColumnFilter: true,
+    filterFn: 'equalsString',
     enableGlobalFilter: false,
   },
   {
