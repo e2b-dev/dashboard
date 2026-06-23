@@ -45,7 +45,7 @@ export default function TagsHeader({
   )
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-6">
       <div className="flex items-center gap-2 justify-between">
         <div className="w-full max-w-70">
           <label
@@ -97,7 +97,7 @@ export default function TagsHeader({
             rel="noopener"
             className="underline-offset-2 underline hover:text-fg transition-colors"
           >
-            Read more
+            Read&nbsp;more
           </a>
           .
         </p>
