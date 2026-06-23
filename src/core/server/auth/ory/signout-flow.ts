@@ -10,13 +10,11 @@ import { ORY_POST_LOGOUT_PATH } from './signout'
 
 export async function completeOrySignOut(origin = BASE_URL): Promise<string> {
   let identityId: string | undefined
-  let userId: string | undefined
   try {
     const session = await auth()
     const serverFields = readOrySessionFields(session)
-    userId = session?.user?.id
-    // The Kratos identity id resolved at sign-in — NOT the OIDC subject (which
-    // is the E2B user id) — so we revoke the right identity's Kratos sessions.
+    // Hydra's OAuth2 subject and Kratos both key off the identity id, not
+    // AuthUser.id (which is the public.users.id / external_id).
     identityId = serverFields?.identityId
   } catch (error) {
     l.warn(
@@ -45,7 +43,7 @@ export async function completeOrySignOut(origin = BASE_URL): Promise<string> {
   // log-and-swallow their own errors, and the Kratos helper retries 429
   // contention, so Promise.all never rejects here.
   await Promise.all([
-    userId ? revokeOryOAuthSessionsForSubject(userId) : null,
+    identityId ? revokeOryOAuthSessionsForSubject(identityId) : null,
     identityId ? revokeKratosSessionsForIdentity(identityId) : null,
   ])
 

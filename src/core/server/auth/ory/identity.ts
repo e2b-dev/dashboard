@@ -3,6 +3,7 @@ import 'server-only'
 import type { Identity } from '@ory/client-fetch'
 import type { Session } from 'next-auth'
 import type { AuthUser } from '../types'
+import { readOrySessionFields } from './authjs-session-boundary'
 
 type FromOryIdentityOptions = {
   userId?: string
@@ -12,8 +13,10 @@ type FromOryIdentityOptions = {
 // at request time by getAuthContext. `providers` is empty because the session
 // doesn't carry credential info — use fromOryIdentity when that's needed.
 export function fromAuthSession(session: Session): AuthUser {
+  const identityId = readOrySessionFields(session)?.identityId
   return {
     id: session.user.id,
+    identity_id: identityId ?? session.user.id,
     email: session.user.email ?? null,
     name: session.user.name ?? null,
     avatarUrl: session.user.image ?? null,
@@ -43,7 +46,8 @@ export function fromOryIdentity(
   const canChangePassword = hasPasswordCredential && !hasOidcCredential
 
   return {
-    id: options.userId ?? identity.id,
+    id: identity.external_id ?? options.userId ?? identity.id,
+    identity_id: identity.id,
     email,
     name,
     avatarUrl,

@@ -11,6 +11,7 @@ export type OrySessionFields = {
   accessToken?: string
   idToken?: string
   identityId?: string
+  externalId?: string
   error?: string
 }
 
@@ -24,6 +25,7 @@ const ORY_TOKEN_SESSION_KEYS = [
   'idToken',
   'refreshToken',
   'identityId',
+  'externalId',
 ] as const
 
 export function readOrySessionFields(
@@ -36,6 +38,7 @@ export function readOrySessionFields(
     accessToken: internalSession.accessToken,
     idToken: internalSession.idToken,
     identityId: internalSession.identityId,
+    externalId: internalSession.externalId,
     error: internalSession.error,
   }
 }

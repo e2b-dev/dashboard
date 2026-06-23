@@ -127,7 +127,7 @@ describe('Ory account security', () => {
 
     await handleCredentialChangeSuccess()
 
-    expect(revokeOAuthSessionsMock).toHaveBeenCalledWith('e2b-user-id')
+    expect(revokeOAuthSessionsMock).toHaveBeenCalledWith('kratos-uuid')
     expect(revokeKratosSessionsMock).toHaveBeenCalledWith('kratos-uuid')
     expect(authjsSignOutMock).toHaveBeenCalledWith({ redirect: false })
   })

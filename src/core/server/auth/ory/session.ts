@@ -88,22 +88,12 @@ export async function updateUser(
     )
   }
 
-  const result = await oryAuthFlows.updateUser({
+  return oryAuthFlows.updateUser({
     identityId,
     name: input.name,
     email: input.email,
     password: input.password,
   })
-
-  if (!result.ok) return result
-
-  return {
-    ...result,
-    user: {
-      ...result.user,
-      id: session.user.id,
-    },
-  }
 }
 
 export async function startReauthForAccountSettings(): Promise<ReauthDispatch> {
@@ -118,10 +108,11 @@ export async function handleCredentialChangeSuccess(
   const session = await readCurrentSession(authSession)
   if (!session?.user?.id) return
 
-  await revokeOryOAuthSessionsForSubject(session.user.id)
-
+  // Hydra's OAuth2 subject is the Kratos identity id, not AuthUser.id, so both
+  // revocations key off the resolved identity id.
   const identityId = await resolveIdentityId(session)
   if (identityId) {
+    await revokeOryOAuthSessionsForSubject(identityId)
     await revokeKratosSessionsForIdentity(identityId)
   }
 
@@ -154,6 +145,20 @@ export function getAuthContextFromOrySession(
         context: { error: serverFields.error },
       },
       `Auth.js session reports error '${serverFields.error}'; treating as unauthenticated`
+    )
+    return null
+  }
+
+  // Without external_id we cannot resolve the public.users.id; the jwt callback
+  // has already tried to backfill it from Kratos, so force a re-auth rather than
+  // expose the Kratos identity id as AuthUser.id.
+  if (!serverFields.externalId) {
+    l.warn(
+      {
+        key: 'auth_provider:ory_session_missing_external_id',
+        user_id: session.user.id,
+      },
+      'Auth.js session has no external_id; treating as unauthenticated'
     )
     return null
   }

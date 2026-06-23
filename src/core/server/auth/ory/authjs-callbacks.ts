@@ -46,6 +46,11 @@ const ACCESS_TOKEN_REFRESH_SKEW_SECONDS = 60
 
 const BOOTSTRAP_FAILURE_COOKIE_MAX_AGE_SECONDS = 60
 
+// external_id is read from the Kratos identity at sign-in (after bootstrap), so
+// it is normally already on the token. This caps the per-request Kratos
+// re-resolution used to backfill sessions that predate the externalId field.
+const MAX_EXTERNAL_ID_RESOLVE_ATTEMPTS = 1
+
 // Implements the Auth.js `signIn` callback. This is intentionally a callback,
 // not an event: returning a URL here denies the sign-in before Auth.js finalizes
 // the new session cookie. On failure, we hand the id_token to a local route via
@@ -112,7 +117,37 @@ export async function persistOryTokensInAuthJsJwt(
     return refreshOryToken(token)
   }
 
+  if (shouldResolveExternalId(token)) {
+    return resolveExternalIdFromKratos(token)
+  }
+
   return token
+}
+
+// True when external_id is still missing but we have a Kratos identity to look
+// it up against and remaining budget. Normally external_id is already on the
+// token from sign-in; this backfills sessions that predate the field.
+function shouldResolveExternalId(token: OryAuthJsJwt): boolean {
+  return (
+    !token.externalId &&
+    !!token.identityId &&
+    (token.externalIdResolveAttempts ?? 0) < MAX_EXTERNAL_ID_RESOLVE_ATTEMPTS
+  )
+}
+
+// Hydra does not project external_id into the access token, so we re-read it
+// from the Kratos identity rather than refreshing the OAuth token.
+async function resolveExternalIdFromKratos(
+  token: OryAuthJsJwt
+): Promise<OryAuthJsJwt> {
+  const identity = token.identityId
+    ? await resolveOryIdentity({ subjects: [token.identityId] })
+    : null
+  return {
+    ...token,
+    externalId: identity?.external_id ?? token.externalId,
+    externalIdResolveAttempts: (token.externalIdResolveAttempts ?? 0) + 1,
+  }
 }
 
 // Implements the Auth.js `session` callback: project the persisted token fields
@@ -122,10 +157,13 @@ export function projectOryJwtToAuthJsSession({
   token,
 }: OryAuthJsSessionInput) {
   const orySession = session as OryInternalAuthJsSession
-  orySession.user.id = token.sub ?? orySession.user.id
+  // AuthUser.id is the public.users.id (external_id). token.sub stays the
+  // Kratos identity id, surfaced as identityId for admin/OAuth operations.
+  orySession.user.id = token.externalId ?? token.sub ?? orySession.user.id
   orySession.accessToken = token.accessToken
   orySession.idToken = token.idToken
-  orySession.identityId = token.identityId
+  orySession.identityId = token.identityId ?? token.sub
+  orySession.externalId = token.externalId
   orySession.error = token.error
   return orySession
 }
@@ -143,7 +181,11 @@ async function buildSignInToken(
     ...token,
     sub: userId,
   }
-  const identityId = await resolveKratosIdentityId(nextToken, account, profile)
+  const { identityId, externalId } = await resolveKratosIdentity(
+    nextToken,
+    account,
+    profile
+  )
 
   await persistOrySignupMetadataFromCookie(identityId)
 
@@ -154,27 +196,32 @@ async function buildSignInToken(
     idToken: account.id_token,
     expiresAt: account.expires_at ?? null,
     identityId,
+    externalId,
+    externalIdResolveAttempts: 0,
     error: undefined,
   }
 }
 
-// The Kratos identity id is NOT the OIDC subject the dashboard uses as the E2B
-// user id (`token.sub`, consumed by dashboard-api and infra). It is surfaced via
-// the OIDC profile `sub`. Resolve it once at sign-in — by profile.sub, then
-// token.sub, then the verified email — so account operations can use a stable
-// Kratos id without a per-request lookup. Returns undefined on failure; the
-// provider then falls back to a per-request lookup, so sign-in is never blocked.
-async function resolveKratosIdentityId(
+// Resolve the Kratos identity once at sign-in — by profile.sub, then token.sub,
+// then the verified email. We read two things off it:
+//   - `id`: the Kratos identity id (the OAuth2 subject), used for admin and
+//     Hydra operations without a per-request lookup.
+//   - `external_id`: the dashboard public.users.id. Hydra does not project this
+//     into the OAuth2 access token, so the Kratos identity is the source of
+//     truth. Bootstrap (in the signIn callback) sets it before this runs, so it
+//     is present even for brand-new users. Returns undefined on failure; the
+//     provider falls back to per-request lookups, so sign-in is never blocked.
+async function resolveKratosIdentity(
   token: OryAuthJsJwt,
   account: OryAuthJsAccount,
   profile: OryAuthJsJwtInput['profile']
-): Promise<string | undefined> {
+): Promise<{ identityId?: string; externalId?: string }> {
   const identity = await resolveOryIdentity({
     subjects: [readOryProfileSubject(profile), token.sub],
     email: readOryEmailClaim(account),
   })
 
-  return identity?.id
+  return { identityId: identity?.id, externalId: identity?.external_id }
 }
 
 async function prepareBootstrapFailureRedirect(
