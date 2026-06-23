@@ -15,9 +15,3 @@ export const INCLUDE_DASHBOARD_FEEDBACK_SURVEY =
 
 export const INCLUDE_REPORT_ISSUE =
   process.env.NEXT_PUBLIC_INCLUDE_REPORT_ISSUE === '1'
-
-// Gates the custom Ory flow pages + same-origin SDK proxy. On (Preview/Staging)
-// renders the Elements UI; off (Production) redirects to /sign-in etc.
-export function isOryCustomUiEnabled() {
-  return process.env.NEXT_PUBLIC_ORY_CUSTOM_UI === 'true'
-}

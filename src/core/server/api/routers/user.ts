@@ -55,7 +55,7 @@ export const userRouter = createTRPCRouter({
   // never hangs on the identity provider.
   profile: protectedProcedure.query(async ({ ctx }): Promise<AuthUser> => {
     const result = await withTimeout(
-      getUserProfile(ctx.authSession).catch(() => null),
+      getUserProfile().catch(() => null),
       PROFILE_LOOKUP_TIMEOUT_MS
     )
 
@@ -93,7 +93,7 @@ export const userRouter = createTRPCRouter({
 
       if (input.email !== undefined || input.password !== undefined) {
         const profile = await withTimeout(
-          getUserProfile(ctx.authSession).catch(() => null),
+          getUserProfile().catch(() => null),
           PROFILE_LOOKUP_TIMEOUT_MS
         )
         const credentialProfile =
@@ -121,19 +121,16 @@ export const userRouter = createTRPCRouter({
         }
       }
 
-      const result = await updateUser(
-        {
-          email: input.email,
-          password: input.password,
-          name: input.name,
-        },
-        ctx.authSession
-      )
+      const result = await updateUser({
+        email: input.email,
+        password: input.password,
+        name: input.name,
+      })
 
       if (result.ok) {
         // Invalidate sessions when the password changed.
         if (input.password) {
-          await handleCredentialChangeSuccess(ctx.authSession)
+          await handleCredentialChangeSuccess()
         }
 
         return { status: 'ok' as const, user: result.user }

@@ -18,12 +18,21 @@ export const relativeUrlSchema = z
   .trim()
   .refine(
     (url) => {
-      if (!url.startsWith('/')) {
+      if (!url.startsWith('/') || url.startsWith('//')) {
         return false
       }
 
-      if (url.includes('://') || url.startsWith('//')) {
+      if (url.includes('://')) {
         return false
+      }
+
+      // Backslashes and control chars let `new URL()` escape the origin:
+      // http(s) normalizes `\` to `/`, so `/\evil.com` resolves to evil.com.
+      for (let i = 0; i < url.length; i++) {
+        const code = url.charCodeAt(i)
+        if (url[i] === '\\' || code <= 0x1f || code === 0x7f) {
+          return false
+        }
       }
 
       return true

@@ -12,19 +12,22 @@ export const serverSchema = z.object({
 
   LAUNCHDARKLY_SDK_KEY: z.string().min(1).optional(),
 
-  AUTH_SECRET: z.string().min(1).optional(),
-  AUTH_TRUST_HOST: z.string().optional(),
-  // Prefix for Auth.js cookie names to disambiguate multiple local
-  // instances sharing localhost (cookies aren't scoped by port).
-  // Leave unset in prod/preview.
-  AUTH_COOKIE_PREFIX: z.string().min(1).optional(),
+  // JWE key for the e2b_session cookie. Generate with `openssl rand -hex 32`.
+  E2B_SESSION_SECRET: z.string().min(1).optional(),
   ORY_SDK_URL: z.url().optional(),
+  // OIDC issuer (Hydra public URL). Falls back to ORY_SDK_URL on Ory Network;
+  // set explicitly for self-hosted Hydra (e.g. http://localhost:4444).
+  ORY_HYDRA_PUBLIC_URL: z.url().optional(),
   ORY_OAUTH2_CLIENT_ID: z.string().min(1).optional(),
   ORY_OAUTH2_CLIENT_SECRET: z.string().min(1).optional(),
   ORY_OAUTH2_AUDIENCE: z.string().min(1).optional(),
   ORY_PROJECT_API_TOKEN: z.string().min(1).optional(),
   ORY_KRATOS_ADMIN_URL: z.url().optional(),
   ORY_HYDRA_ADMIN_URL: z.url().optional(),
+  // Fixed host whose OAuth callback/logout relays are registered in Hydra. Set
+  // on preview deployments (dynamic hosts can't register their own redirect
+  // URIs); unset on staging/production/local, where the flow stays host-direct.
+  ORY_OAUTH_RELAY_ORIGIN: z.url().optional(),
 
   OTEL_SERVICE_NAME: z.string().optional(),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
@@ -76,10 +79,8 @@ export const clientSchema = z.object({
   NEXT_PUBLIC_E2B_SANDBOX_URL: z.url().optional(),
   NEXT_PUBLIC_DASHBOARD_API_URL: z.url().optional(),
 
-  // Browser-facing Kratos public URL for the custom Ory UI; falls back to ORY_SDK_URL.
+  // Browser-facing Kratos public URL for the Elements UI; falls back to ORY_SDK_URL.
   NEXT_PUBLIC_ORY_SDK_URL: z.url().optional(),
-  // Gates the custom Ory UI: 'true' on Preview/Staging, unset on Production.
-  NEXT_PUBLIC_ORY_CUSTOM_UI: z.string().optional(),
 })
 
 const merged = serverSchema.merge(clientSchema)
@@ -87,7 +88,7 @@ const merged = serverSchema.merge(clientSchema)
 type MergedEnv = z.infer<typeof merged>
 
 const oryRequiredEnvVars = [
-  'AUTH_SECRET',
+  'E2B_SESSION_SECRET',
   'ORY_SDK_URL',
   'ORY_OAUTH2_CLIENT_ID',
   'ORY_OAUTH2_CLIENT_SECRET',
@@ -105,7 +106,7 @@ function requireEnvVars(
 
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: `Auth.js/Ory requires ${envVar}`,
+      message: `Ory requires ${envVar}`,
       path: [envVar],
     })
   }
@@ -133,7 +134,7 @@ function validateOryAdminEnv(data: MergedEnv, ctx: z.RefinementCtx) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message:
-        'Auth.js/Ory requires ORY_PROJECT_API_TOKEN (Ory Network) or both ORY_KRATOS_ADMIN_URL and ORY_HYDRA_ADMIN_URL (self-hosted)',
+        'Ory requires ORY_PROJECT_API_TOKEN (Ory Network) or both ORY_KRATOS_ADMIN_URL and ORY_HYDRA_ADMIN_URL (self-hosted)',
       path: ['ORY_PROJECT_API_TOKEN'],
     })
   }

@@ -1,12 +1,9 @@
 import 'server-only'
 
 import { createHmac, timingSafeEqual } from 'node:crypto'
-import { type JsonPatch, JsonPatchOpEnum } from '@ory/client-fetch'
 import { cookies } from 'next/headers'
-import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
-import { getOryIdentityApi } from './client'
-
-export const ORY_SIGNUP_METADATA_COOKIE = 'e2b-ory-signup-metadata'
+import { l } from '@/core/shared/clients/logger/logger'
+import { ORY_SIGNUP_METADATA_COOKIE } from './session-cookie'
 
 const SIGNUP_METADATA_COOKIE_MAX_AGE_SECONDS = 30 * 60
 const MAX_IP_LENGTH = 128
@@ -15,6 +12,14 @@ const MAX_USER_AGENT_LENGTH = 1024
 export type OrySignupMetadata = {
   signup_ip?: string
   signup_user_agent?: string
+}
+
+export type OrySignupMetadataCookieOptions = {
+  httpOnly: true
+  sameSite: 'lax'
+  path: '/'
+  secure: boolean
+  maxAge: number
 }
 
 export function readOrySignupMetadataFromHeaders(
@@ -31,55 +36,40 @@ export function readOrySignupMetadataFromHeaders(
   return metadata.signup_ip || metadata.signup_user_agent ? metadata : null
 }
 
-export async function setOrySignupMetadataCookie(
+// Tamper-evident HMAC handoff between the start route (sets it on the redirect)
+// and the callback's bootstrap (reads it). httpOnly + same-origin already gate
+// access; the signature guards against a forged value.
+export function encodeOrySignupMetadata(
   metadata: OrySignupMetadata | null
-): Promise<void> {
-  if (!metadata) return
+): string | null {
+  if (!metadata) return null
 
-  const encoded = encodeSignupMetadata(metadata)
-  if (!encoded) {
+  const secret = process.env.E2B_SESSION_SECRET
+  if (!secret) {
     l.warn(
       { key: 'auth_provider:ory_signup_metadata:missing_secret' },
-      'Skipping Ory signup metadata handoff because AUTH_SECRET is not configured'
+      'Skipping Ory signup metadata handoff because E2B_SESSION_SECRET is not configured'
     )
-    return
+    return null
   }
 
-  const cookieStore = await cookies()
-  cookieStore.set(ORY_SIGNUP_METADATA_COOKIE, encoded, {
+  const payload = Buffer.from(JSON.stringify(metadata), 'utf8').toString(
+    'base64url'
+  )
+  const signature = createHmac('sha256', secret)
+    .update(payload)
+    .digest('base64url')
+
+  return `${payload}.${signature}`
+}
+
+export function signupMetadataCookieOptions(): OrySignupMetadataCookieOptions {
+  return {
     httpOnly: true,
     sameSite: 'lax',
     path: '/',
-    maxAge: SIGNUP_METADATA_COOKIE_MAX_AGE_SECONDS,
     secure: process.env.NODE_ENV === 'production',
-  })
-}
-
-export async function persistOrySignupMetadataFromCookie(
-  identityId?: string
-): Promise<void> {
-  const metadata = await consumeOrySignupMetadataCookie()
-  if (!metadata) return
-
-  if (!identityId) {
-    l.warn(
-      { key: 'auth_provider:ory_signup_metadata:missing_identity' },
-      'Could not persist Ory signup metadata because the Kratos identity id is missing'
-    )
-    return
-  }
-
-  try {
-    await persistOrySignupMetadata(identityId, metadata)
-  } catch (error) {
-    l.error(
-      {
-        key: 'auth_provider:ory_signup_metadata:update_error',
-        user_id: identityId,
-        error: serializeErrorForLog(error),
-      },
-      'Failed to persist Ory signup metadata'
-    )
+    maxAge: SIGNUP_METADATA_COOKIE_MAX_AGE_SECONDS,
   }
 }
 
@@ -100,71 +90,8 @@ export async function readOrySignupMetadataCookie(): Promise<OrySignupMetadata |
   return metadata
 }
 
-export async function persistOrySignupMetadata(
-  identityId: string,
-  metadata: OrySignupMetadata
-): Promise<void> {
-  const api = getOryIdentityApi()
-  const identity = await api.getIdentity({ id: identityId })
-  const currentMetadata = objectMetadata(identity.metadata_admin)
-  const existingMetadata = currentMetadata ?? {}
-  const fieldsToAdd: OrySignupMetadata = {}
-
-  if (metadata.signup_ip && !Object.hasOwn(existingMetadata, 'signup_ip')) {
-    fieldsToAdd.signup_ip = metadata.signup_ip
-  }
-
-  if (
-    metadata.signup_user_agent &&
-    !Object.hasOwn(existingMetadata, 'signup_user_agent')
-  ) {
-    fieldsToAdd.signup_user_agent = metadata.signup_user_agent
-  }
-
-  if (!fieldsToAdd.signup_ip && !fieldsToAdd.signup_user_agent) return
-
-  const jsonPatch: JsonPatch[] = currentMetadata
-    ? Object.entries(fieldsToAdd).map(([key, value]) => ({
-        op: JsonPatchOpEnum.Add,
-        path: `/metadata_admin/${escapeJsonPointer(key)}`,
-        value,
-      }))
-    : [
-        {
-          op: JsonPatchOpEnum.Add,
-          path: '/metadata_admin',
-          value: fieldsToAdd,
-        },
-      ]
-
-  await api.patchIdentity({ id: identityId, jsonPatch })
-}
-
-async function consumeOrySignupMetadataCookie(): Promise<OrySignupMetadata | null> {
-  const cookieStore = await cookies()
-  const metadata = await readOrySignupMetadataCookie()
-
-  cookieStore.delete(ORY_SIGNUP_METADATA_COOKIE)
-
-  return metadata
-}
-
-function encodeSignupMetadata(metadata: OrySignupMetadata): string | null {
-  const secret = process.env.AUTH_SECRET
-  if (!secret) return null
-
-  const payload = Buffer.from(JSON.stringify(metadata), 'utf8').toString(
-    'base64url'
-  )
-  const signature = createHmac('sha256', secret)
-    .update(payload)
-    .digest('base64url')
-
-  return `${payload}.${signature}`
-}
-
 function decodeSignupMetadata(value: string): OrySignupMetadata | null {
-  const secret = process.env.AUTH_SECRET
+  const secret = process.env.E2B_SESSION_SECRET
   if (!secret) return null
 
   const [payload, signature] = value.split('.')
@@ -218,16 +145,6 @@ function normalizeHeaderValue(
   const trimmed = value?.trim()
   if (!trimmed) return undefined
   return trimmed.slice(0, maxLength)
-}
-
-function objectMetadata(value: unknown): Record<string, unknown> | null {
-  return value && typeof value === 'object' && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null
-}
-
-function escapeJsonPointer(value: string): string {
-  return value.replaceAll('~', '~0').replaceAll('/', '~1')
 }
 
 function safeEqual(left: string, right: string): boolean {

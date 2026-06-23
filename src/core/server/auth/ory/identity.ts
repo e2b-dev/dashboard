@@ -1,22 +1,87 @@
 import 'server-only'
 
 import type { Identity } from '@ory/client-fetch'
-import type { Session } from 'next-auth'
+import { z } from 'zod'
+import { l } from '@/core/shared/clients/logger/logger'
 import type { AuthUser } from '../types'
 
-type FromOryIdentityOptions = {
-  userId?: string
+// AuthUser.id is always public.users.id (the identity's external_id), never the
+// Kratos identity id. A provisioned user always has one; getAuthContext refuses
+// sessions without it, so reaching here without an external_id is an invariant
+// violation we fail loudly on rather than mislabel the user.
+function requireExternalId(identity: {
+  id: string
+  external_id?: string | null
+}): string {
+  if (!identity.external_id) {
+    throw new Error(`Ory identity ${identity.id} has no external_id`)
+  }
+  return identity.external_id
 }
 
-// Cheap path: build the user from the Auth.js session alone (no Ory call). Used
-// at request time by getAuthContext. `providers` is empty because the session
-// doesn't carry credential info — use fromOryIdentity when that's needed.
-export function fromAuthSession(session: Session): AuthUser {
+export const oryIdentityTraitsSchema = z
+  .object({
+    email: z.email().max(320),
+    name: z.string().max(320).optional(),
+  })
+  .strict()
+
+export type OryIdentityTraits = z.infer<typeof oryIdentityTraitsSchema>
+
+type TraitSource = 'kratos_session' | 'admin_identity'
+
+function parseOryTraits(
+  raw: unknown,
+  ctx: { identityId: string; source: TraitSource }
+): Record<string, unknown> {
+  const traits = (raw ?? {}) as Record<string, unknown>
+  const result = oryIdentityTraitsSchema.safeParse(traits)
+
+  if (!result.success) {
+    l.error(
+      {
+        key: 'auth_events:identity_traits:schema_drift',
+        context: {
+          identity_id: ctx.identityId,
+          source: ctx.source,
+          issues: result.error.issues.map((issue) => ({
+            path: issue.path.join('.'),
+            code: issue.code,
+          })),
+        },
+      },
+      'Ory identity traits failed schema validation (possible schema drift)'
+    )
+  }
+
+  return traits
+}
+
+function readPublicPicture(metadataPublic: unknown): string | null {
+  const meta = (metadataPublic ?? {}) as Record<string, unknown>
+  return readString(meta, 'picture')
+}
+
+// Build the user from a live Kratos session identity (whoami) — the source of
+// truth for getAuthContext. The session identity carries traits but not
+// credentials, so provider/credential flags stay false — use fromOryIdentity
+// with an admin lookup when those are needed (e.g. the profile query).
+export function fromKratosSessionIdentity(identity: {
+  id: string
+  external_id?: string | null
+  traits?: unknown
+  metadata_public?: unknown
+}): AuthUser {
+  const traits = parseOryTraits(identity.traits, {
+    identityId: identity.id,
+    source: 'kratos_session',
+  })
   return {
-    id: session.user.id,
-    email: session.user.email ?? null,
-    name: session.user.name ?? null,
-    avatarUrl: session.user.image ?? null,
+    id: requireExternalId(identity),
+    identityId: identity.id,
+    email: readString(traits, 'email'),
+    name: readString(traits, 'name'),
+    avatarUrl: readPublicPicture(identity.metadata_public),
     providers: [],
     canChangeEmail: false,
     canChangePassword: false,
@@ -26,15 +91,14 @@ export function fromAuthSession(session: Session): AuthUser {
 // Rich path: build the user from a full Kratos Identity (traits + credentials).
 // Used wherever we've fetched the identity via the admin API — admin lookups and
 // the live profile query.
-export function fromOryIdentity(
-  identity: Identity,
-  options: FromOryIdentityOptions = {}
-): AuthUser {
-  const traits = (identity.traits ?? {}) as Record<string, unknown>
+export function fromOryIdentity(identity: Identity): AuthUser {
+  const traits = parseOryTraits(identity.traits, {
+    identityId: identity.id,
+    source: 'admin_identity',
+  })
   const email = readString(traits, 'email')
-  const name = readDisplayName(traits)
-  const avatarUrl =
-    readString(traits, 'picture') ?? readString(traits, 'avatar_url')
+  const name = readString(traits, 'name')
+  const avatarUrl = readPublicPicture(identity.metadata_public)
   const providers = normalizeProviders(identity.credentials)
   const hasPasswordCredential = hasUsablePasswordCredential(
     identity.credentials?.password
@@ -43,7 +107,8 @@ export function fromOryIdentity(
   const canChangePassword = hasPasswordCredential && !hasOidcCredential
 
   return {
-    id: options.userId ?? identity.id,
+    id: requireExternalId(identity),
+    identityId: identity.id,
     email,
     name,
     avatarUrl,
@@ -99,21 +164,4 @@ function readString(
 ): string | null {
   const value = traits[key]
   return typeof value === 'string' && value.length > 0 ? value : null
-}
-
-function readDisplayName(traits: Record<string, unknown>): string | null {
-  // ory's default schema nests name as { first, last } or stores it flat
-  const flat = readString(traits, 'name')
-  if (flat) return flat
-
-  const nested = traits.name
-  if (nested && typeof nested === 'object') {
-    const obj = nested as Record<string, unknown>
-    const first = readString(obj, 'first')
-    const last = readString(obj, 'last')
-    const composite = [first, last].filter(Boolean).join(' ').trim()
-    if (composite) return composite
-  }
-
-  return null
 }

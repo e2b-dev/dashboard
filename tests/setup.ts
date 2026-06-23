@@ -5,7 +5,7 @@ const projectDir = process.cwd()
 loadEnvConfig(projectDir)
 
 // fall back to placeholder values for env-coupled clients that initialize at module load
-process.env.AUTH_SECRET ??= 'test-auth-secret'
+process.env.E2B_SESSION_SECRET ??= 'test-session-secret'
 process.env.ORY_SDK_URL ??= 'https://test-ory.projects.oryapis.com'
 process.env.ORY_OAUTH2_CLIENT_ID ??= 'test-ory-client-id'
 process.env.ORY_OAUTH2_CLIENT_SECRET ??= 'test-ory-client-secret'
