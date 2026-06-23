@@ -1,7 +1,10 @@
 import { addHours, subHours } from 'date-fns'
 import { nanoid } from 'nanoid'
 import type { Sandbox, Sandboxes } from '@/core/modules/sandboxes/models'
-import type { ClientTeamMetrics } from '@/core/modules/sandboxes/models.client'
+import type {
+  ClientSandboxesMetrics,
+  ClientTeamMetrics,
+} from '@/core/modules/sandboxes/models.client'
 import type { DefaultTemplate, Template } from '@/core/modules/templates/models'
 
 const DEFAULT_TEMPLATES: DefaultTemplate[] = [
@@ -821,6 +824,130 @@ function generateMockSandboxes(count: number): Sandboxes {
   return sandboxes
 }
 
+function generateMockMetrics(sandboxes: Sandbox[]): {
+  metrics: ClientSandboxesMetrics
+} {
+  const metrics: ClientSandboxesMetrics = {}
+
+  // Define characteristics by template type
+  const templatePatterns: Record<
+    string,
+    { memoryProfile: string; cpuIntensity: number; diskGb: number }
+  > = {
+    'node-typescript-v1': {
+      memoryProfile: 'web',
+      cpuIntensity: 0.4,
+      diskGb: 0,
+    },
+    'react-vite-v2': { memoryProfile: 'web', cpuIntensity: 0.5, diskGb: 10 },
+    'postgres-v15': {
+      memoryProfile: 'database',
+      cpuIntensity: 0.6,
+      diskGb: 100,
+    },
+    'redis-v7': { memoryProfile: 'cache', cpuIntensity: 0.2, diskGb: 20 },
+    'python-ml-v1': { memoryProfile: 'ml', cpuIntensity: 0.9, diskGb: 50 },
+    'elastic-v8': { memoryProfile: 'search', cpuIntensity: 0.7, diskGb: 80 },
+    'grafana-v9': {
+      memoryProfile: 'visualization',
+      cpuIntensity: 0.3,
+      diskGb: 15,
+    },
+    'nginx-v1': { memoryProfile: 'web', cpuIntensity: 0.2, diskGb: 0 },
+    'mongodb-v6': { memoryProfile: 'database', cpuIntensity: 0.5, diskGb: 100 },
+    'mysql-v8': { memoryProfile: 'database', cpuIntensity: 0.6, diskGb: 100 },
+  }
+
+  const memoryBaselines: Record<string, number> = {
+    web: 0.15,
+    database: 0.4,
+    cache: 0.2,
+    ml: 0.6,
+    search: 0.45,
+    visualization: 0.25,
+  }
+
+  const memoryVolatility: Record<string, number> = {
+    web: 0.15,
+    database: 0.1,
+    cache: 0.3,
+    ml: 0.35,
+    search: 0.2,
+    visualization: 0.15,
+  }
+
+  const diskBaselines: Record<string, number> = {
+    web: 0.1,
+    database: 0.5,
+    cache: 0.05,
+    ml: 0.4,
+    search: 0.3,
+    visualization: 0.2,
+  }
+  const diskVolatility: Record<string, number> = {
+    web: 0.2,
+    database: 0.15,
+    cache: 0.1,
+    ml: 0.3,
+    search: 0.25,
+    visualization: 0.15,
+  }
+
+  for (const sandbox of sandboxes) {
+    const pattern = templatePatterns[sandbox.templateID] || {
+      memoryProfile: 'web',
+      cpuIntensity: 0.5,
+      diskGb: 20,
+    }
+
+    const memBaseline = memoryBaselines[pattern.memoryProfile]!
+    const memVolatility = memoryVolatility[pattern.memoryProfile]!
+
+    // Generate current load based on time of day
+    const hourOfDay = new Date().getHours()
+    const isBusinessHours = hourOfDay >= 8 && hourOfDay <= 18
+    const baseLoad = isBusinessHours
+      ? 0.5 + Math.random() * 0.3
+      : 0.2 + Math.random() * 0.2
+
+    // CPU calculation
+    const cpuSpike = Math.random() < 0.1 ? Math.random() * 0.5 : 0
+    const cpuLoad = Math.max(
+      0,
+      Math.min(1, (baseLoad + cpuSpike) * pattern.cpuIntensity)
+    )
+    const cpuUsedPct = Math.min(100, Math.max(0, cpuLoad * 100))
+
+    // Memory calculation
+    const memoryNoise = (Math.random() - 0.5) * memVolatility
+    const memPct = memBaseline + baseLoad * memVolatility + memoryNoise
+    const memUsedMb = Math.floor(sandbox.memoryMB * Math.min(1.0, memPct))
+    const diskBaseline = diskBaselines[pattern.memoryProfile]!
+    const diskVolatilityVal = diskVolatility[pattern.memoryProfile]!
+    const diskNoise = (Math.random() - 0.5) * 0.1
+    const diskPct = diskBaseline + baseLoad * diskVolatilityVal + diskNoise
+    // Use sandbox's declared disk size (in MB) as the total capacity
+    const sandboxDiskTotalGb = (sandbox.diskSizeMB ?? 0) / 1024
+    const clampedDiskPct = Math.min(1, Math.max(0, diskPct))
+    const diskUsedGb = Number((sandboxDiskTotalGb * clampedDiskPct).toFixed(2))
+    const diskTotalGb = Number(sandboxDiskTotalGb.toFixed(2))
+
+    metrics[sandbox.sandboxID] = {
+      cpuCount: sandbox.cpuCount,
+      cpuUsedPct,
+      memTotalMb: sandbox.memoryMB,
+      memUsedMb: memUsedMb,
+      timestamp: new Date().toISOString(),
+      diskUsedGb,
+      diskTotalGb,
+    }
+  }
+
+  return {
+    metrics,
+  }
+}
+
 /**
  * This function replicates the back-end step calculation logic from e2b-dev/infra.
  * https://github.com/e2b-dev/infra/blob/19778a715e8df3adea83858c798582d289bd7159/packages/api/internal/handlers/sandbox_metrics.go#L90
@@ -1040,6 +1167,8 @@ export function generateMockTeamMetrics(
   return { metrics, step }
 }
 
+export const MOCK_METRICS_DATA = (sandboxes: Sandbox[]) =>
+  generateMockMetrics(sandboxes)
 export const MOCK_SANDBOXES_DATA = () => generateMockSandboxes(120)
 export const MOCK_TEMPLATES_DATA = TEMPLATES
 export const MOCK_DEFAULT_TEMPLATES_DATA = DEFAULT_TEMPLATES

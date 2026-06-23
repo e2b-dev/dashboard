@@ -5,6 +5,7 @@ import { LoadMoreButton } from '@/ui/pagination-buttons'
 import { Button } from '@/ui/primitives/button'
 import { AddIcon, CloseIcon } from '@/ui/primitives/icons'
 import SandboxesListEmpty from './empty'
+import { useSandboxesMetrics } from './hooks/use-sandboxes-metrics'
 import { useSandboxListTableStore } from './stores/table-store'
 import type { SandboxListRow, SandboxListTable } from './table-config'
 import { SandboxesTableRow } from './table-row'
@@ -31,6 +32,9 @@ export const SandboxesTableBody = ({
   'use no memo'
 
   const resetFilters = useSandboxListTableStore((state) => state.resetFilters)
+  const pollingInterval = useSandboxListTableStore(
+    (state) => state.pollingInterval
+  )
   const hasFilter = useSandboxListTableStore((state) => {
     return (
       state.startedAtFilter !== undefined ||
@@ -57,6 +61,19 @@ export const SandboxesTableBody = ({
   // During initial virtualizer mount, virtualRows can be temporarily empty
   // even when centerRows already has data.
   const rows = virtualRows.length > 0 ? virtualRows : centerRows
+
+  const isListScrolling = virtualizer.isScrolling
+
+  // Live metrics only exist for running sandboxes.
+  const runningVisibleSandboxes = rows
+    .map((row) => row.original)
+    .filter((sandbox) => sandbox.state === 'running')
+
+  useSandboxesMetrics({
+    sandboxes: runningVisibleSandboxes,
+    pollingIntervalMs: pollingInterval === 0 ? 0 : pollingInterval * 1_000,
+    isListScrolling,
+  })
 
   const lastVisibleIndex = virtualizer.getVirtualItems().at(-1)?.index ?? -1
 

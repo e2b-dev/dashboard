@@ -6,6 +6,7 @@ import type { components as InfraComponents } from '@/contracts/infra-api'
 import type {
   SandboxEventModel,
   Sandboxes,
+  SandboxesMetricsRecord,
   SandboxState,
   TeamMetric,
 } from '@/core/modules/sandboxes/models'
@@ -75,6 +76,9 @@ export interface SandboxesRepository {
   listSandboxes(
     options: ListSandboxesOptions
   ): Promise<RepoResult<ListSandboxesResult>>
+  getSandboxesMetrics(
+    sandboxIds: string[]
+  ): Promise<RepoResult<SandboxesMetricsRecord>>
   getTeamMetricsRange(
     startUnixSeconds: number,
     endUnixSeconds: number
@@ -405,6 +409,41 @@ export function createSandboxesRepository(
         sandboxes: result.data ?? [],
         nextCursor: result.response.headers.get('x-next-token') || null,
       })
+    },
+    async getSandboxesMetrics(sandboxIds) {
+      const result = await deps.infraClient.GET('/sandboxes/metrics', {
+        params: {
+          query: {
+            sandbox_ids: sandboxIds,
+          },
+        },
+        headers: {
+          ...deps.authHeaders(scope.accessToken, scope.teamId),
+        },
+        cache: 'no-store',
+      })
+
+      if (!result.response.ok || result.error) {
+        l.error({
+          key: 'repositories:sandboxes:get_sandboxes_metrics:infra_error',
+          error: result.error,
+          team_id: scope.teamId,
+          context: {
+            status: result.response.status,
+            path: '/sandboxes/metrics',
+            sandbox_ids: sandboxIds,
+          },
+        })
+        return err(
+          repoErrorFromHttp(
+            result.response.status,
+            result.error?.message ?? 'Failed to fetch sandboxes metrics',
+            result.error
+          )
+        )
+      }
+
+      return ok(result.data.sandboxes)
     },
     async getTeamMetricsRange(startUnixSeconds, endUnixSeconds) {
       const result = await deps.infraClient.GET('/teams/{teamID}/metrics', {

@@ -1,0 +1,81 @@
+'use client'
+
+import { useQuery } from '@tanstack/react-query'
+import { useEffect, useMemo, useRef } from 'react'
+import { SANDBOXES_METRICS_POLLING_MS } from '@/configs/intervals'
+import type { Sandboxes } from '@/core/modules/sandboxes/models'
+import { areStringArraysEqual } from '@/lib/utils/array'
+import { useTRPC } from '@/trpc/client'
+import { useDashboard } from '../../../context'
+import { useSandboxMetricsStore } from '../stores/metrics-store'
+
+interface UseSandboxesMetricsProps {
+  sandboxes: Sandboxes
+  pollingIntervalMs?: number
+  isListScrolling?: boolean
+}
+
+function useStableSandboxIdsWhileScrolling(
+  sandboxIds: string[],
+  isListScrolling: boolean
+) {
+  const activeSandboxIdsRef = useRef<string[]>(sandboxIds)
+
+  if (
+    !isListScrolling &&
+    !areStringArraysEqual(activeSandboxIdsRef.current, sandboxIds)
+  ) {
+    activeSandboxIdsRef.current = sandboxIds
+  }
+
+  return activeSandboxIdsRef.current
+}
+
+export function useSandboxesMetrics({
+  sandboxes,
+  pollingIntervalMs = SANDBOXES_METRICS_POLLING_MS,
+  isListScrolling = false,
+}: UseSandboxesMetricsProps) {
+  const { team } = useDashboard()
+  const trpc = useTRPC()
+
+  const sandboxIds = useMemo(
+    () => sandboxes.map((sbx) => sbx.sandboxID),
+    [sandboxes]
+  )
+  const activeSandboxIds = useStableSandboxIdsWhileScrolling(
+    sandboxIds,
+    isListScrolling
+  )
+
+  const setMetrics = useSandboxMetricsStore((s) => s.setMetrics)
+  const shouldEnableMetricsQuery =
+    !isListScrolling && activeSandboxIds.length > 0
+  const metricsRefetchInterval =
+    pollingIntervalMs > 0 ? pollingIntervalMs : false
+
+  const metricsQueryInput = useMemo(
+    () => ({
+      teamSlug: team.slug,
+      sandboxIds: activeSandboxIds,
+    }),
+    [activeSandboxIds, team.slug]
+  )
+
+  const { data } = useQuery(
+    trpc.sandboxes.getSandboxesMetrics.queryOptions(metricsQueryInput, {
+      enabled: shouldEnableMetricsQuery,
+      refetchInterval: metricsRefetchInterval,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchOnReconnect: true,
+      refetchIntervalInBackground: false,
+    })
+  )
+
+  useEffect(() => {
+    if (data?.metrics) {
+      setMetrics(data.metrics)
+    }
+  }, [data, setMetrics])
+}

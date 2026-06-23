@@ -11,20 +11,102 @@ import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import { DotIcon, ExternalLinkIcon, PausedIcon } from '@/ui/primitives/icons'
 import { useDashboard } from '../../context'
+import { useSandboxMetricsStore } from './stores/metrics-store'
 import type { SandboxListRow } from './table-config'
 
+const USAGE_TEXT_CLASSNAME = 'prose-table-numeric text-right'
 const MONO_NUMERIC_TEXT_CLASSNAME =
   'overflow-x-hidden whitespace-nowrap font-mono prose-table-numeric'
 
+// Live usage is only available for running sandboxes; paused sandboxes fall
+// back to their allocated specs.
+
+const CpuUsageCellView = ({
+  sandboxId,
+  totalCpu,
+}: {
+  sandboxId: string
+  totalCpu?: number
+}) => {
+  const cpuUsedPct = useSandboxMetricsStore(
+    (state) => state.metrics?.[sandboxId]?.cpuUsedPct
+  )
+
+  return (
+    <ResourceUsage
+      type="cpu"
+      metrics={cpuUsedPct}
+      total={totalCpu}
+      classNames={{ wrapper: USAGE_TEXT_CLASSNAME }}
+    />
+  )
+}
+
+const RamUsageCellView = ({
+  sandboxId,
+  totalMem,
+}: {
+  sandboxId: string
+  totalMem?: number
+}) => {
+  const memUsedMb = useSandboxMetricsStore(
+    (state) => state.metrics?.[sandboxId]?.memUsedMb
+  )
+
+  return (
+    <ResourceUsage
+      type="mem"
+      metrics={memUsedMb}
+      total={totalMem}
+      classNames={{ wrapper: USAGE_TEXT_CLASSNAME }}
+    />
+  )
+}
+
+const DiskUsageCellView = ({
+  sandboxId,
+  totalDiskGb,
+}: {
+  sandboxId: string
+  totalDiskGb: number
+}) => {
+  const diskUsedGb = useSandboxMetricsStore(
+    (state) => state.metrics?.[sandboxId]?.diskUsedGb
+  )
+
+  return (
+    <ResourceUsage
+      type="disk"
+      metrics={diskUsedGb}
+      total={totalDiskGb}
+      classNames={{ wrapper: USAGE_TEXT_CLASSNAME }}
+    />
+  )
+}
+
 export const CpuUsageCell = ({ row }: CellContext<SandboxListRow, unknown>) => (
   <div className="flex w-full justify-end">
-    <ResourceUsage type="cpu" mode="simple" total={row.original.cpuCount} />
+    {row.original.state === 'running' ? (
+      <CpuUsageCellView
+        sandboxId={row.original.sandboxID}
+        totalCpu={row.original.cpuCount}
+      />
+    ) : (
+      <ResourceUsage type="cpu" mode="simple" total={row.original.cpuCount} />
+    )}
   </div>
 )
 
 export const RamUsageCell = ({ row }: CellContext<SandboxListRow, unknown>) => (
   <div className="flex w-full justify-end">
-    <ResourceUsage type="mem" mode="simple" total={row.original.memoryMB} />
+    {row.original.state === 'running' ? (
+      <RamUsageCellView
+        sandboxId={row.original.sandboxID}
+        totalMem={row.original.memoryMB}
+      />
+    ) : (
+      <ResourceUsage type="mem" mode="simple" total={row.original.memoryMB} />
+    )}
   </div>
 )
 
@@ -32,11 +114,18 @@ export const DiskUsageCell = ({
   row,
 }: CellContext<SandboxListRow, unknown>) => (
   <div className="flex w-full justify-end">
-    <ResourceUsage
-      type="disk"
-      mode="simple"
-      total={row.original.diskSizeMB / 1024}
-    />
+    {row.original.state === 'running' ? (
+      <DiskUsageCellView
+        sandboxId={row.original.sandboxID}
+        totalDiskGb={row.original.diskSizeMB / 1024}
+      />
+    ) : (
+      <ResourceUsage
+        type="disk"
+        mode="simple"
+        total={row.original.diskSizeMB / 1024}
+      />
+    )}
   </div>
 )
 

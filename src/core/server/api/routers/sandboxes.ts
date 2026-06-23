@@ -13,7 +13,10 @@ import {
 } from '@/core/modules/sandboxes/schemas'
 import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/errors'
 import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
-import { fillTeamMetricsWithZeros } from '@/core/server/functions/sandboxes/utils'
+import {
+  fillTeamMetricsWithZeros,
+  transformMetricsToClientMetrics,
+} from '@/core/server/functions/sandboxes/utils'
 import { createTRPCRouter } from '@/core/server/trpc/init'
 import { protectedTeamProcedure } from '@/core/server/trpc/procedures'
 
@@ -56,6 +59,34 @@ export const sandboxesRouter = createTRPCRouter({
       return {
         sandboxes: sandboxesResult.data.sandboxes,
         nextCursor: sandboxesResult.data.nextCursor,
+      }
+    }),
+
+  getSandboxesMetrics: sandboxesRepositoryProcedure
+    .input(
+      z.object({
+        sandboxIds: z.array(z.string()),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { sandboxIds } = input
+
+      if (sandboxIds.length === 0 || USE_MOCK_DATA) {
+        return {
+          metrics: {},
+        }
+      }
+
+      const metricsDataResult =
+        await ctx.sandboxesRepository.getSandboxesMetrics(sandboxIds)
+      if (!metricsDataResult.ok) {
+        throwTRPCErrorFromRepoError(metricsDataResult.error)
+      }
+      const metricsData = metricsDataResult.data
+      const metrics = transformMetricsToClientMetrics(metricsData)
+
+      return {
+        metrics,
       }
     }),
 
