@@ -47,7 +47,15 @@ export function isOrySessionAuthenticated(
   session: Session | null | undefined
 ): boolean {
   const fields = readOrySessionFields(session)
-  return !!session?.user?.id && !!fields?.accessToken && !fields.error
+  // externalId is required to mirror getAuthContextFromOrySession: without it
+  // the proxy and the server-side auth context would disagree and loop a
+  // half-authenticated user between /sign-in and /dashboard.
+  return (
+    !!session?.user?.id &&
+    !!fields?.accessToken &&
+    !!fields.externalId &&
+    !fields.error
+  )
 }
 
 export function withSanitizedOryAuthJsHandler(

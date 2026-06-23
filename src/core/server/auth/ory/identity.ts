@@ -16,7 +16,7 @@ export function fromAuthSession(session: Session): AuthUser {
   const identityId = readOrySessionFields(session)?.identityId
   return {
     id: session.user.id,
-    identity_id: identityId ?? session.user.id,
+    identityId: identityId ?? session.user.id,
     email: session.user.email ?? null,
     name: session.user.name ?? null,
     avatarUrl: session.user.image ?? null,
@@ -47,7 +47,7 @@ export function fromOryIdentity(
 
   return {
     id: identity.external_id ?? options.userId ?? identity.id,
-    identity_id: identity.id,
+    identityId: identity.id,
     email,
     name,
     avatarUrl,

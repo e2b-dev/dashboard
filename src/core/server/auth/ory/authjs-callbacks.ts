@@ -113,40 +113,54 @@ export async function persistOryTokensInAuthJsJwt(
     return token
   }
 
-  if (isAccessTokenExpiring(token)) {
-    return refreshOryToken(token)
+  let next = token
+  if (isAccessTokenExpiring(next)) {
+    next = await refreshOryToken(next)
+    if (next.error) return next
   }
 
-  if (shouldResolveExternalId(token)) {
-    return resolveExternalIdFromKratos(token)
+  // Resolve external_id on the same tick as a refresh so a legacy session is
+  // never left half-authenticated for a request.
+  if (shouldResolveExternalId(next)) {
+    next = await resolveExternalIdFromKratos(next)
   }
 
-  return token
+  return next
 }
 
-// True when external_id is still missing but we have a Kratos identity to look
-// it up against and remaining budget. Normally external_id is already on the
-// token from sign-in; this backfills sessions that predate the field.
+// True when external_id is still missing but we have a subject to look it up
+// against and remaining budget. Normally external_id is already on the token
+// from sign-in; this backfills sessions that predate the field.
 function shouldResolveExternalId(token: OryAuthJsJwt): boolean {
   return (
     !token.externalId &&
-    !!token.identityId &&
+    !!(token.identityId ?? token.sub) &&
     (token.externalIdResolveAttempts ?? 0) < MAX_EXTERNAL_ID_RESOLVE_ATTEMPTS
   )
 }
 
 // Hydra does not project external_id into the access token, so we re-read it
-// from the Kratos identity rather than refreshing the OAuth token.
+// from the Kratos identity rather than refreshing the OAuth token. The Kratos
+// id may be stored as identityId or, on older tokens, only as the sub.
 async function resolveExternalIdFromKratos(
   token: OryAuthJsJwt
 ): Promise<OryAuthJsJwt> {
-  const identity = token.identityId
-    ? await resolveOryIdentity({ subjects: [token.identityId] })
-    : null
+  const identity = await resolveOryIdentity({
+    subjects: [token.identityId, token.sub],
+  })
+
+  if (identity?.external_id) {
+    return { ...token, externalId: identity.external_id }
+  }
+
+  // Only spend budget on a definitive outcome (identity resolved but has no
+  // external_id). A null identity is likely a transient Kratos failure
+  // (find-identity swallows non-404s), so leave the budget to retry next tick.
   return {
     ...token,
-    externalId: identity?.external_id ?? token.externalId,
-    externalIdResolveAttempts: (token.externalIdResolveAttempts ?? 0) + 1,
+    externalIdResolveAttempts: identity
+      ? (token.externalIdResolveAttempts ?? 0) + 1
+      : (token.externalIdResolveAttempts ?? 0),
   }
 }
 

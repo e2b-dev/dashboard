@@ -43,8 +43,9 @@ export type OryAuthJsJwt = JWT & {
   idToken?: string
   // Kratos identity id resolved at sign-in for admin IdentityApi operations.
   identityId?: string
-  // public.users.id, read from the access token's external_id claim. This is
-  // the dashboard AuthUser.id; token.sub stays the Kratos identity id.
+  // public.users.id, sourced from the Kratos identity's external_id (Hydra does
+  // not project it into the access token). This is the dashboard AuthUser.id;
+  // token.sub stays the Kratos identity id.
   externalId?: string
   // Bounds the per-request Kratos lookups used to backfill a missing externalId
   // (e.g. on sessions that predate this field).
