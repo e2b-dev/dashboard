@@ -32,6 +32,7 @@ function consentRequest(challenge: string | null = 'consent-challenge') {
 describe('Ory consent provider', () => {
   beforeEach(() => {
     getConsentMock.mockReset().mockResolvedValue({
+      client: { client_id: 'test-ory-client-id' },
       subject: 'identity-uuid',
       requested_scope: ['openid', 'offline_access', 'email', 'profile'],
       requested_access_token_audience: ['dashboard-api'],
@@ -66,6 +67,7 @@ describe('Ory consent provider', () => {
 
   it('omits the email claim when the email scope is not granted', async () => {
     getConsentMock.mockResolvedValueOnce({
+      client: { client_id: 'test-ory-client-id' },
       subject: 'identity-uuid',
       requested_scope: ['openid'],
       requested_access_token_audience: [],
