@@ -7,11 +7,14 @@ import {
 import { buildOryAuthorizationRequest } from '@/core/server/auth/ory/oauth-client'
 import {
   E2B_OAUTH_FLOW_COOKIE,
-  OAUTH_CALLBACK_PATH,
   ORY_RECOVER_PATH,
   oryFlowCookieOptions,
   sealOryFlowState,
 } from '@/core/server/auth/ory/oauth-flow'
+import {
+  resolveOryRedirectUri,
+  sealRelayState,
+} from '@/core/server/auth/ory/oauth-relay'
 import { ORY_SIGNUP_METADATA_COOKIE } from '@/core/server/auth/ory/session-cookie'
 import {
   encodeOrySignupMetadata,
@@ -34,11 +37,17 @@ export async function GET(request: NextRequest) {
   const returnTo = normalizeOryReturnTo(
     request.nextUrl.searchParams.get('returnTo')
   )
-  const redirectUri = new URL(OAUTH_CALLBACK_PATH, origin).toString()
+  const { redirectUri, relayTarget } = resolveOryRedirectUri(origin)
 
   let authorization: Awaited<ReturnType<typeof buildOryAuthorizationRequest>>
   try {
-    authorization = await buildOryAuthorizationRequest(intent, redirectUri)
+    // Relay mode carries the preview origin in a sealed state; direct mode keeps
+    // the original two-arg call so staging/production behavior is unchanged.
+    authorization = relayTarget
+      ? await buildOryAuthorizationRequest(intent, redirectUri, {
+          state: await sealRelayState(relayTarget),
+        })
+      : await buildOryAuthorizationRequest(intent, redirectUri)
   } catch (error) {
     l.error(
       {

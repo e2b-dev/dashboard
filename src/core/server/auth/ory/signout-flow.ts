@@ -32,5 +32,6 @@ export async function completeOrySignOut(origin = BASE_URL): Promise<string> {
 
   if (!idToken) return fallback
 
-  return buildOryLogoutUrl({ idToken, origin })?.toString() ?? fallback
+  const logoutUrl = await buildOryLogoutUrl({ idToken, origin })
+  return logoutUrl?.toString() ?? fallback
 }

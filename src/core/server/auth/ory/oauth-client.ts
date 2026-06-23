@@ -93,7 +93,8 @@ function oryClient(env: OryOAuthEnv): oauth.Client {
 
 export async function buildOryAuthorizationRequest(
   intent: OryAuthIntent,
-  redirectUri: string
+  redirectUri: string,
+  options?: { state?: string }
 ): Promise<OryAuthorizationRequest> {
   const env = readOryOAuthEnv()
   const as = await discoverAuthorizationServer(env)
@@ -104,7 +105,9 @@ export async function buildOryAuthorizationRequest(
 
   const codeVerifier = oauth.generateRandomCodeVerifier()
   const codeChallenge = await oauth.calculatePKCECodeChallenge(codeVerifier)
-  const state = oauth.generateRandomState()
+  // In relay mode the caller supplies a sealed state carrying the preview
+  // origin; it doubles as the CSRF state validated at the callback.
+  const state = options?.state ?? oauth.generateRandomState()
   const nonce = oauth.generateRandomNonce()
 
   const url = new URL(as.authorization_endpoint)

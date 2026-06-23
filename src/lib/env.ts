@@ -24,6 +24,10 @@ export const serverSchema = z.object({
   ORY_PROJECT_API_TOKEN: z.string().min(1).optional(),
   ORY_KRATOS_ADMIN_URL: z.url().optional(),
   ORY_HYDRA_ADMIN_URL: z.url().optional(),
+  // Fixed host whose OAuth callback/logout relays are registered in Hydra. Set
+  // on preview deployments (dynamic hosts can't register their own redirect
+  // URIs); unset on staging/production/local, where the flow stays host-direct.
+  ORY_OAUTH_RELAY_ORIGIN: z.url().optional(),
 
   OTEL_SERVICE_NAME: z.string().optional(),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),

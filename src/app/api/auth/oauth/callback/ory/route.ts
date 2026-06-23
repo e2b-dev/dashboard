@@ -6,10 +6,10 @@ import { ensureOryUserBootstrapped } from '@/core/server/auth/ory/dashboard-boot
 import { exchangeOryCallback } from '@/core/server/auth/ory/oauth-client'
 import {
   E2B_OAUTH_FLOW_COOKIE,
-  OAUTH_CALLBACK_PATH,
   ORY_RECOVER_PATH,
   openOryFlowState,
 } from '@/core/server/auth/ory/oauth-flow'
+import { resolveOryRedirectUri } from '@/core/server/auth/ory/oauth-relay'
 import {
   E2B_SESSION_COOKIE,
   ORY_SIGNUP_METADATA_COOKIE,
@@ -49,7 +49,9 @@ export async function GET(request: NextRequest) {
       expectedState: flow.state,
       expectedNonce: flow.nonce,
       codeVerifier: flow.codeVerifier,
-      redirectUri: new URL(OAUTH_CALLBACK_PATH, origin).toString(),
+      // Must be byte-identical to the authorize-time value (the registered
+      // relay URI on previews), not the host the code was delivered to.
+      redirectUri: resolveOryRedirectUri(origin).redirectUri,
     })
   } catch (error) {
     l.error(
@@ -76,7 +78,7 @@ export async function GET(request: NextRequest) {
     // Don't strand the user with a half-provisioned login: end the Ory + Kratos
     // session via RP-logout (falling back to home if no id_token is available).
     const logoutUrl = tokens.idToken
-      ? buildOryLogoutUrl({ idToken: tokens.idToken, origin })
+      ? await buildOryLogoutUrl({ idToken: tokens.idToken, origin })
       : null
     return finalize(
       NextResponse.redirect(logoutUrl ?? new URL(ORY_POST_LOGOUT_PATH, origin))
