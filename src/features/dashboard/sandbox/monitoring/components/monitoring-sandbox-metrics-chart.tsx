@@ -467,6 +467,9 @@ function SandboxMetricsChart({
     return {
       backgroundColor: 'transparent',
       animation: false,
+      toolbox: {
+        show: false,
+      },
       brush: isMobile
         ? undefined
         : {
