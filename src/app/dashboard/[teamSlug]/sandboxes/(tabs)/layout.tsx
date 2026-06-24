@@ -1,4 +1,5 @@
 import { PROTECTED_URLS } from '@/configs/urls'
+import { isNewSandboxListEnabled } from '@/features/dashboard/sandboxes/list/feature-flag.server'
 import { DashboardTabsList } from '@/ui/dashboard-tabs'
 import { ListIcon, TrendIcon } from '@/ui/primitives/icons'
 
@@ -7,6 +8,9 @@ export default async function SandboxesTabsLayout({
   params,
 }: LayoutProps<'/dashboard/[teamSlug]/sandboxes'>) {
   const { teamSlug } = await params
+  const listHref = (await isNewSandboxListEnabled(teamSlug))
+    ? PROTECTED_URLS.SANDBOXES_LIST2(teamSlug)
+    : PROTECTED_URLS.SANDBOXES_LIST(teamSlug)
 
   return (
     <div className="mt-2 md:mt-3 min-h-0 h-full flex flex-col">
@@ -22,7 +26,7 @@ export default async function SandboxesTabsLayout({
           {
             id: 'list',
             label: 'List',
-            href: PROTECTED_URLS.SANDBOXES_LIST(teamSlug),
+            href: listHref,
             icon: <ListIcon className="size-4" />,
           },
         ]}

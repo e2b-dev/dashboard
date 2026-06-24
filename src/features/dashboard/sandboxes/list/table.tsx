@@ -18,7 +18,6 @@ import {
 import { subHours } from 'date-fns'
 import { useEffect, useMemo, useRef } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
-import { useFeatureFlag } from '@/core/modules/feature-flags/feature-flags.client'
 import type { Sandboxes } from '@/core/modules/sandboxes/models'
 import { useSandboxListTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
 import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
@@ -251,7 +250,7 @@ function SandboxesTableView({
   )
 }
 
-function NewSandboxesTable() {
+export function NewSandboxesTable() {
   const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/sandboxes'>()
   const trpc = useTRPC()
   const pollingInterval = useSandboxListTableStore(
@@ -297,7 +296,7 @@ function NewSandboxesTable() {
   )
 }
 
-function LegacySandboxesTable() {
+export function LegacySandboxesTable() {
   const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/sandboxes'>()
   const trpc = useTRPC()
 
@@ -322,12 +321,4 @@ function LegacySandboxesTable() {
   )
 }
 
-export default function SandboxesTable() {
-  const newSandboxListEnabled = useFeatureFlag('newSandboxList')
-
-  return newSandboxListEnabled ? (
-    <NewSandboxesTable />
-  ) : (
-    <LegacySandboxesTable />
-  )
-}
+export default LegacySandboxesTable
