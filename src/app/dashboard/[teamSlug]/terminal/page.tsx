@@ -13,7 +13,10 @@ import type { components as InfraComponents } from '@/core/shared/contracts/infr
 import { createSandboxManagementAuth } from '@/core/shared/sandbox-management-auth.server'
 import { SandboxIdSchema } from '@/core/shared/schemas/api'
 import DashboardTerminal from '@/features/dashboard/terminal/dashboard-terminal'
-import { normalizeTerminalTemplate } from '@/features/dashboard/terminal/template'
+import {
+  isPublicTemplateReference,
+  normalizeTerminalTemplate,
+} from '@/features/dashboard/terminal/template'
 import { Button } from '@/ui/primitives/button'
 
 export const metadata: Metadata = {
@@ -189,6 +192,10 @@ async function isTerminalTemplateAvailable({
   template: string
 }) {
   if (template === 'base') {
+    return { ok: true as const, available: true }
+  }
+
+  if (isPublicTemplateReference(template)) {
     return { ok: true as const, available: true }
   }
 

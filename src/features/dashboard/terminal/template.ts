@@ -15,6 +15,12 @@ export function normalizeTerminalTemplate(template?: string) {
   return value
 }
 
+export function isPublicTemplateReference(template: string) {
+  const [owner, name, ...rest] = template.split('/')
+
+  return Boolean(owner && name && rest.length === 0)
+}
+
 export function resolveTerminalTemplateOverride(
   template: string | undefined,
   fallback: string
