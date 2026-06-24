@@ -11,8 +11,6 @@ export default async function SandboxesListPage({
   prefetch(
     trpc.sandboxes.getSandboxes.queryOptions({
       teamSlug,
-      limit: 50,
-      states: ['running'],
     })
   )
 

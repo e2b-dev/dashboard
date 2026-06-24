@@ -265,7 +265,7 @@ export function NewSandboxesTable() {
     hasNextPage,
     isFetchingNextPage,
   } = useSuspenseInfiniteQuery(
-    trpc.sandboxes.getSandboxes.infiniteQueryOptions(
+    trpc.sandboxes.listSandboxesPaginated.infiniteQueryOptions(
       { teamSlug, limit: SANDBOXES_PAGE_SIZE },
       {
         getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
@@ -277,15 +277,6 @@ export function NewSandboxesTable() {
       }
     )
   )
-
-  // Client-side sorting, filtering, and search run over the full result set, so
-  // drain every page before the table applies them — otherwise those operations
-  // (and the row counts) would only ever see the pages fetched so far.
-  useEffect(() => {
-    if (hasNextPage && !isFetchingNextPage) {
-      void fetchNextPage()
-    }
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
   const sandboxes = useMemo(
     () => data.pages.flatMap((page) => page.sandboxes),
@@ -311,7 +302,7 @@ export function LegacySandboxesTable() {
 
   const { data, refetch, isFetching } = useSuspenseQuery(
     trpc.sandboxes.getSandboxes.queryOptions(
-      { teamSlug, limit: SANDBOXES_PAGE_SIZE, states: ['running'] },
+      { teamSlug },
       {
         refetchOnMount: 'always',
         refetchOnWindowFocus: true,
