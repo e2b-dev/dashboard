@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
+import { StatusIcon } from '@/ui/primitives/icons'
 import { Status } from './table-cells'
 
 const STATUS_OPTIONS: Array<{ value: BuildStatus; label: string }> = [
@@ -88,7 +89,7 @@ function StatusIcons({ selectedStatuses }: StatusIconsProps) {
   )
 
   return (
-    <div className="flex -space-x-1.5">
+    <div className="flex -space-x-2">
       {sortedStatuses.map((status, i) => (
         <DashedStatusCircleIcon key={status} status={status} index={i} />
       ))}
@@ -101,21 +102,27 @@ interface DashedStatusCircleIconProps {
   index: number
 }
 
+// StatusIcon (an SVG ring) instead of a CSS dashed border: Safari renders
+// `border-dashed` on rounded elements with uneven, sparse dashes. The opaque
+// backdrop masks the ring behind it in the overlap, as the old `bg-bg` did.
 function DashedStatusCircleIcon({
   status,
   index,
 }: DashedStatusCircleIconProps) {
   return (
-    <div
-      className={cn(
-        'size-3.5 rounded-full bg-bg border-[1.5px] border-dashed',
-        {
-          'border-fg-tertiary': status === 'building',
-          'border-accent-positive-highlight': status === 'success',
-          'border-accent-error-highlight': status === 'failed',
-        }
-      )}
+    <span
+      className="relative grid shrink-0 place-items-center"
       style={{ rotate: `${index * 50}deg`, zIndex: index + 1 }}
-    />
+    >
+      <span className="col-start-1 row-start-1 size-3.5 rounded-full bg-bg" />
+      <StatusIcon
+        size={17}
+        className={cn('col-start-1 row-start-1', {
+          'text-fg-tertiary': status === 'building',
+          'text-accent-positive-highlight': status === 'success',
+          'text-accent-error-highlight': status === 'failed',
+        })}
+      />
+    </span>
   )
 }
