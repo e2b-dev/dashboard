@@ -21,10 +21,9 @@ import {
 // Minimum CLI version that supports the Hydra JWT auth flow.
 // CLI versions >= this use the new public-client OAuth flow;
 // older versions fall back to the legacy e2b access token flow.
-//
-// Set to the current CLI version for development so the new flow
-// is exercised locally. Bump to the actual new CLI version when
-// shipping the refactor.
+// Old 2.12.2 binaries don't send cliVersion at all (it's a new param),
+// so they correctly fall to 'legacy'. The paired CLI PR ships as 2.12.2
+// with the new flow and sends cliVersion=2.12.2.
 const MIN_CLI_VERSION_FOR_HYDRA_FLOW = '2.12.2'
 
 type CLISearchParams = Promise<{

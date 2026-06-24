@@ -33,9 +33,7 @@ export async function GET(request: NextRequest) {
   const authContext = await getAuthContext()
   if (!authContext) {
     return finalize(
-      NextResponse.redirect(
-        `${flow.next}?${new URLSearchParams({ error: 'Not authenticated' }).toString()}`
-      ),
+      redirectWithParams(flow.next, { error: 'Not authenticated' }),
       origin
     )
   }
@@ -53,29 +51,36 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     return finalize(
-      NextResponse.redirect(
-        `${flow.next}?${new URLSearchParams({
-          error: `Token exchange failed: ${error instanceof Error ? error.message : String(error)}`,
-        }).toString()}`
-      ),
+      redirectWithParams(flow.next, {
+        error: `Token exchange failed: ${error instanceof Error ? error.message : String(error)}`,
+      }),
       origin
     )
   }
 
   const tokenEndpoint = buildTokenEndpoint(env.issuer.href)
 
-  const params = new URLSearchParams({
-    email: authContext.user.email ?? '',
-    accessToken: tokens.accessToken,
-    refreshToken: tokens.refreshToken ?? '',
-    oryTokenEndpoint: tokenEndpoint,
-    cliClientId: env.clientId,
-  })
-
   return finalize(
-    NextResponse.redirect(`${flow.next}?${params.toString()}`),
+    redirectWithParams(flow.next, {
+      email: authContext.user.email ?? '',
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken ?? '',
+      oryTokenEndpoint: tokenEndpoint,
+      cliClientId: env.clientId,
+    }),
     origin
   )
+}
+
+function redirectWithParams(
+  next: string,
+  params: Record<string, string>
+): NextResponse {
+  const url = new URL(next)
+  for (const [key, value] of Object.entries(params)) {
+    url.searchParams.set(key, value)
+  }
+  return NextResponse.redirect(url)
 }
 
 function finalize(response: NextResponse, _origin: string): NextResponse {

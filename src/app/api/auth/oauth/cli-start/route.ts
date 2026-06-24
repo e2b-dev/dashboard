@@ -25,11 +25,12 @@ export async function GET(request: NextRequest) {
   try {
     authorization = await buildCliAuthorizationRequest(redirectUri)
   } catch (error) {
-    return NextResponse.redirect(
-      `${next}?${new URLSearchParams({
-        error: `Failed to start OAuth flow: ${error instanceof Error ? error.message : String(error)}`,
-      }).toString()}`
+    const errorUrl = new URL(next)
+    errorUrl.searchParams.set(
+      'error',
+      `Failed to start OAuth flow: ${error instanceof Error ? error.message : String(error)}`
     )
+    return NextResponse.redirect(errorUrl)
   }
 
   const sealedFlow = await sealCliFlowState({
