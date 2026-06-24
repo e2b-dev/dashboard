@@ -40,6 +40,7 @@ export interface GetSandboxMetricsOptions {
 export interface ListSandboxesOptions {
   cursor?: string
   limit: number
+  states?: SandboxState[]
 }
 
 export interface ListSandboxesResult {
@@ -375,7 +376,7 @@ export function createSandboxesRepository(
       const result = await deps.infraClient.GET('/v2/sandboxes', {
         params: {
           query: {
-            state: DEFAULT_SANDBOX_STATES,
+            state: options.states ?? DEFAULT_SANDBOX_STATES,
             nextToken: options.cursor,
             limit: options.limit,
           },

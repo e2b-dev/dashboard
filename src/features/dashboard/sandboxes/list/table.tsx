@@ -3,8 +3,10 @@
 import {
   keepPreviousData,
   useSuspenseInfiniteQuery,
+  useSuspenseQuery,
 } from '@tanstack/react-query'
 import {
+  type ColumnDef,
   type ColumnFiltersState,
   type ColumnSizingState,
   flexRender,
@@ -16,6 +18,8 @@ import {
 import { subHours } from 'date-fns'
 import { useEffect, useMemo, useRef } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
+import { useFeatureFlag } from '@/core/modules/feature-flags/feature-flags.client'
+import type { Sandboxes } from '@/core/modules/sandboxes/models'
 import { useSandboxListTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
 import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
@@ -34,7 +38,11 @@ import type { SandboxStartedAtFilter } from './stores/table-store'
 import { getSandboxListEffectiveSorting } from './stores/table-store'
 import { SandboxesTableBody } from './table-body'
 import type { SandboxListRow } from './table-config'
-import { sandboxIdFuzzyFilter, sandboxListColumns } from './table-config'
+import {
+  legacySandboxListColumns,
+  sandboxIdFuzzyFilter,
+  sandboxListColumns,
+} from './table-config'
 
 const STARTED_AT_FILTER_HOURS: Record<
   Exclude<SandboxStartedAtFilter, undefined>,
@@ -82,13 +90,28 @@ function buildColumnFilters({
 
 const SANDBOXES_PAGE_SIZE = 50
 
-export default function SandboxesTable() {
+interface SandboxesTableViewProps {
+  sandboxes: Sandboxes
+  columns: ColumnDef<SandboxListRow>[]
+  refetch: () => void
+  isFetching: boolean
+  hasNextPage?: boolean
+  isFetchingNextPage?: boolean
+  fetchNextPage?: () => void
+}
+
+function SandboxesTableView({
+  sandboxes,
+  columns,
+  refetch,
+  isFetching,
+  hasNextPage,
+  isFetchingNextPage,
+  fetchNextPage,
+}: SandboxesTableViewProps) {
   'use no memo'
 
   const scrollRef = useRef<HTMLDivElement>(null)
-  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/sandboxes'>()
-
-  const trpc = useTRPC()
 
   const [columnSizing, setColumnSizing] = useLocalStorage<ColumnSizingState>(
     'sandboxes:columnSizing:v2',
@@ -106,36 +129,9 @@ export default function SandboxesTable() {
     memoryMB,
     sorting,
     globalFilter,
-    pollingInterval,
     setSorting,
     setGlobalFilter,
   } = useSandboxListTableStore()
-
-  const {
-    data,
-    refetch,
-    isFetching,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useSuspenseInfiniteQuery(
-    trpc.sandboxes.getSandboxes.infiniteQueryOptions(
-      { teamSlug, limit: SANDBOXES_PAGE_SIZE },
-      {
-        getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-        initialCursor: undefined,
-        refetchOnMount: 'always',
-        refetchOnWindowFocus: true,
-        refetchInterval: pollingInterval > 0 ? pollingInterval * 1_000 : false,
-        placeholderData: keepPreviousData,
-      }
-    )
-  )
-
-  const sandboxes = useMemo(
-    () => data.pages.flatMap((page) => page.sandboxes),
-    [data]
-  )
 
   const columnFilters = useMemo(
     () =>
@@ -151,7 +147,7 @@ export default function SandboxesTable() {
   const activeSorting = getSandboxListEffectiveSorting(sorting)
 
   const table = useReactTable<SandboxListRow>({
-    columns: sandboxListColumns,
+    columns,
     data: sandboxes,
     state: {
       globalFilter,
@@ -175,13 +171,19 @@ export default function SandboxesTable() {
   })
 
   const columnSizeVars = useColumnSizeVars(table)
+  const scrollResetKey = useMemo(
+    () => JSON.stringify({ activeSorting, globalFilter, columnFilters }),
+    [activeSorting, globalFilter, columnFilters]
+  )
 
   useEffect(() => {
+    void scrollResetKey
+
     if (scrollRef.current) {
       scrollRef.current.scrollTop = 0
       scrollRef.current.scrollLeft = 0
     }
-  }, [activeSorting, globalFilter, columnFilters])
+  }, [scrollResetKey])
 
   const tableSorting = table.getState().sorting
 
@@ -246,5 +248,86 @@ export default function SandboxesTable() {
         </DataTable>
       </div>
     </ClientOnly>
+  )
+}
+
+function NewSandboxesTable() {
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/sandboxes'>()
+  const trpc = useTRPC()
+  const pollingInterval = useSandboxListTableStore(
+    (state) => state.pollingInterval
+  )
+
+  const {
+    data,
+    refetch,
+    isFetching,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useSuspenseInfiniteQuery(
+    trpc.sandboxes.getSandboxes.infiniteQueryOptions(
+      { teamSlug, limit: SANDBOXES_PAGE_SIZE },
+      {
+        getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+        initialCursor: undefined,
+        refetchOnMount: 'always',
+        refetchOnWindowFocus: true,
+        refetchInterval: pollingInterval > 0 ? pollingInterval * 1_000 : false,
+        placeholderData: keepPreviousData,
+      }
+    )
+  )
+
+  const sandboxes = useMemo(
+    () => data.pages.flatMap((page) => page.sandboxes),
+    [data]
+  )
+
+  return (
+    <SandboxesTableView
+      sandboxes={sandboxes}
+      columns={sandboxListColumns}
+      refetch={refetch}
+      isFetching={isFetching}
+      hasNextPage={hasNextPage}
+      isFetchingNextPage={isFetchingNextPage}
+      fetchNextPage={fetchNextPage}
+    />
+  )
+}
+
+function LegacySandboxesTable() {
+  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/sandboxes'>()
+  const trpc = useTRPC()
+
+  const { data, refetch, isFetching } = useSuspenseQuery(
+    trpc.sandboxes.getSandboxes.queryOptions(
+      { teamSlug, limit: SANDBOXES_PAGE_SIZE, states: ['running'] },
+      {
+        refetchOnMount: 'always',
+        refetchOnWindowFocus: true,
+        placeholderData: keepPreviousData,
+      }
+    )
+  )
+
+  return (
+    <SandboxesTableView
+      sandboxes={data.sandboxes}
+      columns={legacySandboxListColumns}
+      refetch={refetch}
+      isFetching={isFetching}
+    />
+  )
+}
+
+export default function SandboxesTable() {
+  const newSandboxListEnabled = useFeatureFlag('newSandboxList')
+
+  return newSandboxListEnabled ? (
+    <NewSandboxesTable />
+  ) : (
+    <LegacySandboxesTable />
   )
 }

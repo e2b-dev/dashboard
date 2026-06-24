@@ -15,6 +15,14 @@ export const FEATURE_FLAGS = {
     description: 'Enables dashboard admin-only surfaces.',
     exposure: 'server',
   },
+  newSandboxList: {
+    kind: 'boolean',
+    key: 'new_sandbox_list',
+    defaultValue: false,
+    description:
+      'Enables the new sandbox list with pagination and paused sandbox coverage.',
+    exposure: 'both',
+  },
 } as const satisfies Record<string, FeatureFlagDefinition>
 
 export type FeatureFlagId = keyof typeof FEATURE_FLAGS

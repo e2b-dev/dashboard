@@ -36,6 +36,7 @@ export const sandboxesRouter = createTRPCRouter({
       z.object({
         cursor: z.string().optional(),
         limit: z.number().int().min(1).max(100).default(50),
+        states: z.array(z.enum(['running', 'paused'])).optional(),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -43,7 +44,11 @@ export const sandboxesRouter = createTRPCRouter({
         await new Promise((resolve) => setTimeout(resolve, 200))
 
         return {
-          sandboxes: MOCK_SANDBOXES_DATA(),
+          sandboxes: input.states
+            ? MOCK_SANDBOXES_DATA().filter((sandbox) =>
+                input.states?.includes(sandbox.state)
+              )
+            : MOCK_SANDBOXES_DATA(),
           nextCursor: null,
         }
       }
@@ -51,6 +56,7 @@ export const sandboxesRouter = createTRPCRouter({
       const sandboxesResult = await ctx.sandboxesRepository.listSandboxes({
         cursor: input.cursor,
         limit: input.limit,
+        states: input.states,
       })
       if (!sandboxesResult.ok) {
         throwTRPCErrorFromRepoError(sandboxesResult.error)

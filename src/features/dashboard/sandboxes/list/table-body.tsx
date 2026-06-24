@@ -17,16 +17,16 @@ const PREFETCH_THRESHOLD = 8
 interface SandboxesTableBodyProps {
   table: SandboxListTable
   scrollRef: RefObject<HTMLDivElement | null>
-  hasNextPage: boolean
-  isFetchingNextPage: boolean
-  fetchNextPage: () => void
+  hasNextPage?: boolean
+  isFetchingNextPage?: boolean
+  fetchNextPage?: () => void
 }
 
 export const SandboxesTableBody = ({
   table,
   scrollRef,
-  hasNextPage,
-  isFetchingNextPage,
+  hasNextPage = false,
+  isFetchingNextPage = false,
   fetchNextPage,
 }: SandboxesTableBodyProps) => {
   'use no memo'
@@ -81,6 +81,7 @@ export const SandboxesTableBody = ({
     if (
       hasNextPage &&
       !isFetchingNextPage &&
+      fetchNextPage &&
       lastVisibleIndex >= centerRows.length - PREFETCH_THRESHOLD
     ) {
       fetchNextPage()
@@ -143,7 +144,7 @@ export const SandboxesTableBody = ({
         <div className="flex items-center justify-center py-3 text-fg-tertiary max-md:sticky max-md:left-0 max-md:w-[calc(100svw-1.5rem)]">
           <LoadMoreButton
             isLoading={isFetchingNextPage}
-            onLoadMore={fetchNextPage}
+            onLoadMore={fetchNextPage ?? (() => {})}
           />
         </div>
       )}
