@@ -206,3 +206,8 @@ export function buildTokenEndpoint(issuer: string): string {
   const base = issuer.replace(/\/$/, '')
   return `${base}/oauth2/token`
 }
+
+export function buildRevokeEndpoint(issuer: string): string {
+  const base = issuer.replace(/\/$/, '')
+  return `${base}/oauth2/revoke`
+}

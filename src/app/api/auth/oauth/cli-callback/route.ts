@@ -3,6 +3,7 @@ import 'server-only'
 import { type NextRequest, NextResponse } from 'next/server'
 import { getAuthContext } from '@/core/server/auth'
 import {
+  buildRevokeEndpoint,
   buildTokenEndpoint,
   CLI_OAUTH_CALLBACK_PATH,
   CLI_OAUTH_FLOW_COOKIE,
@@ -59,6 +60,7 @@ export async function GET(request: NextRequest) {
   }
 
   const tokenEndpoint = buildTokenEndpoint(env.issuer.href)
+  const revokeEndpoint = buildRevokeEndpoint(env.issuer.href)
 
   return finalize(
     redirectWithParams(flow.next, {
@@ -66,6 +68,7 @@ export async function GET(request: NextRequest) {
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken ?? '',
       oryTokenEndpoint: tokenEndpoint,
+      oryRevokeEndpoint: revokeEndpoint,
       cliClientId: env.clientId,
     }),
     origin
