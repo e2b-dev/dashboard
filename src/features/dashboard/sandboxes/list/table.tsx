@@ -278,6 +278,15 @@ export function NewSandboxesTable() {
     )
   )
 
+  // Client-side sorting, filtering, and search run over the full result set, so
+  // drain every page before the table applies them — otherwise those operations
+  // (and the row counts) would only ever see the pages fetched so far.
+  useEffect(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      void fetchNextPage()
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
+
   const sandboxes = useMemo(
     () => data.pages.flatMap((page) => page.sandboxes),
     [data]
