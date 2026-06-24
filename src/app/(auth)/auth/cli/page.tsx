@@ -1,25 +1,56 @@
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
+import type { FeatureFlagContext } from '@/core/modules/feature-flags/context'
+import { featureFlags } from '@/core/modules/feature-flags/feature-flags.server'
 import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
 import { getAuthContext } from '@/core/server/auth'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { isLoopbackUrl } from '@/core/shared/schemas/url'
 import { encodedRedirect } from '@/lib/utils/auth'
 import { generateE2BUserAccessToken } from '@/lib/utils/server'
+import { isVersionGreaterOrEqual } from '@/lib/utils/version'
 import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
-import { CloudIcon, LaptopIcon, LinkIcon } from '@/ui/primitives/icons'
+import {
+  CloudIcon,
+  LaptopIcon,
+  LinkIcon,
+  TerminalIcon,
+} from '@/ui/primitives/icons'
 
-// Types
+// Minimum CLI version that supports the Hydra JWT auth flow.
+// CLI versions >= this use the new public-client OAuth flow;
+// older versions fall back to the legacy e2b access token flow.
+//
+// Set to the current CLI version for development so the new flow
+// is exercised locally. Bump to the actual new CLI version when
+// shipping the refactor.
+const MIN_CLI_VERSION_FOR_HYDRA_FLOW = '2.12.2'
+
 type CLISearchParams = Promise<{
   next?: string
+  cliVersion?: string
   state?: string
   error?: string
 }>
 
-// Server Actions
+type CLIFlow = 'hydra' | 'legacy'
 
-async function handleCLIAuth(
+function resolveCLIFlow(cliVersion: string | undefined): CLIFlow {
+  if (!cliVersion) return 'legacy'
+  return isVersionGreaterOrEqual(cliVersion, MIN_CLI_VERSION_FOR_HYDRA_FLOW)
+    ? 'hydra'
+    : 'legacy'
+}
+
+function handleHydraCLIAuth(next: string) {
+  if (!isLoopbackUrl(next)) {
+    throw new Error('Invalid redirect URL')
+  }
+  return redirect(`/api/auth/oauth/cli-start?next=${encodeURIComponent(next)}`)
+}
+
+async function handleLegacyCLIAuth(
   next: string,
   userEmail: string,
   authProviderAccessToken: string
@@ -57,10 +88,9 @@ async function handleCLIAuth(
   return redirect(`${next}?${searchParams.toString()}`)
 }
 
-// UI Components
 function CLIIcons() {
   return (
-    <p className="flex items-center justify-center gap-4 text-3xl  tracking-tight sm:text-4xl">
+    <p className="flex items-center justify-center gap-4 text-3xl tracking-tight sm:text-4xl">
       <span className="text-fg-tertiary">
         <LaptopIcon className="size-8" />
       </span>
@@ -86,98 +116,141 @@ function ErrorAlert({ message }: { message: string }) {
 function SuccessState() {
   return (
     <>
-      <h2 className="text-brand-400 ">Successfully linked</h2>
+      <h2 className="text-brand-400">Successfully linked</h2>
       <div>You can close this page and start using CLI.</div>
     </>
   )
 }
 
-// Main Component
+function UpgradeCLIState() {
+  return (
+    <div className="p-6 text-center">
+      <CLIIcons />
+      <h2 className="mt-6 text-base leading-7">CLI update required</h2>
+      <p className="text-fg-tertiary mt-4 max-w-md leading-7 mx-auto">
+        Your E2B CLI version is outdated and no longer supported for
+        authentication. Please update to the latest version to continue.
+      </p>
+      <div className="mt-8 inline-flex items-center gap-2 rounded-md border bg-bg-hover px-4 py-2">
+        <TerminalIcon className="size-4 text-fg-tertiary" />
+        <code className="text-fg-secondary text-sm">
+          npm install -g @e2b/cli@latest
+        </code>
+      </div>
+      <p className="text-fg-tertiary mt-6 text-sm">
+        Then run <code className="text-fg-secondary">e2b auth login</code>{' '}
+        again.
+      </p>
+    </div>
+  )
+}
+
 export default async function CLIAuthPage({
   searchParams,
 }: {
   searchParams: CLISearchParams
 }) {
-  const { next, state, error } = await searchParams
+  const { next, cliVersion, state, error } = await searchParams
   const authContext = await getAuthContext()
 
   if (state === 'success') {
     return <SuccessState />
   }
 
-  // Validate redirect URL
   if (!next || !isLoopbackUrl(next)) {
     l.error(
       {
         key: 'cli_auth:invalid_redirect_url',
         user_id: authContext?.user.id,
-        context: {
-          next,
-        },
+        context: { next },
       },
       `Invalid redirect URL: ${next}`
     )
     redirect(PROTECTED_URLS.DASHBOARD)
   }
 
-  // If user is not authenticated, redirect to sign in with return URL
   if (!authContext) {
-    const searchParams = new URLSearchParams({
-      returnTo: `${AUTH_URLS.CLI}?${new URLSearchParams({ next }).toString()}`,
-    })
-    redirect(`${AUTH_URLS.SIGN_IN}?${searchParams.toString()}`)
+    const returnToParams = new URLSearchParams({ next })
+    if (cliVersion) returnToParams.set('cliVersion', cliVersion)
+    return redirect(
+      `${AUTH_URLS.SIGN_IN}?returnTo=${encodeURIComponent(
+        `${AUTH_URLS.CLI}?${returnToParams.toString()}`
+      )}`
+    )
   }
 
-  // Handle CLI callback if authenticated
-  if (!error && next && authContext) {
-    try {
-      if (!authContext.user.email) {
-        throw new Error('No user email found')
-      }
+  const flow = resolveCLIFlow(cliVersion)
 
-      return await handleCLIAuth(
-        next,
-        authContext.user.email,
-        authContext.accessToken
-      )
-    } catch (err) {
-      if (err instanceof Error && err.message.includes('NEXT_REDIRECT')) {
-        throw err
-      }
+  if (flow === 'legacy') {
+    const flagContext: FeatureFlagContext = {
+      user: {
+        id: authContext.user.id,
+        email: authContext.user.email ?? undefined,
+      },
+    }
+    const blockLegacy = await featureFlags.isEnabled(
+      'blockLegacyCliAuth',
+      flagContext
+    )
 
-      l.error(
-        {
-          key: 'cli_auth:unexpected_error',
-          error: serializeErrorForLog(err),
-          user_id: authContext.user.id,
-          context: {
-            next,
-          },
-        },
-        `Unexpected error during CLI authentication: ${err instanceof Error ? err.message : String(err)}`
-      )
-
-      return encodedRedirect('error', '/auth/cli', (err as Error).message, {
-        next,
-      })
+    if (blockLegacy) {
+      return <UpgradeCLIState />
     }
   }
 
-  return (
-    <div className="p-6 text-center">
-      <CLIIcons />
-      <h2 className="mt-6 text-base leading-7">
-        Linking CLI with your account
-      </h2>
-      <div className="text-fg-tertiary mt-12 leading-8">
-        <Suspense fallback={<div>Loading...</div>}>
-          {error ? (
+  if (error) {
+    return (
+      <div className="p-6 text-center">
+        <CLIIcons />
+        <h2 className="mt-6 text-base leading-7">
+          Linking CLI with your account
+        </h2>
+        <div className="text-fg-tertiary mt-12 leading-8">
+          <Suspense fallback={<div>Loading...</div>}>
             <ErrorAlert message={error} />
-          ) : (
-            <div>Authorizing CLI...</div>
-          )}
-        </Suspense>
+          </Suspense>
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
+
+  try {
+    if (flow === 'hydra') {
+      return handleHydraCLIAuth(next)
+    }
+
+    if (!authContext.user.email) {
+      throw new Error('No user email found')
+    }
+
+    return await handleLegacyCLIAuth(
+      next,
+      authContext.user.email,
+      authContext.accessToken
+    )
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('NEXT_REDIRECT')) {
+      throw err
+    }
+
+    l.error(
+      {
+        key: 'cli_auth:unexpected_error',
+        error: serializeErrorForLog(err),
+        user_id: authContext.user.id,
+        context: { next, flow },
+      },
+      `Unexpected error during CLI authentication: ${err instanceof Error ? err.message : String(err)}`
+    )
+
+    const redirectParams: Record<string, string> = { next }
+    if (cliVersion) redirectParams.cliVersion = cliVersion
+
+    return encodedRedirect(
+      'error',
+      '/auth/cli',
+      (err as Error).message,
+      redirectParams
+    )
+  }
 }

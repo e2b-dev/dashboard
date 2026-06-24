@@ -15,6 +15,14 @@ export const FEATURE_FLAGS = {
     description: 'Enables dashboard admin-only surfaces.',
     exposure: 'server',
   },
+  blockLegacyCliAuth: {
+    kind: 'boolean',
+    key: 'block_legacy_cli_auth',
+    defaultValue: false,
+    description:
+      'Blocks the legacy e2b access token CLI auth flow. When enabled, old CLI versions see an upgrade prompt instead.',
+    exposure: 'server',
+  },
 } as const satisfies Record<string, FeatureFlagDefinition>
 
 export type FeatureFlagId = keyof typeof FEATURE_FLAGS
