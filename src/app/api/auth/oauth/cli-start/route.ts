@@ -3,6 +3,7 @@ import {
   buildCliAuthorizationRequest,
   CLI_OAUTH_CALLBACK_PATH,
   CLI_OAUTH_FLOW_COOKIE,
+  type CliAuthorizationRequest,
   cliFlowCookieOptions,
   sealCliFlowState,
 } from '@/core/server/auth/ory/cli-oauth'
@@ -20,7 +21,16 @@ export async function GET(request: NextRequest) {
 
   const redirectUri = `${request.nextUrl.origin}${CLI_OAUTH_CALLBACK_PATH}`
 
-  const authorization = await buildCliAuthorizationRequest(redirectUri)
+  let authorization: CliAuthorizationRequest
+  try {
+    authorization = await buildCliAuthorizationRequest(redirectUri)
+  } catch (error) {
+    return NextResponse.redirect(
+      `${next}?${new URLSearchParams({
+        error: `Failed to start OAuth flow: ${error instanceof Error ? error.message : String(error)}`,
+      }).toString()}`
+    )
+  }
 
   const sealedFlow = await sealCliFlowState({
     state: authorization.state,

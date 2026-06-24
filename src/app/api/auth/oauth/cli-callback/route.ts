@@ -33,7 +33,9 @@ export async function GET(request: NextRequest) {
   const authContext = await getAuthContext()
   if (!authContext) {
     return finalize(
-      new NextResponse('Not authenticated', { status: 401 }),
+      NextResponse.redirect(
+        `${flow.next}?${new URLSearchParams({ error: 'Not authenticated' }).toString()}`
+      ),
       origin
     )
   }
@@ -51,9 +53,10 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     return finalize(
-      new NextResponse(
-        `Token exchange failed: ${error instanceof Error ? error.message : String(error)}`,
-        { status: 502 }
+      NextResponse.redirect(
+        `${flow.next}?${new URLSearchParams({
+          error: `Token exchange failed: ${error instanceof Error ? error.message : String(error)}`,
+        }).toString()}`
       ),
       origin
     )
