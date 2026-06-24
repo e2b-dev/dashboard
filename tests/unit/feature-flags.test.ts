@@ -66,6 +66,7 @@ describe('createFeatureFlagService', () => {
     expect(provider.evaluate).toHaveBeenCalledWith(context, [
       FEATURE_FLAGS.agentsEnabled,
       FEATURE_FLAGS.isAdmin,
+      FEATURE_FLAGS.newSandboxList,
     ])
     expect(result).toEqual([
       {
@@ -81,6 +82,15 @@ describe('createFeatureFlagService', () => {
         key: 'is_admin',
         kind: 'boolean',
         description: 'Enables dashboard admin-only surfaces.',
+        defaultValue: false,
+        value: true,
+      },
+      {
+        id: 'newSandboxList',
+        key: 'new_sandbox_list',
+        kind: 'boolean',
+        description:
+          'Enables the new sandbox list with pagination and paused sandbox coverage.',
         defaultValue: false,
         value: true,
       },
