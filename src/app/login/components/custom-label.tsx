@@ -6,9 +6,20 @@ import Link from 'next/link'
 import { AUTH_URLS } from '@/configs/urls'
 import { cn } from '@/lib/utils'
 import { Label } from '@/ui/primitives/label'
+import { getReauthInfo } from './reauth'
 
 export function OryLabel({ node, children, fieldError }: OryNodeLabelProps) {
-  const { flowType } = useOryFlow()
+  const oryFlow = useOryFlow()
+  const { flowType } = oryFlow
+
+  // On a reauth screen the user already holds a Kratos session, so starting
+  // recovery directly bounces to the default return URL ("already logged in").
+  // Route through sign-out first to clear the session, then land on recovery.
+  const { isReauthLogin } = getReauthInfo(oryFlow)
+  const recoverHref = isReauthLogin
+    ? `${AUTH_URLS.SIGN_OUT}?return_to=${encodeURIComponent(AUTH_URLS.FORGOT_PASSWORD)}`
+    : AUTH_URLS.FORGOT_PASSWORD
+
   const label = node.meta?.label?.text
   const messages = node.messages ?? []
   const fieldErrorText =
@@ -37,7 +48,7 @@ export function OryLabel({ node, children, fieldError }: OryNodeLabelProps) {
             <Link
               prefetch={false}
               target="_top"
-              href={AUTH_URLS.FORGOT_PASSWORD}
+              href={recoverHref}
               tabIndex={-1}
               className="prose-label text-fg-secondary hover:text-fg underline underline-offset-[3px]"
             >

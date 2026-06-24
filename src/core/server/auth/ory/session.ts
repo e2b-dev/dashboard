@@ -113,7 +113,7 @@ export async function signOut(
   await revokeCurrentSession()
 
   return {
-    redirectTo: await completeOrySignOut(options?.origin),
+    redirectTo: await completeOrySignOut(options?.origin, options?.returnTo),
   }
 }
 
