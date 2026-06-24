@@ -10,6 +10,7 @@ import {
   openCliFlowState,
   readCliOAuthEnv,
 } from '@/core/server/auth/ory/cli-oauth'
+import { isLoopbackUrl } from '@/core/shared/schemas/url'
 
 // Hydra redirects here with ?code after SSO. We exchange the code (validating
 // state + PKCE), then redirect to the CLI's localhost with the tokens.
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
     request.cookies.get(CLI_OAUTH_FLOW_COOKIE)?.value
   )
 
-  if (!flow) {
+  if (!flow || !isLoopbackUrl(flow.next)) {
     return finalize(
       new NextResponse('Invalid or expired flow state', { status: 400 }),
       origin

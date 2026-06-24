@@ -66,6 +66,7 @@ describe('createFeatureFlagService', () => {
     expect(provider.evaluate).toHaveBeenCalledWith(context, [
       FEATURE_FLAGS.agentsEnabled,
       FEATURE_FLAGS.isAdmin,
+      FEATURE_FLAGS.blockLegacyCliAuth,
     ])
     expect(result).toEqual([
       {
@@ -81,6 +82,15 @@ describe('createFeatureFlagService', () => {
         key: 'is_admin',
         kind: 'boolean',
         description: 'Enables dashboard admin-only surfaces.',
+        defaultValue: false,
+        value: true,
+      },
+      {
+        id: 'blockLegacyCliAuth',
+        key: 'block_legacy_cli_auth',
+        kind: 'boolean',
+        description:
+          'Blocks the legacy e2b access token CLI auth flow. When enabled, old CLI versions see an upgrade prompt instead.',
         defaultValue: false,
         value: true,
       },
