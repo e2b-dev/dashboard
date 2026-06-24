@@ -296,7 +296,7 @@ export function TemplateNameCell({
           type="button"
           onClick={handleCopy}
           className={cn(
-            'group/copy absolute right-0 z-10 p-1.5 rounded cursor-pointer',
+            'group/copy relative z-10 ml-auto shrink-0 p-1.5 rounded cursor-pointer',
             'opacity-0 group-hover/row:opacity-100',
             'focus-visible:opacity-100 focus-visible:outline-none'
           )}
