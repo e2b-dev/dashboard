@@ -10,6 +10,7 @@ const TITLE_BY_FLOW: Partial<Record<FlowType, string>> = {
   [FlowType.Registration]: 'Sign up',
   [FlowType.Recovery]: 'Reset your password',
   [FlowType.Verification]: 'Verify your email',
+  [FlowType.Settings]: 'Set a new password',
 }
 
 const REAUTH_DESCRIPTION: Record<ReauthCredential, string> = {
@@ -22,6 +23,7 @@ const DESCRIPTION_BY_FLOW: Partial<Record<FlowType, string>> = {
   [FlowType.Registration]: 'Sign up with a social provider or your email.',
   [FlowType.Recovery]: 'Enter your email to recover your account.',
   [FlowType.Verification]: 'Enter your email to verify your account.',
+  [FlowType.Settings]: 'Choose a new password for your account.',
 }
 
 export function OryCardHeader() {

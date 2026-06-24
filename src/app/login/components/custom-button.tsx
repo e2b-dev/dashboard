@@ -13,7 +13,11 @@ export function OryButton({
   const { flowType } = useOryFlow()
   const label = node.meta?.label?.text
   const loadingLabel =
-    flowType === FlowType.Registration ? 'Signing up…' : 'Signing in…'
+    flowType === FlowType.Registration
+      ? 'Signing up…'
+      : flowType === FlowType.Settings
+        ? 'Saving…'
+        : 'Signing in…'
 
   return (
     <Button {...buttonProps} loading={isSubmitting ? loadingLabel : undefined}>
