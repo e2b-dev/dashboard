@@ -86,7 +86,7 @@ export default function DashboardSidebarContent() {
                     >
                       <item.icon
                         className={cn(
-                          'transition-[size,color]',
+                          'transition-[size]',
                           SIDEBAR_TRANSITION_CLASSNAMES,
                           isActive(item) && 'text-accent-main-highlight'
                         )}
