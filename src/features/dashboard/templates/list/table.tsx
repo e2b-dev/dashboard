@@ -184,7 +184,10 @@ export default function TemplatesTable() {
         >
           <DataTableHeader className="sticky top-0 shadow-xs bg-bg z-30">
             {table.getHeaderGroups().map((headerGroup) => (
-              <DataTableRow key={headerGroup.id} className="border-b-0">
+              <DataTableRow
+                key={headerGroup.id}
+                className="border-b-0 -mx-2 px-2 w-[calc(100%+16px)]"
+              >
                 {headerGroup.headers.map((header) => (
                   <DataTableHead
                     key={header.id}

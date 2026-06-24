@@ -3,6 +3,7 @@ import {
   httpUrlSchema,
   isLoopbackUrl,
   loopbackUrlSchema,
+  relativeUrlSchema,
 } from '@/core/shared/schemas/url'
 
 describe('httpUrlSchema', () => {
@@ -146,6 +147,63 @@ describe('isLoopbackUrl', () => {
 
     it('rejects empty strings', () => {
       expect(isLoopbackUrl('')).toBe(false)
+    })
+  })
+})
+
+describe('relativeUrlSchema', () => {
+  describe('accepts safe relative paths', () => {
+    it('accepts a bare path', () => {
+      expect(relativeUrlSchema.safeParse('/dashboard').success).toBe(true)
+    })
+
+    it('accepts a path with query params', () => {
+      expect(
+        relativeUrlSchema.safeParse('/dashboard?tab=settings').success
+      ).toBe(true)
+    })
+
+    it('accepts a nested path', () => {
+      expect(relativeUrlSchema.safeParse('/a/b/c').success).toBe(true)
+    })
+  })
+
+  describe('rejects open-redirect bypass attempts', () => {
+    it('rejects the backslash bypass', () => {
+      // `new URL('/\\evil.com', origin)` normalizes to https://evil.com/
+      expect(relativeUrlSchema.safeParse('/\\evil.com').success).toBe(false)
+    })
+
+    it('rejects protocol-relative URLs', () => {
+      expect(relativeUrlSchema.safeParse('//evil.com').success).toBe(false)
+    })
+
+    it('rejects absolute http(s) URLs', () => {
+      expect(relativeUrlSchema.safeParse('https://evil.com').success).toBe(
+        false
+      )
+    })
+
+    it('rejects an embedded scheme', () => {
+      expect(relativeUrlSchema.safeParse('/path://evil.com').success).toBe(
+        false
+      )
+    })
+
+    it('rejects a tab control char', () => {
+      expect(relativeUrlSchema.safeParse('/\tevil.com').success).toBe(false)
+    })
+
+    it('rejects a newline control char', () => {
+      expect(relativeUrlSchema.safeParse('/foo\nbar').success).toBe(false)
+    })
+
+    it('rejects a NUL control char', () => {
+      expect(relativeUrlSchema.safeParse('/\x00').success).toBe(false)
+    })
+
+    it('rejects a non-relative path', () => {
+      expect(relativeUrlSchema.safeParse('dashboard').success).toBe(false)
     })
   })
 })

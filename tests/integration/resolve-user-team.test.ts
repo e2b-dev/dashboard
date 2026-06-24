@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { COOKIE_KEYS } from '@/configs/cookies'
 
 const {
-  mockFlags,
   mockCookieStore,
   mockListUserTeams,
   mockBootstrapAuthProviderUser,
@@ -10,9 +9,6 @@ const {
   mockCreateUserTeamsRepository,
   mockCreateAdminUsersRepository,
 } = vi.hoisted(() => ({
-  mockFlags: {
-    enableUserBootstrap: true,
-  },
   mockCookieStore: {
     get: vi.fn(),
   },
@@ -33,12 +29,6 @@ vi.mock('@/core/modules/teams/user-teams-repository.server', () => ({
 
 vi.mock('@/core/modules/users/admin-repository.server', () => ({
   createAdminUsersRepository: mockCreateAdminUsersRepository,
-}))
-
-vi.mock('@/configs/env-flags', () => ({
-  get ENABLE_USER_BOOTSTRAP() {
-    return mockFlags.enableUserBootstrap
-  },
 }))
 
 import { resolveUserTeam } from '@/core/server/functions/team/resolve-user-team'
@@ -82,7 +72,6 @@ function createTeam(overrides: Record<string, unknown> = {}) {
 describe('resolveUserTeam', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockFlags.enableUserBootstrap = true
     mockCreateUserTeamsRepository.mockReturnValue({
       listUserTeams: mockListUserTeams,
       resolveTeamBySlug: mockResolveTeamBySlug,
@@ -287,21 +276,6 @@ describe('resolveUserTeam', () => {
       oidc_user_email: 'user-123@example.test',
       oidc_user_name: 'Ada Lovelace',
     })
-  })
-
-  it('returns null without bootstrapping when bootstrap is disabled', async () => {
-    mockFlags.enableUserBootstrap = false
-    setupCookies({})
-    mockListUserTeams.mockResolvedValue({
-      ok: true,
-      data: [],
-    })
-
-    const result = await resolveUserTeam(TEST_USER_ID, TEST_ACCESS_TOKEN)
-
-    expect(result).toBeNull()
-    expect(mockCreateAdminUsersRepository).not.toHaveBeenCalled()
-    expect(mockBootstrapAuthProviderUser).not.toHaveBeenCalled()
   })
 
   it('returns null when listing teams fails', async () => {

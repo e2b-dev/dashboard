@@ -1,6 +1,5 @@
 export const ALLOW_SEO_INDEXING = process.env.ALLOW_SEO_INDEXING === '1'
 export const VERBOSE = process.env.NEXT_PUBLIC_VERBOSE === '1'
-export const ENABLE_USER_BOOTSTRAP = process.env.ENABLE_USER_BOOTSTRAP === '1'
 export const INCLUDE_BILLING = process.env.NEXT_PUBLIC_INCLUDE_BILLING === '1'
 export const INCLUDE_ARGUS = process.env.NEXT_PUBLIC_INCLUDE_ARGUS === '1'
 export const INCLUDE_STATUS_INDICATOR =
@@ -15,9 +14,3 @@ export const INCLUDE_DASHBOARD_FEEDBACK_SURVEY =
 
 export const INCLUDE_REPORT_ISSUE =
   process.env.NEXT_PUBLIC_INCLUDE_REPORT_ISSUE === '1'
-
-// Gates the custom Ory flow pages + same-origin SDK proxy. On (Preview/Staging)
-// renders the Elements UI; off (Production) redirects to /sign-in etc.
-export function isOryCustomUiEnabled() {
-  return process.env.NEXT_PUBLIC_ORY_CUSTOM_UI === 'true'
-}

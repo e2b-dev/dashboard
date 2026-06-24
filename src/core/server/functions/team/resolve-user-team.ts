@@ -2,7 +2,6 @@ import 'server-only'
 
 import { cookies } from 'next/headers'
 import { COOKIE_KEYS } from '@/configs/cookies'
-import { ENABLE_USER_BOOTSTRAP } from '@/configs/env-flags'
 import type { ResolvedTeam } from '@/core/modules/teams/models'
 import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
 import { createAdminUsersRepository } from '@/core/modules/users/admin-repository.server'
@@ -68,10 +67,6 @@ export async function resolveUserTeam(
   }
 
   if (teamsResult.data.length === 0) {
-    if (!ENABLE_USER_BOOTSTRAP) {
-      return null
-    }
-
     const bootstrapRequest = await createOryUserBootstrapRequest({
       accessToken,
     })

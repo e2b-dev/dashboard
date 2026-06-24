@@ -15,7 +15,7 @@ export const authMiddleware = t.middleware(async ({ ctx, next }) => {
     const authContext = await context.with(
       trace.setSpan(context.active(), span),
       async () => {
-        return await getAuthContext(ctx.authSession)
+        return await getAuthContext()
       }
     )
 
