@@ -4,6 +4,7 @@ export const AUTH_URLS = {
   SIGN_UP: '/sign-up',
   SIGN_OUT: '/api/auth/sign-out',
   SWITCH_ACCOUNT: '/api/auth/switch-account',
+  RECOVERY_COMPLETE: '/api/auth/recovery-complete',
   CLI: '/auth/cli',
   // Shell-less Ory settings page (password reset + account config). Reachable
   // with only a Kratos session, so the post-recovery password reset works

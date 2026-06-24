@@ -168,7 +168,7 @@ function PasswordChangedDialog({ open }: { open: boolean }) {
         <DialogFooter>
           <Button
             onClick={() => {
-              window.location.href = AUTH_URLS.SIGN_IN
+              window.location.href = AUTH_URLS.RECOVERY_COMPLETE
             }}
           >
             Sign in with new password
@@ -221,9 +221,11 @@ export function SettingsCards({
         </Settings>
       </SessionProvider>
 
-      {/* No silent mint under remember=false — the user must sign in with the
-          new password. The dialog can't be dismissed: the only way forward is
-          to sign in. */}
+      {/* The recovery Kratos session is still live, so "sign in" routes through
+          RECOVERY_COMPLETE, which revokes every session for the identity (this
+          device plus any other live session) and clears cookies before
+          /sign-in — forcing a real password entry. The dialog can't be
+          dismissed: the only way forward is to sign in. */}
       <PasswordChangedDialog open={passwordChanged} />
     </div>
   )
