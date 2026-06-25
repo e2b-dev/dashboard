@@ -116,10 +116,9 @@ function DashedStatusCircleIcon({
     >
       <span className="col-start-1 row-start-1 size-3.5 rounded-full bg-bg" />
       <StatusIcon
-        // `!` overrides the button's `[&_svg]:size-4` / `[&_svg]:text-icon-tertiary`
-        // so each ring keeps its 17px size (≈14px ring, matching the old border)
-        // and its status color.
-        className={cn('col-start-1 row-start-1 size-[17px]!', {
+        // `!` overrides the button's `[&_svg]:text-icon-tertiary` so each ring
+        // keeps its status color (size inherits the button's `[&_svg]:size-4`).
+        className={cn('col-start-1 row-start-1', {
           'text-fg-tertiary!': status === 'building',
           'text-accent-positive-highlight!': status === 'success',
           'text-accent-error-highlight!': status === 'failed',
