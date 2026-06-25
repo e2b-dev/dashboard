@@ -10,13 +10,13 @@ import {
   openOryFlowState,
 } from '@/core/server/auth/ory/oauth-flow'
 import { resolveOryRedirectUri } from '@/core/server/auth/ory/oauth-relay'
+import { readKratosExternalId } from '@/core/server/auth/ory/session'
 import {
   E2B_SESSION_COOKIE,
   ORY_SIGNUP_METADATA_COOKIE,
   sealSessionCookie,
   sessionCookieOptions,
 } from '@/core/server/auth/ory/session-cookie'
-import { readKratosExternalId } from '@/core/server/auth/ory/session'
 import {
   buildOryLogoutUrl,
   ORY_POST_LOGOUT_PATH,
@@ -89,7 +89,9 @@ export async function GET(request: NextRequest) {
         ? await buildOryLogoutUrl({ idToken: tokens.idToken, origin })
         : null
       return finalize(
-        NextResponse.redirect(logoutUrl ?? new URL(ORY_POST_LOGOUT_PATH, origin))
+        NextResponse.redirect(
+          logoutUrl ?? new URL(ORY_POST_LOGOUT_PATH, origin)
+        )
       )
     }
   }

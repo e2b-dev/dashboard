@@ -132,7 +132,9 @@ describe('Ory OAuth callback', () => {
   it('skips bootstrap when the identity already has an external_id', async () => {
     readExternalIdMock.mockResolvedValueOnce('user-ext-123')
 
-    const response = await GET(await callbackRequest({ returnTo: '/dashboard' }))
+    const response = await GET(
+      await callbackRequest({ returnTo: '/dashboard' })
+    )
 
     expect(bootstrapMock).not.toHaveBeenCalled()
     // The session is still sealed and the user lands on their destination.
