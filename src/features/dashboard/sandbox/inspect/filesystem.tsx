@@ -30,7 +30,7 @@ export default function SandboxInspectFilesystem({
 
   return (
     <div className="h-full flex-1 flex flex-col gap-1 overflow-hidden">
-      <StoppedBanner rootNodeCount={children.length} />
+      {isRunning && <StoppedBanner rootNodeCount={children.length} />}
       <SandboxInspectFrame
         initial={{
           flex: 1,
@@ -41,7 +41,7 @@ export default function SandboxInspectFilesystem({
         <div className="h-full flex-1 overflow-hidden">
           {showRootLoading ? (
             <LoadingLayout />
-          ) : !children.length ? (
+          ) : !isRunning || !children.length ? (
             <SandboxInspectNotFound
               isResumePending={isSandboxResumePending}
               onResumeSandbox={() => void resumeSandbox()}

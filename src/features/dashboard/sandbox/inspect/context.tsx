@@ -1,7 +1,6 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-import Sandbox from 'e2b'
 import type { ReactNode } from 'react'
 import {
   createContext,
@@ -11,16 +10,16 @@ import {
   useRef,
   useState,
 } from 'react'
-import type { SandboxManagementAuth } from '@/core/shared/sandbox-management-auth'
+import { createEnvdSandbox } from '@/core/shared/create-envd-sandbox'
 import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
 import { getParentPath, normalizePath } from '@/lib/utils/filesystem'
+import { useTRPCClient } from '@/trpc/client'
 import { useDashboard } from '../../context'
 import { useSandboxContext } from '../context'
+import { SANDBOX_RESUME_TIMEOUT_MS } from './constants'
 import { createFilesystemStore, type FilesystemStore } from './filesystem/store'
 import type { FilesystemOperations } from './filesystem/types'
 import { SandboxManager } from './sandbox-manager'
-
-const SANDBOX_RESUME_TIMEOUT_MS = 70_000
 
 interface SandboxInspectContextValue {
   store: FilesystemStore
@@ -37,7 +36,6 @@ const SandboxInspectContext = createContext<SandboxInspectContextValue | null>(
 interface SandboxInspectProviderProps {
   children: ReactNode
   rootPath: string
-  sandboxManagementAuth: SandboxManagementAuth
 }
 
 function createStoreWithRoot(rootPath: string) {
@@ -64,10 +62,10 @@ function createStoreWithRoot(rootPath: string) {
 export default function SandboxInspectProvider({
   children,
   rootPath,
-  sandboxManagementAuth,
 }: SandboxInspectProviderProps) {
   const { team } = useDashboard()
   const teamId = team.id
+  const trpcClient = useTRPCClient()
 
   const { sandboxInfo, isRunning, refetchSandboxInfo } = useSandboxContext()
   const sandboxId = sandboxInfo?.sandboxID
@@ -75,7 +73,6 @@ export default function SandboxInspectProvider({
   const [store] = useState(() => createStoreWithRoot(rootPath))
   const sandboxManagerRef = useRef<SandboxManager | null>(null)
   const connectGenerationRef = useRef(0)
-  const connectAbortControllerRef = useRef<AbortController | null>(null)
   const [isSandboxResumePending, setIsSandboxResumePending] = useState(false)
   const [sandboxResumeError, setSandboxResumeError] = useState<string>()
   const [connectionKey, setConnectionKey] = useState<string>()
@@ -169,44 +166,53 @@ export default function SandboxInspectProvider({
     [isRunning, store, trackInteraction]
   )
 
-  const connectSandbox = async (options?: {
-    connectionKey?: string | null
-    requestTimeoutMs?: number
-    timeoutMs?: number
+  // Build an envd-only client from sandbox-scoped credentials and start the
+  // file watcher. No control-plane call, so this never resumes a paused
+  // sandbox or extends its TTL — the account token never reaches the browser.
+  const buildManagerFromCreds = async (creds: {
+    sandboxId: string
+    sandboxDomain?: string | null
+    envdVersion: string
+    envdAccessToken?: string
   }) => {
-    if (!sandboxId || !teamId) return false
     const generation = connectGenerationRef.current + 1
     connectGenerationRef.current = generation
-    connectAbortControllerRef.current?.abort()
-    const abortController = new AbortController()
-    connectAbortControllerRef.current = abortController
 
-    // (re)create the sandbox-manager when sandbox / team / root changes
     if (sandboxManagerRef.current) {
       sandboxManagerRef.current.stopWatching()
     }
 
-    const sandbox = await Sandbox.connect(sandboxId, {
+    const sandbox = createEnvdSandbox({
+      ...creds,
       domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
-      // Keep inspect connections from extending sandbox TTL via SDK default connect timeout.
-      timeoutMs: options?.timeoutMs ?? 1_000,
-      requestTimeoutMs: options?.requestTimeoutMs,
-      signal: abortController.signal,
-      apiHeaders: {
-        ...sandboxManagementAuth.headers,
-      },
+      sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
     })
+    const manager = new SandboxManager(store, sandbox, rootPath)
+    sandboxManagerRef.current = manager
+    await manager.loadDirectory(rootPath)
 
+    // Superseded by a newer connect/resume while loading — discard.
     if (connectGenerationRef.current !== generation) {
-      if (connectAbortControllerRef.current === abortController) {
-        connectAbortControllerRef.current = null
-      }
+      manager.stopWatching()
       return false
     }
+    return true
+  }
 
-    connectAbortControllerRef.current = null
-    sandboxManagerRef.current = new SandboxManager(store, sandbox, rootPath)
-    await sandboxManagerRef.current.loadDirectory(rootPath)
+  const connectSandbox = async (options?: {
+    connectionKey?: string | null
+  }) => {
+    if (!sandboxInfo || !sandboxId || !teamId) return false
+    if (sandboxInfo.state === 'killed') return false
+
+    const didConnect = await buildManagerFromCreds({
+      sandboxId,
+      sandboxDomain: sandboxInfo.domain,
+      envdVersion: sandboxInfo.envdVersion,
+      envdAccessToken: sandboxInfo.envdAccessToken,
+    })
+    if (!didConnect) return false
+
     if (options?.connectionKey !== null) {
       setConnectionKey(options?.connectionKey ?? expectedConnectionKey)
     }
@@ -224,8 +230,6 @@ export default function SandboxInspectProvider({
     queryFn: () => {
       if (!isRunning) {
         connectGenerationRef.current += 1
-        connectAbortControllerRef.current?.abort()
-        connectAbortControllerRef.current = null
         sandboxManagerRef.current?.stopWatching()
         sandboxManagerRef.current = null
         setConnectionKey(expectedConnectionKey)
@@ -246,20 +250,27 @@ export default function SandboxInspectProvider({
     staleTime: Number.POSITIVE_INFINITY,
   })
 
+  // Explicit, user-triggered resume. The control-plane connect (resume + TTL)
+  // happens server-side via the `sandbox.resume` mutation; we then rebuild the
+  // envd-only client from the returned sandbox-scoped credentials.
   const resumeSandbox = async () => {
+    if (!sandboxId || !teamId) return
     setSandboxResumeError(undefined)
     setIsSandboxResumePending(true)
     try {
-      const didConnect = await connectSandbox({
-        connectionKey: null,
+      const creds = await trpcClient.sandbox.resume.mutate({
+        teamSlug: team.slug,
+        sandboxId,
         requestTimeoutMs: SANDBOX_RESUME_TIMEOUT_MS,
-        timeoutMs: SANDBOX_RESUME_TIMEOUT_MS,
       })
+
+      const didConnect = await buildManagerFromCreds(creds)
       if (!didConnect) {
         setSandboxResumeError('Failed to resume sandbox. Please try again.')
         setIsSandboxResumePending(false)
         return
       }
+
       const nextSandboxInfo = await refetchSandboxInfo()
       if (nextSandboxInfo?.state === 'running') {
         setConnectionKey(
@@ -280,8 +291,6 @@ export default function SandboxInspectProvider({
   useEffect(() => {
     return () => {
       connectGenerationRef.current += 1
-      connectAbortControllerRef.current?.abort()
-      connectAbortControllerRef.current = null
       sandboxManagerRef.current?.stopWatching()
       sandboxManagerRef.current = null
     }
