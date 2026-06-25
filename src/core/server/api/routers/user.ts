@@ -1,5 +1,6 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
+import { featureFlags } from '@/core/modules/feature-flags/feature-flags.server'
 import {
   type AuthUser,
   getUserProfile,
@@ -10,7 +11,6 @@ import { createTRPCRouter } from '@/core/server/trpc/init'
 import { protectedProcedure } from '@/core/server/trpc/procedures'
 import { l } from '@/core/shared/clients/logger/logger'
 import { generateE2BUserAccessToken } from '@/lib/utils/server'
-import { featureFlags } from '@/core/modules/feature-flags/feature-flags.server'
 
 // How long the live identity-provider profile lookup is allowed to take before
 // we fall back to the cheap session user. Keeps a slow Ory admin API out of the
