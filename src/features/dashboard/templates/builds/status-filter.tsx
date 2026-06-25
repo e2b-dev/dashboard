@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
+import { StatusIcon } from '@/ui/primitives/icons'
 import { Status } from './table-cells'
 
 const STATUS_OPTIONS: Array<{ value: BuildStatus; label: string }> = [
@@ -83,14 +84,15 @@ interface StatusIconsProps {
 }
 
 function StatusIcons({ selectedStatuses }: StatusIconsProps) {
-  const sortedStatuses = STATUS_DISPLAY_ORDER.filter((s) =>
-    selectedStatuses.includes(s)
-  )
-
   return (
-    <div className="flex -space-x-1.5">
-      {sortedStatuses.map((status, i) => (
-        <DashedStatusCircleIcon key={status} status={status} index={i} />
+    <div className="flex -space-x-2">
+      {STATUS_DISPLAY_ORDER.map((status, i) => (
+        <DashedStatusCircleIcon
+          key={status}
+          status={status}
+          index={i}
+          selected={selectedStatuses.includes(status)}
+        />
       ))}
     </div>
   )
@@ -99,23 +101,28 @@ function StatusIcons({ selectedStatuses }: StatusIconsProps) {
 interface DashedStatusCircleIconProps {
   status: BuildStatus
   index: number
+  selected: boolean
 }
 
 function DashedStatusCircleIcon({
   status,
   index,
+  selected,
 }: DashedStatusCircleIconProps) {
   return (
-    <div
-      className={cn(
-        'size-3.5 rounded-full bg-bg border-[1.5px] border-dashed',
-        {
-          'border-fg-tertiary': status === 'building',
-          'border-accent-positive-highlight': status === 'success',
-          'border-accent-error-highlight': status === 'failed',
-        }
-      )}
+    <span
+      className="relative grid shrink-0 place-items-center"
       style={{ rotate: `${index * 50}deg`, zIndex: index + 1 }}
-    />
+    >
+      <span className="col-start-1 row-start-1 size-3.5 rounded-full bg-bg" />
+      <StatusIcon
+        className={cn('col-start-1 row-start-1', {
+          'text-fill!': !selected,
+          'text-fg-tertiary!': selected && status === 'building',
+          'text-accent-positive-highlight!': selected && status === 'success',
+          'text-accent-error-highlight!': selected && status === 'failed',
+        })}
+      />
+    </span>
   )
 }

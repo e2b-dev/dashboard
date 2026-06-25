@@ -1,7 +1,7 @@
 import { Icon, type IconProps } from './icon'
 
 /**
- * ![StatusIcon](data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTQuMTY2IDhDMTQuMTY2IDExLjMxMzcgMTEuNDc5NyAxNCA4LjE2NjAyIDE0QzQuODUyMzEgMTQgMi4xNjYwMiAxMS4zMTM3IDIuMTY2MDIgOEMyLjE2NjAyIDQuNjg2MjkgNC44NTIzMSAyIDguMTY2MDIgMkMxMS40Nzk3IDIgMTQuMTY2IDQuNjg2MjkgMTQuMTY2IDhaIiBzdHJva2U9IiM4ODg4ODgiIHN0cm9rZS13aWR0aD0iMS4zMzMzMyIgc3Ryb2tlLWxpbmVjYXA9InNxdWFyZSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLWRhc2hhcnJheT0iMS4zMyAyLjY3Ii8+PC9zdmc+)
+ * ![StatusIcon](data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTQuMTY2IDhDMTQuMTY2IDExLjMxMzcgMTEuNDc5NyAxNCA4LjE2NjAyIDE0QzQuODUyMzEgMTQgMi4xNjYwMiAxMS4zMTM3IDIuMTY2MDIgOEMyLjE2NjAyIDQuNjg2MjkgNC44NTIzMSAyIDguMTY2MDIgMkMxMS40Nzk3IDIgMTQuMTY2IDQuNjg2MjkgMTQuMTY2IDhaIiBzdHJva2U9IiM4ODg4ODgiIHN0cm9rZS13aWR0aD0iMS4zMzMzMyIgc3Ryb2tlLWxpbmVjYXA9InNxdWFyZSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLWRhc2hhcnJheT0iMS4zMyAyLjY3IiBwYXRoTGVuZ3RoPSIzMiIvPjwvc3ZnPg==)
  *
  * Synced from Figma `Icon/16px/Status`.
  */
@@ -14,6 +14,7 @@ export const StatusIcon = (props: IconProps) => (
       strokeLinejoin="round"
       strokeWidth="1.33333"
       strokeDasharray="1.33 2.67"
+      pathLength={32}
     />
   </Icon>
 )
