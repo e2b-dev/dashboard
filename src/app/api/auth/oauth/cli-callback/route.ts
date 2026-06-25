@@ -67,8 +67,8 @@ export async function GET(request: NextRequest) {
       email: authContext.user.email ?? '',
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken ?? '',
-      oryTokenEndpoint: tokenEndpoint,
-      oryRevokeEndpoint: revokeEndpoint,
+      tokenEndpoint: tokenEndpoint,
+      revokeEndpoint: revokeEndpoint,
       cliClientId: env.clientId,
     }),
     origin
