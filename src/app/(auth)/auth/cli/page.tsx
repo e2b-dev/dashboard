@@ -186,17 +186,12 @@ export default async function CLIAuthPage({
         email: authContext.user.email ?? undefined,
       },
     }
-    const blockLegacy = await featureFlags.isEnabled(
-      'blockLegacyCliAuth',
-      flagContext
-    )
-
     const tokenProvisioningDisabled = await featureFlags.isEnabled(
       'disableE2BAccessTokenProvisioning',
       flagContext
     )
 
-    if (blockLegacy || tokenProvisioningDisabled) {
+    if (tokenProvisioningDisabled) {
       return <UpgradeCLIState />
     }
   }

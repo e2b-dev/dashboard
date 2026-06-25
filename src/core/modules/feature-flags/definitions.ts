@@ -15,14 +15,6 @@ export const FEATURE_FLAGS = {
     description: 'Enables dashboard admin-only surfaces.',
     exposure: 'server',
   },
-  blockLegacyCliAuth: {
-    kind: 'boolean',
-    key: 'block_legacy_cli_auth',
-    defaultValue: false,
-    description:
-      'Blocks the legacy e2b access token CLI auth flow. When enabled, old CLI versions see an upgrade prompt instead.',
-    exposure: 'server',
-  },
   disableE2BAccessTokenProvisioning: {
     kind: 'boolean',
     key: 'disable_e2b_access_token_provisioning',
