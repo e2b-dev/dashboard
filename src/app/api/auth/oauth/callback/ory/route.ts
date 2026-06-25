@@ -16,6 +16,7 @@ import {
   sealSessionCookie,
   sessionCookieOptions,
 } from '@/core/server/auth/ory/session-cookie'
+import { readKratosExternalId } from '@/core/server/auth/ory/session'
 import {
   buildOryLogoutUrl,
   ORY_POST_LOGOUT_PATH,
@@ -64,25 +65,33 @@ export async function GET(request: NextRequest) {
     return finalize(NextResponse.redirect(new URL(ORY_RECOVER_PATH, origin)))
   }
 
-  const bootstrapped = await ensureOryUserBootstrapped({
-    accessToken: tokens.accessToken,
-    idToken: tokens.idToken,
-    provider: 'ory',
-  })
+  // Bootstrap links the Kratos identity to its dashboard user and backfills
+  // external_id. Once that's set the user is fully provisioned, so skip the admin
+  // call on repeat logins. A null read (e.g. session cookie not yet visible) falls
+  // through to bootstrap — identical to the prior unconditional behavior.
+  const alreadyProvisioned = await readKratosExternalId()
 
-  if (!bootstrapped) {
-    l.error(
-      { key: 'oauth_callback:bootstrap_failed' },
-      'dashboard bootstrap failed; ending the Ory session without a dashboard cookie'
-    )
-    // Don't strand the user with a half-provisioned login: end the Ory + Kratos
-    // session via RP-logout (falling back to home if no id_token is available).
-    const logoutUrl = tokens.idToken
-      ? await buildOryLogoutUrl({ idToken: tokens.idToken, origin })
-      : null
-    return finalize(
-      NextResponse.redirect(logoutUrl ?? new URL(ORY_POST_LOGOUT_PATH, origin))
-    )
+  if (!alreadyProvisioned) {
+    const bootstrapped = await ensureOryUserBootstrapped({
+      accessToken: tokens.accessToken,
+      idToken: tokens.idToken,
+      provider: 'ory',
+    })
+
+    if (!bootstrapped) {
+      l.error(
+        { key: 'oauth_callback:bootstrap_failed' },
+        'dashboard bootstrap failed; ending the Ory session without a dashboard cookie'
+      )
+      // Don't strand the user with a half-provisioned login: end the Ory + Kratos
+      // session via RP-logout (falling back to home if no id_token is available).
+      const logoutUrl = tokens.idToken
+        ? await buildOryLogoutUrl({ idToken: tokens.idToken, origin })
+        : null
+      return finalize(
+        NextResponse.redirect(logoutUrl ?? new URL(ORY_POST_LOGOUT_PATH, origin))
+      )
+    }
   }
 
   const sealed = await sealSessionCookie({
