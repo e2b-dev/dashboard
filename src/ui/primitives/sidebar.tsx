@@ -249,6 +249,10 @@ function Sidebar({
           side === 'left'
             ? 'left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]'
             : 'right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]',
+          // Hover line: 2px pseudo-element overlaying the border edge (no layout shift).
+          'after:pointer-events-none after:absolute after:inset-y-0 after:z-10 after:w-0.5 after:bg-stroke after:opacity-0 after:transition-opacity after:duration-150 after:content-[""]',
+          'group-data-[side=left]:after:-right-px group-data-[side=right]:after:-left-px',
+          'has-[[data-sidebar=rail]:hover]:after:opacity-100',
           // Adjust the padding for floating and inset variants.
           variant === 'floating' || variant === 'inset'
             ? 'p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]'
@@ -299,28 +303,50 @@ function SidebarTrigger({
   )
 }
 
-function SidebarRail({ className, ...props }: React.ComponentProps<'button'>) {
+function SidebarRail({
+  className,
+  tooltip,
+  ...props
+}: React.ComponentProps<'button'> & { tooltip?: React.ReactNode }) {
   const { toggleSidebar } = useSidebar()
 
-  return (
+  const rail = (
     <button
       data-sidebar="rail"
       data-slot="sidebar-rail"
       aria-label="Toggle Sidebar"
       tabIndex={-1}
       onClick={toggleSidebar}
-      title="Toggle Sidebar"
       className={cn(
-        'hover:after:bg-stroke absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] sm:flex',
+        'absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 sm:flex',
+        // Hover line is drawn on the Sidebar container (has-[rail:hover]); the rail
+        // itself is just the hit area.
         'in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize',
         '[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize',
-        'hover:group-data-[collapsible=offcanvas]:bg-bg group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full',
+        'hover:group-data-[collapsible=offcanvas]:bg-bg group-data-[collapsible=offcanvas]:translate-x-0',
         '[[data-side=left][data-collapsible=offcanvas]_&]:-right-2',
         '[[data-side=right][data-collapsible=offcanvas]_&]:-left-2',
         className
       )}
       {...props}
     />
+  )
+
+  if (!tooltip) {
+    return rail
+  }
+
+  return (
+    <Tooltip delayDuration={300}>
+      <TooltipTrigger asChild>{rail}</TooltipTrigger>
+      <TooltipContent
+        side="right"
+        align="center"
+        className="flex items-center gap-2 py-1.5 pr-2 normal-case"
+      >
+        {tooltip}
+      </TooltipContent>
+    </Tooltip>
   )
 }
 
