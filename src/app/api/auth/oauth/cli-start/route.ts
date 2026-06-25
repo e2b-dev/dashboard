@@ -22,8 +22,14 @@ export async function GET(request: NextRequest) {
   const redirectUri = `${request.nextUrl.origin}${CLI_OAUTH_CALLBACK_PATH}`
 
   let authorization: CliAuthorizationRequest
+  let sealedFlow: string
   try {
     authorization = await buildCliAuthorizationRequest(redirectUri)
+    sealedFlow = await sealCliFlowState({
+      state: authorization.state,
+      codeVerifier: authorization.codeVerifier,
+      next,
+    })
   } catch (error) {
     const errorUrl = new URL(next)
     errorUrl.searchParams.set(
@@ -32,12 +38,6 @@ export async function GET(request: NextRequest) {
     )
     return NextResponse.redirect(errorUrl)
   }
-
-  const sealedFlow = await sealCliFlowState({
-    state: authorization.state,
-    codeVerifier: authorization.codeVerifier,
-    next,
-  })
 
   const response = NextResponse.redirect(authorization.url)
   response.cookies.set(

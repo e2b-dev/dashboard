@@ -39,7 +39,17 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  const env = readCliOAuthEnv()
+  let env: ReturnType<typeof readCliOAuthEnv>
+  try {
+    env = readCliOAuthEnv()
+  } catch (error) {
+    return finalize(
+      redirectWithParams(flow.next, {
+        error: `OAuth configuration error: ${error instanceof Error ? error.message : String(error)}`,
+      }),
+      origin
+    )
+  }
   const redirectUri = `${origin}${CLI_OAUTH_CALLBACK_PATH}`
 
   let tokens: Awaited<ReturnType<typeof exchangeCliCallback>>
