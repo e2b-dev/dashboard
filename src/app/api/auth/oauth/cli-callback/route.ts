@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
       refreshToken: tokens.refreshToken ?? '',
       tokenEndpoint: tokenEndpoint,
       revokeEndpoint: revokeEndpoint,
-      cliClientId: env.clientId,
+      clientId: env.clientId,
     }),
     origin
   )
