@@ -11,11 +11,7 @@ import { encodedRedirect } from '@/lib/utils/auth'
 import { generateE2BUserAccessToken } from '@/lib/utils/server'
 import { isVersionGreaterOrEqual } from '@/lib/utils/version'
 import { Alert, AlertDescription, AlertTitle } from '@/ui/primitives/alert'
-import {
-  CloudIcon,
-  LaptopIcon,
-  LinkIcon,
-} from '@/ui/primitives/icons'
+import { CloudIcon, LaptopIcon, LinkIcon } from '@/ui/primitives/icons'
 
 // Minimum CLI version that supports the OAuth JWT auth flow.
 // CLI versions >= this use the new public-client OAuth flow;
