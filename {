@@ -1,0 +1,8 @@
+{
+ "results": [],
+ "paggination": {
+   "size": 20,
+   "next": "abc",
+   "prev": "abc"
+ }
+}
