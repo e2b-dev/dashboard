@@ -15,7 +15,6 @@ import {
   CloudIcon,
   LaptopIcon,
   LinkIcon,
-  TerminalIcon,
 } from '@/ui/primitives/icons'
 
 // Minimum CLI version that supports the OAuth JWT auth flow.
@@ -120,29 +119,6 @@ function SuccessState() {
   )
 }
 
-function UpgradeCLIState() {
-  return (
-    <div className="p-6 text-center">
-      <CLIIcons />
-      <h2 className="mt-6 text-base leading-7">CLI update required</h2>
-      <p className="text-fg-tertiary mt-4 max-w-md leading-7 mx-auto">
-        Your E2B CLI version is outdated and no longer supported for
-        authentication. Please update to the latest version to continue.
-      </p>
-      <div className="mt-8 inline-flex items-center gap-2 rounded-md border bg-bg-hover px-4 py-2">
-        <TerminalIcon className="size-4 text-fg-tertiary" />
-        <code className="text-fg-secondary text-sm">
-          npm install -g @e2b/cli@latest
-        </code>
-      </div>
-      <p className="text-fg-tertiary mt-6 text-sm">
-        Then run <code className="text-fg-secondary">e2b auth login</code>{' '}
-        again.
-      </p>
-    </div>
-  )
-}
-
 export default async function CLIAuthPage({
   searchParams,
 }: {
@@ -192,7 +168,12 @@ export default async function CLIAuthPage({
     )
 
     if (tokenProvisioningDisabled) {
-      return <UpgradeCLIState />
+      const errorUrl = new URL(next)
+      errorUrl.searchParams.set(
+        'error',
+        'CLI update required. Run: npm install -g @e2b/cli@latest'
+      )
+      return redirect(errorUrl.toString())
     }
   }
 
