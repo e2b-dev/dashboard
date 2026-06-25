@@ -39,6 +39,13 @@ export async function GET(request: NextRequest) {
     )
   }
 
+  if (!authContext.user.email) {
+    return finalize(
+      redirectWithParams(flow.next, { error: 'No user email found' }),
+      origin
+    )
+  }
+
   let env: ReturnType<typeof readCliOAuthEnv>
   try {
     env = readCliOAuthEnv()
@@ -74,7 +81,7 @@ export async function GET(request: NextRequest) {
 
   return finalize(
     redirectWithParams(flow.next, {
-      email: authContext.user.email ?? '',
+      email: authContext.user.email,
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken ?? '',
       tokenEndpoint: tokenEndpoint,
