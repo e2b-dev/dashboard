@@ -19,6 +19,7 @@ export const serverSchema = z.object({
   ORY_HYDRA_PUBLIC_URL: z.url().optional(),
   ORY_OAUTH2_CLIENT_ID: z.string().min(1).optional(),
   ORY_OAUTH2_CLIENT_SECRET: z.string().min(1).optional(),
+  ORY_OAUTH2_CLI_CLIENT_ID: z.string().min(1).optional(),
   ORY_OAUTH2_AUDIENCE: z.string().min(1).optional(),
   ORY_PROJECT_API_TOKEN: z.string().min(1).optional(),
   ORY_KRATOS_ADMIN_URL: z.url().optional(),
@@ -91,6 +92,7 @@ const oryRequiredEnvVars = [
   'ORY_SDK_URL',
   'ORY_OAUTH2_CLIENT_ID',
   'ORY_OAUTH2_CLIENT_SECRET',
+  'ORY_OAUTH2_CLI_CLIENT_ID',
   'ORY_OAUTH2_AUDIENCE',
   'DASHBOARD_API_ADMIN_TOKEN',
 ] as const satisfies readonly (keyof MergedEnv)[]
