@@ -8,6 +8,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
+import { StatusIcon } from '@/ui/primitives/icons'
 import type { LogLevelValue } from './log-cells'
 
 const DEFAULT_OPTIONS: Array<{ value: LogLevelValue; label: string }> = [
@@ -61,18 +62,18 @@ export function LogLevelFilter({
   )
 }
 
+// StatusIcon (an SVG ring) instead of a CSS dashed border: Safari renders
+// `border-dashed` on rounded elements with uneven, sparse dashes. `!` overrides
+// the button's `[&_svg]:size-4` / `[&_svg]:text-icon-tertiary`.
 function LevelIndicator({ level }: { level: LogLevelValue }) {
   return (
-    <div
-      className={cn(
-        'size-3.5 rounded-full bg-bg border-[1.5px] border-dashed',
-        {
-          'border-fg-tertiary': level === 'debug',
-          'border-accent-info-highlight': level === 'info',
-          'border-accent-warning-highlight': level === 'warn',
-          'border-accent-error-highlight': level === 'error',
-        }
-      )}
+    <StatusIcon
+      className={cn('size-[17px]! shrink-0', {
+        'text-fg-tertiary!': level === 'debug',
+        'text-accent-info-highlight!': level === 'info',
+        'text-accent-warning-highlight!': level === 'warn',
+        'text-accent-error-highlight!': level === 'error',
+      })}
     />
   )
 }
