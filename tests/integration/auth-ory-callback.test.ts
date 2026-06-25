@@ -12,6 +12,7 @@ import {
 
 const exchangeMock = vi.hoisted(() => vi.fn())
 const bootstrapMock = vi.hoisted(() => vi.fn())
+const readExternalIdMock = vi.hoisted(() => vi.fn())
 
 vi.mock('@/core/server/auth/ory/oauth-client', () => ({
   exchangeOryCallback: exchangeMock,
@@ -19,6 +20,10 @@ vi.mock('@/core/server/auth/ory/oauth-client', () => ({
 
 vi.mock('@/core/server/auth/ory/dashboard-bootstrap', () => ({
   ensureOryUserBootstrapped: bootstrapMock,
+}))
+
+vi.mock('@/core/server/auth/ory/session', () => ({
+  readKratosExternalId: readExternalIdMock,
 }))
 
 vi.mock('@/core/shared/clients/logger/logger', () => ({
@@ -64,6 +69,8 @@ describe('Ory OAuth callback', () => {
     vi.stubEnv('ORY_HYDRA_PUBLIC_URL', 'https://ory.example.com')
     exchangeMock.mockReset().mockResolvedValue(tokens)
     bootstrapMock.mockReset().mockResolvedValue(true)
+    // Default to an unprovisioned identity so bootstrap runs as before.
+    readExternalIdMock.mockReset().mockResolvedValue(null)
   })
 
   afterEach(() => {
@@ -114,6 +121,28 @@ describe('Ory OAuth callback', () => {
       'https://app.e2b.dev/api/auth/oauth/recover'
     )
     expect(response.cookies.get(E2B_SESSION_COOKIE)?.value).toBeUndefined()
+  })
+
+  it('bootstraps when the identity has no external_id yet', async () => {
+    await GET(await callbackRequest())
+
+    expect(bootstrapMock).toHaveBeenCalledOnce()
+  })
+
+  it('skips bootstrap when the identity already has an external_id', async () => {
+    readExternalIdMock.mockResolvedValueOnce('user-ext-123')
+
+    const response = await GET(
+      await callbackRequest({ returnTo: '/dashboard' })
+    )
+
+    expect(bootstrapMock).not.toHaveBeenCalled()
+    // The session is still sealed and the user lands on their destination.
+    const sealed = response.cookies.get(E2B_SESSION_COOKIE)?.value
+    expect(await openSessionCookie(sealed)).toEqual(tokens)
+    expect(response.headers.get('location')).toBe(
+      'https://app.e2b.dev/dashboard'
+    )
   })
 
   it('RP-logs-out (no dashboard cookie) when bootstrap fails', async () => {

@@ -72,6 +72,15 @@ export async function getAuthContext(): Promise<AuthContext | null> {
   }
 }
 
+// external_id is set by bootstrap and lives only on the Kratos identity (never in
+// the token claims). A non-null value means the user is already provisioned, so
+// the OAuth callback can skip the bootstrap admin call. Reuses the request-cached
+// session read — no extra whoami round trip.
+export async function readKratosExternalId(): Promise<string | null> {
+  const kratos = await readKratosSession()
+  return kratos?.active ? (kratos.identity?.external_id ?? null) : null
+}
+
 export async function getUserProfile(): Promise<AuthUser | null> {
   const identityId = (await readKratosSession())?.identity?.id
   if (!identityId) return null
