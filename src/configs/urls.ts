@@ -100,6 +100,8 @@ export const HELP_URLS = {
   BUILD_TEMPLATE:
     'https://e2b.dev/docs/sandbox-template#4-build-your-sandbox-template',
   START_COMMAND: 'https://e2b.dev/docs/sandbox-template/start-cmd',
+  ACCESS_TOKEN_DEPRECATION:
+    'https://e2b.dev/docs/migration/access-token-deprecation',
 }
 
 export const BASE_URL = process.env.VERCEL_ENV
