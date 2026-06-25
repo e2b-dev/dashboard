@@ -62,9 +62,6 @@ export function LogLevelFilter({
   )
 }
 
-// StatusIcon (an SVG ring) instead of a CSS dashed border: Safari renders
-// `border-dashed` on rounded elements with uneven, sparse dashes. `!` overrides
-// the button's `[&_svg]:text-icon-tertiary` so the ring keeps its level color.
 function LevelIndicator({ level }: { level: LogLevelValue }) {
   return (
     <StatusIcon

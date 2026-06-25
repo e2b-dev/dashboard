@@ -102,9 +102,6 @@ interface DashedStatusCircleIconProps {
   index: number
 }
 
-// StatusIcon (an SVG ring) instead of a CSS dashed border: Safari renders
-// `border-dashed` on rounded elements with uneven, sparse dashes. The opaque
-// backdrop masks the ring behind it in the overlap, as the old `bg-bg` did.
 function DashedStatusCircleIcon({
   status,
   index,
@@ -116,8 +113,6 @@ function DashedStatusCircleIcon({
     >
       <span className="col-start-1 row-start-1 size-3.5 rounded-full bg-bg" />
       <StatusIcon
-        // `!` overrides the button's `[&_svg]:text-icon-tertiary` so each ring
-        // keeps its status color (size inherits the button's `[&_svg]:size-4`).
         className={cn('col-start-1 row-start-1', {
           'text-fg-tertiary!': status === 'building',
           'text-accent-positive-highlight!': status === 'success',
