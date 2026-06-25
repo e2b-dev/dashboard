@@ -18,13 +18,12 @@ import {
   TerminalIcon,
 } from '@/ui/primitives/icons'
 
-// Minimum CLI version that supports the Hydra JWT auth flow.
+// Minimum CLI version that supports the OAuth JWT auth flow.
 // CLI versions >= this use the new public-client OAuth flow;
 // older versions fall back to the legacy e2b access token flow.
-// Old 2.12.2 binaries don't send cliVersion at all (it's a new param),
-// so they correctly fall to 'legacy'. The paired CLI PR ships as 2.12.2
-// with the new flow and sends cliVersion=2.12.2.
-const MIN_CLI_VERSION_FOR_HYDRA_FLOW = '2.12.2'
+// Old binaries (pre-2.13.0) don't send cliVersion at all (it's a new param),
+// so they correctly fall to 'legacy'.
+const MIN_CLI_VERSION_FOR_HYDRA_FLOW = '2.13.0'
 
 type CLISearchParams = Promise<{
   next?: string
