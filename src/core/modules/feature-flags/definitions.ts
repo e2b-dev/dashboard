@@ -23,6 +23,14 @@ export const FEATURE_FLAGS = {
       'Blocks the legacy e2b access token CLI auth flow. When enabled, old CLI versions see an upgrade prompt instead.',
     exposure: 'server',
   },
+  disableE2BAccessTokenProvisioning: {
+    kind: 'boolean',
+    key: 'disable_e2b_access_token_provisioning',
+    defaultValue: false,
+    description:
+      'Disables provisioning of e2b access tokens via generateE2BUserAccessToken. When enabled, the legacy CLI flow shows an upgrade prompt and the createAccessToken tRPC mutation returns an error.',
+    exposure: 'server',
+  },
 } as const satisfies Record<string, FeatureFlagDefinition>
 
 export type FeatureFlagId = keyof typeof FEATURE_FLAGS
