@@ -84,14 +84,15 @@ interface StatusIconsProps {
 }
 
 function StatusIcons({ selectedStatuses }: StatusIconsProps) {
-  const sortedStatuses = STATUS_DISPLAY_ORDER.filter((s) =>
-    selectedStatuses.includes(s)
-  )
-
   return (
     <div className="flex -space-x-2">
-      {sortedStatuses.map((status, i) => (
-        <DashedStatusCircleIcon key={status} status={status} index={i} />
+      {STATUS_DISPLAY_ORDER.map((status, i) => (
+        <DashedStatusCircleIcon
+          key={status}
+          status={status}
+          index={i}
+          selected={selectedStatuses.includes(status)}
+        />
       ))}
     </div>
   )
@@ -100,11 +101,13 @@ function StatusIcons({ selectedStatuses }: StatusIconsProps) {
 interface DashedStatusCircleIconProps {
   status: BuildStatus
   index: number
+  selected: boolean
 }
 
 function DashedStatusCircleIcon({
   status,
   index,
+  selected,
 }: DashedStatusCircleIconProps) {
   return (
     <span
@@ -114,9 +117,10 @@ function DashedStatusCircleIcon({
       <span className="col-start-1 row-start-1 size-3.5 rounded-full bg-bg" />
       <StatusIcon
         className={cn('col-start-1 row-start-1', {
-          'text-fg-tertiary!': status === 'building',
-          'text-accent-positive-highlight!': status === 'success',
-          'text-accent-error-highlight!': status === 'failed',
+          'text-fill!': !selected,
+          'text-fg-tertiary!': selected && status === 'building',
+          'text-accent-positive-highlight!': selected && status === 'success',
+          'text-accent-error-highlight!': selected && status === 'failed',
         })}
       />
     </span>
