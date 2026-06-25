@@ -139,7 +139,7 @@ export function TemplatesTableBody({
               isSelected={row.getIsSelected()}
               className={cn(
                 'group/row relative h-8 min-w-full -mx-2 px-2 hover:bg-bg-1 border-b-0 transition-none w-[calc(100%+16px)]',
-                'border-stroke/80 hover:z-20 focus-within:z-10',
+                'hover:z-20 focus-within:z-10',
                 'has-[button[aria-haspopup=menu][data-state=open]]:z-10'
               )}
             >
@@ -165,6 +165,14 @@ export function TemplatesTableBody({
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </DataTableCell>
               ))}
+              <div
+                aria-hidden
+                className={cn(
+                  'pointer-events-none absolute inset-x-2 bottom-0 border-b border-stroke/80',
+                  'group-hover/row:hidden group-focus-visible/row:hidden',
+                  'group-has-[button[aria-haspopup=menu][data-state=open]]/row:hidden'
+                )}
+              />
               <RowHoverFrame
                 className={cn(
                   'group-has-[button[aria-haspopup=menu][data-state=open]]/row:border-stroke',

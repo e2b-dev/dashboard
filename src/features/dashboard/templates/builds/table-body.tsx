@@ -52,7 +52,7 @@ export function BuildsTableBody({
             key={row.id}
             className={cn(
               'group/row relative h-10 min-w-full cursor-pointer -mx-2 px-2 hover:bg-bg-1 border-b-0 transition-none w-[calc(100%+16px)]',
-              'border-stroke/80 hover:z-20 focus-within:z-10',
+              'hover:z-20 focus-within:z-10',
               { 'bg-bg-1 animate-pulse': isBuilding }
             )}
             onClick={() => onRowClick(row.original)}
@@ -69,6 +69,13 @@ export function BuildsTableBody({
                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
               </DataTableCell>
             ))}
+            <div
+              aria-hidden
+              className={cn(
+                'pointer-events-none absolute inset-x-2 bottom-0 border-b border-stroke/80',
+                'group-hover/row:hidden group-focus-visible/row:hidden'
+              )}
+            />
             <RowHoverFrame />
           </DataTableRow>
         )
