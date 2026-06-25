@@ -21,6 +21,6 @@ export const TAB_URL_MAP: Record<string, (teamSlug: string) => string> = {
   members: (teamSlug) => PROTECTED_URLS.MEMBERS(teamSlug),
   account: (_) => PROTECTED_URLS.ACCOUNT_SETTINGS,
   personal: (_) => PROTECTED_URLS.ACCOUNT_SETTINGS,
-
+  terminal: (teamSlug) => PROTECTED_URLS.TERMINAL(teamSlug),
   budget: (teamSlug) => PROTECTED_URLS.LIMITS(teamSlug),
 }

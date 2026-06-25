@@ -67,6 +67,7 @@ describe('createFeatureFlagService', () => {
       FEATURE_FLAGS.agentsEnabled,
       FEATURE_FLAGS.isAdmin,
       FEATURE_FLAGS.newSandboxList,
+      FEATURE_FLAGS.disableE2BAccessTokenProvisioning,
     ])
     expect(result).toEqual([
       {
@@ -91,6 +92,15 @@ describe('createFeatureFlagService', () => {
         kind: 'boolean',
         description:
           'Enables the new sandbox list with pagination and paused sandbox coverage.',
+        defaultValue: false,
+        value: true,
+      },
+      {
+        id: 'disableE2BAccessTokenProvisioning',
+        key: 'disable_e2b_access_token_provisioning',
+        kind: 'boolean',
+        description:
+          'Disables provisioning of e2b access tokens via generateE2BUserAccessToken. When enabled, the legacy CLI flow shows an upgrade prompt and the createAccessToken tRPC mutation returns an error.',
         defaultValue: false,
         value: true,
       },

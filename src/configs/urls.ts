@@ -2,8 +2,14 @@ export const AUTH_URLS = {
   FORGOT_PASSWORD: '/recovery',
   SIGN_IN: '/sign-in',
   SIGN_UP: '/sign-up',
+  SIGN_OUT: '/api/auth/sign-out',
   SWITCH_ACCOUNT: '/api/auth/switch-account',
+  RECOVERY_COMPLETE: '/api/auth/recovery-complete',
   CLI: '/auth/cli',
+  // Shell-less Ory settings page (password reset + account config). Reachable
+  // with only a Kratos session, so the post-recovery password reset works
+  // before any e2b_session (Hydra token) exists. Kratos' settings_ui_url.
+  SETTINGS: '/settings',
 }
 
 export const PROTECTED_URLS = {
@@ -19,6 +25,7 @@ export const PROTECTED_URLS = {
   GENERAL: (teamSlug: string) => `/dashboard/${teamSlug}/general`,
   KEYS: (teamSlug: string) => `/dashboard/${teamSlug}/keys`,
   MEMBERS: (teamSlug: string) => `/dashboard/${teamSlug}/members`,
+  TERMINAL: (teamSlug: string) => `/dashboard/${teamSlug}/terminal`,
 
   SANDBOXES: (teamSlug: string) =>
     `/dashboard/${teamSlug}/sandboxes/monitoring`,

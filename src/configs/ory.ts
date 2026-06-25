@@ -1,5 +1,5 @@
 import type { OryClientConfiguration } from '@ory/elements-react'
-import { PROTECTED_URLS } from '@/configs/urls'
+import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 
 // `sdk.url` must be the app's own origin so the Elements client's
 // /self-service/* calls stay same-origin (Kratos' wildcard CORS rejects
@@ -21,7 +21,7 @@ const oryConfig: OryClientConfiguration = {
     recovery_ui_url: '/recovery',
     verification_enabled: true,
     verification_ui_url: '/verification',
-    settings_ui_url: PROTECTED_URLS.ACCOUNT_SETTINGS,
+    settings_ui_url: AUTH_URLS.SETTINGS,
   },
 }
 

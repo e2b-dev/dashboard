@@ -126,6 +126,10 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
     title: 'Members',
     type: 'default',
   }),
+  '/dashboard/*/terminal': () => ({
+    title: 'Terminal',
+    type: 'custom',
+  }),
   '/dashboard/*/agents': () => ({
     title: 'Agents',
     type: 'default',

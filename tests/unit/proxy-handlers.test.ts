@@ -67,9 +67,29 @@ describe('proxy handlers', () => {
     expect(response?.headers.get('X-Robots-Tag')).toBe('noindex, nofollow')
   })
 
-  it('redirects unauthenticated dashboard pages to sign-in', async () => {
-    const response = await handleAuthGate(request('/dashboard/team-x'), false)
+  it('redirects unauthenticated dashboard pages to sign-in with returnTo', async () => {
+    const response = await handleAuthGate(
+      request('/dashboard/team-x?tab=settings'),
+      false
+    )
 
-    expect(response.headers.get('location')).toContain('/sign-in')
+    const location = response.headers.get('location')
+    expect(location).toContain('/sign-in')
+    expect(location).toContain(
+      'returnTo=%2Fdashboard%2Fteam-x%3Ftab%3Dsettings'
+    )
+  })
+
+  it('preserves terminal paths and query params for sign-in', async () => {
+    for (const path of [
+      '/dashboard/terminal?template=base&command=ls',
+      '/dashboard/team-x/terminal?template=base&command=ls',
+    ]) {
+      const response = await handleAuthGate(request(path), false)
+
+      const location = response.headers.get('location')
+      expect(location).toContain('/sign-in')
+      expect(location).toContain(`returnTo=${encodeURIComponent(path)}`)
+    }
   })
 })
