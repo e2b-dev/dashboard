@@ -12,9 +12,13 @@ import { Loader } from '@/ui/primitives/loader'
 
 interface UserAccessTokenProps {
   className?: string
+  disabled?: boolean
 }
 
-export default function UserAccessToken({ className }: UserAccessTokenProps) {
+export default function UserAccessToken({
+  className,
+  disabled,
+}: UserAccessTokenProps) {
   const { toast } = useToast()
   const trpc = useTRPC()
   const [token, setToken] = useState<string>()
@@ -41,6 +45,7 @@ export default function UserAccessToken({ className }: UserAccessTokenProps) {
           type={isVisible ? 'text' : 'password'}
           value={token ?? '••••••••••••••••'}
           readOnly
+          disabled={disabled}
           className="bg-bg-1 font-mono"
         />
         <IconButton
@@ -54,7 +59,7 @@ export default function UserAccessToken({ className }: UserAccessTokenProps) {
               fetchToken()
             }
           }}
-          disabled={isPending}
+          disabled={isPending || disabled}
         >
           {isPending ? (
             <Loader variant="square" size="lg" />
