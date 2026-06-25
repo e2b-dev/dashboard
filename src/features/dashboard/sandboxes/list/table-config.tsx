@@ -13,6 +13,7 @@ import {
   MetadataCell,
   RamUsageCell,
   StartedAtCell,
+  StateCell,
   TemplateCell,
 } from './table-cells'
 
@@ -102,6 +103,100 @@ export const templateIdentifierFilter: FilterFn<SandboxListRow> = (
 // TABLE CONFIG
 
 export const sandboxListColumns: ColumnDef<SandboxListRow>[] = [
+  {
+    id: 'startedAt',
+    accessorKey: 'startedAt',
+    header: 'Started At',
+    cell: StartedAtCell,
+    size: 150,
+    enableResizing: false,
+    filterFn: startedAtDateRangeFilter,
+    enableColumnFilter: true,
+    enableGlobalFilter: false,
+    sortingFn: (rowA, rowB) => {
+      return rowA.original.startedAt.localeCompare(rowB.original.startedAt)
+    },
+  },
+  {
+    accessorKey: 'sandboxID',
+    header: 'Instance',
+    cell: IdCell,
+    size: 165,
+    minSize: 100,
+    enableResizing: false,
+    enableColumnFilter: false,
+    enableSorting: false,
+    enableGlobalFilter: true,
+  },
+  {
+    accessorKey: 'state',
+    id: 'state',
+    header: 'State',
+    cell: StateCell,
+    size: 90,
+    minSize: 80,
+    enableResizing: false,
+    enableSorting: false,
+    enableColumnFilter: true,
+    filterFn: 'equalsString',
+    enableGlobalFilter: false,
+  },
+  {
+    accessorFn: (row) => row.alias || row.templateID,
+    id: 'template',
+    header: 'TEMPLATE',
+    cell: TemplateCell,
+    size: 250,
+    minSize: 100,
+    maxSize: 350,
+    enableResizing: true,
+    filterFn: templateIdentifierFilter,
+    enableGlobalFilter: false,
+  },
+  {
+    id: 'cpuUsage',
+    header: 'CPU',
+    cell: (props) => <CpuUsageCell {...props} />,
+    size: 100,
+    enableResizing: false,
+    enableSorting: false,
+    enableColumnFilter: true,
+    filterFn: resourceEqualsFilter,
+  },
+  {
+    id: 'ramUsage',
+    header: 'Memory',
+    cell: (props) => <RamUsageCell {...props} />,
+    size: 140,
+    enableResizing: false,
+    enableSorting: false,
+    enableColumnFilter: true,
+    filterFn: resourceEqualsFilter,
+  },
+  {
+    id: 'diskUsage',
+    header: 'Disk',
+    cell: (props) => <DiskUsageCell {...props} />,
+    size: 100,
+    enableResizing: false,
+    enableSorting: false,
+    enableColumnFilter: false,
+  },
+  {
+    id: 'metadata',
+    accessorFn: (row) => JSON.stringify(row.metadata ?? {}),
+    header: 'Metadata',
+    cell: MetadataCell,
+    filterFn: 'includesStringSensitive',
+    enableGlobalFilter: false,
+    size: 200,
+    minSize: 160,
+    enableResizing: true,
+    enableSorting: false,
+  },
+]
+
+export const legacySandboxListColumns: ColumnDef<SandboxListRow>[] = [
   {
     accessorKey: 'sandboxID',
     header: 'ID',

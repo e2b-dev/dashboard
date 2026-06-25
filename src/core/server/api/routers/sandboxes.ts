@@ -35,10 +35,8 @@ export const sandboxesRouter = createTRPCRouter({
     if (USE_MOCK_DATA) {
       await new Promise((resolve) => setTimeout(resolve, 200))
 
-      const sandboxes = MOCK_SANDBOXES_DATA()
-
       return {
-        sandboxes,
+        sandboxes: MOCK_SANDBOXES_DATA(),
       }
     }
 
@@ -51,6 +49,44 @@ export const sandboxesRouter = createTRPCRouter({
       sandboxes: sandboxesResult.data,
     }
   }),
+
+  listSandboxesPaginated: sandboxesRepositoryProcedure
+    .input(
+      z.object({
+        cursor: z.string().optional(),
+        limit: z.number().int().min(1).max(100).default(50),
+        states: z.array(z.enum(['running', 'paused'])).optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      if (USE_MOCK_DATA) {
+        await new Promise((resolve) => setTimeout(resolve, 200))
+
+        return {
+          sandboxes: input.states
+            ? MOCK_SANDBOXES_DATA().filter((sandbox) =>
+                input.states?.includes(sandbox.state)
+              )
+            : MOCK_SANDBOXES_DATA(),
+          nextCursor: null,
+        }
+      }
+
+      const sandboxesResult =
+        await ctx.sandboxesRepository.listSandboxesPaginated({
+          cursor: input.cursor,
+          limit: input.limit,
+          states: input.states,
+        })
+      if (!sandboxesResult.ok) {
+        throwTRPCErrorFromRepoError(sandboxesResult.error)
+      }
+
+      return {
+        sandboxes: sandboxesResult.data.sandboxes,
+        nextCursor: sandboxesResult.data.nextCursor,
+      }
+    }),
 
   getSandboxesMetrics: sandboxesRepositoryProcedure
     .input(

@@ -1,6 +1,7 @@
-import type { RefObject } from 'react'
+import { type RefObject, useEffect } from 'react'
 import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
 import { DataTableBody } from '@/ui/data-table'
+import { LoadMoreButton } from '@/ui/pagination-buttons'
 import { Button } from '@/ui/primitives/button'
 import { AddIcon, CloseIcon } from '@/ui/primitives/icons'
 import SandboxesListEmpty from './empty'
@@ -11,15 +12,22 @@ import { SandboxesTableRow } from './table-row'
 
 const ROW_HEIGHT_PX = 32
 const VIRTUAL_OVERSCAN = 8
+const PREFETCH_THRESHOLD = 8
 
 interface SandboxesTableBodyProps {
   table: SandboxListTable
   scrollRef: RefObject<HTMLDivElement | null>
+  hasNextPage?: boolean
+  isFetchingNextPage?: boolean
+  fetchNextPage?: () => void
 }
 
 export const SandboxesTableBody = ({
   table,
   scrollRef,
+  hasNextPage = false,
+  isFetchingNextPage = false,
+  fetchNextPage,
 }: SandboxesTableBodyProps) => {
   'use no memo'
 
@@ -54,14 +62,37 @@ export const SandboxesTableBody = ({
   // even when centerRows already has data.
   const rows = virtualRows.length > 0 ? virtualRows : centerRows
 
-  const visibleSandboxes = rows.map((row) => row.original)
   const isListScrolling = virtualizer.isScrolling
 
+  // Live metrics only exist for running sandboxes.
+  const runningVisibleSandboxes = rows
+    .map((row) => row.original)
+    .filter((sandbox) => sandbox.state === 'running')
+
   useSandboxesMetrics({
-    sandboxes: visibleSandboxes,
+    sandboxes: runningVisibleSandboxes,
     pollingIntervalMs: pollingInterval === 0 ? 0 : pollingInterval * 1_000,
     isListScrolling,
   })
+
+  const lastVisibleIndex = virtualizer.getVirtualItems().at(-1)?.index ?? -1
+
+  useEffect(() => {
+    if (
+      hasNextPage &&
+      !isFetchingNextPage &&
+      fetchNextPage &&
+      lastVisibleIndex >= centerRows.length - PREFETCH_THRESHOLD
+    ) {
+      fetchNextPage()
+    }
+  }, [
+    hasNextPage,
+    isFetchingNextPage,
+    lastVisibleIndex,
+    centerRows.length,
+    fetchNextPage,
+  ])
 
   const isEmpty = centerRows.length === 0
 
@@ -80,7 +111,7 @@ export const SandboxesTableBody = ({
     ) : (
       <SandboxesListEmpty
         title="No Sandboxes Yet"
-        description="Running sandboxes can be observed here."
+        description="Running and paused sandboxes can be observed here."
         actions={
           <Button variant="secondary" asChild className="w-full gap-2">
             <a href="/docs/quickstart" target="_blank" rel="noopener">
@@ -101,11 +132,22 @@ export const SandboxesTableBody = ({
   }
 
   return (
-    <DataTableBody virtualizedTotalHeight={virtualizedTotalHeight}>
-      {virtualPaddingTop > 0 && <div style={{ height: virtualPaddingTop }} />}
-      {rows.map((row) => (
-        <SandboxesTableRow key={row.id} row={row} />
-      ))}
-    </DataTableBody>
+    <>
+      <DataTableBody virtualizedTotalHeight={virtualizedTotalHeight}>
+        {virtualPaddingTop > 0 && <div style={{ height: virtualPaddingTop }} />}
+        {rows.map((row) => (
+          <SandboxesTableRow key={row.id} row={row} />
+        ))}
+      </DataTableBody>
+
+      {hasNextPage && (
+        <div className="flex items-center justify-center py-3 text-fg-tertiary max-md:sticky max-md:left-0 max-md:w-[calc(100svw-1.5rem)]">
+          <LoadMoreButton
+            isLoading={isFetchingNextPage}
+            onLoadMore={fetchNextPage ?? (() => {})}
+          />
+        </div>
+      )}
+    </>
   )
 }
