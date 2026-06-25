@@ -29,11 +29,16 @@ export async function GET(request: NextRequest) {
     const consent = await oauth2.getOAuth2ConsentRequest({ consentChallenge })
 
     const { clientId } = readOryOAuthEnv()
-    if (consent.client?.client_id !== clientId) {
+    const cliClientId = process.env.ORY_OAUTH2_CLI_CLIENT_ID
+    const allowedClientIds = new Set(
+      [clientId, cliClientId].filter((id): id is string => Boolean(id))
+    )
+    const requestClientId = consent.client?.client_id
+    if (!requestClientId || !allowedClientIds.has(requestClientId)) {
       l.warn(
         {
           key: 'oauth_consent:unexpected_client',
-          clientId: consent.client?.client_id,
+          clientId: requestClientId,
         },
         'refusing to auto-consent for unexpected OAuth client'
       )

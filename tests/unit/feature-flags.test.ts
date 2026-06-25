@@ -66,6 +66,7 @@ describe('createFeatureFlagService', () => {
     expect(provider.evaluate).toHaveBeenCalledWith(context, [
       FEATURE_FLAGS.agentsEnabled,
       FEATURE_FLAGS.isAdmin,
+      FEATURE_FLAGS.disableE2BAccessTokenProvisioning,
     ])
     expect(result).toEqual([
       {
@@ -81,6 +82,15 @@ describe('createFeatureFlagService', () => {
         key: 'is_admin',
         kind: 'boolean',
         description: 'Enables dashboard admin-only surfaces.',
+        defaultValue: false,
+        value: true,
+      },
+      {
+        id: 'disableE2BAccessTokenProvisioning',
+        key: 'disable_e2b_access_token_provisioning',
+        kind: 'boolean',
+        description:
+          'Disables provisioning of e2b access tokens via generateE2BUserAccessToken. When enabled, the legacy CLI flow shows an upgrade prompt and the createAccessToken tRPC mutation returns an error.',
         defaultValue: false,
         value: true,
       },
