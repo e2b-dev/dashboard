@@ -2,7 +2,7 @@
 
 import type { CommandHandle, Sandbox } from 'e2b'
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react'
-import type { SandboxManagementAuth } from '@/core/shared/sandbox-management-auth'
+import { useTRPCClient } from '@/trpc/client'
 import {
   DEFAULT_CWD,
   TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS,
@@ -35,9 +35,9 @@ interface DashboardTerminalProps {
   onSandboxAttached?: (sandboxId: string) => void
   onSandboxAttachFailed?: (target: TerminalLaunchTarget | undefined) => void
   sandboxConnectRequestTimeoutMs?: number
-  sandboxManagementAuth: SandboxManagementAuth
   sandboxScoped?: boolean
   teamSlug: string
+  userId: string
 }
 
 export default function DashboardTerminal({
@@ -47,10 +47,12 @@ export default function DashboardTerminal({
   onSandboxAttached,
   onSandboxAttachFailed,
   sandboxConnectRequestTimeoutMs,
-  sandboxManagementAuth,
   sandboxScoped = false,
   teamSlug,
+  userId,
 }: DashboardTerminalProps) {
+  const trpcClient = useTRPCClient()
+
   const [status, setStatus] = useState<TerminalStatus>('idle')
   const [activeSandboxId, setActiveSandboxId] = useState<string>()
   const [template, setTemplate] = useState(
@@ -307,12 +309,15 @@ export default function DashboardTerminal({
           const terminalSandbox = await openTerminalSandbox({
             forceNewSandbox: options.forceNewSandbox,
             onStatus: appendOutput,
+            openTerminal: (mutationInput) =>
+              trpcClient.sandbox.openTerminal.mutate(mutationInput),
             requestTimeoutMs: requestedSandboxId
               ? (sandboxConnectRequestTimeoutMs ??
                 TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS)
               : undefined,
-            sandboxManagementAuth,
             shouldStoreSession: !sandboxScoped,
+            teamSlug,
+            userId,
             sandboxId: requestedSandboxId,
             template: nextTemplate,
           })
@@ -413,7 +418,9 @@ export default function DashboardTerminal({
       focusTerminal,
       getSandbox,
       runCommand,
-      sandboxManagementAuth,
+      trpcClient,
+      teamSlug,
+      userId,
       sandboxScoped,
       sandboxConnectRequestTimeoutMs,
       template,

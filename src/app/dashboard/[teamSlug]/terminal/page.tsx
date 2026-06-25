@@ -10,7 +10,6 @@ import {
 import { getAuthContext } from '@/core/server/auth'
 import { infra } from '@/core/shared/clients/api'
 import type { components as InfraComponents } from '@/core/shared/contracts/infra-api.types'
-import { createSandboxManagementAuth } from '@/core/shared/sandbox-management-auth.server'
 import { SandboxIdSchema } from '@/core/shared/schemas/api'
 import DashboardTerminal from '@/features/dashboard/terminal/dashboard-terminal'
 import { normalizeTerminalTemplate } from '@/features/dashboard/terminal/template'
@@ -132,11 +131,8 @@ export default async function TeamTerminalPage({
           sandboxId: terminalSandboxId,
           template: terminalTemplate,
         }}
-        sandboxManagementAuth={createSandboxManagementAuth(
-          authContext,
-          team.id
-        )}
         teamSlug={team.slug}
+        userId={authContext.user.id}
       />
     </div>
   )

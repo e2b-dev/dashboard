@@ -1,7 +1,6 @@
 'use client'
 
 import { type ReactNode, useMemo, useState } from 'react'
-import type { SandboxManagementAuth } from '@/core/shared/sandbox-management-auth'
 import LoadingLayout from '@/features/dashboard/loading-layout'
 import DashboardTerminal from '@/features/dashboard/terminal/dashboard-terminal'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
@@ -11,14 +10,14 @@ import SandboxInspectNotFound from '../inspect/not-found'
 
 interface SandboxTerminalViewProps {
   command?: string
-  sandboxManagementAuth: SandboxManagementAuth
+  userId: string
 }
 
 const SANDBOX_TERMINAL_RESUME_TIMEOUT_MS = 70_000
 
 export default function SandboxTerminalView({
   command,
-  sandboxManagementAuth,
+  userId,
 }: SandboxTerminalViewProps) {
   const [shouldResumeSandbox, setShouldResumeSandbox] = useState(false)
   const [terminalResumeError, setTerminalResumeError] = useState<string>()
@@ -96,9 +95,9 @@ export default function SandboxTerminalView({
         sandboxConnectRequestTimeoutMs={
           shouldResumeSandbox ? SANDBOX_TERMINAL_RESUME_TIMEOUT_MS : undefined
         }
-        sandboxManagementAuth={sandboxManagementAuth}
         sandboxScoped
         teamSlug={team.slug}
+        userId={userId}
       />
     </div>
   )

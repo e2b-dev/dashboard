@@ -2,7 +2,6 @@ import { redirect } from 'next/navigation'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { getAuthContext } from '@/core/server/auth'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
-import { createSandboxManagementAuth } from '@/core/shared/sandbox-management-auth.server'
 import SandboxTerminalView from '@/features/dashboard/sandbox/terminal/view'
 
 interface SandboxTerminalPageProps {
@@ -36,13 +35,5 @@ export default async function SandboxTerminalPage({
     redirect(PROTECTED_URLS.DASHBOARD)
   }
 
-  return (
-    <SandboxTerminalView
-      command={command}
-      sandboxManagementAuth={createSandboxManagementAuth(
-        authContext,
-        teamId.data
-      )}
-    />
-  )
+  return <SandboxTerminalView command={command} userId={authContext.user.id} />
 }

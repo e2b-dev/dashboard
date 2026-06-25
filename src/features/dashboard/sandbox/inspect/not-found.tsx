@@ -16,7 +16,10 @@ import {
   RunningIcon,
 } from '@/ui/primitives/icons'
 import { useSandboxContext } from '../context'
+import { SANDBOX_RESUME_TIMEOUT_MS } from './constants'
 import SandboxInspectEmptyFrame from './empty'
+
+const RESUME_TIMEOUT_SECONDS = Math.round(SANDBOX_RESUME_TIMEOUT_MS / 1000)
 
 interface SandboxInspectNotFoundProps {
   isResumePending?: boolean
@@ -75,15 +78,23 @@ export default function SandboxInspectNotFound({
   const isPaused = sandboxInfo?.state === 'paused'
   const resourceName = isFilesystem ? 'filesystem' : 'terminal'
   const description =
-    isRunning && isFilesystem
-      ? 'This directory appears to be empty or does not exist. You can reset to the default state, navigate to root, or refresh to try again.'
-      : isRunning
-        ? 'The terminal is unavailable right now. Refresh to try again.'
-        : resumeError
-          ? resumeError
-          : isPaused
-            ? `Resume this sandbox to access the ${resourceName}.`
-            : `It seems like the sandbox is not connected anymore. We cannot access the ${resourceName} at this time.`
+    isRunning && isFilesystem ? (
+      'This directory appears to be empty or does not exist. You can reset to the default state, navigate to root, or refresh to try again.'
+    ) : isRunning ? (
+      'The terminal is unavailable right now. Refresh to try again.'
+    ) : resumeError ? (
+      resumeError
+    ) : isPaused ? (
+      <>
+        Resume this sandbox to access the {resourceName}.
+        <span className="mt-1 block text-fg-tertiary">
+          Runs for {RESUME_TIMEOUT_SECONDS}s, then stops unless the timeout is
+          extended. You can pause it again anytime.
+        </span>
+      </>
+    ) : (
+      `It seems like the sandbox is not connected anymore. We cannot access the ${resourceName} at this time.`
+    )
 
   const actions =
     isRunning && isFilesystem ? (
