@@ -3,20 +3,13 @@ import type { Metadata } from 'next/types'
 import { authHeaders } from '@/configs/api'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
-import {
-  createDefaultTemplatesRepository,
-  createTemplatesRepository,
-} from '@/core/modules/templates/repository.server'
 import { getAuthContext } from '@/core/server/auth'
 import { infra } from '@/core/shared/clients/api'
 import type { components as InfraComponents } from '@/core/shared/contracts/infra-api.types'
 import { createSandboxManagementAuth } from '@/core/shared/sandbox-management-auth.server'
 import { SandboxIdSchema } from '@/core/shared/schemas/api'
 import DashboardTerminal from '@/features/dashboard/terminal/dashboard-terminal'
-import {
-  isPublicTemplateReference,
-  normalizeTerminalTemplate,
-} from '@/features/dashboard/terminal/template'
+import { normalizeTerminalTemplate } from '@/features/dashboard/terminal/template'
 import { Button } from '@/ui/primitives/button'
 
 export const metadata: Metadata = {
@@ -104,28 +97,6 @@ export default async function TeamTerminalPage({
     return <TerminalUnavailable message="The terminal template is invalid." />
   }
 
-  const templateAvailable = terminalSandboxId
-    ? { ok: true as const, available: true }
-    : await isTerminalTemplateAvailable({
-        accessToken: authContext.accessToken,
-        teamId: team.id,
-        template: terminalTemplate,
-      })
-
-  if (!templateAvailable.ok) {
-    return (
-      <TerminalUnavailable message="We could not verify the terminal template for this account." />
-    )
-  }
-
-  if (!templateAvailable.available) {
-    return (
-      <TerminalUnavailable
-        message={`Template "${terminalTemplate}" is not available for this account.`}
-      />
-    )
-  }
-
   return (
     <div className="flex h-full min-h-0 overflow-hidden p-3 md:p-6">
       <DashboardTerminal
@@ -179,56 +150,6 @@ async function getSandboxInTeam({
     return result.data
   } catch {
     return null
-  }
-}
-
-async function isTerminalTemplateAvailable({
-  accessToken,
-  teamId,
-  template,
-}: {
-  accessToken: string
-  teamId: string
-  template: string
-}) {
-  if (template === 'base') {
-    return { ok: true as const, available: true }
-  }
-
-  if (isPublicTemplateReference(template)) {
-    return { ok: true as const, available: true }
-  }
-
-  const defaultTemplatesRepository = createDefaultTemplatesRepository({
-    accessToken,
-  })
-  const teamTemplatesRepository = createTemplatesRepository({
-    accessToken,
-    teamId,
-  })
-  const [defaultTemplates, teamTemplates] = await Promise.all([
-    defaultTemplatesRepository.getDefaultTemplatesCached(),
-    teamTemplatesRepository.getTeamTemplates(),
-  ])
-
-  if (!defaultTemplates.ok || !teamTemplates.ok) {
-    return { ok: false as const }
-  }
-
-  const templates = [
-    ...defaultTemplates.data.templates,
-    ...teamTemplates.data.templates,
-  ]
-
-  return {
-    ok: true as const,
-    available: templates.some((candidate) =>
-      [
-        candidate.templateID,
-        ...(candidate.aliases ?? []),
-        ...(candidate.names ?? []),
-      ].includes(template)
-    ),
   }
 }
 

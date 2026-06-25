@@ -12,7 +12,6 @@ import {
   writeStoredTerminalSession,
 } from '@/features/dashboard/terminal/storage'
 import {
-  isPublicTemplateReference,
   normalizeTerminalTemplate,
   resolveTerminalTemplateOverride,
 } from '@/features/dashboard/terminal/template'
@@ -83,21 +82,6 @@ describe('dashboard terminal helpers', () => {
       )
       expect(normalizeTerminalTemplate('base; echo nope')).toBeNull()
       expect(normalizeTerminalTemplate('../base')).toBeNull()
-    })
-  })
-
-  describe('isPublicTemplateReference', () => {
-    it('detects owner-qualified public template references', () => {
-      expect(isPublicTemplateReference('team-slug/python:default')).toBe(true)
-      expect(
-        isPublicTemplateReference('aiengineer-d56d/aiengineer-guide')
-      ).toBe(true)
-    })
-
-    it('does not treat bare or multi-path template names as public references', () => {
-      expect(isPublicTemplateReference('base')).toBe(false)
-      expect(isPublicTemplateReference('python_3.12-dev')).toBe(false)
-      expect(isPublicTemplateReference('owner/nested/template')).toBe(false)
     })
   })
 
