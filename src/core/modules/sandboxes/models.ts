@@ -20,6 +20,9 @@ interface SandboxDetailsBaseModel {
   cpuCount: number
   memoryMB: number
   diskSizeMB: number
+  // True when the sandbox ended more than the retention window ago, so its
+  // monitoring, events, and logs data is no longer available.
+  retentionExpired: boolean
   lifecycle?: SandboxLifecycleModel
 }
 
@@ -169,6 +172,8 @@ export function mapInfraSandboxDetailsToModel(
     diskSizeMB: sandbox.diskSizeMB,
     metadata: sandbox.metadata,
     state: sandbox.state,
+    // Infra only serves live sandboxes, whose data is never past retention.
+    retentionExpired: false,
   }
 }
 
@@ -189,5 +194,6 @@ export function mapApiSandboxRecordToModel(
     memoryMB: sandbox.memoryMB,
     diskSizeMB: sandbox.diskSizeMB,
     state: 'killed',
+    retentionExpired: sandbox.retentionExpired,
   }
 }

@@ -1280,6 +1280,8 @@ export interface components {
       cpuCount: components['schemas']['CPUCount']
       memoryMB: components['schemas']['MemoryMB']
       diskSizeMB: components['schemas']['DiskSizeMB']
+      /** @description Whether the sandbox ended more than the retention window ago, so its monitoring, events, and logs data is no longer available */
+      retentionExpired: boolean
     }
     HealthResponse: {
       /** @description Human-readable health check result. */

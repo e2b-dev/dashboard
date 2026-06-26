@@ -20,6 +20,17 @@ import { SandboxIdSchema } from '@/core/shared/schemas/api'
 import { SANDBOX_MONITORING_METRICS_RETENTION_MS } from '@/features/dashboard/sandbox/monitoring/utils/constants'
 import { TERMINAL_SANDBOX_TIMEOUT_MS } from '@/features/dashboard/terminal/constants'
 
+function isPastRetention(timestamp: string | null): boolean {
+  if (!timestamp) {
+    return false
+  }
+  const timestampMs = new Date(timestamp).getTime()
+  if (Number.isNaN(timestampMs)) {
+    return false
+  }
+  return Date.now() - timestampMs > SANDBOX_MONITORING_METRICS_RETENTION_MS
+}
+
 const sandboxRepositoryProcedure = protectedTeamProcedure.use(
   withTeamAuthedRequestRepository(
     createSandboxesRepository,
@@ -67,11 +78,21 @@ export const sandboxRouter = createTRPCRouter({
           ? (mappedDetails.stoppedAt ?? mappedDetails.endAt)
           : null
 
+      const pausedAt = derivedLifecycle.pausedAt ?? fallbackPausedAt
+
+      // A paused sandbox keeps no fresh data, so once it has been paused longer
+      // than the retention window its monitoring/events/logs are gone too. The
+      // killed case is already flagged by the backend (mappedDetails).
+      const retentionExpired =
+        mappedDetails.retentionExpired ||
+        (mappedDetails.state === 'paused' && isPastRetention(pausedAt))
+
       return {
         ...mappedDetails,
+        retentionExpired,
         lifecycle: {
           createdAt: derivedLifecycle.createdAt ?? mappedDetails.startedAt,
-          pausedAt: derivedLifecycle.pausedAt ?? fallbackPausedAt,
+          pausedAt,
           endedAt: derivedLifecycle.endedAt ?? fallbackEndedAt,
           events: derivedLifecycle.events,
         },

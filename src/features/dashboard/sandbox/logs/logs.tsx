@@ -12,7 +12,6 @@ import {
   useRef,
   useState,
 } from 'react'
-import { LOG_RETENTION_MS } from '@/configs/logs'
 import type { SandboxLogModel } from '@/core/modules/sandboxes/models'
 import {
   LOG_LEVEL_LEFT_BORDER_CLASS,
@@ -28,6 +27,7 @@ import {
   VirtualizedTableLoaderBody,
   VirtualizedTableRow,
 } from '@/features/dashboard/common/virtualized-table-ui'
+import { DataRetentionExpired } from '@/features/dashboard/sandbox/common/data-retention-expired'
 import { cn } from '@/lib/utils'
 import { DebouncedInput } from '@/ui/primitives/input'
 import { Loader } from '@/ui/primitives/loader'
@@ -44,28 +44,21 @@ const ROW_HEIGHT_PX = 26
 const LIVE_STATUS_ROW_HEIGHT_PX = ROW_HEIGHT_PX + 16
 const VIRTUAL_OVERSCAN = 16
 const SCROLL_LOAD_THRESHOLD_PX = 200
-const LOG_RETENTION_DAYS = LOG_RETENTION_MS / 24 / 60 / 60 / 1000
 
 interface LogsProps {
   teamSlug: string
   sandboxId: string
 }
 
-function checkIfSandboxStillHasLogs(startedAtIso: string) {
-  const startedAtUnix = new Date(startedAtIso).getTime()
-
-  if (Number.isNaN(startedAtUnix)) {
-    return true
-  }
-
-  return Date.now() - startedAtUnix < LOG_RETENTION_MS
-}
-
 export default function SandboxLogs({ teamSlug, sandboxId }: LogsProps) {
   'use no memo'
 
-  const { sandboxInfo, sandboxLifecycle, isRunning } = useSandboxContext()
+  const { sandboxInfo, isRunning } = useSandboxContext()
   const { level, setLevel, search, setSearch } = useLogFilters()
+
+  if (sandboxInfo?.retentionExpired) {
+    return <DataRetentionExpired />
+  }
 
   if (!sandboxInfo) {
     return (
@@ -90,16 +83,11 @@ export default function SandboxLogs({ teamSlug, sandboxId }: LogsProps) {
     )
   }
 
-  const hasRetainedLogs = checkIfSandboxStillHasLogs(
-    sandboxLifecycle?.createdAt ?? sandboxInfo.startedAt
-  )
-
   return (
     <LogsContent
       teamSlug={teamSlug}
       sandboxId={sandboxId}
       isRunning={isRunning}
-      hasRetainedLogs={hasRetainedLogs}
       level={level}
       search={search}
       setLevel={setLevel}
@@ -112,7 +100,6 @@ interface LogsContentProps {
   teamSlug: string
   sandboxId: string
   isRunning: boolean
-  hasRetainedLogs: boolean
   level: SandboxLogLevelFilter | null
   search: string
   setLevel: (level: SandboxLogLevelFilter | null) => void
@@ -123,7 +110,6 @@ function LogsContent({
   teamSlug,
   sandboxId,
   isRunning,
-  hasRetainedLogs,
   level,
   search,
   setLevel,
@@ -207,12 +193,7 @@ function LogsContent({
           />
 
           {showLoader && <VirtualizedTableLoaderBody />}
-          {showEmpty && (
-            <EmptyBody
-              hasRetainedLogs={hasRetainedLogs}
-              errorMessage={initialLoadError}
-            />
-          )}
+          {showEmpty && <EmptyBody errorMessage={initialLoadError} />}
           {hasLogs && scrollContainerElement && (
             <VirtualizedLogsBody
               logs={renderedLogs}
@@ -266,16 +247,13 @@ function useFilterRefetchTracking(
 }
 
 interface EmptyBodyProps {
-  hasRetainedLogs: boolean
   errorMessage: string | null
 }
 
-function EmptyBody({ hasRetainedLogs, errorMessage }: EmptyBodyProps) {
+function EmptyBody({ errorMessage }: EmptyBodyProps) {
   const description = errorMessage
     ? errorMessage
-    : !hasRetainedLogs
-      ? `This sandbox has exceeded the ${LOG_RETENTION_DAYS} day retention limit.`
-      : 'Sandbox logs will appear here once available.'
+    : 'Sandbox logs will appear here once available.'
 
   return <LogsEmptyBody description={description} />
 }
