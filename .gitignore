@@ -44,6 +44,12 @@ next-env.d.ts
 .cursor/
 .agent
 
+## Claude
+.claude/*.local.json
+.claude/**/*.local.md
+.claude/worktrees
+CLAUDE.local.md
+
 # Cursor IDE
 .cursor/
 
