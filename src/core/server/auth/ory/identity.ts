@@ -66,7 +66,8 @@ function readPublicPicture(metadataPublic: unknown): string | null {
 // authenticated through an organization's SSO connection. Absent/empty means the
 // identity is not part of an SSO organization.
 function readOrganizationId(organizationId?: string | null): string | null {
-  const trimmed = typeof organizationId === 'string' ? organizationId.trim() : ''
+  const trimmed =
+    typeof organizationId === 'string' ? organizationId.trim() : ''
   return trimmed === '' ? null : trimmed
 }
 
