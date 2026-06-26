@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import type { FeatureFlagDefinition } from '@/core/modules/feature-flags/types'
 
 export const FEATURE_FLAGS = {
@@ -30,6 +31,15 @@ export const FEATURE_FLAGS = {
     description:
       'Disables provisioning of e2b access tokens via generateE2BUserAccessToken. When enabled, the legacy CLI flow shows an upgrade prompt and the createAccessToken tRPC mutation returns an error.',
     exposure: 'server',
+  },
+  trustedTemplateProviders: {
+    kind: 'payload',
+    key: 'trusted_template_providers',
+    defaultValue: [],
+    schema: z.array(z.string()),
+    description:
+      'Template providers whose namespaced templates can auto-start dashboard terminals.',
+    exposure: 'both',
   },
 } as const satisfies Record<string, FeatureFlagDefinition>
 

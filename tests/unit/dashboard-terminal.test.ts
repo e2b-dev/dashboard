@@ -7,6 +7,9 @@ import {
   writeStoredTerminalSession,
 } from '@/features/dashboard/terminal/storage'
 import {
+  getTerminalTemplateProvider,
+  getUntrustedTerminalTemplateProvider,
+  isTrustedTemplateProvider,
   normalizeTerminalTemplate,
   resolveTerminalTemplateOverride,
 } from '@/features/dashboard/terminal/template'
@@ -95,6 +98,36 @@ describe('dashboard terminal helpers', () => {
     it('normalizes explicit overrides', () => {
       expect(resolveTerminalTemplateOverride('  ', 'python')).toBe('base')
       expect(resolveTerminalTemplateOverride('../base', 'python')).toBeNull()
+    })
+  })
+
+  describe('terminal template providers', () => {
+    it('extracts the provider from namespaced templates only', () => {
+      expect(getTerminalTemplateProvider('e2b/base')).toBe('e2b')
+      expect(getTerminalTemplateProvider('some/team/name/of/template')).toBe(
+        'some/team/name/of'
+      )
+      expect(getTerminalTemplateProvider('base')).toBeNull()
+    })
+
+    it('matches trusted providers case-insensitively', () => {
+      expect(isTrustedTemplateProvider('e2b', [' E2B '])).toBe(true)
+      expect(isTrustedTemplateProvider('unknown', ['e2b'])).toBe(false)
+    })
+
+    it('requires review for namespaced templates from untrusted providers', () => {
+      expect(getUntrustedTerminalTemplateProvider('base', ['e2b'])).toBe(
+        undefined
+      )
+      expect(getUntrustedTerminalTemplateProvider('e2b/base', ['e2b'])).toBe(
+        undefined
+      )
+      expect(
+        getUntrustedTerminalTemplateProvider('malicious/e2b/base', ['e2b'])
+      ).toBe('malicious/e2b')
+      expect(
+        getUntrustedTerminalTemplateProvider('malicious/base', ['e2b'])
+      ).toBe('malicious')
     })
   })
 

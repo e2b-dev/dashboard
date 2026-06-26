@@ -1,6 +1,4 @@
-import Sandbox from 'e2b'
 import { type NextRequest, NextResponse } from 'next/server'
-import { authHeaders } from '@/configs/api'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { getAuthContext } from '@/core/server/auth'
 import { resolveUserTeam } from '@/core/server/functions/team/resolve-user-team'
@@ -39,14 +37,6 @@ export const GET = async (req: NextRequest) => {
       return NextResponse.redirect(new URL(req.url).origin)
     }
 
-    const sbx = await Sandbox.create(template, {
-      apiUrl: process.env.NEXT_PUBLIC_INFRA_API_URL,
-      domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
-      apiHeaders: {
-        ...authHeaders(authContext.accessToken, team.id),
-      },
-    })
-
     const terminalParams = new URLSearchParams({ template })
     const command = requestUrl.searchParams.get('command')?.trim()
 
@@ -54,10 +44,7 @@ export const GET = async (req: NextRequest) => {
       terminalParams.set('command', command)
     }
 
-    const terminalUrl = PROTECTED_URLS.SANDBOX_TERMINAL(
-      team.slug,
-      sbx.sandboxId
-    )
+    const terminalUrl = PROTECTED_URLS.TERMINAL(team.slug)
 
     return NextResponse.redirect(
       new URL(`${terminalUrl}?${terminalParams.toString()}`, req.url)

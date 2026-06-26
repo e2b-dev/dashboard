@@ -23,3 +23,39 @@ export function resolveTerminalTemplateOverride(
 
   return normalizeTerminalTemplate(template)
 }
+
+export function getTerminalTemplateProvider(template: string) {
+  const separatorIndex = template.lastIndexOf('/')
+
+  if (separatorIndex <= 0) {
+    return null
+  }
+
+  return template.slice(0, separatorIndex)
+}
+
+export function isTrustedTemplateProvider(
+  provider: string,
+  trustedProviders: readonly string[]
+) {
+  const normalizedProvider = provider.trim().toLowerCase()
+  if (!normalizedProvider) return true
+
+  return trustedProviders.some(
+    (trustedProvider) =>
+      trustedProvider.trim().toLowerCase() === normalizedProvider
+  )
+}
+
+export function getUntrustedTerminalTemplateProvider(
+  template: string,
+  trustedProviders: readonly string[]
+) {
+  const provider = getTerminalTemplateProvider(template)
+
+  if (!provider || isTrustedTemplateProvider(provider, trustedProviders)) {
+    return undefined
+  }
+
+  return provider
+}

@@ -13,8 +13,9 @@ export type StartTerminalOptions = {
 }
 
 export type PendingTerminalLaunch = {
-  command: string
+  command?: string
   target?: TerminalLaunchTarget
+  untrustedTemplateProvider?: string
 }
 
 export type TerminalLaunchTarget = {
