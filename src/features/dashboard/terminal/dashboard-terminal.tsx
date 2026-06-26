@@ -548,6 +548,14 @@ export default function DashboardTerminal({
     ]
   )
 
+  const cancelPendingLaunch = useCallback(() => {
+    if (pendingLaunch?.untrustedTemplateProvider && !activeSandboxId) {
+      setTemplate('base')
+    }
+
+    setPendingLaunch(null)
+  }, [activeSandboxId, pendingLaunch])
+
   const reconnectTarget = sandboxScoped
     ? launchTarget
     : activeSandboxId
@@ -645,7 +653,7 @@ export default function DashboardTerminal({
 
       <DashboardTerminalCommandDialog
         launch={pendingLaunch}
-        onCancel={() => setPendingLaunch(null)}
+        onCancel={cancelPendingLaunch}
         onConfirm={confirmPendingLaunch}
       />
     </>
