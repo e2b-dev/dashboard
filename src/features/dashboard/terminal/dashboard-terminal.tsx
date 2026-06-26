@@ -581,6 +581,19 @@ export default function DashboardTerminal({
       return
     }
 
+    const untrustedTemplateProvider = getUntrustedTerminalTemplateProvider(
+      template,
+      trustedTemplateProviders
+    )
+
+    if (untrustedTemplateProvider) {
+      setPendingLaunch({
+        target: { template },
+        untrustedTemplateProvider,
+      })
+      return
+    }
+
     void startTerminal({ forceNewSandbox: true })
   }, [
     getSandbox,
@@ -588,6 +601,8 @@ export default function DashboardTerminal({
     reconnectSandboxId,
     sandboxScoped,
     startTerminal,
+    template,
+    trustedTemplateProviders,
   ])
 
   useEffect(() => {
