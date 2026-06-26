@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useDashboard } from '@/features/dashboard/context'
 import { AddMemberForm } from '@/features/dashboard/members/add-member-form'
 import { Button } from '@/ui/primitives/button'
 import {
@@ -11,9 +12,38 @@ import {
   DialogTrigger,
 } from '@/ui/primitives/dialog'
 import { AddIcon } from '@/ui/primitives/icons'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/ui/primitives/tooltip'
 
 export const AddMemberDialog = () => {
+  const { user } = useDashboard()
   const [open, setOpen] = useState(false)
+
+  // SSO-managed teams have their membership driven by the identity provider:
+  // teammates join by signing in through SSO, not by manual invitation.
+  if (user.isSso) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          {/* A disabled button swallows the pointer events the tooltip trigger
+              needs, so the wrapping span carries them instead. */}
+          <span>
+            <Button type="button" disabled>
+              <AddIcon />
+              Add new member
+            </Button>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" className="max-w-[260px]">
+          Members are managed by your SSO provider. Ask teammates to sign in
+          through SSO to join this team automatically.
+        </TooltipContent>
+      </Tooltip>
+    )
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

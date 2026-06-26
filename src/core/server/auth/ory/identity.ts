@@ -62,6 +62,14 @@ function readPublicPicture(metadataPublic: unknown): string | null {
   return readString(meta, 'picture')
 }
 
+// organization_id is a first-class Ory identity field, set when the identity
+// authenticated through an organization's SSO connection. Absent/empty means the
+// identity is not part of an SSO organization.
+function readOrganizationId(organizationId?: string | null): string | null {
+  const trimmed = typeof organizationId === 'string' ? organizationId.trim() : ''
+  return trimmed === '' ? null : trimmed
+}
+
 // Build the user from a live Kratos session identity (whoami) — the source of
 // truth for getAuthContext. The session identity carries traits but not
 // credentials, so provider/credential flags stay false — use fromOryIdentity
@@ -71,11 +79,13 @@ export function fromKratosSessionIdentity(identity: {
   external_id?: string | null
   traits?: unknown
   metadata_public?: unknown
+  organization_id?: string | null
 }): AuthUser {
   const traits = parseOryTraits(identity.traits, {
     identityId: identity.id,
     source: 'kratos_session',
   })
+  const organizationId = readOrganizationId(identity.organization_id)
   return {
     id: requireExternalId(identity),
     identityId: identity.id,
@@ -85,6 +95,8 @@ export function fromKratosSessionIdentity(identity: {
     providers: [],
     canChangeEmail: false,
     canChangePassword: false,
+    organizationId,
+    isSso: organizationId !== null,
   }
 }
 
@@ -105,6 +117,7 @@ export function fromOryIdentity(identity: Identity): AuthUser {
   )
   const hasOidcCredential = hasLinkedOidcCredential(identity.credentials?.oidc)
   const canChangePassword = hasPasswordCredential && !hasOidcCredential
+  const organizationId = readOrganizationId(identity.organization_id)
 
   return {
     id: requireExternalId(identity),
@@ -117,6 +130,8 @@ export function fromOryIdentity(identity: Identity): AuthUser {
     // settings/verification flows instead of patching traits directly.
     canChangeEmail: false,
     canChangePassword,
+    organizationId,
+    isSso: organizationId !== null,
   }
 }
 

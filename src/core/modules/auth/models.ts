@@ -9,4 +9,10 @@ export type AuthUser = {
   providers: string[]
   canChangeEmail: boolean
   canChangePassword: boolean
+  // Ory organization id when the identity belongs to an SSO organization,
+  // otherwise null. `isSso` is a convenience flag derived from it. SSO members
+  // are managed by their identity provider: they can't create teams or add
+  // members.
+  organizationId: string | null
+  isSso: boolean
 }
