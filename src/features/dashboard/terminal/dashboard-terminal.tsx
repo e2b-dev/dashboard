@@ -511,6 +511,7 @@ export default function DashboardTerminal({
       const launchSandboxId = launchTarget?.sandboxId
 
       if (
+        normalizedCommand &&
         status === 'ready' &&
         template === launchTemplate &&
         (!launchSandboxId || activeSandboxId === launchSandboxId)
@@ -533,7 +534,9 @@ export default function DashboardTerminal({
       setPendingLaunch(null)
       pendingCommandsRef.current = normalizedCommand ? [normalizedCommand] : []
       void startTerminal({
-        forceNewSandbox: !launchSandboxId && template !== launchTemplate,
+        forceNewSandbox:
+          pendingLaunch.forceNewSandbox ??
+          (!launchSandboxId && template !== launchTemplate),
         target: launchTarget,
       })
     },
@@ -588,6 +591,7 @@ export default function DashboardTerminal({
 
     if (untrustedTemplateProvider) {
       setPendingLaunch({
+        forceNewSandbox: true,
         target: { template },
         untrustedTemplateProvider,
       })
