@@ -21,6 +21,7 @@ export default async function NewSandboxesListPage({
     trpc.sandboxes.listSandboxesPaginated.infiniteQueryOptions({
       teamSlug,
       limit: 50,
+      order: 'desc',
     })
   )
 

@@ -255,6 +255,8 @@ export interface paths {
           metadata?: string
           /** @description Filter sandboxes by one or more states */
           state?: components['schemas']['SandboxState'][]
+          /** @description Sort direction by sandbox start time. Defaults to desc (newest first). */
+          order?: 'asc' | 'desc'
           /** @description Cursor to start the list from */
           nextToken?: components['parameters']['paginationNextToken']
           /** @description Maximum number of items to return per page */
