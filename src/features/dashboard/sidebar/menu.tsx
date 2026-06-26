@@ -83,8 +83,6 @@ export default function DashboardSidebarMenu() {
           >
             <DashboardSidebarMenuTeams />
 
-            {/* SSO-managed members can't create teams; their team membership is
-                driven entirely by their identity provider. */}
             {!user.isSso && (
               <DropdownMenuItem
                 className="h-9 gap-2.5 [&_svg]:size-5 font-sans prose-body-highlight"

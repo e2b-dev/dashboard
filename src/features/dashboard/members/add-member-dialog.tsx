@@ -22,8 +22,6 @@ export const AddMemberDialog = () => {
   const { user } = useDashboard()
   const [open, setOpen] = useState(false)
 
-  // SSO-managed teams have their membership driven by the identity provider:
-  // teammates join by signing in through SSO, not by manual invitation.
   if (user.isSso) {
     return (
       <Tooltip>
