@@ -34,7 +34,10 @@ import { Input } from '@/ui/primitives/input'
 
 type SettingsProps = ComponentProps<typeof Settings>
 
-interface SettingsCardsProps extends Pick<SettingsProps, 'flow' | 'config'> {
+interface SettingsCardsProps extends Pick<SettingsProps, 'config'> {
+  // Two @ory/client-fetch copies are installed; accept flow loosely and cast to
+  // <Settings>'s own prop type below (see login-card.tsx).
+  flow: unknown
   // Read-only Kratos identity traits, shown for reference during the reset.
   name: string | null
   email: string | null
@@ -212,7 +215,7 @@ export function SettingsCards({
       />
       <SessionProvider>
         <Settings
-          flow={flow}
+          flow={flow as SettingsProps['flow']}
           config={config}
           components={settingsComponents}
           onSuccess={handleSuccess}

@@ -9,7 +9,10 @@ import {
   ORY_RECOVER_PATH,
   openOryFlowState,
 } from '@/core/server/auth/ory/oauth-flow'
-import { resolveOryRedirectUri } from '@/core/server/auth/ory/oauth-relay'
+import {
+  publicOrigin,
+  resolveOryRedirectUri,
+} from '@/core/server/auth/ory/oauth-relay'
 import { readKratosExternalId } from '@/core/server/auth/ory/session'
 import {
   E2B_SESSION_COOKIE,
@@ -29,7 +32,10 @@ import { relativeUrlSchema } from '@/core/shared/schemas/url'
 // id_token, then seal the OIDC tokens into e2b_session. Kratos already owns the
 // session at this point — this cookie only carries tokens for API access.
 export async function GET(request: NextRequest) {
-  const origin = request.nextUrl.origin
+  // Public https origin behind E2B's ingress, not the internal localhost bind.
+  // Must match the start route's redirect_uri byte-for-byte for the PKCE
+  // exchange and seal the right return host for the post-login redirect.
+  const origin = publicOrigin(request)
   const flow = await openOryFlowState(
     request.cookies.get(E2B_OAUTH_FLOW_COOKIE)?.value
   )
@@ -113,7 +119,9 @@ export async function GET(request: NextRequest) {
   response.cookies.set(
     E2B_SESSION_COOKIE,
     sealed,
-    sessionCookieOptions(request.nextUrl.host)
+    // Scope to the public host (e.g. `3000-<sid>.e2b.dev`) so the cookie lands on
+    // the origin the browser is on, not the internal localhost bind.
+    sessionCookieOptions(new URL(origin).host)
   )
   return response
 }

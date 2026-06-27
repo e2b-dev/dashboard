@@ -9,6 +9,12 @@ type VerificationProps = ComponentProps<typeof Verification>
 export function VerificationCard({
   flow,
   config,
-}: Pick<VerificationProps, 'flow' | 'config'>) {
-  return <Verification flow={flow} config={config} components={oryComponents} />
+}: { flow: unknown } & Pick<VerificationProps, 'config'>) {
+  return (
+    <Verification
+      flow={flow as VerificationProps['flow']}
+      config={config}
+      components={oryComponents}
+    />
+  )
 }

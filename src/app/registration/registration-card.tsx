@@ -9,6 +9,12 @@ type RegistrationProps = ComponentProps<typeof Registration>
 export function RegistrationCard({
   flow,
   config,
-}: Pick<RegistrationProps, 'flow' | 'config'>) {
-  return <Registration flow={flow} config={config} components={oryComponents} />
+}: { flow: unknown } & Pick<RegistrationProps, 'config'>) {
+  return (
+    <Registration
+      flow={flow as RegistrationProps['flow']}
+      config={config}
+      components={oryComponents}
+    />
+  )
 }

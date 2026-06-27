@@ -1,6 +1,5 @@
 import 'server-only'
 
-import { getServerSession } from '@ory/nextjs/app'
 import { cookies, headers } from 'next/headers'
 import { cache } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
@@ -27,6 +26,7 @@ import {
   revokeKratosSessionsForIdentity,
 } from './kratos-session'
 import { revokeOryOAuthSessionsForSubject } from './oauth-session'
+import { getServerKratosSession } from './server-flow'
 import {
   E2B_SESSION_COOKIE,
   openSessionCookie,
@@ -176,14 +176,14 @@ export async function handleCredentialChangeSuccess(): Promise<void> {
 // authenticated"; the e2b_session cookie only carries the API token.
 const readKratosSession = cache(async () => {
   try {
-    return await getServerSession()
+    return await getServerKratosSession()
   } catch (error) {
     l.error(
       {
         key: 'auth_provider:kratos_get_session:error',
         error: serializeErrorForLog(error),
       },
-      'getServerSession() threw while reading the Kratos session'
+      'getServerKratosSession() threw while reading the Kratos session'
     )
     return null
   }

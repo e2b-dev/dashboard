@@ -16,12 +16,37 @@
 // (signout.ts pulls it in for the post-logout path).
 
 import { EncryptJWT, jwtDecrypt } from 'jose'
+import type { NextRequest } from 'next/server'
 import { isLoopbackUrl } from '@/core/shared/schemas/url'
 import { CONTENT_ENCRYPTION, deriveKey, KEY_ALGORITHM } from './cookie-crypto'
 import { OAUTH_CALLBACK_PATH } from './oauth-flow'
 
 export const OAUTH_RELAY_PATH = '/api/auth/oauth/relay'
 export const OAUTH_LOGOUT_RELAY_PATH = '/api/auth/oauth/logout-relay'
+
+// The public origin the browser actually reached. Behind E2B's per-port ingress
+// `request.nextUrl.origin` resolves to the internal `http://localhost:3000`, but
+// the OAuth redirect_uri, sealed relay target, and post-login redirects must use
+// the public https origin or the browser can't complete the round-trip. The
+// published host lives in `x-forwarded-host` (or `host`); the scheme is forced to
+// https for non-loopback hosts (the proxy stamps x-forwarded-proto: https, but we
+// re-derive defensively so callers don't depend on header ordering).
+export function publicOrigin(request: NextRequest): string {
+  const forwardedHost =
+    request.headers.get('x-forwarded-host') ?? request.headers.get('host')
+  if (!forwardedHost) return request.nextUrl.origin
+
+  const hostname = forwardedHost.split(':')[0] ?? forwardedHost
+  const isLoopback = hostname === 'localhost' || hostname === '127.0.0.1'
+  if (isLoopback) return request.nextUrl.origin
+
+  const proto =
+    request.headers.get('x-forwarded-proto')?.split(',')[0]?.trim() === 'http'
+      ? 'https'
+      : (request.headers.get('x-forwarded-proto')?.split(',')[0]?.trim() ??
+        'https')
+  return `${proto}://${forwardedHost}`
+}
 
 // The fixed host whose relay endpoints are registered in Hydra. Set on preview
 // deployments only; unset on staging/production/local, where the flow stays

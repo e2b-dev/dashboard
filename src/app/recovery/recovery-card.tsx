@@ -9,6 +9,12 @@ type RecoveryProps = ComponentProps<typeof Recovery>
 export function RecoveryCard({
   flow,
   config,
-}: Pick<RecoveryProps, 'flow' | 'config'>) {
-  return <Recovery flow={flow} config={config} components={oryComponents} />
+}: { flow: unknown } & Pick<RecoveryProps, 'config'>) {
+  return (
+    <Recovery
+      flow={flow as RecoveryProps['flow']}
+      config={config}
+      components={oryComponents}
+    />
+  )
 }

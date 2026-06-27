@@ -4,13 +4,21 @@ import { Login } from '@ory/elements-react/theme'
 import type { ComponentProps } from 'react'
 import { oryComponents } from './components'
 
-// Derive props from <Login>: two @ory/client-fetch copies are installed, so
-// naming the LoginFlow type directly would mismatch.
+// Two @ory/client-fetch copies are installed (this app's vs the one bundled by
+// @ory/elements-react), so the server-fetched flow's type differs from <Login>'s
+// flow prop. This wrapper is the single bridge: accept flow loosely and cast it
+// to <Login>'s own prop type, which re-narrows at render.
 type LoginProps = ComponentProps<typeof Login>
 
 export function LoginCard({
   flow,
   config,
-}: Pick<LoginProps, 'flow' | 'config'>) {
-  return <Login flow={flow} config={config} components={oryComponents} />
+}: { flow: unknown } & Pick<LoginProps, 'config'>) {
+  return (
+    <Login
+      flow={flow as LoginProps['flow']}
+      config={config}
+      components={oryComponents}
+    />
+  )
 }
