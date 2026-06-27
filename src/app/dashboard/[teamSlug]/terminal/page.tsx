@@ -33,10 +33,13 @@ export default async function TeamTerminalPage({
 }: TeamTerminalPageProps) {
   const [{ teamSlug }, { command = '', sandboxId, template }] =
     await Promise.all([params, searchParams])
-  const requestedTemplate = normalizeTerminalTemplate(template)
+  const hasTemplateOverride = template !== undefined
+  const requestedTemplate = hasTemplateOverride
+    ? normalizeTerminalTemplate(template)
+    : undefined
   const terminalSandboxId = normalizeTerminalSandboxId(sandboxId)
 
-  if (!terminalSandboxId && !requestedTemplate) {
+  if (!terminalSandboxId && hasTemplateOverride && !requestedTemplate) {
     return <TerminalUnavailable message="The terminal template is invalid." />
   }
 
@@ -90,7 +93,7 @@ export default async function TeamTerminalPage({
 
   const terminalTemplate = terminalSandbox
     ? (terminalSandbox.alias ?? terminalSandbox.templateID)
-    : requestedTemplate
+    : (requestedTemplate ?? 'base')
 
   if (!terminalTemplate) {
     return <TerminalUnavailable message="The terminal template is invalid." />
@@ -102,8 +105,11 @@ export default async function TeamTerminalPage({
         autoStart
         launchTarget={{
           command,
+          forceNewSandbox: !terminalSandboxId && hasTemplateOverride,
           sandboxId: terminalSandboxId,
-          template: terminalTemplate,
+          template: terminalSandboxId
+            ? terminalTemplate
+            : (requestedTemplate ?? undefined),
         }}
         teamSlug={team.slug}
         userId={authContext.user.id}
