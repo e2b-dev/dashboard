@@ -36,6 +36,9 @@ import {
 
 type RunProxyOptions = {
   isAuthenticated?: boolean
+  // Corrected x-forwarded-* headers (https + public host) to forward to Next so
+  // RSC next/headers() reads the public origin behind E2B's ingress.
+  forwardedHeaders?: Headers | null
 }
 
 // Same-origin paths the @ory/nextjs proxy forwards to Kratos (NEXT_PUBLIC_ORY_SDK_URL),
@@ -55,10 +58,90 @@ function isOrySdkProxyPath(pathname: string): boolean {
   return ORY_SDK_PROXY_PREFIXES.some((prefix) => pathname.startsWith(prefix))
 }
 
+// @ory/nextjs's middleware resolves its upstream Kratos target from
+// NEXT_PUBLIC_ORY_SDK_URL (getEnv prefers the NEXT_PUBLIC_ prefix). We set that
+// to the dashboard's OWN same-origin URL so the browser's credentialed Elements
+// flow fetch isn't rejected by Kratos' wildcard CORS — but that means the
+// server-side proxy would fetch ITSELF and loop back out through E2B's per-port
+// ingress until the sandbox connection limit trips (HTTP 429). Forward
+// /self-service/* to the real internal Kratos public endpoint instead by
+// pointing the upstream var at it only for the duration of the proxy call. The
+// client bundle keeps the same-origin value (NEXT_PUBLIC_* is inlined at build
+// time), so this server-side override never reaches the browser.
+async function oryProxyToKratos(request: NextRequest) {
+  const kratos = process.env.ORY_KRATOS_PUBLIC_URL
+  if (!kratos) return oryProxy(request)
+
+  const previous = process.env.NEXT_PUBLIC_ORY_SDK_URL
+  process.env.NEXT_PUBLIC_ORY_SDK_URL = kratos
+  try {
+    return await oryProxy(request)
+  } finally {
+    if (previous === undefined) {
+      delete process.env.NEXT_PUBLIC_ORY_SDK_URL
+    } else {
+      process.env.NEXT_PUBLIC_ORY_SDK_URL = previous
+    }
+  }
+}
+
+// The public host the browser actually reached. Behind E2B's per-port ingress
+// `request.nextUrl.host` is the internal bind (`localhost:3000`); the published
+// host lives only in `x-forwarded-host` (or `host`). Returns null for loopback.
+function publicSandboxHost(request: NextRequest): string | null {
+  const host =
+    request.headers.get('x-forwarded-host') ?? request.headers.get('host')
+  if (!host) return null
+  const hostname = host.split(':')[0] ?? host
+  if (hostname === 'localhost' || hostname === '127.0.0.1') return null
+  return host
+}
+
+// E2B's per-port ingress terminates TLS but forwards to the dashboard with
+// `x-forwarded-proto: http` (literally "http", not absent) and an internal
+// `localhost:3000` host. Ory's scheme resolution (request-config.ts,
+// @ory/nextjs getPublicUrl, and the middleware's `isTls`/Secure-cookie stamping)
+// then believes the request is plain HTTP, so Kratos is told to rewrite its
+// browser base URL to `http://<port>-<sandboxId>.e2b.dev`. The ingress is
+// HTTPS-only, so the browser's redirect to that plain-HTTP
+// `/self-service/login/browser` URL is reset and login dies before the form
+// renders.
+//
+// Fix: for a public sandbox host, force `https`. Mutating `request.headers` in
+// place is NOT enough — RSC/route handlers read a frozen snapshot via
+// next/headers(), so the corrected headers must be forwarded on a
+// `NextResponse.next({ request: { headers } })`. We also flip
+// `request.nextUrl.protocol` so `nextUrl.origin` (used by the OAuth routes and
+// the @ory/nextjs middleware) is the public https origin, not http://localhost.
+// Returns the corrected headers to forward, or null when nothing changed.
+function forceHttpsForSandbox(request: NextRequest): Headers | null {
+  const host = publicSandboxHost(request)
+  if (!host) return null
+
+  // Make nextUrl.origin reflect the public https host for everything downstream.
+  request.nextUrl.protocol = 'https:'
+  request.nextUrl.host = host
+
+  if (request.headers.get('x-forwarded-proto') === 'https') return null
+
+  const headers = new Headers(request.headers)
+  headers.set('x-forwarded-proto', 'https')
+  headers.set('x-forwarded-host', host)
+  // Mirror onto the live request so same-tick reads (request-config.ts) agree.
+  request.headers.set('x-forwarded-proto', 'https')
+  request.headers.set('x-forwarded-host', host)
+  return headers
+}
+
 export async function runDashboardProxy(
   request: NextRequest,
   _event: NextFetchEvent
 ) {
+  // Must run before the Ory proxy and any scheme-dependent resolution below.
+  // Forward the corrected headers via NextResponse.next so RSC next/headers()
+  // and the @ory/nextjs middleware see https + the public host.
+  const forwardedHeaders = forceHttpsForSandbox(request)
+
   if (request.nextUrl.pathname.startsWith('/oauth2/')) {
     const hydra = process.env.ORY_HYDRA_PUBLIC_URL ?? process.env.ORY_SDK_URL
     if (hydra) {
@@ -70,9 +153,11 @@ export async function runDashboardProxy(
   }
 
   // Forward Ory SDK traffic to Kratos before classification (it would otherwise
-  // classify as a bypass and go to Next).
+  // classify as a bypass and go to Next). The @ory/nextjs middleware reads the
+  // request scheme/host to tell Kratos which browser base URL to emit, so it
+  // must see the corrected https + public host.
   if (isOrySdkProxyPath(request.nextUrl.pathname)) {
-    return oryProxy(request)
+    return oryProxyToKratos(request)
   }
 
   const plan = classifyProxyRequest(request.nextUrl.pathname)
@@ -91,7 +176,9 @@ export async function runDashboardProxy(
     : await refreshSessionCookie(request)
 
   if (!planNeedsAuthGate(plan)) {
-    return session.persist(await runProxyConcerns(request, plan))
+    return session.persist(
+      await runProxyConcerns(request, plan, { forwardedHeaders })
+    )
   }
 
   // The Kratos session is the source of truth, checked via an edge-safe whoami.
@@ -105,7 +192,7 @@ export async function runDashboardProxy(
   if (authRouteRedirect) return session.persist(authRouteRedirect)
 
   return session.persist(
-    await runProxyConcerns(request, plan, { isAuthenticated })
+    await runProxyConcerns(request, plan, { isAuthenticated, forwardedHeaders })
   )
 }
 
@@ -192,7 +279,9 @@ async function runProxyConcerns(
       return handleAuthGate(request, options.isAuthenticated ?? false)
     }
 
-    return NextResponse.next({ request })
+    return options.forwardedHeaders
+      ? NextResponse.next({ request: { headers: options.forwardedHeaders } })
+      : NextResponse.next({ request })
   } catch (error) {
     l.error(
       {
@@ -206,6 +295,8 @@ async function runProxyConcerns(
       'middleware - unexpected error'
     )
 
-    return NextResponse.next({ request })
+    return options.forwardedHeaders
+      ? NextResponse.next({ request: { headers: options.forwardedHeaders } })
+      : NextResponse.next({ request })
   }
 }

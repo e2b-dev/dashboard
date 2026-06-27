@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { AUTH_URLS } from '@/configs/urls'
+import { publicOrigin } from '@/core/server/auth/ory/oauth-relay'
 import { l } from '@/core/shared/clients/logger/logger'
 
 const RECOVERY_COOKIE = 'auth_recover_attempted'
@@ -19,7 +20,9 @@ export async function GET(request: NextRequest) {
   )
 
   const destination = alreadyAttempted ? '/' : AUTH_URLS.SIGN_IN
-  const response = NextResponse.redirect(new URL(destination, request.url))
+  const response = NextResponse.redirect(
+    new URL(destination, publicOrigin(request))
+  )
 
   if (alreadyAttempted) {
     response.cookies.delete(RECOVERY_COOKIE)

@@ -8,6 +8,7 @@ import {
 import {
   isAllowedRelayTarget,
   openRelayState,
+  publicOrigin,
 } from '@/core/server/auth/ory/oauth-relay'
 import { l } from '@/core/shared/clients/logger/logger'
 
@@ -18,7 +19,8 @@ import { l } from '@/core/shared/clients/logger/logger'
 // callback, which finishes the PKCE exchange (its verifier never left that
 // origin). See oauth-relay.ts. Never touches cookies.
 export async function GET(request: NextRequest) {
-  const origin = request.nextUrl.origin
+  // Public https origin behind E2B's ingress, not the internal localhost bind.
+  const origin = publicOrigin(request)
   const state = request.nextUrl.searchParams.get('state')
   const target = await openRelayState(state)
 
