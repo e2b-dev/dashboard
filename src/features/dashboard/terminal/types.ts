@@ -19,6 +19,7 @@ export type PendingTerminalLaunch = {
 
 export type TerminalLaunchTarget = {
   command?: string
+  forceNewSandbox?: boolean
   sandboxId?: string
   template?: string
 }

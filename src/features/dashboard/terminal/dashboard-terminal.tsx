@@ -284,6 +284,8 @@ export default function DashboardTerminal({
       }
 
       const requestedSandboxId = target?.sandboxId
+      const shouldForceNewSandbox =
+        options.forceNewSandbox === true || target?.forceNewSandbox === true
       isStartingRef.current = true
       const startGeneration = startGenerationRef.current + 1
       startGenerationRef.current = startGeneration
@@ -307,7 +309,7 @@ export default function DashboardTerminal({
           sandbox = await getSandbox()
         } else {
           const terminalSandbox = await openTerminalSandbox({
-            forceNewSandbox: options.forceNewSandbox,
+            forceNewSandbox: shouldForceNewSandbox,
             onStatus: appendOutput,
             openTerminal: (mutationInput) =>
               trpcClient.sandbox.openTerminal.mutate(mutationInput),
@@ -483,6 +485,7 @@ export default function DashboardTerminal({
       if (
         status === 'ready' &&
         template === launchTemplate &&
+        launchTarget?.forceNewSandbox !== true &&
         (!launchSandboxId || activeSandboxId === launchSandboxId)
       ) {
         setPendingLaunch(null)

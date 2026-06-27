@@ -362,6 +362,31 @@ describe('dashboard terminal helpers', () => {
       })
     })
 
+    it('creates a new sandbox when reuse is disabled for a matching stored template', async () => {
+      writeStoredTerminalSession('user-123', {
+        sandboxId: 'stored-sandbox',
+        template: 'base',
+      })
+
+      await openTerminalSandbox({
+        forceNewSandbox: true,
+        onStatus: vi.fn(),
+        openTerminal: mockOpenTerminal,
+        teamSlug: 'team-slug',
+        userId: 'user-123',
+        template: 'base',
+      })
+
+      expect(mockOpenTerminal).toHaveBeenCalledWith({
+        teamSlug: 'team-slug',
+        template: 'base',
+      })
+      expect(readStoredTerminalSession('user-123')).toEqual({
+        sandboxId: 'created-sandbox',
+        template: 'base',
+      })
+    })
+
     it('falls back to creating a new sandbox when reconnecting fails', async () => {
       writeStoredTerminalSession('user-123', {
         sandboxId: 'stored-sandbox',
