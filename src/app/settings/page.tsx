@@ -1,16 +1,17 @@
 import { getSettingsFlow, type OryPageParams } from '@ory/nextjs/app'
 import oryConfig from '@/configs/ory'
-import { getUserProfile } from '@/core/server/auth'
+import { getSettingsProfile } from '@/core/server/auth'
 import { getOryConfigForRequest } from '@/core/server/auth/ory/request-config'
 import { SettingsCards } from './settings-cards'
 
 export const dynamic = 'force-dynamic'
 
 // Ory-driven settings page, intentionally separate from /dashboard/account.
-// It needs only a Kratos session (getSettingsFlow + getUserProfile read the
+// It needs only a Kratos session (getSettingsFlow + getSettingsProfile read the
 // session/identity, not e2b_session) — so the post-recovery password reset works
-// before any Hydra token exists. Name/e-mail are shown read-only for reference;
-// editing the account profile stays on the gated /dashboard/account page.
+// before any Hydra token exists, even for an identity not yet bootstrapped (no
+// external_id). Name/e-mail are shown read-only for reference; editing the
+// account profile stays on the gated /dashboard/account page.
 export default async function SettingsPage(props: OryPageParams) {
   const flow = await getSettingsFlow(oryConfig, props.searchParams)
 
@@ -19,17 +20,17 @@ export default async function SettingsPage(props: OryPageParams) {
     return null
   }
 
-  const [config, user] = await Promise.all([
+  const [config, profile] = await Promise.all([
     getOryConfigForRequest(),
-    getUserProfile(),
+    getSettingsProfile(),
   ])
 
   return (
     <SettingsCards
       flow={flow}
       config={config}
-      name={user?.name ?? null}
-      email={user?.email ?? null}
+      name={profile?.name ?? null}
+      email={profile?.email ?? null}
     />
   )
 }

@@ -21,7 +21,11 @@ import {
 } from './find-identity'
 import { oryAuthFlows } from './flows'
 import { isKratosSessionFresh } from './freshness'
-import { fromKratosSessionIdentity, fromOryIdentity } from './identity'
+import {
+  fromKratosSessionIdentity,
+  fromOryIdentity,
+  readIdentityDisplayProfile,
+} from './identity'
 import {
   revokeKratosSession,
   revokeKratosSessionsForIdentity,
@@ -92,6 +96,19 @@ export async function getUserProfile(): Promise<AuthUser | null> {
   })
 
   return identity ? fromOryIdentity(identity) : null
+}
+
+// Display-only profile for the pre-provisioning /settings page. Unlike
+// getUserProfile (which requires a fully provisioned identity), this reads
+// name/email straight off the Kratos session, so it works for a recovery
+// session whose identity has no external_id yet.
+export async function getSettingsProfile(): Promise<Pick<
+  AuthUser,
+  'name' | 'email'
+> | null> {
+  const identity = (await readKratosSession())?.identity
+  if (!identity) return null
+  return readIdentityDisplayProfile(identity)
 }
 
 // Tears down the current login: revokes the OAuth tokens and the Kratos

@@ -3,6 +3,7 @@ import 'server-only'
 export type { AuthUser } from '@/core/modules/auth/models'
 export {
   getAuthContext,
+  getSettingsProfile,
   getUserProfile,
   handleCredentialChangeSuccess,
   revokeCurrentSession,
