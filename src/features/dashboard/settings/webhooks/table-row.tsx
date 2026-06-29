@@ -219,7 +219,7 @@ export const WebhookTableRow = ({ webhook }: WebhookRowProps) => {
   return (
     <TableRow
       className={cn(
-        'group/row relative cursor-pointer hover:bg-bg-1 border-b-0 transition-none',
+        'group/row relative cursor-pointer border-b-0 transition-none',
         'border-stroke/80 hover:z-20 focus-within:z-10',
         'has-[button[aria-haspopup=menu][data-state=open]]:z-10'
       )}
@@ -228,6 +228,7 @@ export const WebhookTableRow = ({ webhook }: WebhookRowProps) => {
       <TableCell className={cn(rowCellClassName, 'max-w-0')}>
         <RowHoverFrame
           className={cn(
+            '-inset-x-3 -z-10 group-hover/row:bg-bg-1',
             'group-has-[button[aria-haspopup=menu][data-state=open]]/row:border-stroke',
             'group-has-[button[aria-haspopup=menu][data-state=open]]/row:[--corner-mark-color:var(--color-fg-tertiary)]'
           )}
