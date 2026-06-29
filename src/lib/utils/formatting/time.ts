@@ -318,31 +318,31 @@ const formatDateParts = (
   const dateFormatterOptions: Intl.DateTimeFormatOptions = {
     timeZone: timezone,
   }
-  const dateFormatter = new Intl.DateTimeFormat(undefined, {
+  const dateFormatter = new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: '2-digit',
     ...dateFormatterOptions,
   })
-  const dateWithYearFormatter = new Intl.DateTimeFormat(undefined, {
+  const dateWithYearFormatter = new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: '2-digit',
     year: 'numeric',
     ...dateFormatterOptions,
   })
-  const timeFormatter = new Intl.DateTimeFormat(undefined, {
+  const timeFormatter = new Intl.DateTimeFormat('en-US', {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
     hour12: false,
     ...dateFormatterOptions,
   })
-  const timeNoSecondsFormatter = new Intl.DateTimeFormat(undefined, {
+  const timeNoSecondsFormatter = new Intl.DateTimeFormat('en-US', {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
     ...dateFormatterOptions,
   })
-  const timezoneFormatter = new Intl.DateTimeFormat(undefined, {
+  const timezoneFormatter = new Intl.DateTimeFormat('en-US', {
     timeZoneName: 'short',
     ...dateFormatterOptions,
   })
