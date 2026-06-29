@@ -78,21 +78,6 @@ export function fromKratosSessionIdentity(identity: {
     source: 'kratos_session',
   })
   const organizationId = identity.organization_id || null
-  const isSso = organizationId !== null
-
-  l.debug(
-    {
-      key: 'sso_debug:identity:from_kratos_session',
-      context: {
-        identity_id: identity.id,
-        organization_id_raw: identity.organization_id,
-        organization_id_resolved: organizationId,
-        isSso,
-        source: 'kratos_session',
-      },
-    },
-    'SSO debug: fromKratosSessionIdentity organization_id resolution'
-  )
 
   return {
     id: requireExternalId(identity),
@@ -104,7 +89,7 @@ export function fromKratosSessionIdentity(identity: {
     canChangeEmail: false,
     canChangePassword: false,
     organizationId,
-    isSso,
+    isSso: organizationId !== null,
   }
 }
 
@@ -126,20 +111,6 @@ export function fromOryIdentity(identity: Identity): AuthUser {
   const hasOidcCredential = hasLinkedOidcCredential(identity.credentials?.oidc)
   const canChangePassword = hasPasswordCredential && !hasOidcCredential
   const organizationId = identity.organization_id || null
-
-  l.debug(
-    {
-      key: 'sso_debug:identity:from_ory_identity',
-      context: {
-        identity_id: identity.id,
-        organization_id_raw: identity.organization_id,
-        organization_id_resolved: organizationId,
-        isSso: organizationId !== null,
-        source: 'admin_identity',
-      },
-    },
-    'SSO debug: fromOryIdentity organization_id resolution'
-  )
 
   return {
     id: requireExternalId(identity),

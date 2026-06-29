@@ -45,23 +45,6 @@ const ACCOUNT_SETTINGS_REAUTH_RETURN_TO = `${PROTECTED_URLS.ACCOUNT_SETTINGS}?re
 
 export async function getAuthContext(): Promise<AuthContext | null> {
   const kratos = await readKratosSession()
-
-  l.debug(
-    {
-      key: 'sso_debug:auth_context:kratos_session',
-      context: {
-        active: kratos?.active,
-        identity_id: kratos?.identity?.id,
-        organization_id: kratos?.identity?.organization_id ?? null,
-        identity_keys: kratos?.identity
-          ? Object.keys(kratos.identity)
-          : null,
-        has_external_id: !!kratos?.identity?.external_id,
-      },
-    },
-    'SSO debug: raw Kratos session from getServerSession()'
-  )
-
   if (!kratos?.active || !kratos.identity) return null
 
   // public.users.id lives only on the Kratos identity's external_id. Without it
@@ -83,22 +66,8 @@ export async function getAuthContext(): Promise<AuthContext | null> {
   const tokens = await readSessionTokens()
   if (!tokens?.accessToken) return null
 
-  const user = fromKratosSessionIdentity(kratos.identity)
-
-  l.debug(
-    {
-      key: 'sso_debug:auth_context:resolved',
-      context: {
-        user_id: user.id,
-        isSso: user.isSso,
-        organizationId: user.organizationId,
-      },
-    },
-    'SSO debug: getAuthContext final resolved user'
-  )
-
   return {
-    user,
+    user: fromKratosSessionIdentity(kratos.identity),
     accessToken: tokens.accessToken,
   }
 }
@@ -121,18 +90,6 @@ export async function getUserProfile(): Promise<AuthUser | null> {
     subjects: [identityId],
     includeCredential: ACCOUNT_IDENTITY_CREDENTIALS,
   })
-
-  l.debug(
-    {
-      key: 'sso_debug:user_profile:admin_identity',
-      context: {
-        identity_id: identity?.id,
-        organization_id: identity?.organization_id ?? null,
-        found: !!identity,
-      },
-    },
-    'SSO debug: getUserProfile admin API identity lookup'
-  )
 
   return identity ? fromOryIdentity(identity) : null
 }
