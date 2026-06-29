@@ -88,6 +88,23 @@ export function fromKratosSessionIdentity(identity: {
   }
 }
 
+// Display-only traits (name/email) from a Kratos session identity, without
+// requiring external_id — for the pre-provisioning /settings page, where a
+// recovery session's identity may not be bootstrapped yet.
+export function readIdentityDisplayProfile(identity: {
+  id: string
+  traits?: unknown
+}): Pick<AuthUser, 'name' | 'email'> {
+  const traits = parseOryTraits(identity.traits, {
+    identityId: identity.id,
+    source: 'kratos_session',
+  })
+  return {
+    name: readString(traits, 'name'),
+    email: readString(traits, 'email'),
+  }
+}
+
 // Rich path: build the user from a full Kratos Identity (traits + credentials).
 // Used wherever we've fetched the identity via the admin API — admin lookups and
 // the live profile query.
