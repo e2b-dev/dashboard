@@ -1,6 +1,7 @@
 import type { Timezone } from '@/features/dashboard/timezone'
 import {
   formatCurrency,
+  formatDate,
   formatNumber,
   getDateParts,
 } from '@/lib/utils/formatting'
@@ -21,12 +22,10 @@ const isThisYearInTimezone = (timestamp: number, timezone: Timezone): boolean =>
   getDateParts(new Date(), timezone).year
 
 const formatZonedDay = (timestamp: number, timezone: Timezone): string =>
-  new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone,
-    year: isThisYearInTimezone(timestamp, timezone) ? undefined : 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }).format(timestamp)
+  formatDate(timestamp, {
+    timezone,
+    format: isThisYearInTimezone(timestamp, timezone) ? 'month-day' : 'date',
+  }) ?? ''
 
 const formatZonedHour = (timestamp: number, timezone: Timezone): string => {
   const date = new Date(timestamp)
@@ -94,11 +93,7 @@ export function formatAxisDate(
         hour12: true,
       }).format(new Date(timestamp))
     default:
-      return new Intl.DateTimeFormat('en-US', {
-        timeZone: timezone,
-        month: 'short',
-        day: 'numeric',
-      }).format(new Date(timestamp))
+      return formatDate(timestamp, { timezone, format: 'month-day' }) ?? ''
   }
 }
 
