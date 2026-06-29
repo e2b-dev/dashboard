@@ -4,6 +4,7 @@ import {
   formatChartTimestampLocal,
   formatChartTimestampUTC,
   formatCPUCores,
+  formatDateParts,
   formatDecimal,
   formatDuration,
   formatMemory,
@@ -98,6 +99,39 @@ describe('Date & Time Formatting', () => {
       // when showDate is false, should show time even at midnight
       const result = formatTimeAxisLabel(timestamp, false, true)
       expect(result).toMatch(/\d{1,2}:\d{2}:\d{2} [AP]M/)
+    })
+  })
+
+  describe('formatDateParts', () => {
+    it('uses US month/day and 24-hour time for log-style timestamps', () => {
+      const timestamp = Date.UTC(2026, 5, 8, 13, 5, 9, 870)
+
+      expect(
+        formatDateParts(timestamp, {
+          timezone: 'America/New_York',
+          format: 'date-time-with-centiseconds',
+        })
+      ).toMatchObject({
+        datePart: 'Jun 08',
+        timePart: '09:05:09',
+        subsecondPart: '87',
+        timezonePart: 'EDT',
+      })
+    })
+
+    it('keeps US order when the year is included', () => {
+      const timestamp = Date.UTC(2026, 5, 8, 13, 5, 9, 870)
+
+      expect(
+        formatDateParts(timestamp, {
+          timezone: 'America/New_York',
+          format: 'date-year-time-no-seconds',
+        })
+      ).toMatchObject({
+        datePart: 'Jun 08, 2026',
+        timePart: '09:05',
+        timezonePart: 'EDT',
+      })
     })
   })
 
