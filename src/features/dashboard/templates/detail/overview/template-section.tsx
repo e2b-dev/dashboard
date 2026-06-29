@@ -23,7 +23,7 @@ export function TemplateSection({ template, teamSlug }: TemplateSectionProps) {
 
   const created = formatDateParts(template.createdAt, {
     timezone,
-    format: 'date-year-time-no-seconds',
+    format: 'date-time-no-seconds',
   })
 
   const isModified =
@@ -31,7 +31,7 @@ export function TemplateSection({ template, teamSlug }: TemplateSectionProps) {
   const modified = isModified
     ? formatDateParts(template.updatedAt, {
         timezone,
-        format: 'date-year-time-no-seconds',
+        format: 'date-time-no-seconds',
       })
     : null
 

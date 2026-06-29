@@ -70,19 +70,20 @@ export default async function DashboardLayout({
     .fetchQuery(teamsQueryOptions)
     .catch(() => null)
   const team = teams?.find((candidate) => candidate.slug === teamSlug)
+  const dashboardTeam = team
+    ? {
+        id: team.id,
+        name: team.name,
+        slug: teamSlug,
+      }
+    : undefined
 
   const featureFlagContext = {
     user: {
       id: authContext.user.id,
       email: authContext.user.email ?? undefined,
     },
-    team: team
-      ? {
-          id: team.id,
-          name: team.name,
-          slug: teamSlug,
-        }
-      : undefined,
+    team: dashboardTeam,
   }
   const [evaluatedFeatureFlags] = await Promise.all([
     featureFlags.evaluateAll(featureFlagContext),
