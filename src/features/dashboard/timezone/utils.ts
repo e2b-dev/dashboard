@@ -1,3 +1,4 @@
+import { formatTimezoneAbbreviation } from '@/lib/utils/formatting'
 import { type Timezone, TimezoneSchema } from './schema'
 
 const isValidTimezone = (timezone: string): timezone is Timezone =>
@@ -49,19 +50,10 @@ const formatTimezoneDisplayName = (timezone: Timezone): string =>
   timezone.replaceAll('_', ' ')
 
 const formatTimezoneLabel = (timezone: Timezone): string => {
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone,
-    timeZoneName: 'short',
-  })
-
-  const timezoneName = formatter
-    .formatToParts(new Date())
-    .find((part) => part.type === 'timeZoneName')?.value
-
   const displayName = formatTimezoneDisplayName(timezone)
-  if (!timezoneName) return displayName
+  const abbreviation = formatTimezoneAbbreviation(new Date(), timezone)
 
-  return `${displayName} (${timezoneName})`
+  return `${displayName} (${abbreviation})`
 }
 
 export {
