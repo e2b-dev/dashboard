@@ -72,19 +72,20 @@ export default async function DashboardLayout({
     .fetchQuery(teamsQueryOptions)
     .catch(() => null)
   const team = teams?.find((candidate) => candidate.slug === teamSlug)
+  const dashboardTeam = team
+    ? {
+        id: team.id,
+        name: team.name,
+        slug: teamSlug,
+      }
+    : undefined
 
   const featureFlagContext = {
     user: {
       id: authContext.user.id,
       email: authContext.user.email ?? undefined,
     },
-    team: team
-      ? {
-          id: team.id,
-          name: team.name,
-          slug: teamSlug,
-        }
-      : undefined,
+    team: dashboardTeam,
   }
   const [evaluatedFeatureFlags] = await Promise.all([
     featureFlags.evaluateAll(featureFlagContext),
@@ -93,7 +94,12 @@ export default async function DashboardLayout({
 
   return (
     <HydrateClient>
-      {postHogEnabled && <OryPostHogIdentityBridge user={authContext.user} />}
+      {postHogEnabled && dashboardTeam && (
+        <OryPostHogIdentityBridge
+          user={authContext.user}
+          team={dashboardTeam}
+        />
+      )}
       <FeatureFlagsProvider initialFlags={evaluatedFeatureFlags}>
         <DashboardTeamGate teamSlug={teamSlug} fallbackUser={authContext.user}>
           <TimezoneProvider initialTimezone={timezone}>

@@ -272,6 +272,7 @@ interface DateTimeParts {
 
 type DatePartsFormatPreset =
   | 'date-time'
+  | 'date-time-no-seconds'
   | 'date-time-with-centiseconds'
   | 'date-year-time-no-seconds'
 
@@ -290,6 +291,11 @@ const DATE_PARTS_PRESET_OPTIONS: Record<
 > = {
   'date-time': {
     includeSeconds: true,
+    includeYear: false,
+    includeCentiseconds: false,
+  },
+  'date-time-no-seconds': {
+    includeSeconds: false,
     includeYear: false,
     includeCentiseconds: false,
   },
