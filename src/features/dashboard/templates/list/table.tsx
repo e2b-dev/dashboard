@@ -170,21 +170,24 @@ export default function TemplatesTable() {
 
       <div
         className={cn(
-          'bg-bg flex-1 mt-4 overflow-x-auto w-full md:max-w-[calc(calc(100svw-48px)-var(--sidebar-width-active))]',
+          'bg-bg flex-1 mt-4 -mx-3 md:-mx-6 overflow-x-auto md:max-w-[calc(100svw-var(--sidebar-width-active))]',
           SIDEBAR_TRANSITION_CLASSNAMES
         )}
       >
         <DataTable
           className={cn(
-            'h-full overflow-y-auto md:min-w-[calc(100svw-48px-var(--sidebar-width-active))]',
+            'h-full overflow-y-auto px-3 md:px-6 md:min-w-[calc(100svw-var(--sidebar-width-active))]',
             SIDEBAR_TRANSITION_CLASSNAMES
           )}
           style={{ ...columnSizeVars }}
           ref={scrollRef}
         >
-          <DataTableHeader className="sticky top-0 shadow-xs bg-bg z-10">
+          <DataTableHeader className="sticky top-0 shadow-xs bg-bg z-30">
             {table.getHeaderGroups().map((headerGroup) => (
-              <DataTableRow key={headerGroup.id} className="border-b-0">
+              <DataTableRow
+                key={headerGroup.id}
+                className="border-b-0 -mx-2 px-2 w-[calc(100%+16px)]"
+              >
                 {headerGroup.headers.map((header) => (
                   <DataTableHead
                     key={header.id}

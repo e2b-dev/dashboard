@@ -4,7 +4,7 @@ import Link from 'next/link'
 import {
   INCLUDE_DASHBOARD_FEEDBACK_SURVEY,
   INCLUDE_REPORT_ISSUE,
-} from '@/configs/flags'
+} from '@/configs/env-flags'
 import { GITHUB_URL } from '@/configs/urls'
 import { cn } from '@/lib/utils'
 import {

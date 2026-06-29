@@ -3,9 +3,10 @@ import 'server-only'
 export type { AuthUser } from '@/core/modules/auth/models'
 export {
   getAuthContext,
-  getAuthContextFromOrySession,
+  getSettingsProfile,
   getUserProfile,
   handleCredentialChangeSuccess,
+  revokeCurrentSession,
   signOut,
   startReauthForAccountSettings,
   updateUser,

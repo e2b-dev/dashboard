@@ -11,6 +11,7 @@ import {
   BrushComponent,
   GridComponent,
   MarkPointComponent,
+  ToolboxComponent,
 } from 'echarts/components'
 import * as echarts from 'echarts/core'
 import { SVGRenderer } from 'echarts/renderers'
@@ -47,6 +48,7 @@ echarts.use([
   GridComponent,
   BrushComponent,
   MarkPointComponent,
+  ToolboxComponent,
   SVGRenderer,
   AxisPointerComponent,
 ])
@@ -467,6 +469,9 @@ function SandboxMetricsChart({
     return {
       backgroundColor: 'transparent',
       animation: false,
+      toolbox: {
+        show: false,
+      },
       brush: isMobile
         ? undefined
         : {

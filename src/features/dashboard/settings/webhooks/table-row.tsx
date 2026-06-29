@@ -1,6 +1,8 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { Fragment, useState } from 'react'
+import { PROTECTED_URLS } from '@/configs/urls'
 import { SandboxLifecycleEventTypeSchema } from '@/core/modules/sandboxes/lifecycle-event-types'
 import { useTimezone } from '@/features/dashboard/timezone'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
@@ -32,6 +34,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/ui/primitives/tooltip'
+import { RowHoverFrame } from '@/ui/row-hover-frame'
 import { useDashboard } from '../../context'
 import { UserAvatar } from '../../shared'
 import { WEBHOOK_EVENT_LABELS } from './constants'
@@ -87,7 +90,12 @@ const WebhookNameAndUrl = ({ name, url }: WebhookNameAndUrlProps) => {
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 pb-0.5">
-        <p className="truncate text-left text-fg prose-body">{name}</p>
+        <p
+          className="w-fit max-w-full truncate text-left text-fg prose-body"
+          title={name}
+        >
+          {name}
+        </p>
         <Button
           variant="quaternary"
           size="none"
@@ -95,7 +103,7 @@ const WebhookNameAndUrl = ({ name, url }: WebhookNameAndUrlProps) => {
           onMouseEnter={() => setIsUrlHovered(true)}
           onMouseLeave={() => setIsUrlHovered(false)}
           aria-label={`Copy webhook URL ${url}`}
-          className="w-full min-w-0 justify-start font-mono uppercase prose-label-numeric"
+          className="w-fit max-w-full min-w-0 justify-start font-mono uppercase prose-label-numeric"
         >
           <span className="truncate">{url}</span>
         </Button>
@@ -104,7 +112,7 @@ const WebhookNameAndUrl = ({ name, url }: WebhookNameAndUrlProps) => {
   )
 }
 
-const rowCellClassName = 'p-0 py-1.5 align-middle [tr:first-child>&]:pt-0'
+const rowCellClassName = 'p-0 py-1.5 align-middle'
 const rowContentClassName = 'flex items-center'
 const actionIconClassName = 'size-4 text-fg-tertiary'
 
@@ -159,7 +167,10 @@ const WebhookRowActions = ({ webhook }: WebhookRowActionsProps) => {
   return (
     <DropdownMenu open={dropDownOpen} onOpenChange={setDropDownOpen}>
       <DropdownMenuTrigger asChild>
-        <IconButton aria-label={`Open actions for ${webhook.name}`}>
+        <IconButton
+          aria-label={`Open actions for ${webhook.name}`}
+          onClick={(e) => e.stopPropagation()}
+        >
           <IndicatorDotsIcon className="-rotate-90" />
         </IconButton>
       </DropdownMenuTrigger>
@@ -190,14 +201,36 @@ const WebhookRowActions = ({ webhook }: WebhookRowActionsProps) => {
 export const WebhookTableRow = ({ webhook }: WebhookRowProps) => {
   const { team } = useDashboard()
   const { timezone } = useTimezone()
+  const router = useRouter()
 
   const createdAt = webhook.createdAt
     ? (formatDate(webhook.createdAt, { timezone }) ?? '-')
     : '-'
 
+  const webhookHref = PROTECTED_URLS.WEBHOOK(team.slug, webhook.id)
+  const handleRowClick = (event: React.MouseEvent<HTMLTableRowElement>) => {
+    if (!(event.target instanceof Node)) return
+    if (!event.currentTarget.contains(event.target)) return
+
+    router.push(webhookHref)
+  }
+
   return (
-    <TableRow>
+    <TableRow
+      className={cn(
+        'group/row relative cursor-pointer hover:bg-bg-1 border-b-0 transition-none',
+        'border-stroke/80 hover:z-20 focus-within:z-10',
+        'has-[button[aria-haspopup=menu][data-state=open]]:z-10'
+      )}
+      onClick={handleRowClick}
+    >
       <TableCell className={cn(rowCellClassName, 'max-w-0')}>
+        <RowHoverFrame
+          className={cn(
+            'group-has-[button[aria-haspopup=menu][data-state=open]]/row:border-stroke',
+            'group-has-[button[aria-haspopup=menu][data-state=open]]/row:[--corner-mark-color:var(--color-fg-tertiary)]'
+          )}
+        />
         <WebhookNameAndUrl name={webhook.name} url={webhook.url} />
       </TableCell>
 
@@ -207,9 +240,9 @@ export const WebhookTableRow = ({ webhook }: WebhookRowProps) => {
         </div>
       </TableCell>
 
-      <TableCell className={cn(rowCellClassName, 'w-[136px]')}>
+      <TableCell className={cn(rowCellClassName, 'w-[184px]')}>
         <div className={cn(rowContentClassName, 'justify-end gap-6')}>
-          <p className="w-[92px] text-left text-fg-tertiary prose-body">
+          <p className="w-[92px] whitespace-nowrap text-left text-fg-tertiary prose-body">
             {createdAt}
           </p>
           <UserAvatar label={team.name} />

@@ -18,6 +18,14 @@ function getTabRedirectPath(tab: string | null, teamSlug: string) {
   return PROTECTED_URLS.SANDBOXES(teamSlug)
 }
 
+/**
+ * `/dashboard?tab=<tab>` resolves the user's default team and redirects to the
+ * team-scoped page (e.g. `/dashboard/keys` -> `/dashboard/<team-slug>/keys`).
+ *
+ * This is NOT legacy: these links are stable public entrypoints crosslinked
+ * from emails, docs, and the CLI, so this route must keep working. See
+ * `TAB_URL_MAP` for the supported tabs.
+ */
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const tab = searchParams.get('tab')
@@ -57,6 +65,17 @@ export async function GET(request: NextRequest) {
 
   if (searchParams.get('support') === 'true') {
     redirectUrl.searchParams.set('support', 'true')
+  }
+
+  // send everything to terminal if it's terminal
+  if (tab === 'terminal') {
+    const terminalParams = ['template', 'sandboxId', 'command']
+    terminalParams.forEach((param) => {
+      const value = searchParams.get(param)
+      if (value) {
+        redirectUrl.searchParams.set(param, value)
+      }
+    })
   }
 
   return NextResponse.redirect(redirectUrl)

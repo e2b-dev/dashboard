@@ -108,10 +108,10 @@ function Calendar({
       disabled={disabledDates}
       formatters={{
         formatMonthDropdown: (date) =>
-          date.toLocaleString('default', { month: 'short' }),
+          date.toLocaleString('en-US', { month: 'short' }),
         formatWeekdayName: (date) =>
           date
-            .toLocaleString('default', { weekday: 'short' })
+            .toLocaleString('en-US', { weekday: 'short' })
             .toUpperCase()
             .slice(0, 3),
         ...formatters,
@@ -255,7 +255,7 @@ function CalendarDayButton({
       ref={ref}
       variant="tertiary"
       size="none"
-      data-day={day.date.toLocaleDateString()}
+      data-day={day.date.toLocaleDateString('en-US')}
       data-selected-single={
         modifiers.selected &&
         !modifiers.range_start &&

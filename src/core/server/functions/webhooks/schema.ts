@@ -45,9 +45,53 @@ export const UpdateWebhookSecretInputSchema = z.object({
   signatureSecret: WebhookSecretSchema,
 })
 
+const DeliveryStatusSchema = z.enum(['success', 'failed'])
+
+export const GetWebhookInputSchema = z.object({
+  webhookId: z.uuid(),
+})
+
+export const ListWebhookDeliveriesInputSchema = z.object({
+  webhookId: z.uuid(),
+  limit: z.number().int().min(1).max(100).optional().default(25),
+  cursor: z.string().optional(),
+  orderAsc: z.boolean().optional().default(false),
+  start: z.iso.datetime().optional(),
+  end: z.iso.datetime().optional(),
+  deliveryStatus: z.array(DeliveryStatusSchema).optional(),
+  eventType: z.array(SandboxLifecycleEventTypeSchema).optional(),
+})
+
+export const GetWebhookDeliveryStatsInputSchema = z
+  .object({
+    webhookId: z.uuid(),
+    start: z.iso.datetime().optional(),
+    end: z.iso.datetime().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.start || !data.end) return
+
+    const start = new Date(data.start)
+    const end = new Date(data.end)
+    if (end.getTime() - start.getTime() <= 7 * 24 * 60 * 60 * 1000) return
+
+    ctx.addIssue({
+      code: 'custom',
+      message: 'Webhook delivery stats range must be 7 days or less',
+      path: ['start'],
+    })
+  })
+
 export type UpsertWebhookFormInput = z.input<typeof UpsertWebhookInputSchema>
 export type UpsertWebhookInput = z.output<typeof UpsertWebhookInputSchema>
 export type DeleteWebhookInput = z.input<typeof DeleteWebhookInputSchema>
 export type UpdateWebhookSecretInput = z.input<
   typeof UpdateWebhookSecretInputSchema
+>
+export type GetWebhookInput = z.input<typeof GetWebhookInputSchema>
+export type ListWebhookDeliveriesInput = z.input<
+  typeof ListWebhookDeliveriesInputSchema
+>
+export type GetWebhookDeliveryStatsInput = z.input<
+  typeof GetWebhookDeliveryStatsInputSchema
 >

@@ -1,5 +1,6 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
+import { featureFlags } from '@/core/modules/feature-flags/feature-flags.server'
 import {
   type AuthUser,
   getUserProfile,
@@ -55,7 +56,7 @@ export const userRouter = createTRPCRouter({
   // never hangs on the identity provider.
   profile: protectedProcedure.query(async ({ ctx }): Promise<AuthUser> => {
     const result = await withTimeout(
-      getUserProfile(ctx.authSession).catch(() => null),
+      getUserProfile().catch(() => null),
       PROFILE_LOOKUP_TIMEOUT_MS
     )
 
@@ -93,7 +94,7 @@ export const userRouter = createTRPCRouter({
 
       if (input.email !== undefined || input.password !== undefined) {
         const profile = await withTimeout(
-          getUserProfile(ctx.authSession).catch(() => null),
+          getUserProfile().catch(() => null),
           PROFILE_LOOKUP_TIMEOUT_MS
         )
         const credentialProfile =
@@ -121,19 +122,16 @@ export const userRouter = createTRPCRouter({
         }
       }
 
-      const result = await updateUser(
-        {
-          email: input.email,
-          password: input.password,
-          name: input.name,
-        },
-        ctx.authSession
-      )
+      const result = await updateUser({
+        email: input.email,
+        password: input.password,
+        name: input.name,
+      })
 
       if (result.ok) {
         // Invalidate sessions when the password changed.
         if (input.password) {
-          await handleCredentialChangeSuccess(ctx.authSession)
+          await handleCredentialChangeSuccess()
         }
 
         return { status: 'ok' as const, user: result.user }
@@ -148,6 +146,23 @@ export const userRouter = createTRPCRouter({
 
   // Creates (POSTs) a fresh E2B access token — non-idempotent, fired on demand.
   createAccessToken: protectedProcedure.mutation(async ({ ctx }) => {
+    const provisioningDisabled = await featureFlags.isEnabled(
+      'disableE2BAccessTokenProvisioning',
+      {
+        user: {
+          id: ctx.user.id,
+          email: ctx.user.email ?? undefined,
+        },
+      }
+    )
+
+    if (provisioningDisabled) {
+      throw new TRPCError({
+        code: 'PRECONDITION_FAILED',
+        message: 'E2B access token provisioning is disabled',
+      })
+    }
+
     try {
       return await generateE2BUserAccessToken(ctx.session.access_token)
     } catch (error) {

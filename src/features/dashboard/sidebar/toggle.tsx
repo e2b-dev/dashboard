@@ -15,6 +15,7 @@ export default function DashboardSidebarToggle() {
 
   const isOpen = open || openMobile
 
+  // Undocumented fallback so users used to the old Ctrl+S shortcut aren't confused.
   useKeydown((event) => {
     if (event.key === 's' && event.ctrlKey) {
       event.preventDefault()
@@ -47,7 +48,7 @@ export default function DashboardSidebarToggle() {
           </motion.span>
         )}
       </AnimatePresence>
-      <ShortcutTooltip keys={['ctrl', 's']}>
+      <ShortcutTooltip keys={['cmd', 'b']}>
         <IconButton onClick={toggleSidebar}>
           {isOpen ? <CollapseLeftIcon /> : <ExpandRightIcon />}
         </IconButton>

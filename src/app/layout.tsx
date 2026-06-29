@@ -12,6 +12,17 @@ import { GTMHead } from '@/features/google-tag-manager'
 import { Toaster } from '@/ui/primitives/toaster'
 import { Body } from './body'
 
+function getPostHogEnvironment() {
+  switch (process.env.VERCEL_ENV) {
+    case 'production':
+    case 'preview':
+    case 'development':
+      return process.env.VERCEL_ENV
+    default:
+      return 'development'
+  }
+}
+
 export const metadata: Metadata = {
   icons: {
     icon: getFaviconIcons(process.env.VERCEL_ENV),
@@ -24,6 +35,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   const postHogEnabled = !!process.env.NEXT_PUBLIC_POSTHOG_KEY
+  const postHogEnvironment = getPostHogEnvironment()
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -31,7 +43,10 @@ export default function RootLayout({
         <GTMHead />
       </Head>
       <Body>
-        <ClientProviders postHogEnabled={postHogEnabled}>
+        <ClientProviders
+          postHogEnabled={postHogEnabled}
+          postHogEnvironment={postHogEnvironment}
+        >
           {children}
           <Suspense>
             <Toaster />

@@ -36,6 +36,10 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
     title: 'Sandboxes',
     type: 'custom',
   }),
+  '/dashboard/*/sandboxes/list2': () => ({
+    title: 'Sandboxes',
+    type: 'custom',
+  }),
   '/dashboard/*/sandboxes/*/*': (pathname) => {
     const parts = pathname.split('/')
     const teamSlug = parts[2]!
@@ -89,12 +93,25 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
       },
     }
   },
+  '/dashboard/*/templates/*/overview': (pathname) =>
+    templateDetailLayoutConfig(pathname),
+  '/dashboard/*/templates/*/tags': (pathname) =>
+    templateDetailLayoutConfig(pathname),
+  '/dashboard/*/templates/*/tags/*': (pathname) =>
+    templateDetailLayoutConfig(pathname),
+  // Keep this more specific glob ahead of /templates/*/builds/* (build detail).
+  '/dashboard/*/templates/*/builds': (pathname) =>
+    templateDetailLayoutConfig(pathname),
 
   // integrations
   '/dashboard/*/webhooks': () => ({
     title: 'Webhooks',
     type: 'default',
   }),
+  '/dashboard/*/webhooks/*/overview': (pathname) =>
+    webhookDetailLayoutConfig(pathname),
+  '/dashboard/*/webhooks/*/deliveries': (pathname) =>
+    webhookDetailLayoutConfig(pathname),
 
   // team
   '/dashboard/*/general': () => ({
@@ -107,6 +124,14 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
   }),
   '/dashboard/*/members': () => ({
     title: 'Members',
+    type: 'default',
+  }),
+  '/dashboard/*/terminal': () => ({
+    title: 'Terminal',
+    type: 'custom',
+  }),
+  '/dashboard/*/agents': () => ({
+    title: 'Agents',
     type: 'default',
   }),
 
@@ -161,6 +186,51 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
     title: 'Account',
     type: 'default',
   }),
+}
+
+// Pathname fallback for detail tabs; usePageTitle replaces with the friendly template name once data loads.
+function templateDetailLayoutConfig(pathname: string): DashboardLayoutConfig {
+  const parts = pathname.split('/')
+  const teamSlug = parts[2]!
+  const templateId = parts[4]!
+  const templateIdSliced =
+    templateId.length > 14
+      ? `${templateId.slice(0, 6)}...${templateId.slice(-6)}`
+      : templateId
+
+  return {
+    title: [
+      {
+        label: 'Templates',
+        href: PROTECTED_URLS.TEMPLATES_LIST(teamSlug),
+      },
+      { label: templateIdSliced },
+    ],
+    type: 'custom',
+    copyValue: templateId,
+  }
+}
+
+function webhookDetailLayoutConfig(pathname: string): DashboardLayoutConfig {
+  const parts = pathname.split('/')
+  const teamSlug = parts[2] ?? ''
+  const webhookId = parts[4] ?? ''
+  const webhookIdSliced = `${webhookId.slice(0, 6)}...${webhookId.slice(-6)}`
+
+  return {
+    title: [
+      {
+        label: 'Webhooks',
+        href: PROTECTED_URLS.WEBHOOKS(teamSlug),
+      },
+      { label: webhookIdSliced },
+    ],
+    type: 'custom',
+    copyValue: webhookId,
+    custom: {
+      includeHeaderBottomStyles: true,
+    },
+  }
 }
 
 /**

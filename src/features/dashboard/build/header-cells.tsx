@@ -1,4 +1,4 @@
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { useTimezone } from '@/features/dashboard/timezone'
@@ -11,7 +11,6 @@ import {
 import { cn } from '@/lib/utils/ui'
 import CopyButtonInline from '@/ui/copy-button-inline'
 import { Button } from '@/ui/primitives/button'
-import { useTemplateTableStore } from '../templates/list/stores/table-store'
 
 export function Template({
   template,
@@ -22,23 +21,21 @@ export function Template({
   templateId: string
   className?: string
 }) {
-  const router = useRouter()
   const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
 
   return (
     <Button
+      asChild
       variant="link"
       size="none"
       className={cn('max-w-full', className)}
-      onClick={(e) => {
-        e.stopPropagation()
-        e.preventDefault()
-
-        useTemplateTableStore.getState().setGlobalFilter(templateId)
-        router.push(PROTECTED_URLS.TEMPLATES_LIST(teamSlug))
-      }}
     >
-      <p className="truncate">{template}</p>
+      <Link
+        href={PROTECTED_URLS.TEMPLATE_OVERVIEW(teamSlug, templateId)}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <p className="truncate">{template}</p>
+      </Link>
     </Button>
   )
 }

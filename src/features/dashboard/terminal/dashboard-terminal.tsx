@@ -1,15 +1,11 @@
 'use client'
 
-import { type CommandHandle, type Sandbox, TimeoutError } from 'e2b'
-import { useCallback, useEffect, useRef, useState } from 'react'
-import type { SandboxManagementAuth } from '@/core/shared/sandbox-management-auth'
-import { attachTerminalWithRetry } from './attach-terminal'
+import type { CommandHandle, Sandbox } from 'e2b'
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react'
+import { useTRPCClient } from '@/trpc/client'
 import {
   DEFAULT_CWD,
   TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS,
-  TERMINAL_ATTACH_MAX_RETRIES,
-  TERMINAL_ATTACH_RETRY_BASE_DELAY_MS,
-  TERMINAL_ATTACH_RETRY_MAX_DELAY_MS,
   TERMINAL_AUTOSTART_DEBOUNCE_MS,
 } from './constants'
 import DashboardTerminalCommandDialog from './dashboard-terminal-command-dialog'
@@ -38,9 +34,10 @@ interface DashboardTerminalProps {
   launchTarget?: TerminalLaunchTarget
   onSandboxAttached?: (sandboxId: string) => void
   onSandboxAttachFailed?: (target: TerminalLaunchTarget | undefined) => void
-  sandboxManagementAuth: SandboxManagementAuth
+  sandboxConnectRequestTimeoutMs?: number
   sandboxScoped?: boolean
   teamSlug: string
+  userId: string
 }
 
 export default function DashboardTerminal({
@@ -49,10 +46,13 @@ export default function DashboardTerminal({
   launchTarget,
   onSandboxAttached,
   onSandboxAttachFailed,
-  sandboxManagementAuth,
+  sandboxConnectRequestTimeoutMs,
   sandboxScoped = false,
   teamSlug,
+  userId,
 }: DashboardTerminalProps) {
+  const trpcClient = useTRPCClient()
+
   const [status, setStatus] = useState<TerminalStatus>('idle')
   const [activeSandboxId, setActiveSandboxId] = useState<string>()
   const [template, setTemplate] = useState(
@@ -71,31 +71,7 @@ export default function DashboardTerminal({
   const inputGenerationRef = useRef(0)
   const pendingCommandsRef = useRef<string[]>([])
   const isStartingRef = useRef(false)
-  const retryResolveRef = useRef<(() => void) | null>(null)
-  const retryTimerRef = useRef<number | null>(null)
   const startGenerationRef = useRef(0)
-
-  const clearAttachRetryTimer = useCallback(() => {
-    if (!retryTimerRef.current) return
-
-    window.clearTimeout(retryTimerRef.current)
-    retryTimerRef.current = null
-    retryResolveRef.current?.()
-    retryResolveRef.current = null
-  }, [])
-
-  const waitForAttachRetry = useCallback(
-    (delayMs: number) =>
-      new Promise<void>((resolve) => {
-        retryResolveRef.current = resolve
-        retryTimerRef.current = window.setTimeout(() => {
-          retryTimerRef.current = null
-          retryResolveRef.current = null
-          resolve()
-        }, delayMs)
-      }),
-    []
-  )
 
   const abortCurrentStart = useCallback(() => {
     startGenerationRef.current += 1
@@ -218,7 +194,7 @@ export default function DashboardTerminal({
 
   const resizePty = useCallback((size: { cols: number; rows: number }) => {
     if (sandboxRef.current && pidRef.current) {
-      void sandboxRef.current.pty.resize(pidRef.current, size)
+      void sandboxRef.current.pty.resize(pidRef.current, size).catch(() => {})
     }
   }, [])
 
@@ -235,7 +211,6 @@ export default function DashboardTerminal({
   })
 
   const closeTerminal = useCallback(async () => {
-    clearAttachRetryTimer()
     clearPendingInput()
 
     const pty = ptyRef.current
@@ -253,7 +228,7 @@ export default function DashboardTerminal({
     } catch {
       // Best-effort cleanup. The sandbox is intentionally left alive.
     }
-  }, [clearAttachRetryTimer, clearPendingInput, requestPtyKill])
+  }, [clearPendingInput, requestPtyKill])
 
   const runCommand = useCallback(
     (command: string, terminalPid?: number) => {
@@ -309,6 +284,8 @@ export default function DashboardTerminal({
       }
 
       const requestedSandboxId = target?.sandboxId
+      const shouldForceNewSandbox =
+        options.forceNewSandbox === true || target?.forceNewSandbox === true
       isStartingRef.current = true
       const startGeneration = startGenerationRef.current + 1
       startGenerationRef.current = startGeneration
@@ -325,50 +302,34 @@ export default function DashboardTerminal({
       appendOutput('Opening terminal...\r\n')
 
       const openSandbox = async () => {
+        let sandbox: Sandbox
+
         if (getSandbox) {
           appendOutput('Connecting to sandbox...\r\n')
-          return getSandbox()
+          sandbox = await getSandbox()
+        } else {
+          const terminalSandbox = await openTerminalSandbox({
+            forceNewSandbox: shouldForceNewSandbox,
+            onStatus: appendOutput,
+            openTerminal: (mutationInput) =>
+              trpcClient.sandbox.openTerminal.mutate(mutationInput),
+            requestTimeoutMs: requestedSandboxId
+              ? (sandboxConnectRequestTimeoutMs ??
+                TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS)
+              : undefined,
+            shouldStoreSession: !sandboxScoped,
+            teamSlug,
+            userId,
+            sandboxId: requestedSandboxId,
+            template: nextTemplate,
+          })
+          sandbox = terminalSandbox.sandbox
         }
 
-        const terminalSandbox = await openTerminalSandbox({
-          forceNewSandbox: options.forceNewSandbox,
-          onStatus: appendOutput,
-          requestTimeoutMs: requestedSandboxId
-            ? TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS
-            : undefined,
-          sandboxManagementAuth,
-          shouldStoreSession: !sandboxScoped,
-          sandboxId: requestedSandboxId,
-          template: nextTemplate,
-        })
-
-        return terminalSandbox.sandbox
+        return sandbox.sandboxId && isCurrentStart() ? sandbox : null
       }
 
-      const canRetrySandboxOpen = Boolean(requestedSandboxId || getSandbox)
-
-      try {
-        const sandbox = await attachTerminalWithRetry({
-          canRetry: canRetrySandboxOpen,
-          isCurrent: isCurrentStart,
-          isRetryableError: (error) => error instanceof TimeoutError,
-          maxRetries: TERMINAL_ATTACH_MAX_RETRIES,
-          onRetry: (retryDelay) => {
-            appendOutput(
-              `Sandbox connection timed out. Retrying in ${Math.round(
-                retryDelay / 1000
-              )}s...\r\n`
-            )
-          },
-          open: openSandbox,
-          retryBaseDelayMs: TERMINAL_ATTACH_RETRY_BASE_DELAY_MS,
-          retryMaxDelayMs: TERMINAL_ATTACH_RETRY_MAX_DELAY_MS,
-          waitForRetry: waitForAttachRetry,
-        })
-
-        if (!sandbox || !isCurrentStart()) return
-
-        appendOutput(`Sandbox ${sandbox.sandboxId} is running.\r\n`)
+      const openPty = async (sandbox: Sandbox) => {
         appendOutput('Opening PTY...\r\n')
         const terminalSize = resizeTerminal()
         const pty = await sandbox.pty.create({
@@ -381,6 +342,30 @@ export default function DashboardTerminal({
             appendOutput(data)
           },
         })
+
+        return pty
+      }
+
+      try {
+        const sandbox = await openSandbox()
+
+        if (!sandbox) {
+          if (isCurrentStart()) {
+            setStatus('idle')
+          }
+          return
+        }
+
+        appendOutput(`Sandbox ${sandbox.sandboxId} is running.\r\n`)
+
+        const pty = await openPty(sandbox)
+
+        if (!pty) {
+          if (isCurrentStart()) {
+            setStatus('idle')
+          }
+          return
+        }
 
         if (!isCurrentStart()) {
           try {
@@ -400,7 +385,7 @@ export default function DashboardTerminal({
         })
         ptyRef.current = pty
         pidRef.current = pty.pid
-        resizeTerminal()
+        resizeTerminal({ force: true })
         setStatus('ready')
         appendOutput(`PTY ${pty.pid} attached.\r\n`)
         focusTerminal()
@@ -435,13 +420,15 @@ export default function DashboardTerminal({
       focusTerminal,
       getSandbox,
       runCommand,
-      sandboxManagementAuth,
+      trpcClient,
+      teamSlug,
+      userId,
       sandboxScoped,
+      sandboxConnectRequestTimeoutMs,
       template,
       onSandboxAttached,
       onSandboxAttachFailed,
       updateTerminalUrl,
-      waitForAttachRetry,
     ]
   )
 
@@ -484,48 +471,55 @@ export default function DashboardTerminal({
     [appendOutput, startTerminal, status, template]
   )
 
-  const confirmPendingLaunch = useCallback(() => {
-    if (!pendingLaunch) return
+  const confirmPendingLaunch = useCallback(
+    (command: string) => {
+      if (!pendingLaunch) return
 
-    const { command, target: launchTarget } = pendingLaunch
-    const launchTemplate = launchTarget?.template ?? 'base'
-    const launchSandboxId = launchTarget?.sandboxId
+      const normalizedCommand = command.trim()
+      if (!normalizedCommand) return
 
-    if (
-      status === 'ready' &&
-      template === launchTemplate &&
-      (!launchSandboxId || activeSandboxId === launchSandboxId)
-    ) {
-      setPendingLaunch(null)
-      runCommand(command)
-      if (activeSandboxId) {
-        updateTerminalUrl({
-          clearCommand: true,
-          sandboxId: activeSandboxId,
-        })
+      const { target: launchTarget } = pendingLaunch
+      const launchTemplate = launchTarget?.template ?? 'base'
+      const launchSandboxId = launchTarget?.sandboxId
+
+      if (
+        status === 'ready' &&
+        template === launchTemplate &&
+        launchTarget?.forceNewSandbox !== true &&
+        (!launchSandboxId || activeSandboxId === launchSandboxId)
+      ) {
+        setPendingLaunch(null)
+        runCommand(normalizedCommand)
+        if (activeSandboxId) {
+          updateTerminalUrl({
+            clearCommand: true,
+            sandboxId: activeSandboxId,
+          })
+        }
+        return
       }
-      return
-    }
 
-    if (isStartingRef.current) {
-      return
-    }
+      if (isStartingRef.current) {
+        return
+      }
 
-    setPendingLaunch(null)
-    pendingCommandsRef.current = [command]
-    void startTerminal({
-      forceNewSandbox: !launchSandboxId && template !== launchTemplate,
-      target: launchTarget,
-    })
-  }, [
-    activeSandboxId,
-    pendingLaunch,
-    runCommand,
-    startTerminal,
-    status,
-    template,
-    updateTerminalUrl,
-  ])
+      setPendingLaunch(null)
+      pendingCommandsRef.current = [normalizedCommand]
+      void startTerminal({
+        forceNewSandbox: !launchSandboxId && template !== launchTemplate,
+        target: launchTarget,
+      })
+    },
+    [
+      activeSandboxId,
+      pendingLaunch,
+      runCommand,
+      startTerminal,
+      status,
+      template,
+      updateTerminalUrl,
+    ]
+  )
 
   const reconnectTarget = sandboxScoped
     ? launchTarget
@@ -577,40 +571,37 @@ export default function DashboardTerminal({
     }
   }, [autoStart, launchTarget, queueTerminalCommand, status])
 
+  const handlePageHide = useEffectEvent((event: PageTransitionEvent) => {
+    if (event.persisted) return
+
+    abortCurrentStart()
+    void closeTerminal()
+  })
+
+  const handlePageShow = useEffectEvent((event: PageTransitionEvent) => {
+    if (!event.persisted || !ptyRef.current) return
+
+    resizeTerminal({ force: true })
+    focusTerminal()
+  })
+
+  const handleTerminalUnmount = useEffectEvent(() => {
+    startGenerationRef.current += 1
+    isStartingRef.current = false
+    clearPendingInput()
+    void closeTerminal()
+  })
+
   useEffect(() => {
-    const handlePageHide = (event: PageTransitionEvent) => {
-      if (event.persisted) return
-
-      abortCurrentStart()
-      void closeTerminal()
-    }
-
-    const handlePageShow = (event: PageTransitionEvent) => {
-      if (!event.persisted || !ptyRef.current) return
-
-      resizeTerminal()
-      focusTerminal()
-    }
-
     window.addEventListener('pagehide', handlePageHide)
     window.addEventListener('pageshow', handlePageShow)
 
     return () => {
       window.removeEventListener('pagehide', handlePageHide)
       window.removeEventListener('pageshow', handlePageShow)
-      abortCurrentStart()
-      clearAttachRetryTimer()
-      clearPendingInput()
-      void closeTerminal()
+      handleTerminalUnmount()
     }
-  }, [
-    abortCurrentStart,
-    clearAttachRetryTimer,
-    clearPendingInput,
-    closeTerminal,
-    focusTerminal,
-    resizeTerminal,
-  ])
+  }, [])
 
   return (
     <>

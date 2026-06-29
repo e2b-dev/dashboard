@@ -38,8 +38,7 @@ export default function DashboardSidebarCommand({
   useKeydown((event) => {
     if (event.key === 'k' && (event.metaKey || event.ctrlKey)) {
       event.preventDefault()
-      event.stopPropagation()
-      setOpen(true)
+      setOpen((prev) => !prev)
     }
 
     return true
@@ -72,7 +71,7 @@ export default function DashboardSidebarCommand({
       </SidebarMenuItem>
       <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput placeholder="Quick Jump to..." />
-        <CommandList className="p-1 pb-3">
+        <CommandList className="scroll-py-3 px-1 py-3">
           <CommandEmpty>No results found.</CommandEmpty>
           <CommandGroup heading="Pages">
             {SIDEBAR_ALL_LINKS.map((link) => (

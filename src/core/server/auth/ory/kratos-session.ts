@@ -5,20 +5,6 @@ import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { getOryIdentityApi } from './client'
 import { readOryError } from './ory-error'
 
-/**
- * Revokes every Kratos identity session for the given identity.
- *
- * Hydra's /oauth2/sessions/logout only ends the OAuth2 session; the Kratos
- * identity cookie on the Ory domain is independent and is what causes the
- * Account Experience to show "Reauthenticate as <last user>" on the next
- * sign-in instead of a fresh provider chooser.
- *
- * We can't surgically target a single session because the OIDC `sid` claim
- * from Hydra is Hydra's own OAuth2 session id, not a Kratos session id, and
- * we don't have access to the user's Kratos cookie from this side. Revoking
- * all identity sessions matches the expected "sign out of identity provider"
- * semantics anyway.
- */
 // Ory uses optimistic locking on identity rows; concurrent writes (e.g. our
 // admin DELETE racing with Hydra's RP-initiated logout cleanup during the
 // same signout flow) return 429 with reason "Conflicting concurrent
@@ -27,12 +13,48 @@ import { readOryError } from './ory-error'
 const REVOKE_MAX_ATTEMPTS = 3
 const REVOKE_BACKOFF_MS = 150
 
+/**
+ * Revokes a single Kratos session by its session id (admin DELETE
+ * /admin/sessions/{id}).
+ *
+ * This is the server-side equivalent of the browser self-service logout: it
+ * ends only the current session, preserving single sign-out semantics. We call
+ * it on sign-out because Hydra's /oauth2/sessions/logout skips the dashboard
+ * /logout -> Kratos bridge whenever Hydra holds no active authentication
+ * session (the production default, where the login is accepted with
+ * remember=false), which would otherwise leave the Kratos identity session
+ * alive and surface "Reauthenticate as <last user>" on the next sign-in.
+ */
+export async function revokeKratosSession(sessionId: string): Promise<void> {
+  await revokeWithRetries('revoke_kratos_session', () =>
+    getOryIdentityApi().disableSession({ id: sessionId })
+  )
+}
+
+/**
+ * Revokes every Kratos identity session for the given identity (admin DELETE
+ * /admin/identities/{id}/sessions).
+ *
+ * Used after a credential change, where signing out every device is the
+ * intended "sign out of identity provider" behavior. The OIDC `sid` claim from
+ * Hydra is Hydra's own OAuth2 session id, not a Kratos session id, so
+ * single-session targeting isn't available on that path.
+ */
 export async function revokeKratosSessionsForIdentity(
   identityId: string
 ): Promise<void> {
+  await revokeWithRetries('revoke_kratos_sessions', () =>
+    getOryIdentityApi().deleteIdentitySessions({ id: identityId })
+  )
+}
+
+async function revokeWithRetries(
+  operation: string,
+  run: () => Promise<unknown>
+): Promise<void> {
   for (let attempt = 1; attempt <= REVOKE_MAX_ATTEMPTS; attempt++) {
     try {
-      await getOryIdentityApi().deleteIdentitySessions({ id: identityId })
+      await run()
       return
     } catch (error) {
       if (error instanceof ResponseError && error.response.status === 404) {
@@ -53,11 +75,11 @@ export async function revokeKratosSessionsForIdentity(
 
       l.error(
         {
-          key: 'auth_provider:revoke_kratos_sessions:error',
+          key: `auth_provider:${operation}:error`,
           context: { ory: oryDetails, attempt },
           error: serializeErrorForLog(error),
         },
-        'failed to revoke Kratos sessions; user may see reauth UX on next sign-in'
+        'failed to revoke Kratos session(s); user may see reauth UX on next sign-in'
       )
       return
     }

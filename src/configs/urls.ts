@@ -1,8 +1,15 @@
 export const AUTH_URLS = {
-  FORGOT_PASSWORD: '/forgot-password',
+  FORGOT_PASSWORD: '/recovery',
   SIGN_IN: '/sign-in',
   SIGN_UP: '/sign-up',
+  SIGN_OUT: '/api/auth/sign-out',
+  SWITCH_ACCOUNT: '/api/auth/switch-account',
+  RECOVERY_COMPLETE: '/api/auth/recovery-complete',
   CLI: '/auth/cli',
+  // Shell-less Ory settings page (password reset + account config). Reachable
+  // with only a Kratos session, so the post-recovery password reset works
+  // before any e2b_session (Hydra token) exists. Kratos' settings_ui_url.
+  SETTINGS: '/settings',
 }
 
 export const PROTECTED_URLS = {
@@ -18,12 +25,15 @@ export const PROTECTED_URLS = {
   GENERAL: (teamSlug: string) => `/dashboard/${teamSlug}/general`,
   KEYS: (teamSlug: string) => `/dashboard/${teamSlug}/keys`,
   MEMBERS: (teamSlug: string) => `/dashboard/${teamSlug}/members`,
+  TERMINAL: (teamSlug: string) => `/dashboard/${teamSlug}/terminal`,
 
   SANDBOXES: (teamSlug: string) =>
     `/dashboard/${teamSlug}/sandboxes/monitoring`,
   SANDBOXES_MONITORING: (teamSlug: string) =>
     `/dashboard/${teamSlug}/sandboxes/monitoring`,
   SANDBOXES_LIST: (teamSlug: string) => `/dashboard/${teamSlug}/sandboxes/list`,
+  SANDBOXES_LIST2: (teamSlug: string) =>
+    `/dashboard/${teamSlug}/sandboxes/list2`,
 
   SANDBOX: (teamSlug: string, sandboxId: string) =>
     `/dashboard/${teamSlug}/sandboxes/${sandboxId}/monitoring`,
@@ -33,15 +43,31 @@ export const PROTECTED_URLS = {
     `/dashboard/${teamSlug}/sandboxes/${sandboxId}/events`,
   SANDBOX_LOGS: (teamSlug: string, sandboxId: string) =>
     `/dashboard/${teamSlug}/sandboxes/${sandboxId}/logs`,
+  SANDBOX_TERMINAL: (teamSlug: string, sandboxId: string) =>
+    `/dashboard/${teamSlug}/sandboxes/${sandboxId}/terminal`,
   SANDBOX_FILESYSTEM: (teamSlug: string, sandboxId: string) =>
     `/dashboard/${teamSlug}/sandboxes/${sandboxId}/filesystem`,
 
   WEBHOOKS: (teamSlug: string) => `/dashboard/${teamSlug}/webhooks`,
+  WEBHOOK: (teamSlug: string, webhookId: string) =>
+    `/dashboard/${teamSlug}/webhooks/${webhookId}/overview`,
+  WEBHOOK_OVERVIEW: (teamSlug: string, webhookId: string) =>
+    `/dashboard/${teamSlug}/webhooks/${webhookId}/overview`,
+  WEBHOOK_DELIVERIES: (teamSlug: string, webhookId: string) =>
+    `/dashboard/${teamSlug}/webhooks/${webhookId}/deliveries`,
 
   TEMPLATES: (teamSlug: string) => `/dashboard/${teamSlug}/templates/list`,
   TEMPLATES_LIST: (teamSlug: string) => `/dashboard/${teamSlug}/templates/list`,
   TEMPLATES_BUILDS: (teamSlug: string) =>
     `/dashboard/${teamSlug}/templates/builds`,
+  TEMPLATE_OVERVIEW: (teamSlug: string, templateId: string) =>
+    `/dashboard/${teamSlug}/templates/${templateId}/overview`,
+  TEMPLATE_DETAIL_BUILDS: (teamSlug: string, templateId: string) =>
+    `/dashboard/${teamSlug}/templates/${templateId}/builds`,
+  TEMPLATE_TAGS: (teamSlug: string, templateId: string) =>
+    `/dashboard/${teamSlug}/templates/${templateId}/tags`,
+  TEMPLATE_TAG_HISTORY: (teamSlug: string, templateId: string, tag: string) =>
+    `/dashboard/${teamSlug}/templates/${templateId}/tags/${encodeURIComponent(tag)}`,
   TEMPLATE_BUILD: (teamSlug: string, templateId: string, buildId: string) =>
     `/dashboard/${teamSlug}/templates/${templateId}/builds/${buildId}`,
 
@@ -69,12 +95,15 @@ export const RESOLVER_URLS = {
 export const TEAM_SPECIFIC_RESOURCE_SEGMENTS: readonly string[] = [
   'sandboxes',
   'templates',
+  'webhooks',
 ]
 
 export const HELP_URLS = {
   BUILD_TEMPLATE:
     'https://e2b.dev/docs/sandbox-template#4-build-your-sandbox-template',
   START_COMMAND: 'https://e2b.dev/docs/sandbox-template/start-cmd',
+  ACCESS_TOKEN_DEPRECATION:
+    'https://e2b.dev/docs/migration/access-token-deprecation',
 }
 
 export const BASE_URL = process.env.VERCEL_ENV

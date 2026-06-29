@@ -485,18 +485,24 @@ function formatDuration(durationMs: number): string {
   return `${hours} hour${hours !== 1 ? 's' : ''}`
 }
 
-function formatDurationCompact(ms: number, showDecimalSeconds = false): string {
+function formatDurationCompact(
+  ms: number,
+  showDecimalSeconds = false,
+  padTrailingField = false
+): string {
   const seconds = Math.floor(ms / 1000)
   const minutes = Math.floor(seconds / 60)
   const hours = Math.floor(minutes / 60)
+  const padDurationPart = (value: number) =>
+    padTrailingField ? pad(value) : `${value}`
 
   if (hours > 0) {
     const remainingMinutes = minutes % 60
-    return `${hours}h ${remainingMinutes}m`
+    return `${hours}h ${padDurationPart(remainingMinutes)}m`
   }
   if (minutes > 0) {
     const remainingSeconds = seconds % 60
-    return `${minutes}m ${remainingSeconds}s`
+    return `${minutes}m ${padDurationPart(remainingSeconds)}s`
   }
   return showDecimalSeconds
     ? `${seconds}.${Math.floor((ms % 1000) / 100)}s`

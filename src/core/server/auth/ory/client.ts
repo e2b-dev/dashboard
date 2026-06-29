@@ -1,9 +1,15 @@
 import 'server-only'
 
-import { Configuration, IdentityApi, OAuth2Api } from '@ory/client-fetch'
+import {
+  Configuration,
+  FrontendApi,
+  IdentityApi,
+  OAuth2Api,
+} from '@ory/client-fetch'
 
 let cachedIdentityApi: IdentityApi | null = null
 let cachedOAuth2Api: OAuth2Api | null = null
+let cachedFrontendApi: FrontendApi | null = null
 
 // IdentityApi resolution:
 //   1. ORY_KRATOS_ADMIN_URL — self-hosted Kratos admin (e.g. local devenv :4434).
@@ -32,6 +38,25 @@ export function getOryOAuth2Api(): OAuth2Api {
     getOryConfiguration(process.env.ORY_HYDRA_ADMIN_URL)
   )
   return cachedOAuth2Api
+}
+
+// FrontendApi talks to Kratos' PUBLIC surface (browser-facing self-service, e.g.
+// the logout flow). It authenticates by forwarding the browser's Kratos session
+// cookie, not the admin PAT, so it targets the public SDK URL with no token —
+// same resolution the edge whoami gate uses.
+export function getOryFrontendApi(): FrontendApi {
+  if (cachedFrontendApi) return cachedFrontendApi
+
+  const basePath =
+    process.env.NEXT_PUBLIC_ORY_SDK_URL ?? process.env.ORY_SDK_URL
+  if (!basePath) {
+    throw new Error('NEXT_PUBLIC_ORY_SDK_URL / ORY_SDK_URL is not configured')
+  }
+
+  cachedFrontendApi = new FrontendApi(
+    new Configuration({ basePath: basePath.replace(/\/$/, '') })
+  )
+  return cachedFrontendApi
 }
 
 function getOryConfiguration(basePathOverride?: string): Configuration {

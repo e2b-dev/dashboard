@@ -62,20 +62,7 @@ cp .env.example .env.local
 3. Enable the upstream identity providers you want in Ory (GitHub, Google, email/password, etc.).
 4. Ensure the Ory access-token audience matches the backend JWT audience setting.
 
-#### b. Key-Value Store Setup (Optional)
-Redis/KV is optional for standard dashboard deployments, including local, enterprise, and on-prem environments. The dashboard can boot and run core auth and dashboard workflows without KV configured.
-
-KV is currently used for optional health-check coverage. If you need that capability, configure a Vercel/Upstash Redis REST-compatible store:
-   ```
-   KV_REST_API_URL=your_redis_rest_api_url
-   KV_REST_API_TOKEN=your_redis_api_write_token
-   ```
-
-> **Note**: `@vercel/kv` expects a Redis REST API. A raw Redis server such as `redis://localhost:6379` is not compatible without an Upstash-compatible REST proxy.
-
-> **Health check**: When `KV_REST_API_URL` and `KV_REST_API_TOKEN` are set, `/api/health` will report `503 degraded` if KV is unreachable. Leave both unset to opt out of the KV health check entirely.
-
-#### c. Start the development server
+#### b. Start the development server
 ```bash
 # Using Bun (recommended)
 bun run dev
@@ -109,7 +96,7 @@ npm run dev
 ```
 src/
 ├── app/          # Next.js App Router pages and layouts
-├── configs/      # Global constants, feature flags, and URL maps
+├── configs/      # Global constants, env flags, and URL maps
 ├── core/         # Server-side logic: actions, adapters, modules, and shared clients
 ├── features/     # Domain-specific components (auth, dashboard, billing, etc.)
 ├── lib/          # Utility functions, hooks, and shared helpers
@@ -129,6 +116,16 @@ We use a layered testing strategy with Vitest and Playwright. For details on tes
 
 ### Environment Variables
 See [`src/lib/env.ts`](./src/lib/env.ts) for all required environment variables and their validation schemas.
+
+### Feature Flags
+Feature flags are evaluated server-side with LaunchDarkly via OpenFeature and hydrated into the dashboard client. To add a flag:
+
+1. Create it in LaunchDarkly `staging` and `production` with the same key.
+2. Add it to [`src/core/modules/feature-flags/definitions.ts`](./src/core/modules/feature-flags/definitions.ts) with a safe default value.
+3. Use `featureFlags.isEnabled(...)` on the server or `useFeatureFlag(...)` inside dashboard client components.
+4. Target users or teams in LaunchDarkly using the `user` and `team` contexts.
+
+Set `LAUNCHDARKLY_SDK_KEY` for environments that should use LaunchDarkly. The SDK key determines the LaunchDarkly environment.
 
 ## Production Deployment
 

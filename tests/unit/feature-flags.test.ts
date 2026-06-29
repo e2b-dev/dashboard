@@ -1,97 +1,141 @@
 import { describe, expect, it, vi } from 'vitest'
-import { z } from 'zod'
-import type {
-  BooleanFeatureFlagDefinition,
-  JsonFeatureFlagDefinition,
-} from '@/configs/flags'
-import { createFeatureFlagService } from '@/core/server/feature-flags/flags.server'
-import { createLaunchDarklyContext } from '@/core/server/feature-flags/launchdarkly'
+import type { FeatureFlagContext } from '@/core/modules/feature-flags/context'
+import { FEATURE_FLAGS } from '@/core/modules/feature-flags/definitions'
+import { createFeatureFlagService } from '@/core/modules/feature-flags/feature-flags.server'
+import { createOpenFeatureEvaluationContext } from '@/core/modules/feature-flags/launchdarkly-openfeature-provider.server'
 
 const context = {
-  userId: 'user-id',
-  teamId: 'team-id',
-}
+  user: {
+    id: 'user-id',
+    email: 'user@example.com',
+  },
+  team: {
+    id: 'team-id',
+    slug: 'team-slug',
+    name: 'Team Name',
+  },
+} satisfies FeatureFlagContext
 
 describe('createFeatureFlagService', () => {
-  it('returns boolean values from the provider', async () => {
-    const flag = {
-      kind: 'boolean',
-      key: 'test-boolean',
-      defaultValue: false,
-    } satisfies BooleanFeatureFlagDefinition
+  it('evaluates boolean flags through the provider', async () => {
     const provider = {
-      getBoolean: vi.fn().mockResolvedValue(true),
-      getJson: vi.fn(),
+      evaluate: vi.fn().mockResolvedValue({
+        getFlagValue: vi.fn().mockReturnValue(true),
+        getPayload: vi.fn(),
+      }),
     }
 
-    const result = await createFeatureFlagService(provider).getBoolean(
-      flag,
+    const result = await createFeatureFlagService(provider).isEnabled(
+      'isAdmin',
       context
     )
 
     expect(result).toBe(true)
-    expect(provider.getBoolean).toHaveBeenCalledWith(flag, context)
+    expect(provider.evaluate).toHaveBeenCalledWith(context, [
+      FEATURE_FLAGS.isAdmin,
+    ])
   })
 
-  it('parses JSON flag values through the flag definition schema', async () => {
-    const flag = {
-      kind: 'json',
-      key: 'test-json',
-      defaultValue: [],
-      schema: z.array(z.object({ name: z.string() })),
-    } satisfies JsonFeatureFlagDefinition<{ name: string }[]>
+  it('falls back to the flag default when the provider has no value', async () => {
     const provider = {
-      getBoolean: vi.fn(),
-      getJson: vi.fn().mockResolvedValue([{ name: 'Codex' }]),
+      evaluate: vi.fn().mockResolvedValue({
+        getFlagValue: vi.fn().mockReturnValue(undefined),
+        getPayload: vi.fn(),
+      }),
     }
 
-    const result = await createFeatureFlagService(provider).getJson(
-      flag,
+    const result = await createFeatureFlagService(provider).isEnabled(
+      'isAdmin',
       context
     )
 
-    expect(result).toEqual([{ name: 'Codex' }])
-    expect(provider.getJson).toHaveBeenCalledWith(flag, context)
+    expect(result).toBe(false)
   })
 
-  it('returns the JSON fallback when provider data is invalid', async () => {
-    const flag = {
-      kind: 'json',
-      key: 'test-json',
-      defaultValue: [{ name: 'Fallback' }],
-      schema: z.array(z.object({ name: z.string() })),
-    } satisfies JsonFeatureFlagDefinition<{ name: string }[]>
+  it('evaluates the registry in a single provider call', async () => {
     const provider = {
-      getBoolean: vi.fn(),
-      getJson: vi.fn().mockResolvedValue([{ name: 123 }]),
+      evaluate: vi.fn().mockResolvedValue({
+        getFlagValue: vi.fn().mockReturnValue(true),
+        getPayload: vi.fn(),
+      }),
     }
 
-    const result = await createFeatureFlagService(provider).getJson(
-      flag,
-      context
-    )
+    const result = await createFeatureFlagService(provider).evaluateAll(context)
 
-    expect(result).toEqual([{ name: 'Fallback' }])
+    expect(provider.evaluate).toHaveBeenCalledTimes(1)
+    expect(provider.evaluate).toHaveBeenCalledWith(context, [
+      FEATURE_FLAGS.agentsEnabled,
+      FEATURE_FLAGS.isAdmin,
+      FEATURE_FLAGS.newSandboxList,
+      FEATURE_FLAGS.disableE2BAccessTokenProvisioning,
+    ])
+    expect(result).toEqual([
+      {
+        id: 'agentsEnabled',
+        key: 'agents_enabled',
+        kind: 'boolean',
+        description: 'Enables the dashboard agents launcher.',
+        defaultValue: false,
+        value: true,
+      },
+      {
+        id: 'isAdmin',
+        key: 'is_admin',
+        kind: 'boolean',
+        description: 'Enables dashboard admin-only surfaces.',
+        defaultValue: false,
+        value: true,
+      },
+      {
+        id: 'newSandboxList',
+        key: 'new_sandbox_list',
+        kind: 'boolean',
+        description:
+          'Enables the new sandbox list with pagination and paused sandbox coverage.',
+        defaultValue: false,
+        value: true,
+      },
+      {
+        id: 'disableE2BAccessTokenProvisioning',
+        key: 'disable_e2b_access_token_provisioning',
+        kind: 'boolean',
+        description:
+          'Disables provisioning of e2b access tokens via generateE2BUserAccessToken. When enabled, the legacy CLI flow shows an upgrade prompt and the createAccessToken tRPC mutation returns an error.',
+        defaultValue: false,
+        value: true,
+      },
+    ])
   })
 })
 
-describe('createLaunchDarklyContext', () => {
-  it('targets teams by stable team id', () => {
-    expect(createLaunchDarklyContext(context)).toEqual({
+describe('createOpenFeatureEvaluationContext', () => {
+  it('maps dashboard users and teams to a LaunchDarkly multi-context', () => {
+    expect(createOpenFeatureEvaluationContext(context)).toEqual({
       kind: 'multi',
       user: {
-        key: 'user-id',
+        targetingKey: 'user-id',
+        email: 'user@example.com',
       },
       team: {
-        key: 'team-id',
+        targetingKey: 'team-id',
+        name: 'Team Name',
+        slug: 'team-slug',
       },
     })
   })
 
-  it('falls back to a user context when no team id is supplied', () => {
-    expect(createLaunchDarklyContext({ userId: 'user-id' })).toEqual({
+  it('maps dashboard users without teams to a user context', () => {
+    expect(
+      createOpenFeatureEvaluationContext({
+        user: {
+          id: 'user-id',
+          email: 'user@example.com',
+        },
+      })
+    ).toEqual({
       kind: 'user',
-      key: 'user-id',
+      targetingKey: 'user-id',
+      email: 'user@example.com',
     })
   })
 })

@@ -174,7 +174,9 @@ function renderUsageMarker(usedMb: number | null, value: number) {
 
   return (
     <>
-      <span className="text-fg">{normalizedUsedMb.toLocaleString()}</span>
+      <span className="text-fg">
+        {normalizedUsedMb.toLocaleString('en-US')}
+      </span>
       <span className="text-fg-secondary">MB</span>
       <span className="text-fg-tertiary px-0.75">·</span>
       <span className="text-fg">{Math.round(value)}</span>

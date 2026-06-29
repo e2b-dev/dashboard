@@ -1,7 +1,6 @@
 'use client'
 
 import { SANDBOX_INSPECT_MINIMUM_ENVD_VERSION } from '@/configs/versioning'
-import type { SandboxManagementAuth } from '@/core/shared/sandbox-management-auth'
 import SandboxInspectProvider from '@/features/dashboard/sandbox/inspect/context'
 import SandboxInspectFilesystem from '@/features/dashboard/sandbox/inspect/filesystem'
 import SandboxInspectViewer from '@/features/dashboard/sandbox/inspect/viewer'
@@ -12,12 +11,10 @@ import SandboxInspectIncompatible from './incompatible'
 
 interface SandboxInspectViewProps {
   rootPath: string
-  sandboxManagementAuth: SandboxManagementAuth
 }
 
 export default function SandboxInspectView({
   rootPath,
-  sandboxManagementAuth,
 }: SandboxInspectViewProps) {
   const { teamSlug } =
     useRouteParams<'/dashboard/[teamSlug]/sandboxes/[sandboxId]'>()
@@ -43,8 +40,8 @@ export default function SandboxInspectView({
 
   return (
     <SandboxInspectProvider
+      key={`${sandboxInfo?.sandboxID ?? 'unknown'}:${rootPath}`}
       rootPath={rootPath}
-      sandboxManagementAuth={sandboxManagementAuth}
     >
       <div className="flex min-h-0 flex-1 gap-4 overflow-hidden p-3 md:p-6">
         <SandboxInspectFilesystem rootPath={rootPath} />

@@ -1,16 +1,16 @@
 'use client'
 
 import type { CellContext } from '@tanstack/react-table'
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useMemo } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import ResourceUsage from '@/features/dashboard/common/resource-usage'
-import { useTemplateTableStore } from '@/features/dashboard/templates/list/stores/table-store'
 import { useTimezone } from '@/features/dashboard/timezone'
 import { formatDateParts } from '@/lib/utils/formatting'
 import { JsonPopover } from '@/ui/json-popover'
+import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
-import { ExternalLinkIcon } from '@/ui/primitives/icons'
+import { DotIcon, ExternalLinkIcon, PausedIcon } from '@/ui/primitives/icons'
 import { useDashboard } from '../../context'
 import { useSandboxMetricsStore } from './stores/metrics-store'
 import type { SandboxListRow } from './table-config'
@@ -18,9 +18,21 @@ import type { SandboxListRow } from './table-config'
 const USAGE_TEXT_CLASSNAME = 'prose-table-numeric text-right'
 const MONO_NUMERIC_TEXT_CLASSNAME =
   'overflow-x-hidden whitespace-nowrap font-mono prose-table-numeric'
+// Started At needs to fit the date, time, and timezone (e.g. "GMT+2") within a
+// fixed-width column, so it drops font-mono for the narrower tabular figures.
+const TIMESTAMP_TEXT_CLASSNAME =
+  'overflow-hidden whitespace-nowrap prose-table-numeric'
 
-type CpuUsageCellProps = { sandboxId: string; totalCpu?: number }
-const CpuUsageCellView = ({ sandboxId, totalCpu }: CpuUsageCellProps) => {
+// Live usage is only available for running sandboxes; paused sandboxes fall
+// back to their allocated specs.
+
+const CpuUsageCellView = ({
+  sandboxId,
+  totalCpu,
+}: {
+  sandboxId: string
+  totalCpu?: number
+}) => {
   const cpuUsedPct = useSandboxMetricsStore(
     (state) => state.metrics?.[sandboxId]?.cpuUsedPct
   )
@@ -35,8 +47,13 @@ const CpuUsageCellView = ({ sandboxId, totalCpu }: CpuUsageCellProps) => {
   )
 }
 
-type RamUsageCellProps = { sandboxId: string; totalMem?: number }
-const RamUsageCellView = ({ sandboxId, totalMem }: RamUsageCellProps) => {
+const RamUsageCellView = ({
+  sandboxId,
+  totalMem,
+}: {
+  sandboxId: string
+  totalMem?: number
+}) => {
   const memUsedMb = useSandboxMetricsStore(
     (state) => state.metrics?.[sandboxId]?.memUsedMb
   )
@@ -51,8 +68,13 @@ const RamUsageCellView = ({ sandboxId, totalMem }: RamUsageCellProps) => {
   )
 }
 
-type DiskUsageCellProps = { sandboxId: string; totalDiskGb: number }
-const DiskUsageCellView = ({ sandboxId, totalDiskGb }: DiskUsageCellProps) => {
+const DiskUsageCellView = ({
+  sandboxId,
+  totalDiskGb,
+}: {
+  sandboxId: string
+  totalDiskGb: number
+}) => {
   const diskUsedGb = useSandboxMetricsStore(
     (state) => state.metrics?.[sandboxId]?.diskUsedGb
   )
@@ -69,34 +91,77 @@ const DiskUsageCellView = ({ sandboxId, totalDiskGb }: DiskUsageCellProps) => {
 
 export const CpuUsageCell = ({ row }: CellContext<SandboxListRow, unknown>) => (
   <div className="flex w-full justify-end">
-    <CpuUsageCellView
-      sandboxId={row.original.sandboxID}
-      totalCpu={row.original.cpuCount}
-    />
+    {row.original.state === 'running' ? (
+      <CpuUsageCellView
+        sandboxId={row.original.sandboxID}
+        totalCpu={row.original.cpuCount}
+      />
+    ) : (
+      <ResourceUsage
+        type="cpu"
+        mode="simple"
+        total={row.original.cpuCount}
+        classNames={{ wrapper: USAGE_TEXT_CLASSNAME }}
+      />
+    )}
   </div>
 )
 
 export const RamUsageCell = ({ row }: CellContext<SandboxListRow, unknown>) => (
   <div className="flex w-full justify-end">
-    <RamUsageCellView
-      sandboxId={row.original.sandboxID}
-      totalMem={row.original.memoryMB}
-    />
+    {row.original.state === 'running' ? (
+      <RamUsageCellView
+        sandboxId={row.original.sandboxID}
+        totalMem={row.original.memoryMB}
+      />
+    ) : (
+      <ResourceUsage
+        type="mem"
+        mode="simple"
+        total={row.original.memoryMB}
+        classNames={{ wrapper: USAGE_TEXT_CLASSNAME }}
+      />
+    )}
   </div>
 )
 
 export const DiskUsageCell = ({
   row,
-}: CellContext<SandboxListRow, unknown>) => {
-  const diskSizeGB = row.original.diskSizeMB / 1024
-
-  return (
-    <div className="flex w-full justify-end">
+}: CellContext<SandboxListRow, unknown>) => (
+  <div className="flex w-full justify-end">
+    {row.original.state === 'running' ? (
       <DiskUsageCellView
         sandboxId={row.original.sandboxID}
-        totalDiskGb={diskSizeGB}
+        totalDiskGb={row.original.diskSizeMB / 1024}
       />
-    </div>
+    ) : (
+      <ResourceUsage
+        type="disk"
+        mode="simple"
+        total={row.original.diskSizeMB / 1024}
+        classNames={{ wrapper: USAGE_TEXT_CLASSNAME }}
+      />
+    )}
+  </div>
+)
+
+export function StateCell({ row }: CellContext<SandboxListRow, unknown>) {
+  const state = row.original.state
+
+  if (state === 'paused') {
+    return (
+      <Badge variant="warning" className="uppercase">
+        <PausedIcon className="size-2 fill-current" />
+        Paused
+      </Badge>
+    )
+  }
+
+  return (
+    <Badge variant="positive" className="uppercase">
+      <DotIcon className="size-3 animate-pulse fill-current" />
+      Running
+    </Badge>
   )
 }
 
@@ -116,27 +181,25 @@ export function TemplateCell({
 }: CellContext<SandboxListRow, unknown>) {
   const templateIdentifier = (getValue() as string | undefined) ?? '--'
   const { team } = useDashboard()
-  const router = useRouter()
   const templateId = row.original.templateID
 
+  if (!templateId) {
+    return (
+      <span className="min-w-0 truncate text-fg-tertiary">
+        {templateIdentifier}
+      </span>
+    )
+  }
+
   return (
-    <Button
-      variant="link-table"
-      size="none"
-      onClick={(e) => {
-        e.stopPropagation()
-        e.preventDefault()
-
-        if (!templateId) {
-          return
-        }
-
-        useTemplateTableStore.getState().setGlobalFilter(templateId)
-        router.push(PROTECTED_URLS.TEMPLATES(team.slug))
-      }}
-    >
-      <span className="min-w-0 truncate">{templateIdentifier}</span>
-      <ExternalLinkIcon className="size-3 shrink-0" />
+    <Button asChild variant="link-table" size="none">
+      <Link
+        href={PROTECTED_URLS.TEMPLATE_OVERVIEW(team.slug, templateId)}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <span className="min-w-0 truncate">{templateIdentifier}</span>
+        <ExternalLinkIcon className="size-3 shrink-0" />
+      </Link>
     </Button>
   )
 }
@@ -155,7 +218,7 @@ export function MetadataCell({
   }, [value])
 
   if (!parsedValue || value.trim() === '{}') {
-    return <span className="text-fg-tertiary block w-full truncate">n/a</span>
+    return <span className="text-fg-tertiary block w-full truncate">--</span>
   }
 
   return (
@@ -179,7 +242,7 @@ export function StartedAtCell({
   }, [dateValue, timezone])
 
   return (
-    <div className={`h-full ${MONO_NUMERIC_TEXT_CLASSNAME}`}>
+    <div className={`h-full ${TIMESTAMP_TEXT_CLASSNAME}`}>
       <span className="text-fg-tertiary">
         {formattedTimestamp?.datePart ?? '--'}
       </span>{' '}

@@ -560,7 +560,11 @@ export interface paths {
         }
         cookie?: never
       }
-      requestBody?: never
+      requestBody?: {
+        content: {
+          'application/json': components['schemas']['SandboxPauseRequest']
+        }
+      }
       responses: {
         /** @description The sandbox was paused successfully and can be resumed */
         204: {
@@ -955,7 +959,39 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    get?: never
+    /** @description List all templates */
+    get: {
+      parameters: {
+        query?: {
+          teamID?: string
+          /** @description Cursor to start the list from */
+          nextToken?: components['parameters']['paginationNextToken']
+          /** @description Maximum number of items to return per page */
+          limit?: components['parameters']['paginationLimit']
+        }
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned all templates */
+        200: {
+          headers: {
+            /** @description Cursor to fetch the next page of results, if more exist */
+            'X-Next-Token'?: string
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Template'][]
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        403: components['responses']['403']
+        500: components['responses']['500']
+      }
+    }
     put?: never
     /**
      * @deprecated
@@ -1044,7 +1080,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** @description List all templates */
+    /**
+     * @deprecated
+     * @description List all templates
+     */
     get: {
       parameters: {
         query?: {
@@ -2599,6 +2638,11 @@ export interface components {
        * @default false
        */
       autoPause: boolean
+      /**
+       * @description Controls the snapshot kind taken when the sandbox auto-pauses on timeout (only relevant when autoPause is true). When false, the auto-pause drops the in-memory state and persists only the filesystem (a filesystem-only snapshot); resuming it cold-boots (reboots) the sandbox from disk. Such a snapshot cannot be auto-resumed by traffic and must be resumed explicitly, so it cannot be combined with autoResume. Defaults to true (full memory snapshot).
+       * @default true
+       */
+      autoPauseMemory: boolean
       autoResume?: components['schemas']['SandboxAutoResumeConfig']
       /** @description Secure all system communication with sandbox */
       secure?: boolean
@@ -2644,6 +2688,13 @@ export interface components {
     SandboxSnapshotRequest: {
       /** @description Optional name for the snapshot template. If a snapshot template with this name already exists, a new build will be assigned to the existing template instead of creating a new one. */
       name?: string
+    }
+    SandboxPauseRequest: {
+      /**
+       * @description Whether to capture a full memory snapshot. When false, only the filesystem is persisted and resuming the sandbox cold-boots (reboots) it from disk, losing in-memory state, running processes, and open connections. Resume it with an explicit request (connect or resume); auto-resume, which can be triggered by arbitrary traffic, refuses such a sandbox. Defaults to true.
+       * @default true
+       */
+      memory: boolean
     }
     /** @description Team metric with timestamp */
     TeamMetric: {
@@ -3155,6 +3206,11 @@ export interface components {
       machineInfo: components['schemas']['MachineInfo']
       status: components['schemas']['NodeStatus']
       /**
+       * Format: date-time
+       * @description Time when the node status was last changed
+       */
+      statusChangedAt: string
+      /**
        * Format: uint32
        * @description Number of sandboxes running on the node
        */
@@ -3189,6 +3245,11 @@ export interface components {
       serviceInstanceID: string
       machineInfo: components['schemas']['MachineInfo']
       status: components['schemas']['NodeStatus']
+      /**
+       * Format: date-time
+       * @description Time when the node status was last changed
+       */
+      statusChangedAt: string
       /**
        * Format: uint32
        * @description Number of sandboxes running on the node

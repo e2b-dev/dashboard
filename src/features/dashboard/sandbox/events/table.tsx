@@ -54,7 +54,7 @@ export const SandboxEventsTable = ({
       <TableHeader className="grid sticky top-0 z-1 bg-bg">
         <TableRow className="flex min-w-full">
           <TableHead
-            className="flex w-[174px] px-0 h-min pb-3 pr-4 text-fg"
+            className="flex w-[190px] px-0 h-min pb-3 pr-4 text-fg"
             data-state="selected"
           >
             <Button
@@ -178,7 +178,7 @@ const SandboxEventRow = ({
       virtualizer={virtualizer}
       height={ROW_HEIGHT_PX}
     >
-      <TableCell className="flex w-[174px] items-center px-0 py-0 pr-4">
+      <TableCell className="flex w-[190px] items-center px-0 py-0 pr-4">
         {formattedTimestamp ? (
           <CopyButtonInline
             value={formattedTimestamp.iso}

@@ -4,6 +4,7 @@ import LoadingLayout from '@/features/dashboard/loading-layout'
 import SandboxInspectFilesystemHeader from '@/features/dashboard/sandbox/inspect/filesystem-header'
 import { ScrollArea } from '@/ui/primitives/scroll-area'
 import { useSandboxContext } from '../context'
+import { useSandboxInspectContext } from './context'
 import SandboxInspectFrame from './frame'
 import { useDirectoryState } from './hooks/use-directory'
 import { useRootChildren } from './hooks/use-node'
@@ -20,6 +21,8 @@ export default function SandboxInspectFilesystem({
   rootPath,
 }: SandboxInspectFilesystemProps) {
   const { isRunning } = useSandboxContext()
+  const { isSandboxResumePending, resumeSandbox, sandboxResumeError } =
+    useSandboxInspectContext()
   const children = useRootChildren()
   const { isLoaded, isLoading } = useDirectoryState(rootPath)
   const showRootLoading =
@@ -27,7 +30,7 @@ export default function SandboxInspectFilesystem({
 
   return (
     <div className="h-full flex-1 flex flex-col gap-1 overflow-hidden">
-      <StoppedBanner rootNodeCount={children.length} />
+      {isRunning && <StoppedBanner rootNodeCount={children.length} />}
       <SandboxInspectFrame
         initial={{
           flex: 1,
@@ -38,8 +41,12 @@ export default function SandboxInspectFilesystem({
         <div className="h-full flex-1 overflow-hidden">
           {showRootLoading ? (
             <LoadingLayout />
-          ) : !children.length ? (
-            <SandboxInspectNotFound />
+          ) : !isRunning || !children.length ? (
+            <SandboxInspectNotFound
+              isResumePending={isSandboxResumePending}
+              onResumeSandbox={() => void resumeSandbox()}
+              resumeError={sandboxResumeError}
+            />
           ) : (
             <ScrollArea className="h-full">
               <SandboxInspectParentDirItem rootPath={rootPath} />

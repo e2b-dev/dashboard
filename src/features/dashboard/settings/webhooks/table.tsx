@@ -20,7 +20,7 @@ interface WebhooksTableProps {
 }
 
 const headerCellClassName =
-  'h-[17px] p-0 pb-2 align-top font-sans! text-[12px] leading-[17px] text-left font-normal text-fg-tertiary uppercase'
+  'h-[17px] p-0 pb-0.5 align-top font-sans! text-[12px] leading-[17px] text-left font-normal text-fg-tertiary uppercase'
 
 export const WebhooksTable = ({
   webhooks,
@@ -34,11 +34,16 @@ export const WebhooksTable = ({
     : 'No webhooks match your search'
 
   return (
-    <Table className={cn('w-full min-w-[720px] table-fixed', className)}>
+    <Table
+      className={cn(
+        'w-full min-w-[720px] table-fixed [&_td:not(:last-child)]:pr-12 [&_th:not(:last-child)]:pr-12',
+        className
+      )}
+    >
       <colgroup>
         <col />
         <col className="w-[264px]" />
-        <col className="w-[136px]" />
+        <col className="w-[184px]" />
         <col className="w-10" />
       </colgroup>
       <TableHeader className="border-b-0">
@@ -56,13 +61,23 @@ export const WebhooksTable = ({
           webhooks.length > 0 && [
             '[&_tr]:border-stroke',
             '[&_tr:last-child]:border-b [&_tr:last-child]:border-stroke',
+            '[&_tr:hover]:border-b-transparent',
+            '[&_tr:last-child:hover]:border-b-transparent',
+            '[&_tr:has(+_tr:hover)]:border-b-transparent',
+            '[&_tr:has(button[aria-haspopup=menu][data-state=open])]:border-b-transparent',
+            '[&_tr:last-child:has(button[aria-haspopup=menu][data-state=open])]:border-b-transparent',
+            '[&_tr:has(+_tr_button[aria-haspopup=menu][data-state=open])]:border-b-transparent',
           ]
         )}
       >
         {isLoading ? (
-          <TableLoadingState colSpan={4} label="Loading webhooks" />
+          <TableLoadingState
+            className="pt-2"
+            colSpan={4}
+            label="Loading webhooks"
+          />
         ) : webhooks.length === 0 ? (
-          <TableEmptyState colSpan={4}>
+          <TableEmptyState className="pt-2" colSpan={4}>
             <WebhookIcon
               aria-hidden
               className={cn(

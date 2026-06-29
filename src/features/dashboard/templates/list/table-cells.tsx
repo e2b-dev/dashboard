@@ -176,7 +176,7 @@ export function ActionsCell({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <IconButton
-            className="size-5"
+            className="size-5 relative z-10"
             disabled={isUpdating || isDeleting || 'isDefault' in template}
           >
             {isUpdating ? (
@@ -238,7 +238,8 @@ export function TemplateIdCell({
 export function TemplateNameCell({
   row,
 }: CellContext<Template | DefaultTemplate, unknown>) {
-  const names = row.original.names
+  const template = row.original
+  const names = template.names
 
   // Prefer a name without "/" as the primary display name
   const primaryName = names.find((name) => !name.includes('/')) ?? names[0]
@@ -247,29 +248,31 @@ export function TemplateNameCell({
   const [wasCopied, copy] = useClipboard(2000)
   const nameValue = (primaryName as string) ?? '--'
 
+  const isDefault = 'isDefault' in template && template.isDefault
+
   const handleCopy = (e: React.MouseEvent) => {
+    e.preventDefault()
     e.stopPropagation()
     if (nameValue !== '--') {
       copy(nameValue)
     }
   }
 
+  // Navigation is handled by the row-level overlay link; interactive controls
+  // here sit above it via z-10 so they stay clickable.
   return (
     <div
-      onClick={handleCopy}
       className={cn(
-        'flex items-center gap-2 prose-body min-w-0 relative group/name w-full h-9',
-        {
-          'text-fg-tertiary': !primaryName,
-          'cursor-pointer': nameValue !== '--',
-        }
+        'flex items-center gap-2 prose-body min-w-0 relative w-full h-9',
+        'group-hover/row:text-fg transition-colors',
+        { 'text-fg-tertiary': !primaryName }
       )}
     >
       <span className="truncate">{nameValue}</span>
       {additionalNames.length > 0 && (
         <HelpTooltip
           trigger={
-            <span className="text-fg-tertiary bg-bg-muted rounded px-1.5 py-0.5 text-xs font-medium">
+            <span className="relative z-10 text-fg-tertiary bg-bg-muted rounded px-1.5 py-0.5 text-xs font-medium">
               +{additionalNames.length}
             </span>
           }
@@ -288,23 +291,24 @@ export function TemplateNameCell({
           </div>
         </HelpTooltip>
       )}
-      {'isDefault' in row.original && row.original.isDefault && (
-        <E2BTemplateBadge />
-      )}
+      {isDefault && <E2BTemplateBadge />}
       {nameValue !== '--' && (
-        <div
+        <button
+          type="button"
+          onClick={handleCopy}
           className={cn(
-            'absolute right-0 p-1.5 rounded bg-bg pointer-events-none',
-            'opacity-0 group-hover/name:opacity-100'
+            'group/copy relative z-10 ml-auto shrink-0 p-1.5 rounded cursor-pointer',
+            'opacity-0 group-hover/row:opacity-100',
+            'focus-visible:opacity-100 focus-visible:outline-none'
           )}
-          aria-hidden="true"
+          aria-label={wasCopied ? 'Copied' : 'Copy template name'}
         >
           {wasCopied ? (
             <CheckmarkIcon className="size-3 text-icon" />
           ) : (
-            <CopyIcon className="size-3 text-icon-secondary" />
+            <CopyIcon className="size-3 text-icon-tertiary group-hover/copy:text-icon" />
           )}
-        </div>
+        </button>
       )}
     </div>
   )
@@ -378,7 +382,7 @@ export function VisibilityCell({
     <Badge
       variant="default"
       size="sm"
-      className={cn('uppercase bg-fill', !isPublic && 'pl-[3]')}
+      className={cn('uppercase bg-fill', !isPublic && 'pl-[3px]')}
     >
       {!isPublic && <PrivateIcon className="size-3 text-fg-tertiary" />}
       {isPublic ? 'Public' : 'Internal'}

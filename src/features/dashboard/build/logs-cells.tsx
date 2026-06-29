@@ -26,10 +26,13 @@ export const Timestamp = ({
   return (
     <CopyButtonInline
       value={date.toISOString()}
-      className="font-mono group prose-table-numeric truncate"
+      truncate={false}
+      className="font-mono group prose-table-numeric"
     >
-      {formatDurationCompact(millisAfterStart, true)}{' '}
-      <span className="group-hover:text-current transition-colors text-fg-tertiary">
+      <span className="inline-block w-[7ch] shrink-0 text-right">
+        {formatDurationCompact(millisAfterStart, true, true)}
+      </span>
+      <span className="ml-2 whitespace-nowrap group-hover:text-current transition-colors text-fg-tertiary">
         {formatDate(timestampUnix, {
           timezone,
           format: 'time-with-centiseconds',
