@@ -1,7 +1,9 @@
 'use client'
 
 import { useCallback, useMemo, useState } from 'react'
+import { useTimezone } from '@/features/dashboard/timezone'
 import { cn } from '@/lib/utils'
+import { formatDateRange } from '@/lib/utils/formatting'
 import { findMatchingPreset } from '@/lib/utils/time-range'
 import { formatTimeframeAsISO8601Interval } from '@/lib/utils/timeframe'
 import CopyButton from '@/ui/copy-button'
@@ -13,10 +15,9 @@ import {
   PopoverTrigger,
 } from '@/ui/primitives/popover'
 import { Separator } from '@/ui/primitives/separator'
-import { TimeRangePicker, type TimeRangeValues } from '@/ui/time-range-picker'
-import { parseTimeRangeValuesToTimestamps } from '@/ui/time-range-picker.logic'
+import { TimeRangePicker } from '@/ui/time-range-picker'
 import { type TimeRangePreset, TimeRangePresets } from '@/ui/time-range-presets'
-import { TIME_RANGE_PRESETS } from './constants'
+import { getUsageTimeRangePresets } from './constants'
 import {
   determineSamplingMode,
   normalizeToEndOfSamplingPeriod,
@@ -41,34 +42,28 @@ export function UsageTimeRangeControls({
   onTimeRangeChange,
   className,
 }: UsageTimeRangeControlsProps) {
+  const { timezone } = useTimezone()
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false)
+
+  const timeRangePresets = useMemo(
+    () => getUsageTimeRangePresets(timezone),
+    [timezone]
+  )
 
   const selectedPresetId = useMemo(
     () =>
       findMatchingPreset(
-        TIME_RANGE_PRESETS,
+        timeRangePresets,
         timeframe.start,
         timeframe.end,
         1000 * 60 * 60 * 24 // 1 day in tolerance
       ),
-    [timeframe.start, timeframe.end]
+    [timeRangePresets, timeframe.start, timeframe.end]
   )
 
   const rangeLabel = useMemo(() => {
-    const opt: Intl.DateTimeFormatOptions = {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    }
-
-    const firstFormatter = new Intl.DateTimeFormat('en-US', opt)
-
-    const lastFormatter = new Intl.DateTimeFormat('en-US', {
-      ...opt,
-      timeZoneName: 'short',
-    })
-    return `${firstFormatter.format(timeframe.start)} - ${lastFormatter.format(timeframe.end)}`
-  }, [timeframe.start, timeframe.end])
+    return formatDateRange(timeframe.start, timeframe.end, { timezone })
+  }, [timeframe.start, timeframe.end, timezone])
 
   const rangeCopyValue = useMemo(
     () => formatTimeframeAsISO8601Interval(timeframe.start, timeframe.end),
@@ -85,14 +80,16 @@ export function UsageTimeRangeControls({
     onTimeRangeChange(
       normalizeToStartOfSamplingPeriod(
         timeframe.start - quarterOfRangeDuration,
-        samplingMode
+        samplingMode,
+        timezone
       ),
       normalizeToEndOfSamplingPeriod(
         timeframe.end - quarterOfRangeDuration,
-        samplingMode
+        samplingMode,
+        timezone
       )
     )
-  }, [timeframe, quarterOfRangeDuration, onTimeRangeChange])
+  }, [timeframe, quarterOfRangeDuration, onTimeRangeChange, timezone])
 
   const handleNextRange = useCallback(() => {
     const samplingMode = determineSamplingMode(timeframe)
@@ -100,23 +97,20 @@ export function UsageTimeRangeControls({
     onTimeRangeChange(
       normalizeToStartOfSamplingPeriod(
         timeframe.start + quarterOfRangeDuration,
-        samplingMode
+        samplingMode,
+        timezone
       ),
       normalizeToEndOfSamplingPeriod(
         timeframe.end + quarterOfRangeDuration,
-        samplingMode
+        samplingMode,
+        timezone
       )
     )
-  }, [timeframe, quarterOfRangeDuration, onTimeRangeChange])
+  }, [timeframe, quarterOfRangeDuration, onTimeRangeChange, timezone])
 
   const handleTimeRangeApply = useCallback(
-    (values: TimeRangeValues) => {
-      const timestamps = parseTimeRangeValuesToTimestamps(values)
-      if (!timestamps) {
-        return
-      }
-
-      onTimeRangeChange(timestamps.start, timestamps.end)
+    (start: number, end: number) => {
+      onTimeRangeChange(start, end)
       setIsTimePickerOpen(false)
     },
     [onTimeRangeChange]
@@ -166,7 +160,7 @@ export function UsageTimeRangeControls({
               startDateTime={new Date(timeframe.start).toISOString()}
               endDateTime={new Date(timeframe.end).toISOString()}
               bounds={USAGE_TIME_RANGE_BOUNDS}
-              onApply={handleTimeRangeApply}
+              onApply={({ start, end }) => handleTimeRangeApply(start, end)}
               className="p-3 w-56 max-md:w-full"
             />
             <Separator
@@ -175,7 +169,7 @@ export function UsageTimeRangeControls({
             />
             <Separator orientation="horizontal" className="w-auto md:hidden" />
             <TimeRangePresets
-              presets={TIME_RANGE_PRESETS}
+              presets={timeRangePresets}
               selectedId={selectedPresetId}
               onSelect={handlePresetSelect}
               className="w-56 max-md:w-full p-3"

@@ -10,6 +10,7 @@ import { PROTECTED_URLS } from '@/configs/urls'
 import type { TeamMember } from '@/core/modules/teams/models'
 import { getTeamDisplayName } from '@/core/modules/teams/utils'
 import { UserAvatar } from '@/features/dashboard/shared'
+import { useTimezone } from '@/features/dashboard/timezone'
 import {
   defaultErrorToast,
   defaultSuccessToast,
@@ -66,6 +67,7 @@ export const MemberTableRow = ({ member, addedByMember }: TableRowProps) => {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const { team, user } = useDashboard()
+  const { timezone } = useTimezone()
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false)
 
   const removeMemberMutation = useMutation(
@@ -109,7 +111,7 @@ export const MemberTableRow = ({ member, addedByMember }: TableRowProps) => {
   const isCurrentUser = member.info.id === user?.id
   const showRemove = shouldShowRemoveMemberAction(member, user?.id)
   const dateStr = member.info.createdAt
-    ? formatDate(new Date(member.info.createdAt), 'MMM d, yyyy')
+    ? formatDate(member.info.createdAt, { timezone })
     : null
   const addedBySystem = wasAddedBySystem(member, addedByMember)
 

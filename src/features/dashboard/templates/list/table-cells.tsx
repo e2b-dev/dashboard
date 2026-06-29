@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { CellContext } from '@tanstack/react-table'
 import { useMemo, useState } from 'react'
 import type { DefaultTemplate, Template } from '@/core/modules/templates/models'
+import { useTimezone } from '@/features/dashboard/timezone'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import {
   defaultErrorToast,
@@ -11,7 +12,7 @@ import {
   useToast,
 } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
-import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
+import { formatDateParts } from '@/lib/utils/formatting'
 import { useTRPC } from '@/trpc/client'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { E2BBadge } from '@/ui/brand'
@@ -316,15 +317,15 @@ export function TemplateNameCell({
 export function CreatedAtCell({
   getValue,
 }: CellContext<Template | DefaultTemplate, unknown>) {
+  const { timezone } = useTimezone()
   const dateValue = getValue() as string
 
   const formattedTimestamp = useMemo(() => {
-    return formatLocalLogStyleTimestamp(dateValue, {
-      includeSeconds: false,
-      includeYear: true,
-      includeTimezone: true,
+    return formatDateParts(dateValue, {
+      timezone,
+      format: 'date-year-time-no-seconds',
     })
-  }, [dateValue])
+  }, [dateValue, timezone])
 
   return (
     <div
@@ -346,15 +347,15 @@ export function CreatedAtCell({
 export function UpdatedAtCell({
   getValue,
 }: CellContext<Template | DefaultTemplate, unknown>) {
+  const { timezone } = useTimezone()
   const dateValue = getValue() as string
 
   const formattedTimestamp = useMemo(() => {
-    return formatLocalLogStyleTimestamp(dateValue, {
-      includeSeconds: false,
-      includeYear: true,
-      includeTimezone: true,
+    return formatDateParts(dateValue, {
+      timezone,
+      format: 'date-year-time-no-seconds',
     })
-  }, [dateValue])
+  }, [dateValue, timezone])
 
   return (
     <div

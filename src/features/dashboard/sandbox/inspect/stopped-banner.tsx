@@ -2,7 +2,9 @@
 
 import { AnimatePresence, motion } from 'motion/react'
 import { useMemo } from 'react'
+import { useTimezone } from '@/features/dashboard/timezone'
 import { cn } from '@/lib/utils'
+import { formatDate } from '@/lib/utils/formatting'
 import {
   CardDescription,
   CardHeader,
@@ -19,6 +21,7 @@ interface StoppedBannerProps {
 
 export function StoppedBanner({ rootNodeCount }: StoppedBannerProps) {
   const { isRunning, sandboxInfo } = useSandboxContext()
+  const { timezone } = useTimezone()
   const lastUpdated = useLastUpdated()
   const watcherError = useWatcherError()
 
@@ -64,7 +67,11 @@ export function StoppedBanner({ rootNodeCount }: StoppedBannerProps) {
                 : 'Filesystem data is stale and is kept locally on your device.'}
               <span className="text-fg-tertiary">
                 {' '}
-                Last updated: {lastUpdated?.toLocaleTimeString('en-US')}
+                Last updated:{' '}
+                {lastUpdated
+                  ? (formatDate(lastUpdated, { timezone, format: 'time' }) ??
+                    '—')
+                  : '—'}
               </span>
             </CardDescription>
           </CardHeader>

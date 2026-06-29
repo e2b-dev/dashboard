@@ -13,7 +13,8 @@ import {
   VirtualizedTableRow,
 } from '@/features/dashboard/common/virtualized-table-ui'
 import { IdBadge } from '@/features/dashboard/shared'
-import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
+import { useTimezone } from '@/features/dashboard/timezone'
+import { formatDateParts } from '@/lib/utils/formatting'
 import CopyButtonInline from '@/ui/copy-button-inline'
 import { JsonPopover } from '@/ui/json-popover'
 import { Button } from '@/ui/primitives/button'
@@ -161,8 +162,10 @@ const SandboxEventRow = ({
   virtualRow,
   virtualizer,
 }: SandboxEventRowProps) => {
-  const formattedTimestamp = formatLocalLogStyleTimestamp(event.timestamp, {
-    includeCentiseconds: true,
+  const { timezone } = useTimezone()
+  const formattedTimestamp = formatDateParts(event.timestamp, {
+    timezone,
+    format: 'date-time-with-centiseconds',
   })
   const eventDataValue = useMemo(
     () => JSON.stringify(event.eventData ?? {}),

@@ -1,5 +1,6 @@
 import type * as echarts from 'echarts/core'
 import { type RefObject, useMemo } from 'react'
+import type { Timezone } from '@/features/dashboard/timezone'
 import type {
   SandboxMetricsLifecycleEventMarker,
   SandboxMetricsSeries,
@@ -67,6 +68,7 @@ interface UseChartOverlaysOptions {
   computedYAxisMax: number
   cssVars: Record<string, string>
   yAxisFormatter: (value: number) => string
+  timezone: Timezone
 }
 
 interface UseChartOverlaysResult {
@@ -88,6 +90,7 @@ export function useChartOverlays({
   computedYAxisMax,
   cssVars,
   yAxisFormatter,
+  timezone,
 }: UseChartOverlaysOptions): UseChartOverlaysResult {
   'use no memo'
 
@@ -207,9 +210,9 @@ export function useChartOverlays({
 
     return {
       xPx: pixel[0],
-      label: formatXAxisLabel(hoveredTimestampMs, true),
+      label: formatXAxisLabel(hoveredTimestampMs, timezone, true),
     }
-  }, [chartRevision, hoveredTimestampMs, showXAxisLabels])
+  }, [chartRevision, hoveredTimestampMs, showXAxisLabels, timezone])
 
   const lifecycleEventOverlays = useMemo<LifecycleEventOverlay[]>(() => {
     void chartRevision

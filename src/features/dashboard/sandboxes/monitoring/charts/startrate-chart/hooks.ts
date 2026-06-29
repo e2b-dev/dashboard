@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { TeamMetricsResponse } from '@/core/modules/sandboxes/models.client'
-import { formatCompactDate, formatDecimal } from '@/lib/utils/formatting'
+import { useTimezone } from '@/features/dashboard/timezone'
+import { formatDate, formatDecimal } from '@/lib/utils/formatting'
 import { transformMetrics } from '../team-metrics-chart'
 import { calculateAverage } from '../team-metrics-chart/utils'
 
@@ -21,11 +22,15 @@ export function useStartRateDisplayMetric(
   chartData: ReturnType<typeof transformMetrics>,
   hoveredValue: HoveredValue | null
 ) {
+  const { timezone } = useTimezone()
   const centralValue = useMemo(() => calculateAverage(chartData), [chartData])
 
   return useMemo(() => {
     if (hoveredValue?.sandboxStartRate !== undefined) {
-      const formattedDate = formatCompactDate(hoveredValue.timestamp)
+      const formattedDate = formatDate(hoveredValue.timestamp, {
+        timezone,
+        format: 'compact-timestamp',
+      })
       return {
         displayValue: formatDecimal(hoveredValue.sandboxStartRate, 3),
         label: 'at',
@@ -37,5 +42,5 @@ export function useStartRateDisplayMetric(
       label: 'average',
       timestamp: null,
     }
-  }, [hoveredValue, centralValue])
+  }, [hoveredValue, centralValue, timezone])
 }

@@ -1,4 +1,7 @@
 import { z } from 'zod'
+import type { Timezone } from '@/features/dashboard/timezone'
+import { getBrowserTimezone } from '@/features/dashboard/timezone/utils'
+import { dateTimePartsToUtcDate } from '@/lib/utils/formatting'
 
 export interface TimeRangeValues {
   startDate: string
@@ -25,9 +28,10 @@ export interface TimeRangeValidationResult {
   issues: TimeRangeIssue[]
 }
 
-interface TimeRangeValidationOptions {
+export interface TimeRangeValidationOptions {
   hideTime: boolean
   bounds?: TimeRangePickerBounds
+  timezone?: Timezone
 }
 
 function normalizeDateInput(value: string): string {
@@ -82,12 +86,12 @@ function parseDateInput(value: string): Date | null {
     return null
   }
 
-  const parsed = new Date(year, month - 1, day)
+  const parsed = new Date(Date.UTC(year, month - 1, day))
 
   if (
-    parsed.getFullYear() !== year ||
-    parsed.getMonth() !== month - 1 ||
-    parsed.getDate() !== day
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
   ) {
     return null
   }
@@ -147,9 +151,9 @@ export function toSecondPrecision(date: Date): Date {
 }
 
 function formatDateValue(date: Date): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
+  const year = date.getUTCFullYear()
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(date.getUTCDate()).padStart(2, '0')
   return `${year}/${month}/${day}`
 }
 
@@ -167,7 +171,8 @@ function formatTimeValue(
 export function parsePickerDateTime(
   dateInput: string,
   timeInput: string | null | undefined,
-  fallbackTime: string
+  fallbackTime: string,
+  timezone: Timezone = getBrowserTimezone()
 ): Date | null {
   const parsedDate = parseDateInput(dateInput)
   if (!parsedDate) {
@@ -181,29 +186,39 @@ export function parsePickerDateTime(
     return null
   }
 
-  return new Date(
-    parsedDate.getFullYear(),
-    parsedDate.getMonth(),
-    parsedDate.getDate(),
-    parsedTime.hours,
-    parsedTime.minutes,
-    parsedTime.seconds,
-    0
+  return dateTimePartsToUtcDate(
+    {
+      year: parsedDate.getUTCFullYear(),
+      month: parsedDate.getUTCMonth() + 1,
+      day: parsedDate.getUTCDate(),
+      hours: parsedTime.hours,
+      minutes: parsedTime.minutes,
+      seconds: parsedTime.seconds,
+    },
+    timezone
   )
 }
 
-function formatBoundaryDateTime(date: Date, hideTime: boolean): string {
-  const datePart = formatDateValue(date)
-  if (hideTime) {
-    return datePart
+function formatBoundaryDateTime(
+  date: Date,
+  hideTime: boolean,
+  timezone: Timezone
+): string {
+  const options: Intl.DateTimeFormatOptions = {
+    timeZone: timezone,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    timeZoneName: 'short',
   }
 
-  const timePart = formatTimeValue(
-    date.getHours(),
-    date.getMinutes(),
-    date.getSeconds()
-  )
-  return `${datePart} ${timePart}`
+  if (!hideTime) {
+    options.hour = '2-digit'
+    options.minute = '2-digit'
+    options.second = '2-digit'
+  }
+
+  return new Intl.DateTimeFormat('en-US', options).format(date)
 }
 
 function normalizeTimeValue(time: string | null): string | null {
@@ -242,17 +257,20 @@ export function normalizeTimeRangeValues(
 }
 
 export function parseTimeRangeValuesToTimestamps(
-  values: TimeRangeValues
+  values: TimeRangeValues,
+  timezone: Timezone = getBrowserTimezone()
 ): { start: number; end: number } | null {
   const startDateTime = parsePickerDateTime(
     values.startDate,
     values.startTime,
-    '00:00:00'
+    '00:00:00',
+    timezone
   )
   const endDateTime = parsePickerDateTime(
     values.endDate,
     values.endTime,
-    '23:59:59'
+    '23:59:59',
+    timezone
   )
 
   if (!startDateTime || !endDateTime) {
@@ -267,19 +285,25 @@ export function parseTimeRangeValuesToTimestamps(
 
 export function validateTimeRangeValues(
   values: TimeRangeValues,
-  { bounds, hideTime }: TimeRangeValidationOptions
+  {
+    bounds,
+    hideTime,
+    timezone = getBrowserTimezone(),
+  }: TimeRangeValidationOptions
 ): TimeRangeValidationResult {
   const issues: TimeRangeIssue[] = []
 
   const startDateTime = parsePickerDateTime(
     values.startDate,
     hideTime ? null : values.startTime,
-    '00:00:00'
+    '00:00:00',
+    timezone
   )
   const endDateTime = parsePickerDateTime(
     values.endDate,
     hideTime ? null : values.endTime,
-    '23:59:59'
+    '23:59:59',
+    timezone
   )
 
   if (!startDateTime) {
@@ -310,14 +334,14 @@ export function validateTimeRangeValues(
   if (minBoundary && startDateTime.getTime() < minBoundary.getTime()) {
     issues.push({
       field: 'startDate',
-      message: `Start date cannot be before ${formatBoundaryDateTime(minBoundary, hideTime)}`,
+      message: `Start date cannot be before ${formatBoundaryDateTime(minBoundary, hideTime, timezone)}`,
     })
   }
 
   if (maxBoundary && endDateTime.getTime() > maxBoundary.getTime()) {
     issues.push({
       field: 'endDate',
-      message: `End date cannot be after ${formatBoundaryDateTime(maxBoundary, hideTime)}`,
+      message: `End date cannot be after ${formatBoundaryDateTime(maxBoundary, hideTime, timezone)}`,
     })
   }
 
