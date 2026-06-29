@@ -1,4 +1,5 @@
 import type { NextRequest } from 'next/server'
+import { l } from '@/core/shared/clients/logger/logger'
 import { APP_OWNED_COOKIES } from './session-cookie'
 
 // Edge-safe Kratos session check for the middleware gate. getServerSession()
@@ -25,13 +26,45 @@ export async function isKratosSessionActive(
       `${sdkUrl.replace(/\/$/, '')}/sessions/whoami`,
       { headers: { cookie, accept: 'application/json' } }
     )
-    if (!response.ok) return false
+    if (!response.ok) {
+      l.debug(
+        {
+          key: 'sso_debug:edge:whoami_failed',
+          context: { status: response.status, sdk_url: sdkUrl },
+        },
+        'SSO debug: edge whoami returned non-OK status'
+      )
+      return false
+    }
     const session = (await response.json()) as {
       active?: boolean
-      identity?: { external_id?: string | null }
+      identity?: {
+        id?: string
+        external_id?: string | null
+        organization_id?: string | null
+      }
     }
+    l.debug(
+      {
+        key: 'sso_debug:edge:whoami_response',
+        context: {
+          active: session.active,
+          identity_id: session.identity?.id,
+          organization_id: session.identity?.organization_id ?? null,
+          has_external_id: !!session.identity?.external_id,
+        },
+      },
+      'SSO debug: edge whoami response'
+    )
     return session.active === true && !!session.identity?.external_id
-  } catch {
+  } catch (error) {
+    l.debug(
+      {
+        key: 'sso_debug:edge:whoami_error',
+        error: error instanceof Error ? error.message : String(error),
+      },
+      'SSO debug: edge whoami threw'
+    )
     return false
   }
 }
