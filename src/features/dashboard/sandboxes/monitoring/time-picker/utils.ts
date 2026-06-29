@@ -1,10 +1,14 @@
 import { calculateStepForDuration } from '@/features/dashboard/sandboxes/monitoring/utils'
 import type { Timezone } from '@/features/dashboard/timezone'
-import { formatDateTimeInput } from '@/lib/utils/formatting'
+import {
+  formatDateTimeInput,
+  instantToCalendarDate,
+} from '@/lib/utils/formatting'
 import type { TimeframeState } from '@/lib/utils/timeframe'
 import {
   CUSTOM_PANEL_HEIGHT,
   CUSTOM_PANEL_WIDTH,
+  MAX_DAYS_AGO,
   TIME_OPTIONS,
 } from './constants'
 
@@ -76,6 +80,15 @@ export function formatTimeframeValues(
   return {
     startDateTime,
     endDateTime,
+  }
+}
+
+export function getCustomTimeCalendarBounds(now: Date, timezone: Timezone) {
+  const nowMs = now.getTime()
+
+  return {
+    minDate: instantToCalendarDate(nowMs - MAX_DAYS_AGO, timezone),
+    maxDate: instantToCalendarDate(nowMs, timezone),
   }
 }
 

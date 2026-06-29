@@ -30,8 +30,7 @@ import {
 } from '@/ui/primitives/form'
 import { TimeInput } from '@/ui/time-input'
 import { parsePickerDateTime } from '@/ui/time-range-picker.logic'
-
-import { MAX_DAYS_AGO } from './constants'
+import { getCustomTimeCalendarBounds } from './utils'
 import {
   type CustomTimeFormValues,
   createCustomTimeFormSchema,
@@ -168,19 +167,10 @@ export const TimePanel = forwardRef<TimePanelRef, TimePanelProps>(
       return () => subscription.unsubscribe()
     }, [form, onValuesChange])
 
-    const { minDate, maxDate } = useMemo(() => {
-      const now = new Date()
-
-      // create new Date object for minDate (31 days ago)
-      const minDate = new Date(now.getTime() - MAX_DAYS_AGO)
-      minDate.setHours(0, 0, 0, 0)
-
-      // create new Date object for maxDate (end of today)
-      const maxDate = new Date(now)
-      maxDate.setHours(23, 59, 59, 999)
-
-      return { minDate, maxDate }
-    }, [])
+    const { minDate, maxDate } = useMemo(
+      () => getCustomTimeCalendarBounds(new Date(), timezone),
+      [timezone]
+    )
 
     return (
       <Form {...form}>

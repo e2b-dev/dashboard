@@ -1,5 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { formatTimeframeValues } from '@/features/dashboard/sandboxes/monitoring/time-picker/utils'
+import {
+  formatTimeframeValues,
+  getCustomTimeCalendarBounds,
+} from '@/features/dashboard/sandboxes/monitoring/time-picker/utils'
 import { createCustomTimeFormSchema } from '@/features/dashboard/sandboxes/monitoring/time-picker/validation'
 import { requireTimezone } from './helpers/timezone'
 
@@ -45,5 +48,21 @@ describe('team monitoring time picker', () => {
     })
 
     expect(result.success).toBe(true)
+  })
+
+  it('aligns calendar bounds with the selected timezone near day boundaries', () => {
+    const auckland = requireTimezone('Pacific/Auckland')
+
+    const { minDate, maxDate } = getCustomTimeCalendarBounds(
+      new Date('2026-06-08T13:00:00.000Z'),
+      auckland
+    )
+
+    expect(minDate.getFullYear()).toBe(2026)
+    expect(minDate.getMonth()).toBe(4)
+    expect(minDate.getDate()).toBe(9)
+    expect(maxDate.getFullYear()).toBe(2026)
+    expect(maxDate.getMonth()).toBe(5)
+    expect(maxDate.getDate()).toBe(9)
   })
 })
