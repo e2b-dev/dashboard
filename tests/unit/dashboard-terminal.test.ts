@@ -3,9 +3,9 @@ import { TERMINAL_SESSION_STORAGE_PREFIX } from '@/features/dashboard/terminal/c
 import {
   hasPtyOptionsSearchParams,
   normalizePtyOptions,
+  parseEnvVars,
   parsePtyOptionsFromSearchParams,
 } from '@/features/dashboard/terminal/pty-options'
-import { parseEnvVars } from '@/features/dashboard/terminal/pty-settings-dialog'
 import { openTerminalSandbox } from '@/features/dashboard/terminal/sandbox-session'
 import {
   clearStoredTerminalSession,

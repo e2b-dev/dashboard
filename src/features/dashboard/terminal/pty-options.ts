@@ -24,6 +24,33 @@ export function normalizePtyOptions(options: TerminalPtyOptions) {
   }
 }
 
+export function formatEnvVars(envs: TerminalPtyOptions['envs']) {
+  if (!envs) return ''
+
+  return Object.entries(envs)
+    .map(([key, value]) => `${key}=${value}`)
+    .join('\n')
+}
+
+export function parseEnvVars(value: string) {
+  const envs: Record<string, string> = {}
+
+  for (const line of value.split(/\r?\n/)) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+
+    const separator = trimmed.indexOf('=')
+    if (separator <= 0) continue
+
+    const key = trimmed.slice(0, separator).trim()
+    if (!key) continue
+
+    envs[key] = trimmed.slice(separator + 1)
+  }
+
+  return Object.keys(envs).length > 0 ? envs : undefined
+}
+
 export function parsePtyOptionsFromSearchParams(
   searchParams: TerminalPtySearchParams
 ) {

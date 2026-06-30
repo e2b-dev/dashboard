@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { Button } from '@/ui/primitives/button'
 import {
   Dialog,
@@ -12,8 +12,11 @@ import {
 } from '@/ui/primitives/dialog'
 import { WarningIcon } from '@/ui/primitives/icons'
 import { Textarea } from '@/ui/primitives/textarea'
-import type { TerminalPtyOptions } from './pty-options'
-import { formatEnvVars, parseEnvVars } from './pty-settings-dialog'
+import {
+  formatEnvVars,
+  parseEnvVars,
+  type TerminalPtyOptions,
+} from './pty-options'
 import type { PendingTerminalLaunch } from './types'
 
 interface DashboardTerminalCommandDialogProps {
@@ -29,15 +32,14 @@ export default function DashboardTerminalCommandDialog({
 }: DashboardTerminalCommandDialogProps) {
   const commandInputId = useId()
   const envInputId = useId()
+  const envInputRef = useRef<HTMLTextAreaElement | null>(null)
   const [command, setCommand] = useState('')
-  const [envs, setEnvs] = useState('')
   const hasCommand = !!launch?.command?.trim()
   const normalizedCommand = command.trim()
   const canEditEnv = !!launch?.target?.requiresConfirmation
 
   useEffect(() => {
     setCommand(launch?.command ?? '')
-    setEnvs(formatEnvVars(launch?.target?.ptyOptions?.envs))
   }, [launch])
 
   return (
@@ -101,10 +103,10 @@ export default function DashboardTerminalCommandDialog({
                 </label>
                 <Textarea
                   id={envInputId}
-                  value={envs}
+                  ref={envInputRef}
+                  defaultValue={formatEnvVars(launch.target?.ptyOptions?.envs)}
                   placeholder={'NAME=value\nDEBUG=1'}
                   className="max-h-32 min-h-20 font-mono text-xs"
-                  onChange={(event) => setEnvs(event.target.value)}
                   spellCheck={false}
                 />
               </div>
@@ -142,7 +144,7 @@ export default function DashboardTerminalCommandDialog({
                 canEditEnv
                   ? {
                       ...launch?.target?.ptyOptions,
-                      envs: parseEnvVars(envs),
+                      envs: parseEnvVars(envInputRef.current?.value ?? ''),
                     }
                   : undefined
               )
