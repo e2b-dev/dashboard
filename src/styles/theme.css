@@ -596,7 +596,7 @@
  * query context (e.g. Tailwind's `@container`). 0.6 ≈ glyph advance per em. */
 @utility prose-value-big-fit {
   font-size: clamp(
-    1rem,
+    0.9375rem,
     calc(100cqi / (var(--char-count, 1) * 0.6)),
     2rem
   ) !important;
