@@ -185,10 +185,14 @@ export async function isCurrentSessionFresh(): Promise<boolean> {
 }
 
 export async function handleInSessionPasswordChange(): Promise<void> {
+  const identityId = (await readKratosSession())?.identity?.id
   const cookie = cookieHeaderWithoutAppOwned((await cookies()).getAll())
-  if (!cookie) return
+  if (!identityId || !cookie) return
 
-  await disableOtherKratosSessions(cookie)
+  await Promise.all([
+    disableOtherKratosSessions(cookie),
+    revokeOryOAuthSessionsForSubject(identityId),
+  ])
 }
 
 export async function handleCredentialChangeSuccess(): Promise<void> {

@@ -229,15 +229,16 @@ describe('Ory account security (Kratos session + e2b_session)', () => {
 
     await handleInSessionPasswordChange()
 
-    // Other Kratos sessions are revoked via the forwarded session cookie, with
-    // app-owned cookies (e2b_session) stripped before forwarding.
+    // Other devices are signed out fully: their Kratos session via the forwarded
+    // cookie (app-owned cookies stripped), and the subject's Hydra OAuth grants
+    // so their cached refresh tokens die too.
     expect(disableOtherKratosSessionsMock).toHaveBeenCalledWith(
       'ory_session_token=kratos-cookie'
     )
-    // The current device stays signed in: no everywhere-revoke, no OAuth
-    // teardown, no e2b_session cookie clear.
+    expect(revokeOAuthSessionsMock).toHaveBeenCalledWith('kratos-uuid')
+    // The current device stays signed in: no all-sessions Kratos revoke and no
+    // e2b_session cookie clear — it re-mints from its live Kratos session.
     expect(revokeKratosSessionsMock).not.toHaveBeenCalled()
-    expect(revokeOAuthSessionsMock).not.toHaveBeenCalled()
     expect(cookieDeleteMock).not.toHaveBeenCalled()
   })
 
