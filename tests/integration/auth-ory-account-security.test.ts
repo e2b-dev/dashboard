@@ -8,8 +8,10 @@ const patchIdentityMock = vi.hoisted(() => vi.fn())
 const revokeOAuthSessionsMock = vi.hoisted(() => vi.fn())
 const revokeKratosSessionsMock = vi.hoisted(() => vi.fn())
 const revokeKratosSessionMock = vi.hoisted(() => vi.fn())
+const disableOtherKratosSessionsMock = vi.hoisted(() => vi.fn())
 const openSessionCookieMock = vi.hoisted(() => vi.fn())
 const cookieDeleteMock = vi.hoisted(() => vi.fn())
+const cookieGetAllMock = vi.hoisted(() => vi.fn())
 
 vi.mock('@ory/nextjs/app', () => ({
   getServerSession: getServerSessionMock,
@@ -19,6 +21,7 @@ vi.mock('next/headers', () => ({
   cookies: () =>
     Promise.resolve({
       get: vi.fn(() => ({ value: 'sealed-cookie' })),
+      getAll: cookieGetAllMock,
       delete: cookieDeleteMock,
     }),
   headers: () =>
@@ -29,6 +32,15 @@ vi.mock('next/headers', () => ({
 
 vi.mock('@/core/server/auth/ory/session-cookie', () => ({
   E2B_SESSION_COOKIE: 'e2b_session',
+  cookieHeaderWithoutAppOwned: (
+    cookieList: ReadonlyArray<{ name: string; value: string }>
+  ) => {
+    const appOwned = new Set(['e2b_session', 'e2b-ory-signup-metadata'])
+    return cookieList
+      .filter((c) => !appOwned.has(c.name))
+      .map((c) => `${c.name}=${c.value}`)
+      .join('; ')
+  },
   openSessionCookie: openSessionCookieMock,
   sessionCookieDeleteOptions: (host: string | null | undefined) => ({
     name: 'e2b_session',
@@ -52,6 +64,7 @@ vi.mock('@/core/server/auth/ory/oauth-session', () => ({
 vi.mock('@/core/server/auth/ory/kratos-session', () => ({
   revokeKratosSessionsForIdentity: revokeKratosSessionsMock,
   revokeKratosSession: revokeKratosSessionMock,
+  disableOtherKratosSessions: disableOtherKratosSessionsMock,
 }))
 
 vi.mock('@/core/shared/clients/logger/logger', () => ({
@@ -59,8 +72,13 @@ vi.mock('@/core/shared/clients/logger/logger', () => ({
   serializeErrorForLog: vi.fn((error: unknown) => error),
 }))
 
-const { getAuthContext, handleCredentialChangeSuccess, signOut, updateUser } =
-  await import('@/core/server/auth/ory/session')
+const {
+  getAuthContext,
+  handleCredentialChangeSuccess,
+  handleInSessionPasswordChange,
+  signOut,
+  updateUser,
+} = await import('@/core/server/auth/ory/session')
 
 const currentIdentity = {
   id: 'kratos-uuid',
@@ -103,12 +121,17 @@ describe('Ory account security (Kratos session + e2b_session)', () => {
     revokeOAuthSessionsMock.mockReset().mockResolvedValue(undefined)
     revokeKratosSessionsMock.mockReset().mockResolvedValue(undefined)
     revokeKratosSessionMock.mockReset().mockResolvedValue(undefined)
+    disableOtherKratosSessionsMock.mockReset().mockResolvedValue(undefined)
     openSessionCookieMock.mockReset().mockResolvedValue({
       accessToken: 'hydra-access-token',
       idToken: 'hydra-id-token',
       expiresAt: 1_900_000_000,
     })
     cookieDeleteMock.mockReset()
+    cookieGetAllMock.mockReset().mockReturnValue([
+      { name: 'ory_session_token', value: 'kratos-cookie' },
+      { name: 'e2b_session', value: 'sealed-cookie' },
+    ])
   })
 
   afterEach(() => {
@@ -199,6 +222,23 @@ describe('Ory account security (Kratos session + e2b_session)', () => {
       path: '/',
       domain: '.app.e2b.dev',
     })
+  })
+
+  it('keeps the current device on an in-session password change: revokes only other sessions', async () => {
+    getServerSessionMock.mockResolvedValue(kratosSession())
+
+    await handleInSessionPasswordChange()
+
+    // Other Kratos sessions are revoked via the forwarded session cookie, with
+    // app-owned cookies (e2b_session) stripped before forwarding.
+    expect(disableOtherKratosSessionsMock).toHaveBeenCalledWith(
+      'ory_session_token=kratos-cookie'
+    )
+    // The current device stays signed in: no everywhere-revoke, no OAuth
+    // teardown, no e2b_session cookie clear.
+    expect(revokeKratosSessionsMock).not.toHaveBeenCalled()
+    expect(revokeOAuthSessionsMock).not.toHaveBeenCalled()
+    expect(cookieDeleteMock).not.toHaveBeenCalled()
   })
 
   it('signs out via Hydra RP-logout and revokes only the current Kratos session', async () => {

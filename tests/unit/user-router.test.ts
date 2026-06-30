@@ -5,14 +5,14 @@ const authMock = vi.hoisted(() => ({
   getAuthContext: vi.fn(),
   getUserProfile: vi.fn(),
   updateUser: vi.fn(),
-  handleCredentialChangeSuccess: vi.fn(),
+  handleInSessionPasswordChange: vi.fn(),
 }))
 
 vi.mock('@/core/server/auth', () => ({
   getAuthContext: authMock.getAuthContext,
   getUserProfile: authMock.getUserProfile,
   updateUser: authMock.updateUser,
-  handleCredentialChangeSuccess: authMock.handleCredentialChangeSuccess,
+  handleInSessionPasswordChange: authMock.handleInSessionPasswordChange,
 }))
 
 vi.mock('@/lib/utils/server', () => ({
@@ -43,7 +43,7 @@ describe('userRouter.update', () => {
     })
     authMock.getUserProfile.mockReset()
     authMock.updateUser.mockReset()
-    authMock.handleCredentialChangeSuccess.mockReset()
+    authMock.handleInSessionPasswordChange.mockReset()
   })
 
   afterEach(() => {
@@ -85,5 +85,18 @@ describe('userRouter.update', () => {
       password: 'new-password',
       name: undefined,
     })
+    expect(authMock.handleInSessionPasswordChange).toHaveBeenCalled()
+  })
+
+  it('keeps the current device signed in (no session teardown) on a name change', async () => {
+    authMock.updateUser.mockResolvedValue({ ok: true, user: authUser })
+
+    const ctx = await createTRPCContext({ headers: new Headers() })
+    const caller = createCaller(ctx)
+
+    const result = await caller.update({ name: 'Ada Lovelace' })
+
+    expect(result).toEqual({ status: 'ok', user: authUser })
+    expect(authMock.handleInSessionPasswordChange).not.toHaveBeenCalled()
   })
 })

@@ -51,11 +51,13 @@ type FormValues = z.infer<typeof formSchema>
 interface PasswordSettingsProps {
   className?: string
   showPasswordChangeForm: boolean
+  isSessionFresh: boolean
 }
 
 export function PasswordSettings({
   className,
   showPasswordChangeForm,
+  isSessionFresh,
 }: PasswordSettingsProps) {
   'use no memo'
 
@@ -64,12 +66,12 @@ export function PasswordSettings({
   const trpc = useTRPC()
   const [reauthDialogOpen, setReauthDialogOpen] = useState(false)
   const [clientShowPasswordForm, setClientShowPasswordForm] = useState(
-    showPasswordChangeForm
+    showPasswordChangeForm || isSessionFresh
   )
 
   useEffect(() => {
-    setClientShowPasswordForm(showPasswordChangeForm)
-  }, [showPasswordChangeForm])
+    setClientShowPasswordForm(showPasswordChangeForm || isSessionFresh)
+  }, [showPasswordChangeForm, isSessionFresh])
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -118,6 +120,11 @@ export function PasswordSettings({
   }
 
   function handleChangePassword() {
+    if (isSessionFresh) {
+      setClientShowPasswordForm(true)
+      return
+    }
+
     setReauthDialogOpen(true)
   }
 
@@ -179,10 +186,12 @@ export function PasswordSettings({
             </Form>
           ) : (
             <>
-              <p className="text-fg-secondary text-md">
-                To change your password, you'll need to re-authenticate for
-                security.
-              </p>
+              {!isSessionFresh && (
+                <p className="text-fg-secondary text-md">
+                  To change your password, you'll need to re-authenticate for
+                  security.
+                </p>
+              )}
               <Button
                 type="button"
                 onClick={handleChangePassword}

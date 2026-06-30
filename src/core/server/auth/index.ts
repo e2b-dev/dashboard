@@ -6,6 +6,8 @@ export {
   getSettingsProfile,
   getUserProfile,
   handleCredentialChangeSuccess,
+  handleInSessionPasswordChange,
+  isCurrentSessionFresh,
   revokeCurrentSession,
   signOut,
   startReauthForAccountSettings,

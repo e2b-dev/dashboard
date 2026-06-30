@@ -2,7 +2,7 @@ import 'server-only'
 
 import { ResponseError } from '@ory/client-fetch'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
-import { getOryIdentityApi } from './client'
+import { getOryFrontendApi, getOryIdentityApi } from './client'
 import { readOryError } from './ory-error'
 
 // Ory uses optimistic locking on identity rows; concurrent writes (e.g. our
@@ -45,6 +45,26 @@ export async function revokeKratosSessionsForIdentity(
 ): Promise<void> {
   await revokeWithRetries('revoke_kratos_sessions', () =>
     getOryIdentityApi().deleteIdentitySessions({ id: identityId })
+  )
+}
+
+/**
+ * Revokes every Kratos session for the current identity EXCEPT the one the
+ * forwarded session cookie belongs to (Kratos public DELETE /sessions, i.e.
+ * `disableMyOtherSessions`).
+ *
+ * Used after an in-session password change so the user stays signed in on the
+ * device they made the change from while every other device is signed out of
+ * the dashboard. Cookie-authenticated rather than admin-PAT: "current" is
+ * defined by the forwarded session, so it targets exactly this device. The
+ * admin API has no all-except-current variant (deleteIdentitySessions includes
+ * the current session).
+ */
+export async function disableOtherKratosSessions(
+  cookie: string
+): Promise<void> {
+  await revokeWithRetries('disable_other_kratos_sessions', () =>
+    getOryFrontendApi().disableMyOtherSessions({ cookie })
   )
 }
 
