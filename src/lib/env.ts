@@ -10,6 +10,7 @@ export const serverSchema = z.object({
   POSTHOG_PROJECT_ID: z.string().min(1).optional(),
 
   LAUNCHDARKLY_SDK_KEY: z.string().min(1).optional(),
+  APP_URL: z.url().optional(),
 
   // JWE key for the e2b_session cookie. Generate with `openssl rand -hex 32`.
   E2B_SESSION_SECRET: z.string().min(1).optional(),

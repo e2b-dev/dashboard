@@ -110,6 +110,6 @@ export const BASE_URL = process.env.VERCEL_ENV
   ? process.env.VERCEL_ENV === 'production'
     ? 'https://e2b.dev'
     : `https://${process.env.VERCEL_BRANCH_URL}`
-  : 'http://localhost:3000'
+  : (process.env.APP_URL ?? 'http://localhost:3000')
 
 export const GITHUB_URL = 'https://github.com/e2b-dev'
