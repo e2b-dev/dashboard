@@ -38,8 +38,10 @@ export default async function TeamTerminalPage({
   params,
   searchParams,
 }: TeamTerminalPageProps) {
-  const [{ teamSlug }, terminalSearchParams] =
-    await Promise.all([params, searchParams])
+  const [{ teamSlug }, terminalSearchParams] = await Promise.all([
+    params,
+    searchParams,
+  ])
   const { command = '', sandboxId, template } = terminalSearchParams
   const hasTemplateOverride = template !== undefined
   const requestedTemplate = hasTemplateOverride
@@ -63,11 +65,14 @@ export default async function TeamTerminalPage({
     return (
       <TerminalSignIn
         command={command}
+        cwd={terminalSearchParams.cwd}
+        env={terminalSearchParams.env}
         sandboxId={terminalSandboxId}
         teamSlug={teamSlug}
         template={
           terminalSandboxId ? template : (requestedTemplate ?? undefined)
         }
+        user={terminalSearchParams.user}
       />
     )
   }
@@ -169,20 +174,33 @@ async function getSandboxInTeam({
 
 function TerminalSignIn({
   command,
+  cwd,
+  env,
   sandboxId,
   teamSlug,
   template,
+  user,
 }: {
   command?: string
+  cwd?: string
+  env?: string | string[]
   sandboxId?: string
   teamSlug: string
   template?: string
+  user?: string
 }) {
-  const returnToQuery = new URLSearchParams({
+  const returnToParams = new URLSearchParams({
     ...(command ? { command } : {}),
+    ...(cwd ? { cwd } : {}),
     ...(sandboxId ? { sandboxId } : {}),
     ...(template ? { template } : {}),
-  }).toString()
+    ...(user ? { user } : {}),
+  })
+  const envValues = Array.isArray(env) ? env : env ? [env] : []
+  for (const value of envValues) {
+    returnToParams.append('env', value)
+  }
+  const returnToQuery = returnToParams.toString()
   const returnTo = `${PROTECTED_URLS.TERMINAL(teamSlug)}${
     returnToQuery ? `?${returnToQuery}` : ''
   }`

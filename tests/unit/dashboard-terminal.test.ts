@@ -182,7 +182,7 @@ describe('dashboard terminal helpers', () => {
       expect(hasPtyOptionsSearchParams({ env: ['DEBUG=1'] })).toBe(true)
     })
 
-    it('round-trips saved PTY options through a cookie', () => {
+    it('round-trips saved PTY options through a cookie without envs', () => {
       writeStoredTerminalPtyOptions('user-123', {
         user: 'root',
         cwd: '/app',
@@ -194,9 +194,6 @@ describe('dashboard terminal helpers', () => {
       expect(readStoredTerminalPtyOptions('user-123')).toEqual({
         user: 'root',
         cwd: '/app',
-        envs: {
-          DEBUG: '1',
-        },
       })
       expect(window.localStorage.setItem).not.toHaveBeenCalled()
     })

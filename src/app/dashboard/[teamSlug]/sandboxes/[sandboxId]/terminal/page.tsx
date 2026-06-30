@@ -2,11 +2,11 @@ import { redirect } from 'next/navigation'
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import { getAuthContext } from '@/core/server/auth'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
+import SandboxTerminalView from '@/features/dashboard/sandbox/terminal/view'
 import {
   hasPtyOptionsSearchParams,
   parsePtyOptionsFromSearchParams,
 } from '@/features/dashboard/terminal/pty-options'
-import SandboxTerminalView from '@/features/dashboard/sandbox/terminal/view'
 
 interface SandboxTerminalPageProps {
   params: Promise<{
