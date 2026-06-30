@@ -26,6 +26,7 @@ import {
   fromOryIdentity,
   readIdentityDisplayProfile,
 } from './identity'
+import { decodeJwtClaims, readStringClaim } from './jwt-claims'
 import {
   revokeKratosSession,
   revokeKratosSessionsForIdentity,
@@ -49,7 +50,9 @@ const ACCOUNT_SETTINGS_REAUTH_RETURN_TO = `${PROTECTED_URLS.ACCOUNT_SETTINGS}?re
 
 export async function getAuthContext(): Promise<AuthContext | null> {
   const kratos = await readKratosSession()
-  if (!kratos?.active || !kratos.identity) return null
+  if (!kratos?.active || !kratos.identity) {
+    return getAuthContextFromSessionTokens()
+  }
 
   // public.users.id lives only on the Kratos identity's external_id. Without it
   // the dashboard can't key the user to its own records (PostHog, telemetry,
@@ -72,6 +75,34 @@ export async function getAuthContext(): Promise<AuthContext | null> {
 
   return {
     user: fromKratosSessionIdentity(kratos.identity),
+    accessToken: tokens.accessToken,
+  }
+}
+
+async function getAuthContextFromSessionTokens(): Promise<AuthContext | null> {
+  const tokens = await readSessionTokens()
+  if (!tokens?.accessToken || !tokens.idToken) return null
+
+  const claims = decodeJwtClaims(tokens.idToken)
+  const identity = await resolveOryIdentity({
+    subjects: [readStringClaim(claims, 'sub')],
+    email: readStringClaim(claims, 'email'),
+  })
+  if (!identity) return null
+
+  return {
+    user: identity.external_id
+      ? fromOryIdentity(identity)
+      : {
+          id: identity.id,
+          identityId: identity.id,
+          email: readStringClaim(claims, 'email'),
+          name: readStringClaim(claims, 'name'),
+          avatarUrl: null,
+          providers: [],
+          canChangeEmail: false,
+          canChangePassword: false,
+        },
     accessToken: tokens.accessToken,
   }
 }
