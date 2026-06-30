@@ -12,12 +12,14 @@ import {
 } from '@/ui/primitives/dialog'
 import { WarningIcon } from '@/ui/primitives/icons'
 import { Textarea } from '@/ui/primitives/textarea'
+import type { TerminalPtyOptions } from './pty-options'
+import { formatEnvVars, parseEnvVars } from './pty-settings-dialog'
 import type { PendingTerminalLaunch } from './types'
 
 interface DashboardTerminalCommandDialogProps {
   launch: PendingTerminalLaunch | null
   onCancel: () => void
-  onConfirm: (command?: string) => void
+  onConfirm: (command?: string, ptyOptions?: TerminalPtyOptions) => void
 }
 
 export default function DashboardTerminalCommandDialog({
@@ -26,12 +28,16 @@ export default function DashboardTerminalCommandDialog({
   onConfirm,
 }: DashboardTerminalCommandDialogProps) {
   const commandInputId = useId()
+  const envInputId = useId()
   const [command, setCommand] = useState('')
+  const [envs, setEnvs] = useState('')
   const hasCommand = !!launch?.command?.trim()
   const normalizedCommand = command.trim()
+  const canEditEnv = !!launch?.target?.requiresConfirmation
 
   useEffect(() => {
     setCommand(launch?.command ?? '')
+    setEnvs(formatEnvVars(launch?.target?.ptyOptions?.envs))
   }, [launch])
 
   return (
@@ -85,14 +91,22 @@ export default function DashboardTerminalCommandDialog({
                 </code>
               </div>
             ) : null}
-            {launch.target?.ptyOptions?.envs ? (
+            {canEditEnv ? (
               <div className="space-y-1">
-                <p className="prose-label text-fg-tertiary">Environment</p>
-                <code className="block max-h-32 overflow-auto whitespace-pre-wrap border bg-bg px-3 py-2 font-mono text-xs text-fg">
-                  {Object.entries(launch.target.ptyOptions.envs)
-                    .map(([key, value]) => `${key}=${value}`)
-                    .join('\n')}
-                </code>
+                <label
+                  className="prose-label text-fg-tertiary"
+                  htmlFor={envInputId}
+                >
+                  Environment
+                </label>
+                <Textarea
+                  id={envInputId}
+                  value={envs}
+                  placeholder={'NAME=value\nDEBUG=1'}
+                  className="max-h-32 min-h-20 font-mono text-xs"
+                  onChange={(event) => setEnvs(event.target.value)}
+                  spellCheck={false}
+                />
               </div>
             ) : null}
             {hasCommand ? (
@@ -122,7 +136,17 @@ export default function DashboardTerminalCommandDialog({
           <Button
             type="button"
             disabled={hasCommand && !normalizedCommand}
-            onClick={() => onConfirm(hasCommand ? normalizedCommand : undefined)}
+            onClick={() =>
+              onConfirm(
+                hasCommand ? normalizedCommand : undefined,
+                canEditEnv
+                  ? {
+                      ...launch?.target?.ptyOptions,
+                      envs: parseEnvVars(envs),
+                    }
+                  : undefined
+              )
+            }
           >
             {hasCommand ? 'Run command' : 'Start terminal'}
           </Button>

@@ -34,6 +34,7 @@ export default function PtySettingsDialog({
   const userId = useId()
   const cwdId = useId()
   const envsId = useId()
+  const makeDefaultId = useId()
   const [user, setUser] = useState(options.user ?? '')
   const [cwd, setCwd] = useState(options.cwd ?? '')
   const [envs, setEnvs] = useState(formatEnvVars(options.envs))
@@ -106,8 +107,9 @@ export default function PtySettingsDialog({
             />
           </label>
 
-          <label className="flex items-center gap-2">
+          <label className="flex items-center gap-2" htmlFor={makeDefaultId}>
             <Checkbox
+              id={makeDefaultId}
               checked={makeDefault}
               onCheckedChange={(checked) => setMakeDefault(checked === true)}
             />
@@ -127,7 +129,7 @@ export default function PtySettingsDialog({
   )
 }
 
-function formatEnvVars(envs: TerminalPtyOptions['envs']) {
+export function formatEnvVars(envs: TerminalPtyOptions['envs']) {
   if (!envs) return ''
 
   return Object.entries(envs)

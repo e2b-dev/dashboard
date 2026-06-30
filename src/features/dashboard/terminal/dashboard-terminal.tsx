@@ -76,8 +76,9 @@ export default function DashboardTerminal({
     () => normalizePtyOptions(launchTarget?.ptyOptions ?? {}),
     [launchTarget?.ptyOptions]
   )
-  const [ptyOptions, setPtyOptions] =
-    useState<TerminalPtyOptions>(launchTargetPtyOptions)
+  const [ptyOptions, setPtyOptions] = useState<TerminalPtyOptions>(
+    launchTargetPtyOptions
+  )
   const [arePtySettingsLoaded, setArePtySettingsLoaded] = useState(
     !allowPtySettings
   )
@@ -497,19 +498,31 @@ export default function DashboardTerminal({
   )
 
   const confirmPendingLaunch = useCallback(
-    (command?: string) => {
+    (command?: string, confirmedPtyOptions?: TerminalPtyOptions) => {
       if (!pendingLaunch) return
 
       const normalizedCommand = command?.trim() ?? ''
       if (pendingLaunch.command && !normalizedCommand) return
 
       const { target: launchTarget } = pendingLaunch
+      const hasConfirmedPtyOptions = confirmedPtyOptions !== undefined
+      const nextPtyOptions = hasConfirmedPtyOptions
+        ? normalizePtyOptions({
+            ...launchTarget?.ptyOptions,
+            ...confirmedPtyOptions,
+          })
+        : ptyOptionsRef.current
+      const nextLaunchTarget = {
+        ...launchTarget,
+        ...(hasConfirmedPtyOptions ? { ptyOptions: nextPtyOptions } : {}),
+      }
       const launchTemplate = launchTarget?.template ?? 'base'
       const launchSandboxId = launchTarget?.sandboxId
 
       if (
         status === 'ready' &&
         template === launchTemplate &&
+        launchTarget?.requiresConfirmation !== true &&
         launchTarget?.forceNewSandbox !== true &&
         (!launchSandboxId || activeSandboxId === launchSandboxId)
       ) {
@@ -531,11 +544,15 @@ export default function DashboardTerminal({
       }
 
       setPendingLaunch(null)
+      if (hasConfirmedPtyOptions) {
+        ptyOptionsRef.current = nextPtyOptions
+        setPtyOptions(nextPtyOptions)
+      }
       pendingCommandsRef.current = normalizedCommand ? [normalizedCommand] : []
       void startTerminal({
         forceNewSandbox: !launchSandboxId && template !== launchTemplate,
         target: {
-          ...launchTarget,
+          ...nextLaunchTarget,
           requiresConfirmation: false,
         },
       })
