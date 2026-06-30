@@ -118,7 +118,7 @@ export const buildsColumns: ColumnDef<ListedBuildModel>[] = [
   {
     accessorKey: 'envdVersion',
     header: 'ENVD',
-    size: 96,
+    size: 48,
     enableResizing: false,
     cell: ({ row }) => <Envd version={row.original.envdVersion} />,
   },
