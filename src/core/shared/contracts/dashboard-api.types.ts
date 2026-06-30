@@ -96,7 +96,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Get build statuses */
+    /** Build statuses */
     get: {
       parameters: {
         query: {
@@ -139,7 +139,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Get build details */
+    /** Build details */
     get: {
       parameters: {
         query?: never
@@ -182,7 +182,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Get sandbox record */
+    /** Sandbox record */
     get: {
       parameters: {
         query?: never
@@ -469,7 +469,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Get user profile */
+    /** User profile */
     get: {
       parameters: {
         query?: never
@@ -860,7 +860,7 @@ export interface paths {
       cookie?: never
     }
     /**
-     * Get template
+     * Template
      * @description Returns a single template owned by the current team. Dashboard-shaped read, indexed by template ID.
      */
     get: {

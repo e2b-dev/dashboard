@@ -11,7 +11,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** @description Health check */
+    /**
+     * Health check
+     * @description Health check
+     */
     get: {
       parameters: {
         query?: never
@@ -46,7 +49,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** @description List all teams */
+    /**
+     * List teams
+     * @description List all teams
+     */
     get: {
       parameters: {
         query?: never
@@ -84,7 +90,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** @description Get metrics for the team */
+    /**
+     * Team metrics
+     * @description Get metrics for the team
+     */
     get: {
       parameters: {
         query?: {
@@ -130,7 +139,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** @description Get the maximum metrics for the team in the given interval */
+    /**
+     * Maximum team metrics
+     * @description Get the maximum metrics for the team in the given interval
+     */
     get: {
       parameters: {
         query: {
@@ -178,7 +190,11 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** @description List all running sandboxes */
+    /**
+     * List running sandboxes
+     * @deprecated
+     * @description List all running sandboxes. Use GET /v2/sandboxes instead.
+     */
     get: {
       parameters: {
         query?: {
@@ -206,7 +222,10 @@ export interface paths {
       }
     }
     put?: never
-    /** @description Create a sandbox from the template */
+    /**
+     * Create sandbox
+     * @description Create a sandbox from the template
+     */
     post: {
       parameters: {
         query?: never
@@ -247,7 +266,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** @description List all sandboxes */
+    /**
+     * List sandboxes (v2)
+     * @description List all sandboxes
+     */
     get: {
       parameters: {
         query?: {
@@ -295,7 +317,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** @description List metrics for given sandboxes */
+    /**
+     * List sandbox metrics
+     * @description List metrics for given sandboxes
+     */
     get: {
       parameters: {
         query: {
@@ -338,6 +363,7 @@ export interface paths {
       cookie?: never
     }
     /**
+     * Sandbox logs
      * @deprecated
      * @description Get sandbox logs. Use /v2/sandboxes/{sandboxID}/logs instead.
      */
@@ -386,7 +412,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** @description Get sandbox logs */
+    /**
+     * Sandbox logs (v2)
+     * @description Get sandbox logs
+     */
     get: {
       parameters: {
         query?: {
@@ -438,7 +467,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** @description Get a sandbox by id */
+    /**
+     * Sandbox
+     * @description Get a sandbox by id
+     */
     get: {
       parameters: {
         query?: never
@@ -466,7 +498,10 @@ export interface paths {
     }
     put?: never
     post?: never
-    /** @description Kill a sandbox */
+    /**
+     * Kill sandbox
+     * @description Kill a sandbox
+     */
     delete: {
       parameters: {
         query?: never
@@ -502,7 +537,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** @description Get sandbox metrics */
+    /**
+     * Sandbox metrics
+     * @description Get sandbox metrics
+     */
     get: {
       parameters: {
         query?: {
@@ -550,7 +588,10 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** @description Pause the sandbox */
+    /**
+     * Pause sandbox
+     * @description Pause the sandbox
+     */
     post: {
       parameters: {
         query?: never
@@ -595,6 +636,7 @@ export interface paths {
     get?: never
     put?: never
     /**
+     * Resume sandbox
      * @deprecated
      * @description Resume the sandbox
      */
@@ -643,7 +685,10 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** @description Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. */
+    /**
+     * Connect sandbox
+     * @description Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended.
+     */
     post: {
       parameters: {
         query?: never
@@ -698,7 +743,10 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** @description Set the timeout for the sandbox. The sandbox will expire x seconds from the time of the request. Calling this method multiple times overwrites the TTL, each time using the current timestamp as the starting point to measure the timeout duration. */
+    /**
+     * Set sandbox timeout
+     * @description Set the timeout for the sandbox. The sandbox will expire x seconds from the time of the request. Calling this method multiple times overwrites the TTL, each time using the current timestamp as the starting point to measure the timeout duration.
+     */
     post: {
       parameters: {
         query?: never
@@ -740,7 +788,10 @@ export interface paths {
       cookie?: never
     }
     get?: never
-    /** @description Update the network configuration for a running sandbox. Replaces the current egress rules with the provided configuration. Omitting field clears it. */
+    /**
+     * Update sandbox network
+     * @description Update the network configuration for a running sandbox. Replaces the current egress rules with the provided configuration. Omitting field clears it.
+     */
     put: {
       parameters: {
         query?: never
@@ -785,7 +836,10 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** @description Refresh the sandbox extending its time to live */
+    /**
+     * Refresh sandbox
+     * @description Refresh the sandbox extending its time to live
+     */
     post: {
       parameters: {
         query?: never
@@ -827,7 +881,10 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** @description Create a persistent snapshot from the sandbox's current state. Snapshots can be used to create new sandboxes and persist beyond the original sandbox's lifetime. */
+    /**
+     * Create snapshot
+     * @description Create a persistent snapshot from the sandbox's current state. Snapshots can be used to create new sandboxes and persist beyond the original sandbox's lifetime.
+     */
     post: {
       parameters: {
         query?: never
@@ -871,7 +928,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** @description List all snapshots for the team */
+    /**
+     * List snapshots
+     * @description List all snapshots for the team
+     */
     get: {
       parameters: {
         query?: {
@@ -917,7 +977,10 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** @description Create a new template */
+    /**
+     * Create template (v3)
+     * @description Create a new template
+     */
     post: {
       parameters: {
         query?: never
@@ -959,7 +1022,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** @description List all templates */
+    /**
+     * List templates (v2)
+     * @description List all templates
+     */
     get: {
       parameters: {
         query?: {
@@ -994,6 +1060,7 @@ export interface paths {
     }
     put?: never
     /**
+     * Create template (v2)
      * @deprecated
      * @description Create a new template
      */
@@ -1037,7 +1104,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** @description Get an upload link for a tar file containing build layer files */
+    /**
+     * Template build file upload URL
+     * @description Get an upload link for a tar file containing build layer files
+     */
     get: {
       parameters: {
         query?: never
@@ -1081,6 +1151,7 @@ export interface paths {
       cookie?: never
     }
     /**
+     * List templates
      * @deprecated
      * @description List all templates
      */
@@ -1110,6 +1181,7 @@ export interface paths {
     }
     put?: never
     /**
+     * Create template
      * @deprecated
      * @description Create a new template
      */
@@ -1153,7 +1225,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** @description List all builds for a template */
+    /**
+     * List template builds
+     * @description List all builds for a template
+     */
     get: {
       parameters: {
         query?: {
@@ -1185,6 +1260,7 @@ export interface paths {
     }
     put?: never
     /**
+     * Rebuild template
      * @deprecated
      * @description Rebuild an template
      */
@@ -1216,7 +1292,10 @@ export interface paths {
         500: components['responses']['500']
       }
     }
-    /** @description Delete a template */
+    /**
+     * Delete template
+     * @description Delete a template
+     */
     delete: {
       parameters: {
         query?: never
@@ -1242,6 +1321,7 @@ export interface paths {
     options?: never
     head?: never
     /**
+     * Update template
      * @deprecated
      * @description Update template
      */
@@ -1284,6 +1364,7 @@ export interface paths {
     get?: never
     put?: never
     /**
+     * Start template build
      * @deprecated
      * @description Start the build
      */
@@ -1325,7 +1406,10 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** @description Start the build */
+    /**
+     * Start template build (v2)
+     * @description Start the build
+     */
     post: {
       parameters: {
         query?: never
@@ -1372,7 +1456,10 @@ export interface paths {
     delete?: never
     options?: never
     head?: never
-    /** @description Update template */
+    /**
+     * Update template (v2)
+     * @description Update template
+     */
     patch: {
       parameters: {
         query?: never
@@ -1411,7 +1498,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** @description Get template build info */
+    /**
+     * Template build status
+     * @description Get template build info
+     */
     get: {
       parameters: {
         query?: {
@@ -1459,7 +1549,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** @description Get template build logs */
+    /**
+     * Template build logs
+     * @description Get template build logs
+     */
     get: {
       parameters: {
         query?: {
@@ -1512,7 +1605,10 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** @description Assign tag(s) to a template build */
+    /**
+     * Assign template tags
+     * @description Assign tag(s) to a template build
+     */
     post: {
       parameters: {
         query?: never
@@ -1541,7 +1637,10 @@ export interface paths {
         500: components['responses']['500']
       }
     }
-    /** @description Delete multiple tags from templates */
+    /**
+     * Delete template tags
+     * @description Delete multiple tags from templates
+     */
     delete: {
       parameters: {
         query?: never
@@ -1580,7 +1679,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** @description List all tags for a template */
+    /**
+     * List template tags
+     * @description List all tags for a template
+     */
     get: {
       parameters: {
         query?: never
@@ -1622,7 +1724,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** @description Check if template with given alias exists */
+    /**
+     * Check template alias
+     * @description Check if template with given alias exists
+     */
     get: {
       parameters: {
         query?: never
@@ -1664,7 +1769,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** @description List all nodes */
+    /**
+     * List nodes
+     * @description List all nodes
+     */
     get: {
       parameters: {
         query?: {
@@ -1705,7 +1813,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** @description Get node info */
+    /**
+     * Node info
+     * @description Get node info
+     */
     get: {
       parameters: {
         query?: {
@@ -1735,7 +1846,10 @@ export interface paths {
       }
     }
     put?: never
-    /** @description Change status of a node */
+    /**
+     * Change node status
+     * @description Change status of a node
+     */
     post: {
       parameters: {
         query?: never
@@ -1964,7 +2078,11 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** @description Create a new access token */
+    /**
+     * Create access token
+     * @deprecated
+     * @description Create a new access token. Deprecated; use an API key (E2B_API_KEY) instead.
+     */
     post: {
       parameters: {
         query?: never
@@ -1988,6 +2106,7 @@ export interface paths {
           }
         }
         401: components['responses']['401']
+        410: components['responses']['410']
         500: components['responses']['500']
       }
     }
@@ -2007,7 +2126,10 @@ export interface paths {
     get?: never
     put?: never
     post?: never
-    /** @description Delete an access token */
+    /**
+     * Delete access token
+     * @description Delete an access token
+     */
     delete: {
       parameters: {
         query?: never
@@ -2043,7 +2165,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** @description List all team API keys */
+    /**
+     * List team API keys
+     * @description List all team API keys
+     */
     get: {
       parameters: {
         query?: never
@@ -2067,7 +2192,10 @@ export interface paths {
       }
     }
     put?: never
-    /** @description Create a new team API key */
+    /**
+     * Create team API key
+     * @description Create a new team API key
+     */
     post: {
       parameters: {
         query?: never
@@ -2110,7 +2238,10 @@ export interface paths {
     get?: never
     put?: never
     post?: never
-    /** @description Delete a team API key */
+    /**
+     * Delete team API key
+     * @description Delete a team API key
+     */
     delete: {
       parameters: {
         query?: never
@@ -2136,7 +2267,10 @@ export interface paths {
     }
     options?: never
     head?: never
-    /** @description Update a team API key */
+    /**
+     * Update team API key
+     * @description Update a team API key
+     */
     patch: {
       parameters: {
         query?: never
@@ -2173,7 +2307,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** @description List all team volumes */
+    /**
+     * List team volumes
+     * @description List all team volumes
+     */
     get: {
       parameters: {
         query?: never
@@ -2197,7 +2334,10 @@ export interface paths {
       }
     }
     put?: never
-    /** @description Create a new team volume */
+    /**
+     * Create team volume
+     * @description Create a new team volume
+     */
     post: {
       parameters: {
         query?: never
@@ -2238,7 +2378,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** @description Get team volume info */
+    /**
+     * Team volume
+     * @description Get team volume info
+     */
     get: {
       parameters: {
         query?: never
@@ -2266,7 +2409,10 @@ export interface paths {
     }
     put?: never
     post?: never
-    /** @description Delete a team volume */
+    /**
+     * Delete team volume
+     * @description Delete a team volume
+     */
     delete: {
       parameters: {
         query?: never
@@ -3454,6 +3600,15 @@ export interface components {
     }
     /** @description Conflict */
     409: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['Error']
+      }
+    }
+    /** @description Gone */
+    410: {
       headers: {
         [name: string]: unknown
       }
