@@ -1,5 +1,6 @@
+import { getBrowserCookie, setBrowserCookie } from '@/lib/utils/browser-cookies'
 import {
-  TERMINAL_PTY_SETTINGS_STORAGE_PREFIX,
+  TERMINAL_PTY_SETTINGS_COOKIE_PREFIX,
   TERMINAL_SESSION_STORAGE_PREFIX,
 } from './constants'
 import type { TerminalPtyOptions } from './pty-options'
@@ -10,8 +11,8 @@ function getTerminalSessionStorageKey(userId: string) {
   return `${TERMINAL_SESSION_STORAGE_PREFIX}:${userId}`
 }
 
-function getTerminalPtySettingsStorageKey(userId: string) {
-  return `${TERMINAL_PTY_SETTINGS_STORAGE_PREFIX}:${userId}`
+function getTerminalPtySettingsCookieKey(userId: string) {
+  return `${TERMINAL_PTY_SETTINGS_COOKIE_PREFIX}:${userId}`
 }
 
 export function readStoredTerminalSession(userId: string) {
@@ -48,9 +49,7 @@ export function readStoredTerminalPtyOptions(
   userId: string
 ): TerminalPtyOptions {
   try {
-    const value = window.localStorage.getItem(
-      getTerminalPtySettingsStorageKey(userId)
-    )
+    const value = getBrowserCookie(getTerminalPtySettingsCookieKey(userId))
     if (!value) return {}
 
     const options = JSON.parse(value) as Partial<TerminalPtyOptions>
@@ -66,12 +65,12 @@ export function writeStoredTerminalPtyOptions(
   options: TerminalPtyOptions
 ) {
   try {
-    window.localStorage.setItem(
-      getTerminalPtySettingsStorageKey(userId),
+    setBrowserCookie(
+      getTerminalPtySettingsCookieKey(userId),
       JSON.stringify(normalizeStoredPtyOptions(options))
     )
   } catch {
-    // Terminal launch should still succeed if browser storage is unavailable.
+    // Terminal launch should still succeed if browser cookies are unavailable.
   }
 }
 
