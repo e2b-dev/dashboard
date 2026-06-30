@@ -79,10 +79,19 @@ function normalizeStoredPtyOptions(
 ): TerminalPtyOptions {
   const user = typeof options.user === 'string' ? options.user : undefined
   const cwd = typeof options.cwd === 'string' ? options.cwd : undefined
+  const envs =
+    options.envs && typeof options.envs === 'object'
+      ? Object.fromEntries(
+          Object.entries(options.envs).filter(
+            ([key, value]) => key && typeof value === 'string'
+          )
+        )
+      : undefined
 
   return {
     ...(user !== undefined ? { user } : {}),
     ...(cwd !== undefined ? { cwd } : {}),
+    ...(envs && Object.keys(envs).length > 0 ? { envs } : {}),
   }
 }
 

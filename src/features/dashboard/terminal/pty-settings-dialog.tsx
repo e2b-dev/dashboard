@@ -128,7 +128,7 @@ function PtySettingsForm({
             onCheckedChange={(checked) => setMakeDefault(checked === true)}
           />
           <span className="prose-label text-fg-tertiary uppercase">
-            Make user and directory default
+            Make default
           </span>
         </label>
       </div>
