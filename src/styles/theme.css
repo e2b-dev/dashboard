@@ -591,6 +591,19 @@
   font-weight: 700 !important;
 }
 
+/* Scales a monospace value down by character count to fit its container's
+ * inline size, avoiding line wrap. Requires `--char-count` and a container
+ * query context (e.g. Tailwind's `@container`). 0.6 ≈ glyph advance per em. */
+@utility prose-value-big-fit {
+  font-size: clamp(
+    1rem,
+    calc(100cqi / (var(--char-count, 1) * 0.6)),
+    2rem
+  ) !important;
+  line-height: 1.1 !important;
+  font-weight: 700 !important;
+}
+
 /* Loader utilities */
 @utility loader {
   display: inline-flex;

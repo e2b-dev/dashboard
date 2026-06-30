@@ -1,6 +1,6 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import type { TemplateDetail } from '@/core/modules/templates/models'
 import { getTemplateDisplayName } from '@/features/dashboard/templates/helpers'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
@@ -35,8 +35,11 @@ export function TemplateSection({ template, teamSlug }: TemplateSectionProps) {
 
   return (
     <OverviewSection label="Template" divider={false}>
-      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
-        <h2 className="prose-value-big font-mono uppercase tracking-tight break-all">
+      <div className="@container flex flex-col gap-1">
+        <h2
+          style={{ '--char-count': displayName.length } as CSSProperties}
+          className="prose-value-big-fit font-mono uppercase tracking-tight break-all"
+        >
           {displayName}
         </h2>
         <TemplateIdCopy templateID={template.templateID} />
