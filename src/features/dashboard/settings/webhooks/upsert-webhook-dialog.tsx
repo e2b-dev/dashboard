@@ -41,27 +41,33 @@ import {
 
 type UpsertWebhookDialogProps =
   | {
-      children: React.ReactNode
+      children?: React.ReactNode
       mode: 'create'
       webhook?: undefined
+      open?: boolean
+      onOpenChange?: (open: boolean) => void
     }
   | {
-      children: React.ReactNode
+      children?: React.ReactNode
       mode: 'update'
       webhook: Webhook
+      open?: boolean
+      onOpenChange?: (open: boolean) => void
     }
 
 export function UpsertWebhookDialog({
   children: trigger,
   mode,
   webhook,
+  open: controlledOpen,
+  onOpenChange,
 }: UpsertWebhookDialogProps) {
   'use no memo'
 
   const { team } = useDashboard()
   const trpc = useTRPC()
   const queryClient = useQueryClient()
-  const [open, setOpen] = useState(false)
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
   const [lastSelectedEvent, setLastSelectedEvent] =
     useState<SandboxLifecycleEventType | null>(null)
@@ -72,6 +78,8 @@ export function UpsertWebhookDialog({
 
   const isUpdateMode = mode === 'update'
   const totalSteps = isUpdateMode ? 1 : 2
+  const open = controlledOpen ?? uncontrolledOpen
+  const setOpen = onOpenChange ?? setUncontrolledOpen
 
   const listQueryKey = trpc.webhooks.list.queryOptions({
     teamSlug: team.slug,
@@ -250,7 +258,7 @@ export function UpsertWebhookDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={handleDialogChange}>
-        <DialogTrigger asChild>{trigger}</DialogTrigger>
+        {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
 
         <DialogContent className="flex flex-col gap-4 px-6 pt-5 pb-6 h-[685px] max-h-[calc(100svh-2rem)] overflow-hidden">
           <DialogHeader className="gap-0.5">
