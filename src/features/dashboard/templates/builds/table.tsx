@@ -40,7 +40,9 @@ import { BuildsTableBody } from './table-body'
 import {
   buildsColumns,
   buildsTableConfig,
+  DEFAULT_SORT_COLUMN_ID,
   fallbackData,
+  ID_COLUMN_ID,
   isRightAlignedColumn,
 } from './table-config'
 
@@ -237,14 +239,20 @@ const BuildsTable = ({
           {table.getHeaderGroups().map((headerGroup) => (
             <DataTableRow
               key={headerGroup.id}
-              className="border-b-0 -mx-2 px-2 w-[calc(100%+16px)]"
+              className="border-b-0 -mx-2 px-2 w-[calc(100%+16px)] gap-8"
             >
               {headerGroup.headers.map((header) => (
                 <DataTableHead
                   key={header.id}
                   header={header}
-                  className="shrink-0"
+                  className={cn(
+                    'shrink-0',
+                    header.id === ID_COLUMN_ID && 'pl-4'
+                  )}
                   align={isRightAlignedColumn(header.id) ? 'right' : 'left'}
+                  sorting={
+                    header.id === DEFAULT_SORT_COLUMN_ID ? true : undefined
+                  }
                 >
                   <span>
                     {header.isPlaceholder

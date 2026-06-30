@@ -20,13 +20,19 @@ import {
 
 export const fallbackData: ListedBuildModel[] = []
 
+// Builds arrive newest-first from the API and are never re-sorted client-side;
+// this column carries the fixed default-sort (desc) indicator in the header.
+export const DEFAULT_SORT_COLUMN_ID = 'createdAt'
+
+// Extra left padding balances spacing between the left-aligned and right-aligned column groups.
+export const ID_COLUMN_ID = 'id'
+
 const RIGHT_ALIGNED_COLUMNS = new Set([
+  'duration',
   'cpuCount',
   'memoryMB',
   'diskSizeMB',
   'envdVersion',
-  'createdAt',
-  'duration',
 ])
 
 export const isRightAlignedColumn = (id: string) =>
@@ -60,6 +66,28 @@ export const buildsColumns: ColumnDef<ListedBuildModel>[] = [
     ),
   },
   {
+    accessorKey: 'createdAt',
+    header: 'Started',
+    size: 68,
+    enableResizing: false,
+    cell: ({ row }) => <StartedAt timestamp={row.original.createdAt} />,
+  },
+  {
+    accessorKey: 'duration',
+    header: 'Duration',
+    size: 68,
+    enableResizing: false,
+    cell: ({ row }) => (
+      <div className="w-full text-end">
+        <Duration
+          createdAt={row.original.createdAt}
+          finishedAt={row.original.finishedAt}
+          isBuilding={row.original.status === 'building'}
+        />
+      </div>
+    ),
+  },
+  {
     accessorKey: 'id',
     header: 'ID',
     size: 128,
@@ -89,32 +117,10 @@ export const buildsColumns: ColumnDef<ListedBuildModel>[] = [
   },
   {
     accessorKey: 'envdVersion',
-    header: 'ENVD Ver.',
-    size: 96,
+    header: 'ENVD',
+    size: 48,
     enableResizing: false,
     cell: ({ row }) => <Envd version={row.original.envdVersion} />,
-  },
-  {
-    accessorKey: 'createdAt',
-    header: 'Started',
-    size: 110,
-    enableResizing: false,
-    cell: ({ row }) => <StartedAt timestamp={row.original.createdAt} />,
-  },
-  {
-    accessorKey: 'duration',
-    header: 'Duration',
-    size: 110,
-    enableResizing: false,
-    cell: ({ row }) => (
-      <div className="w-full text-end">
-        <Duration
-          createdAt={row.original.createdAt}
-          finishedAt={row.original.finishedAt}
-          isBuilding={row.original.status === 'building'}
-        />
-      </div>
-    ),
   },
 ]
 

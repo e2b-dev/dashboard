@@ -59,7 +59,7 @@ function DataTableHead<TData, TValue>({
         }
       >
         {children}
-        {canSort && (
+        {(canSort || sorting !== undefined) && (
           <div
             className={cn(
               'size-5 min-w-5 flex items-center justify-center',
