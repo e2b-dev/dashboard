@@ -159,7 +159,7 @@ export const WebhooksPageContent = ({
           </Suspense>
         </div>
 
-        <div className="bg-bg w-full overflow-x-auto">
+        <div className="bg-bg -mx-3 overflow-x-auto px-3">
           <Suspense
             fallback={
               <WebhooksTable isLoading totalWebhookCount={0} webhooks={[]} />
