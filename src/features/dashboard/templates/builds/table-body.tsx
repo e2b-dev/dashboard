@@ -5,7 +5,7 @@ import { useVirtualRows } from '@/lib/hooks/use-virtual-rows'
 import { cn } from '@/lib/utils'
 import { DataTableBody, DataTableCell, DataTableRow } from '@/ui/data-table'
 import { RowHoverFrame } from '@/ui/row-hover-frame'
-import { isRightAlignedColumn } from './table-config'
+import { ID_COLUMN_ID, isRightAlignedColumn } from './table-config'
 
 const ROW_HEIGHT_PX = 40
 const VIRTUAL_OVERSCAN = 8
@@ -51,7 +51,7 @@ export function BuildsTableBody({
           <DataTableRow
             key={row.id}
             className={cn(
-              'group/row relative h-10 min-w-full cursor-pointer -mx-2 px-2 hover:bg-bg-1 border-b-0 transition-none w-[calc(100%+16px)]',
+              'group/row relative h-10 min-w-full cursor-pointer -mx-2 px-2 hover:bg-bg-1 border-b-0 transition-none w-[calc(100%+16px)] gap-8',
               'hover:z-20 focus-within:z-10',
               { 'bg-bg-1 animate-pulse': isBuilding }
             )}
@@ -63,7 +63,8 @@ export function BuildsTableBody({
                 cell={cell}
                 className={cn(
                   'shrink-0',
-                  isRightAlignedColumn(cell.column.id) && 'justify-end'
+                  isRightAlignedColumn(cell.column.id) && 'justify-end',
+                  cell.column.id === ID_COLUMN_ID && 'pl-4'
                 )}
               >
                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
