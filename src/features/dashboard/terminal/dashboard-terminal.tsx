@@ -54,12 +54,14 @@ interface DashboardTerminalProps {
 }
 
 type TerminalUiState = {
+  arePtySettingsLoaded: boolean
   isPtySettingsOpen: boolean
   pendingLaunch: PendingTerminalLaunch | null
   ptyOptions: TerminalPtyOptions
 }
 
 type TerminalUiAction =
+  | { options: TerminalPtyOptions; type: 'loadPtyOptions' }
   | { open: boolean; type: 'setPtySettingsOpen' }
   | { launch: PendingTerminalLaunch | null; type: 'setPendingLaunch' }
   | { options: TerminalPtyOptions; type: 'setPtyOptions' }
@@ -69,6 +71,12 @@ function terminalUiReducer(
   action: TerminalUiAction
 ): TerminalUiState {
   switch (action.type) {
+    case 'loadPtyOptions':
+      return {
+        ...state,
+        arePtySettingsLoaded: true,
+        ptyOptions: action.options,
+      }
     case 'setPtySettingsOpen':
       return { ...state, isPtySettingsOpen: action.open }
     case 'setPendingLaunch':
@@ -79,22 +87,21 @@ function terminalUiReducer(
 }
 
 function getInitialPtyOptions({
-  allowPtySettings,
   launchTargetPtyOptions,
-  userId,
+  requiresConfirmation,
 }: {
-  allowPtySettings: boolean
   launchTargetPtyOptions: TerminalPtyOptions
-  userId: string
+  requiresConfirmation: boolean
 }) {
-  if (!allowPtySettings || typeof window === 'undefined') {
-    return launchTargetPtyOptions
-  }
+  return requiresConfirmation ? {} : launchTargetPtyOptions
+}
 
-  return normalizePtyOptions({
-    ...readStoredTerminalPtyOptions(userId),
-    ...launchTargetPtyOptions,
-  })
+function parseSerializedPtyOptions(value: string): TerminalPtyOptions {
+  try {
+    return normalizePtyOptions(JSON.parse(value) as TerminalPtyOptions)
+  } catch {
+    return {}
+  }
 }
 
 export default function DashboardTerminal({
@@ -119,16 +126,20 @@ export default function DashboardTerminal({
   const launchTargetPtyOptions = normalizePtyOptions(
     launchTarget?.ptyOptions ?? {}
   )
+  const launchTargetPtyOptionsKey = JSON.stringify(launchTargetPtyOptions)
+  const launchTargetRequiresConfirmation =
+    launchTarget?.requiresConfirmation === true
   const [uiState, dispatchUi] = useReducer(terminalUiReducer, null, () => ({
+    arePtySettingsLoaded: !allowPtySettings,
     isPtySettingsOpen: false,
     pendingLaunch: null,
     ptyOptions: getInitialPtyOptions({
-      allowPtySettings,
       launchTargetPtyOptions,
-      userId,
+      requiresConfirmation: launchTargetRequiresConfirmation,
     }),
   }))
-  const { isPtySettingsOpen, pendingLaunch, ptyOptions } = uiState
+  const { arePtySettingsLoaded, isPtySettingsOpen, pendingLaunch, ptyOptions } =
+    uiState
 
   const ptyOptionsRef = useRef<TerminalPtyOptions>(ptyOptions)
   const sandboxRef = useRef<Sandbox | null>(null)
@@ -668,12 +679,35 @@ export default function DashboardTerminal({
       return
     }
 
-    if (status === 'ready') {
+    if (status === 'ready' || status === 'error') {
       void startTerminal({ forceNewSandbox: true })
     }
   }
 
   useEffect(() => {
+    if (!allowPtySettings) return
+
+    const storedOptions = readStoredTerminalPtyOptions(userId)
+    const currentLaunchTargetPtyOptions = parseSerializedPtyOptions(
+      launchTargetPtyOptionsKey
+    )
+    const nextOptions = normalizePtyOptions({
+      ...storedOptions,
+      ...(launchTargetRequiresConfirmation
+        ? {}
+        : currentLaunchTargetPtyOptions),
+    })
+    ptyOptionsRef.current = nextOptions
+    dispatchUi({ type: 'loadPtyOptions', options: nextOptions })
+  }, [
+    allowPtySettings,
+    launchTargetPtyOptionsKey,
+    launchTargetRequiresConfirmation,
+    userId,
+  ])
+
+  useEffect(() => {
+    if (!arePtySettingsLoaded) return
     if (!autoStart || status !== 'idle' || isStartingRef.current) return
 
     const autoStartTimer = window.setTimeout(() => {
@@ -687,7 +721,13 @@ export default function DashboardTerminal({
     return () => {
       window.clearTimeout(autoStartTimer)
     }
-  }, [autoStart, launchTarget, queueTerminalCommand, status])
+  }, [
+    arePtySettingsLoaded,
+    autoStart,
+    launchTarget,
+    queueTerminalCommand,
+    status,
+  ])
 
   const handlePageHide = useEffectEvent((event: PageTransitionEvent) => {
     if (event.persisted) return
