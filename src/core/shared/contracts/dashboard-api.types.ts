@@ -4,1656 +4,1654 @@
  */
 
 export interface paths {
-  '/health': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Health check */
-    get: {
-      parameters: {
-        query?: never
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Health check successful */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['HealthResponse']
-          }
-        }
-      }
-    }
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/builds': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** List team builds */
-    get: {
-      parameters: {
-        query?: {
-          /** @description Optional filter by build identifier, template identifier, or template alias. */
-          build_id_or_template?: components['parameters']['build_id_or_template']
-          /** @description Comma-separated list of build statuses to include. */
-          statuses?: components['parameters']['build_statuses']
-          /** @description Maximum number of items to return per page. */
-          limit?: components['parameters']['builds_limit']
-          /** @description Cursor returned by the previous list response in `created_at|build_id` format. */
-          cursor?: components['parameters']['builds_cursor']
-        }
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Successfully returned paginated builds. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['BuildsListResponse']
-          }
-        }
-        400: components['responses']['400']
-        401: components['responses']['401']
-        403: components['responses']['403']
-        500: components['responses']['500']
-      }
-    }
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/builds/statuses': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Build statuses */
-    get: {
-      parameters: {
-        query: {
-          /** @description Comma-separated list of build IDs to get statuses for. */
-          build_ids: components['parameters']['build_ids']
-        }
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Successfully returned build statuses */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['BuildsStatusesResponse']
-          }
-        }
-        400: components['responses']['400']
-        401: components['responses']['401']
-        403: components['responses']['403']
-        500: components['responses']['500']
-      }
-    }
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/builds/{build_id}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Build details */
-    get: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Identifier of the build. */
-          build_id: components['parameters']['build_id']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Successfully returned build details. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['BuildInfo']
-          }
-        }
-        401: components['responses']['401']
-        403: components['responses']['403']
-        404: components['responses']['404']
-        500: components['responses']['500']
-      }
-    }
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/sandboxes/{sandboxID}/record': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Sandbox record */
-    get: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Identifier of the sandbox. */
-          sandboxID: components['parameters']['sandboxID']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Successfully returned sandbox details. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['SandboxRecord']
-          }
-        }
-        401: components['responses']['401']
-        403: components['responses']['403']
-        404: components['responses']['404']
-        500: components['responses']['500']
-      }
-    }
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/teams': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * List user teams
-     * @description Returns all teams the authenticated user belongs to, with limits and default flag.
-     */
-    get: {
-      parameters: {
-        query?: never
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Successfully returned user teams. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['UserTeamsResponse']
-          }
-        }
-        401: components['responses']['401']
-        500: components['responses']['500']
-      }
-    }
-    put?: never
-    /** Create team */
-    post: {
-      parameters: {
-        query?: never
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody: {
-        content: {
-          'application/json': components['schemas']['CreateTeamRequest']
-        }
-      }
-      responses: {
-        /** @description Successfully created team. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['TeamResolveResponse']
-          }
-        }
-        400: components['responses']['400']
-        401: components['responses']['401']
-        500: components['responses']['500']
-      }
-    }
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/admin/users/bootstrap': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Bootstrap auth provider user */
-    post: {
-      parameters: {
-        query?: never
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody: {
-        content: {
-          'application/json': components['schemas']['AdminAuthProviderUserBootstrapRequest']
-        }
-      }
-      responses: {
-        /** @description Successfully bootstrapped user. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['TeamResolveResponse']
-          }
-        }
-        400: components['responses']['400']
-        401: components['responses']['401']
-        500: components['responses']['500']
-      }
-    }
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/admin/teams/bootstrap': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Bootstrap team
-     * @description Creates and provisions a team for an admin-authenticated bootstrap workflow.
-     */
-    post: {
-      parameters: {
-        query?: never
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody: {
-        content: {
-          'application/json': components['schemas']['AdminTeamBootstrapRequest']
-        }
-      }
-      responses: {
-        /** @description Successfully bootstrapped team. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['TeamResolveResponse']
-          }
-        }
-        400: components['responses']['400']
-        401: components['responses']['401']
-        500: components['responses']['500']
-        502: components['responses']['502']
-      }
-    }
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/admin/user-profiles/resolve': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Resolve user profiles */
-    post: {
-      parameters: {
-        query?: never
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody: {
-        content: {
-          'application/json': components['schemas']['AdminAuthProviderProfilesResolveRequest']
-        }
-      }
-      responses: {
-        /** @description Successfully resolved profiles. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['AdminAuthProviderProfilesResponse']
-          }
-        }
-        400: components['responses']['400']
-        401: components['responses']['401']
-        500: components['responses']['500']
-      }
-    }
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/admin/user-profiles/by-email': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Lookup user profiles by email */
-    post: {
-      parameters: {
-        query?: never
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody: {
-        content: {
-          'application/json': components['schemas']['AdminAuthProviderProfilesLookupEmailRequest']
-        }
-      }
-      responses: {
-        /** @description Successfully found matching profiles. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['AdminAuthProviderProfilesResponse']
-          }
-        }
-        400: components['responses']['400']
-        401: components['responses']['401']
-        500: components['responses']['500']
-      }
-    }
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/admin/user-profiles/{userId}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** User profile */
-    get: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Identifier of the user. */
-          userId: components['parameters']['userId']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Successfully found profile. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['AdminAuthProviderProfilesResponse']
-          }
-        }
-        400: components['responses']['400']
-        401: components['responses']['401']
-        500: components['responses']['500']
-      }
-    }
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/admin/users/{userId}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    /**
-     * Delete user
-     * @description Deletes a user by removing the identity provider record, user_identities mapping, and public.users row.
-     */
-    delete: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Identifier of the user. */
-          userId: components['parameters']['userId']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Successfully deleted user. */
-        204: {
-          headers: {
-            [name: string]: unknown
-          }
-          content?: never
-        }
-        400: components['responses']['400']
-        401: components['responses']['401']
-        404: components['responses']['404']
-        409: components['responses']['409']
-        500: components['responses']['500']
-      }
-    }
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/teams/resolve': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Resolve team identity
-     * @description Resolves a team slug to the team's identity, validating the user is a member.
-     */
-    get: {
-      parameters: {
-        query: {
-          /** @description Team slug to resolve. */
-          slug: components['parameters']['teamSlug']
-        }
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Successfully resolved team. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['TeamResolveResponse']
-          }
-        }
-        401: components['responses']['401']
-        403: components['responses']['403']
-        404: components['responses']['404']
-        500: components['responses']['500']
-      }
-    }
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/teams/{teamID}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    /** Update team */
-    patch: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Identifier of the team. */
-          teamID: components['parameters']['teamID']
-        }
-        cookie?: never
-      }
-      requestBody: {
-        content: {
-          'application/json': components['schemas']['UpdateTeamRequest']
-        }
-      }
-      responses: {
-        /** @description Successfully updated team. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['UpdateTeamResponse']
-          }
-        }
-        400: components['responses']['400']
-        401: components['responses']['401']
-        403: components['responses']['403']
-        500: components['responses']['500']
-      }
-    }
-    trace?: never
-  }
-  '/teams/{teamID}/members': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** List team members */
-    get: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Identifier of the team. */
-          teamID: components['parameters']['teamID']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Successfully returned team members. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['TeamMembersResponse']
-          }
-        }
-        401: components['responses']['401']
-        403: components['responses']['403']
-        500: components['responses']['500']
-      }
-    }
-    put?: never
-    /** Add team member */
-    post: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Identifier of the team. */
-          teamID: components['parameters']['teamID']
-        }
-        cookie?: never
-      }
-      requestBody: {
-        content: {
-          'application/json': components['schemas']['AddTeamMemberRequest']
-        }
-      }
-      responses: {
-        /** @description Successfully added team member. */
-        201: {
-          headers: {
-            [name: string]: unknown
-          }
-          content?: never
-        }
-        400: components['responses']['400']
-        401: components['responses']['401']
-        403: components['responses']['403']
-        404: components['responses']['404']
-        500: components['responses']['500']
-      }
-    }
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/teams/{teamID}/members/{userId}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    /** Remove team member */
-    delete: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Identifier of the team. */
-          teamID: components['parameters']['teamID']
-          /** @description Identifier of the user. */
-          userId: components['parameters']['userId']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Successfully removed team member. */
-        204: {
-          headers: {
-            [name: string]: unknown
-          }
-          content?: never
-        }
-        400: components['responses']['400']
-        401: components['responses']['401']
-        403: components['responses']['403']
-        500: components['responses']['500']
-      }
-    }
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/templates': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * List team templates
-     * @description Returns a paginated list of the team's templates (and default templates inline, unless the team is on a dedicated cluster), with filtering, search, and column sorting via keyset cursor pagination.
-     */
-    get: {
-      parameters: {
-        query?: {
-          /** @description Filter templates by visibility (true = public, false = internal). */
-          public?: components['parameters']['templates_public']
-          /** @description Case-insensitive substring match on template names, aliases, and template id. */
-          search?: components['parameters']['templates_search']
-          /** @description Sort column and direction. */
-          sort?: components['parameters']['templates_sort']
-          /** @description Maximum number of items to return per page. */
-          limit?: components['parameters']['templates_limit']
-          /** @description Cursor returned by the previous list response in `{sort}|{value}|{templateID}` format. Rejected if its sort does not match the request. */
-          cursor?: components['parameters']['templates_cursor']
-        }
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Successfully returned paginated templates. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['TeamTemplatesResponse']
-          }
-        }
-        400: components['responses']['400']
-        401: components['responses']['401']
-        403: components['responses']['403']
-        500: components['responses']['500']
-      }
-    }
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/templates/defaults': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * List default templates
-     * @description Returns the list of default templates with their latest build info and aliases.
-     */
-    get: {
-      parameters: {
-        query?: never
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Successfully returned default templates. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['DefaultTemplatesResponse']
-          }
-        }
-        401: components['responses']['401']
-        500: components['responses']['500']
-      }
-    }
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/templates/{templateID}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Template
-     * @description Returns a single template owned by the current team. Dashboard-shaped read, indexed by template ID.
-     */
-    get: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Identifier of the template. */
-          templateID: components['parameters']['templateID']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Successfully returned the template. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['TemplateDetail']
-          }
-        }
-        401: components['responses']['401']
-        403: components['responses']['403']
-        404: components['responses']['404']
-        500: components['responses']['500']
-      }
-    }
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/templates/{templateID}/tags/groups': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * List template tag groups
-     * @description Returns ready template tag assignment groups with bounded per-tag history, paginated over tags with keyset cursor.
-     */
-    get: {
-      parameters: {
-        query?: {
-          /** @description Maximum number of ready assignment rows to return per tag. */
-          assignmentLimit?: components['parameters']['tag_assignment_limit']
-          /** @description Maximum number of distinct tags to return per page. */
-          tagsLimit?: components['parameters']['tag_groups_limit']
-          /** @description Cursor returned by the previous list response in `{sort}|{latest_assigned_at}|{tag}` format (sort-tagged, RFC3339Nano). */
-          tagsCursor?: components['parameters']['tag_groups_cursor']
-          /** @description Case-insensitive substring filter on tag name. Allowed characters are `a-z`, `0-9`, `.`, `_`, `-`. */
-          search?: components['parameters']['tag_groups_search']
-          /** @description Sort order for the returned tag groups. */
-          sort?: components['parameters']['tag_groups_sort']
-        }
-        header?: never
-        path: {
-          /** @description Identifier of the template. */
-          templateID: components['parameters']['templateID']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Successfully returned template tag groups. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['TemplateTagGroupsResponse']
-          }
-        }
-        400: components['responses']['400']
-        401: components['responses']['401']
-        403: components['responses']['403']
-        404: components['responses']['404']
-        500: components['responses']['500']
-      }
-    }
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/templates/{templateID}/tags/count': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Count template tags
-     * @description Returns the total number of distinct ready tags for the template.
-     */
-    get: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Identifier of the template. */
-          templateID: components['parameters']['templateID']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Successfully returned tag count. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['TemplateTagsCountResponse']
-          }
-        }
-        401: components['responses']['401']
-        403: components['responses']['403']
-        404: components['responses']['404']
-        500: components['responses']['500']
-      }
-    }
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/templates/{templateID}/tags/exists': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Check ready template tag existence
-     * @description Checks whether a template tag has at least one ready assignment.
-     */
-    get: {
-      parameters: {
-        query: {
-          /** @description Template tag name to check. */
-          tag: components['parameters']['tag']
-        }
-        header?: never
-        path: {
-          /** @description Identifier of the template. */
-          templateID: components['parameters']['templateID']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Successfully checked template tag existence. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['TemplateTagExistsResponse']
-          }
-        }
-        400: components['responses']['400']
-        401: components['responses']['401']
-        403: components['responses']['403']
-        404: components['responses']['404']
-        500: components['responses']['500']
-      }
-    }
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/templates/{templateID}/tags/{tag}/assignments': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * List ready assignments for a single template tag
-     * @description Returns ready tag assignment events for a single tag, ordered newest first, with keyset cursor pagination.
-     */
-    get: {
-      parameters: {
-        query?: {
-          /** @description Cursor returned by the previous list response in `assigned_at|assignment_id` format. */
-          cursor?: components['parameters']['tag_assignments_cursor']
-          /** @description Maximum number of assignment rows to return per page. */
-          limit?: components['parameters']['tag_assignments_limit']
-        }
-        header?: never
-        path: {
-          /** @description Identifier of the template. */
-          templateID: components['parameters']['templateID']
-          /** @description Template tag name. */
-          tag: components['parameters']['tag_path']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Successfully returned tag assignment page. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['TemplateTagAssignmentsResponse']
-          }
-        }
-        400: components['responses']['400']
-        401: components['responses']['401']
-        403: components['responses']['403']
-        404: components['responses']['404']
-        500: components['responses']['500']
-      }
-    }
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
+    "/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Health check */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Health check successful */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["HealthResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/builds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List team builds */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Optional filter by build identifier, template identifier, or template alias. */
+                    build_id_or_template?: components["parameters"]["build_id_or_template"];
+                    /** @description Comma-separated list of build statuses to include. */
+                    statuses?: components["parameters"]["build_statuses"];
+                    /** @description Maximum number of items to return per page. */
+                    limit?: components["parameters"]["builds_limit"];
+                    /** @description Cursor returned by the previous list response in `created_at|build_id` format. */
+                    cursor?: components["parameters"]["builds_cursor"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned paginated builds. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BuildsListResponse"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/builds/statuses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Build statuses */
+        get: {
+            parameters: {
+                query: {
+                    /** @description Comma-separated list of build IDs to get statuses for. */
+                    build_ids: components["parameters"]["build_ids"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned build statuses */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BuildsStatusesResponse"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/builds/{build_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Build details */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Identifier of the build. */
+                    build_id: components["parameters"]["build_id"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned build details. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BuildInfo"];
+                    };
+                };
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sandboxes/{sandboxID}/record": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sandbox record */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Identifier of the sandbox. */
+                    sandboxID: components["parameters"]["sandboxID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned sandbox details. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SandboxRecord"];
+                    };
+                };
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/teams": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List user teams
+         * @description Returns all teams the authenticated user belongs to, with limits and default flag.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned user teams. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["UserTeamsResponse"];
+                    };
+                };
+                401: components["responses"]["401"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        /** Create team */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateTeamRequest"];
+                };
+            };
+            responses: {
+                /** @description Successfully created team. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TeamResolveResponse"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                500: components["responses"]["500"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/users/bootstrap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bootstrap auth provider user */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AdminAuthProviderUserBootstrapRequest"];
+                };
+            };
+            responses: {
+                /** @description Successfully bootstrapped user. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TeamResolveResponse"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                500: components["responses"]["500"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/teams/bootstrap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bootstrap team
+         * @description Creates and provisions a team for an admin-authenticated bootstrap workflow.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AdminTeamBootstrapRequest"];
+                };
+            };
+            responses: {
+                /** @description Successfully bootstrapped team. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TeamResolveResponse"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                500: components["responses"]["500"];
+                502: components["responses"]["502"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/user-profiles/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resolve user profiles */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AdminAuthProviderProfilesResolveRequest"];
+                };
+            };
+            responses: {
+                /** @description Successfully resolved profiles. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminAuthProviderProfilesResponse"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                500: components["responses"]["500"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/user-profiles/by-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Lookup user profiles by email */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AdminAuthProviderProfilesLookupEmailRequest"];
+                };
+            };
+            responses: {
+                /** @description Successfully found matching profiles. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminAuthProviderProfilesResponse"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                500: components["responses"]["500"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/user-profiles/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** User profile */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Identifier of the user. */
+                    userId: components["parameters"]["userId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully found profile. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminAuthProviderProfilesResponse"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/users/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete user
+         * @description Deletes a user by removing the identity provider record, user_identities mapping, and public.users row.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Identifier of the user. */
+                    userId: components["parameters"]["userId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully deleted user. */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                404: components["responses"]["404"];
+                409: components["responses"]["409"];
+                500: components["responses"]["500"];
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/teams/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Resolve team identity
+         * @description Resolves a team slug to the team's identity, validating the user is a member.
+         */
+        get: {
+            parameters: {
+                query: {
+                    /** @description Team slug to resolve. */
+                    slug: components["parameters"]["teamSlug"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully resolved team. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TeamResolveResponse"];
+                    };
+                };
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/teams/{teamID}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update team */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Identifier of the team. */
+                    teamID: components["parameters"]["teamID"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateTeamRequest"];
+                };
+            };
+            responses: {
+                /** @description Successfully updated team. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["UpdateTeamResponse"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                500: components["responses"]["500"];
+            };
+        };
+        trace?: never;
+    };
+    "/teams/{teamID}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List team members */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Identifier of the team. */
+                    teamID: components["parameters"]["teamID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned team members. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TeamMembersResponse"];
+                    };
+                };
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        /** Add team member */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Identifier of the team. */
+                    teamID: components["parameters"]["teamID"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AddTeamMemberRequest"];
+                };
+            };
+            responses: {
+                /** @description Successfully added team member. */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/teams/{teamID}/members/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove team member */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Identifier of the team. */
+                    teamID: components["parameters"]["teamID"];
+                    /** @description Identifier of the user. */
+                    userId: components["parameters"]["userId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully removed team member. */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                500: components["responses"]["500"];
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List team templates
+         * @description Returns a paginated list of the team's templates (and default templates inline, unless the team is on a dedicated cluster), with filtering, search, and column sorting via keyset cursor pagination.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Filter templates by visibility (true = public, false = internal). */
+                    public?: components["parameters"]["templates_public"];
+                    /** @description Case-insensitive substring match on template names, aliases, and template id. */
+                    search?: components["parameters"]["templates_search"];
+                    /** @description Sort column and direction. */
+                    sort?: components["parameters"]["templates_sort"];
+                    /** @description Maximum number of items to return per page. */
+                    limit?: components["parameters"]["templates_limit"];
+                    /** @description Cursor returned by the previous list response in `{sort}|{value}|{templateID}` format. Rejected if its sort does not match the request. */
+                    cursor?: components["parameters"]["templates_cursor"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned paginated templates. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TeamTemplatesResponse"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/templates/defaults": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List default templates
+         * @description Returns the list of default templates with their latest build info and aliases.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned default templates. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DefaultTemplatesResponse"];
+                    };
+                };
+                401: components["responses"]["401"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/templates/{templateID}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Template
+         * @description Returns a single template owned by the current team. Dashboard-shaped read, indexed by template ID.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Identifier of the template. */
+                    templateID: components["parameters"]["templateID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned the template. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TemplateDetail"];
+                    };
+                };
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/templates/{templateID}/tags/groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List template tag groups
+         * @description Returns ready template tag assignment groups with bounded per-tag history, paginated over tags with keyset cursor.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Maximum number of ready assignment rows to return per tag. */
+                    assignmentLimit?: components["parameters"]["tag_assignment_limit"];
+                    /** @description Maximum number of distinct tags to return per page. */
+                    tagsLimit?: components["parameters"]["tag_groups_limit"];
+                    /** @description Cursor returned by the previous list response in `{sort}|{latest_assigned_at}|{tag}` format (sort-tagged, RFC3339Nano). */
+                    tagsCursor?: components["parameters"]["tag_groups_cursor"];
+                    /** @description Case-insensitive substring filter on tag name. Allowed characters are `a-z`, `0-9`, `.`, `_`, `-`. */
+                    search?: components["parameters"]["tag_groups_search"];
+                    /** @description Sort order for the returned tag groups. */
+                    sort?: components["parameters"]["tag_groups_sort"];
+                };
+                header?: never;
+                path: {
+                    /** @description Identifier of the template. */
+                    templateID: components["parameters"]["templateID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned template tag groups. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TemplateTagGroupsResponse"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/templates/{templateID}/tags/count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Count template tags
+         * @description Returns the total number of distinct ready tags for the template.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Identifier of the template. */
+                    templateID: components["parameters"]["templateID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned tag count. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TemplateTagsCountResponse"];
+                    };
+                };
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/templates/{templateID}/tags/exists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Check ready template tag existence
+         * @description Checks whether a template tag has at least one ready assignment.
+         */
+        get: {
+            parameters: {
+                query: {
+                    /** @description Template tag name to check. */
+                    tag: components["parameters"]["tag"];
+                };
+                header?: never;
+                path: {
+                    /** @description Identifier of the template. */
+                    templateID: components["parameters"]["templateID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully checked template tag existence. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TemplateTagExistsResponse"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/templates/{templateID}/tags/{tag}/assignments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List ready assignments for a single template tag
+         * @description Returns ready tag assignment events for a single tag, ordered newest first, with keyset cursor pagination.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Cursor returned by the previous list response in `assigned_at|assignment_id` format. */
+                    cursor?: components["parameters"]["tag_assignments_cursor"];
+                    /** @description Maximum number of assignment rows to return per page. */
+                    limit?: components["parameters"]["tag_assignments_limit"];
+                };
+                header?: never;
+                path: {
+                    /** @description Identifier of the template. */
+                    templateID: components["parameters"]["templateID"];
+                    /** @description Template tag name. */
+                    tag: components["parameters"]["tag_path"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Successfully returned tag assignment page. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TemplateTagAssignmentsResponse"];
+                    };
+                };
+                400: components["responses"]["400"];
+                401: components["responses"]["401"];
+                403: components["responses"]["403"];
+                404: components["responses"]["404"];
+                500: components["responses"]["500"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
-export type webhooks = Record<string, never>
+export type webhooks = Record<string, never>;
 export interface components {
-  schemas: {
-    Error: {
-      /**
-       * Format: int32
-       * @description Error code.
-       */
-      code: number
-      /** @description Error message. */
-      message: string
-    }
-    AdminAuthProviderProfile: {
-      /**
-       * Format: uuid
-       * @description Internal E2B user identifier.
-       */
-      userId: string
-      /** @description Email address from the configured auth provider. */
-      email: string | null
-    }
-    AdminAuthProviderProfilesResponse: {
-      profiles: components['schemas']['AdminAuthProviderProfile'][]
-    }
-    AdminAuthProviderProfilesResolveRequest: {
-      userIds: string[]
-    }
-    AdminAuthProviderProfilesLookupEmailRequest: {
-      /** Format: email */
-      email: string
-    }
-    AdminAuthProviderUserBootstrapRequest: {
-      oidc_issuer: string
-      oidc_user_id: string
-      /** Format: email */
-      oidc_user_email: string
-      oidc_user_name?: string | null
-      signup_ip?: string
-      signup_user_agent?: string
-    }
-    AdminTeamBootstrapRequest: {
-      /** @description Team name. */
-      name: string
-      /**
-       * Format: email
-       * @description Billing/contact email for the team.
-       */
-      email: string
-    }
-    /**
-     * @description Build status mapped for dashboard clients.
-     * @enum {string}
-     */
-    BuildStatus: 'building' | 'failed' | 'success'
-    ListedBuild: {
-      /**
-       * Format: uuid
-       * @description Identifier of the build.
-       */
-      id: string
-      /** @description Template alias when present, otherwise template ID. */
-      template: string
-      /** @description Identifier of the template. */
-      templateId: string
-      status: components['schemas']['BuildStatus']
-      /** @description Failure message when status is `failed`, otherwise `null`. */
-      statusMessage: string | null
-      /**
-       * Format: date-time
-       * @description Build creation timestamp in RFC3339 format.
-       */
-      createdAt: string
-      /**
-       * Format: date-time
-       * @description Build completion timestamp in RFC3339 format, if finished.
-       */
-      finishedAt: string | null
-      /**
-       * Format: int64
-       * @description CPU cores configured for the build.
-       */
-      cpuCount: number
-      /**
-       * Format: int64
-       * @description Memory in MiB configured for the build.
-       */
-      memoryMB: number
-      /**
-       * Format: int64
-       * @description Disk size in MiB configured for the build, if recorded.
-       */
-      diskSizeMB: number | null
-      /** @description envd version the build was created with, if recorded. */
-      envdVersion: string | null
-    }
-    BuildsListResponse: {
-      data: components['schemas']['ListedBuild'][]
-      /** @description Cursor to pass to the next list request, or `null` if there is no next page. */
-      nextCursor: string | null
-    }
-    BuildStatusItem: {
-      /**
-       * Format: uuid
-       * @description Identifier of the build.
-       */
-      id: string
-      status: components['schemas']['BuildStatus']
-      /**
-       * Format: date-time
-       * @description Build completion timestamp in RFC3339 format, if finished.
-       */
-      finishedAt: string | null
-      /** @description Failure message when status is `failed`, otherwise `null`. */
-      statusMessage: string | null
-    }
-    BuildsStatusesResponse: {
-      /** @description List of build statuses */
-      buildStatuses: components['schemas']['BuildStatusItem'][]
-    }
-    BuildInfo: {
-      /** @description Template names related to this build, if available. */
-      names?: string[] | null
-      /**
-       * Format: date-time
-       * @description Build creation timestamp in RFC3339 format.
-       */
-      createdAt: string
-      /**
-       * Format: date-time
-       * @description Build completion timestamp in RFC3339 format, if finished.
-       */
-      finishedAt: string | null
-      status: components['schemas']['BuildStatus']
-      /** @description Failure message when status is `failed`, otherwise `null`. */
-      statusMessage: string | null
-    }
-    /**
-     * Format: int64
-     * @description CPU cores for the sandbox
-     */
-    CPUCount: number
-    /**
-     * Format: int64
-     * @description Memory for the sandbox in MiB
-     */
-    MemoryMB: number
-    /**
-     * Format: int64
-     * @description Disk size for the sandbox in MiB
-     */
-    DiskSizeMB: number
-    SandboxRecord: {
-      /** @description Identifier of the template from which is the sandbox created */
-      templateID: string
-      /** @description Alias of the template */
-      alias?: string
-      /** @description Identifier of the sandbox */
-      sandboxID: string
-      /**
-       * Format: date-time
-       * @description Time when the sandbox was started
-       */
-      startedAt: string
-      /**
-       * Format: date-time
-       * @description Time when the sandbox was stopped
-       */
-      stoppedAt?: string | null
-      /** @description Base domain where the sandbox traffic is accessible */
-      domain?: string | null
-      cpuCount: components['schemas']['CPUCount']
-      memoryMB: components['schemas']['MemoryMB']
-      diskSizeMB: components['schemas']['DiskSizeMB']
-    }
-    HealthResponse: {
-      /** @description Human-readable health check result. */
-      message: string
-    }
-    UserTeamLimits: {
-      /** Format: int64 */
-      maxLengthHours: number
-      /** Format: int32 */
-      concurrentSandboxes: number
-      /** Format: int32 */
-      concurrentTemplateBuilds: number
-      /** Format: int32 */
-      maxVcpu: number
-      /** Format: int32 */
-      maxRamMb: number
-      /** Format: int32 */
-      diskMb: number
-    }
-    UserTeam: {
-      /** Format: uuid */
-      id: string
-      name: string
-      slug: string
-      tier: string
-      email: string
-      profilePictureUrl: string | null
-      isBlocked: boolean
-      isBanned: boolean
-      blockedReason: string | null
-      isDefault: boolean
-      limits: components['schemas']['UserTeamLimits']
-      /** Format: date-time */
-      createdAt: string
-    }
-    UserTeamsResponse: {
-      teams: components['schemas']['UserTeam'][]
-    }
-    TeamMember: {
-      /** Format: uuid */
-      id: string
-      email: string
-      name?: string | null
-      /** Format: uri */
-      profilePictureUrl?: string | null
-      providers: string[]
-      isDefault: boolean
-      /** Format: uuid */
-      addedBy?: string | null
-      /** Format: date-time */
-      createdAt: string | null
-    }
-    TeamMembersResponse: {
-      members: components['schemas']['TeamMember'][]
-    }
-    UpdateTeamRequest: {
-      name?: string
-      profilePictureUrl?: string | null
-    }
-    UpdateTeamResponse: {
-      /** Format: uuid */
-      id: string
-      name: string
-      profilePictureUrl?: string | null
-    }
-    AddTeamMemberRequest: {
-      /** Format: email */
-      email: string
-    }
-    CreateTeamRequest: {
-      name: string
-    }
-    DefaultTemplateAlias: {
-      alias: string
-      namespace?: string | null
-    }
-    DefaultTemplate: {
-      id: string
-      aliases: components['schemas']['DefaultTemplateAlias'][]
-      /** Format: uuid */
-      buildId: string
-      /** Format: int64 */
-      ramMb: number
-      /** Format: int64 */
-      vcpu: number
-      /** Format: int64 */
-      totalDiskSizeMb: number | null
-      envdVersion?: string | null
-      /** Format: date-time */
-      createdAt: string
-      public: boolean
-      /** Format: int32 */
-      buildCount: number
-      /** Format: int64 */
-      spawnCount: number
-    }
-    DefaultTemplatesResponse: {
-      templates: components['schemas']['DefaultTemplate'][]
-    }
-    TeamTemplate: {
-      templateID: string
-      /** Format: uuid */
-      buildID: string
-      /** Format: int64 */
-      cpuCount: number
-      /** Format: int64 */
-      memoryMB: number
-      /** Format: int64 */
-      diskSizeMB: number | null
-      public: boolean
-      aliases: string[]
-      names: string[]
-      /** Format: date-time */
-      createdAt: string
-      /** Format: date-time */
-      updatedAt: string
-      createdBy: {
-        /** Format: uuid */
-        id: string
-        email?: string | null
-      } | null
-      /** Format: date-time */
-      lastSpawnedAt: string | null
-      /** Format: int64 */
-      spawnCount: number
-      /** Format: int32 */
-      buildCount: number
-      envdVersion: string | null
-      isDefault: boolean
-      defaultDescription?: string | null
-    }
-    TeamTemplatesResponse: {
-      data: components['schemas']['TeamTemplate'][]
-      /** @description Cursor to pass to the next list request, or `null` if there is no next page. */
-      nextCursor: string | null
-    }
-    /** @description Dashboard-shaped single-template read. Mirrors the infra-api `Template` schema fields the dashboard renders. */
-    TemplateDetail: {
-      /** @description Identifier of the template. */
-      templateID: string
-      /** @description Identifier of the latest ready build for the template, or the zero UUID when none. */
-      buildID: string
-      /** @description vCPU count of the latest ready default build, or `null` when none. */
-      cpuCount: components['schemas']['CPUCount'] | null
-      /** @description Memory in MiB of the latest ready default build, or `null` when none. */
-      memoryMB: components['schemas']['MemoryMB'] | null
-      /** @description Disk size in MiB of the latest ready default build, or `null` when none. */
-      diskSizeMB: components['schemas']['DiskSizeMB'] | null
-      /** @description Whether the template is public or only accessible by the team. */
-      public: boolean
-      /**
-       * @deprecated
-       * @description Aliases of the template.
-       */
-      aliases: string[]
-      /** @description Names of the template (namespace/alias format when namespaced). */
-      names: string[]
-      /**
-       * Format: date-time
-       * @description Time when the template was created.
-       */
-      createdAt: string
-      /**
-       * Format: date-time
-       * @description Time when the template was last updated.
-       */
-      updatedAt: string
-      /**
-       * Format: date-time
-       * @description Time when the template was last used.
-       */
-      lastSpawnedAt: string | null
-      /**
-       * Format: int64
-       * @description Number of times the template was used.
-       */
-      spawnCount: number
-      /**
-       * Format: int32
-       * @description Number of times the template was built.
-       */
-      buildCount: number
-      /** @description envd version of the latest ready default build, or `null` when none. */
-      envdVersion: string | null
-    }
-    TemplateTagAssignment: {
-      /**
-       * Format: uuid
-       * @description Identifier of the tag assignment event.
-       */
-      assignmentId: string
-      /**
-       * Format: uuid
-       * @description Identifier of the assigned build.
-       */
-      buildId: string
-      /**
-       * Format: date-time
-       * @description Time when the tag was assigned to the build.
-       */
-      assignedAt: string
-      /**
-       * Format: date-time
-       * @description Time when the assigned build was created.
-       */
-      buildCreatedAt: string
-      /**
-       * Format: date-time
-       * @description Time when the assigned build finished.
-       */
-      buildFinishedAt: string | null
-    }
-    TemplateTagGroup: {
-      /** @description Template tag name. */
-      tag: string
-      /** @description Ready assignment events for this tag, sorted latest first. */
-      assignments: components['schemas']['TemplateTagAssignment'][]
-      /** @description Whether more ready assignment events exist beyond the requested assignment limit. */
-      hasMore: boolean
-    }
-    TemplateTagGroupsResponse: {
-      tags: components['schemas']['TemplateTagGroup'][]
-      /** @description Cursor to pass as `tagsCursor` for the next page, or `null` if there is no next page. */
-      nextCursor: string | null
-    }
-    TemplateTagsCountResponse: {
-      /**
-       * Format: int64
-       * @description Total distinct ready tags for the template.
-       */
-      total: number
-    }
-    TemplateTagExistsResponse: {
-      /** @description Whether the template tag has at least one ready assignment. */
-      exists: boolean
-      /** @description Normalized template tag name. */
-      normalizedTag: string
-    }
-    TemplateTagAssignmentsResponse: {
-      /** @description Ready assignment events for the tag, sorted latest first. */
-      data: components['schemas']['TemplateTagAssignment'][]
-      /** @description Cursor to pass to the next list request, or `null` if there is no next page. */
-      nextCursor: string | null
-    }
-    TeamResolveResponse: {
-      /** Format: uuid */
-      id: string
-      slug: string
-    }
-  }
-  responses: {
-    /** @description Bad request */
-    400: {
-      headers: {
-        [name: string]: unknown
-      }
-      content: {
-        'application/json': components['schemas']['Error']
-      }
-    }
-    /** @description Authentication error */
-    401: {
-      headers: {
-        [name: string]: unknown
-      }
-      content: {
-        'application/json': components['schemas']['Error']
-      }
-    }
-    /** @description Forbidden */
-    403: {
-      headers: {
-        [name: string]: unknown
-      }
-      content: {
-        'application/json': components['schemas']['Error']
-      }
-    }
-    /** @description Not found */
-    404: {
-      headers: {
-        [name: string]: unknown
-      }
-      content: {
-        'application/json': components['schemas']['Error']
-      }
-    }
-    /** @description Conflict */
-    409: {
-      headers: {
-        [name: string]: unknown
-      }
-      content: {
-        'application/json': components['schemas']['Error']
-      }
-    }
-    /** @description Server error */
-    500: {
-      headers: {
-        [name: string]: unknown
-      }
-      content: {
-        'application/json': components['schemas']['Error']
-      }
-    }
-    /** @description Upstream error */
-    502: {
-      headers: {
-        [name: string]: unknown
-      }
-      content: {
-        'application/json': components['schemas']['Error']
-      }
-    }
-  }
-  parameters: {
-    /** @description Identifier of the build. */
-    build_id: string
-    /** @description Identifier of the sandbox. */
-    sandboxID: string
-    /** @description Maximum number of items to return per page. */
-    builds_limit: number
-    /** @description Cursor returned by the previous list response in `created_at|build_id` format. */
-    builds_cursor: string
-    /** @description Optional filter by build identifier, template identifier, or template alias. */
-    build_id_or_template: string
-    /** @description Comma-separated list of build statuses to include. */
-    build_statuses: components['schemas']['BuildStatus'][]
-    /** @description Comma-separated list of build IDs to get statuses for. */
-    build_ids: string[]
-    /** @description Identifier of the team. */
-    teamID: string
-    /** @description Identifier of the user. */
-    userId: string
-    /** @description Team slug to resolve. */
-    teamSlug: string
-    /** @description Maximum number of items to return per page. */
-    templates_limit: number
-    /** @description Identifier of the template. */
-    templateID: string
-    /** @description Template tag name to check. */
-    tag: string
-    /** @description Maximum number of ready assignment rows to return per tag. */
-    tag_assignment_limit: number
-    /** @description Template tag name. */
-    tag_path: string
-    /** @description Maximum number of assignment rows to return per page. */
-    tag_assignments_limit: number
-    /** @description Cursor returned by the previous list response in `{sort}|{value}|{templateID}` format. Rejected if its sort does not match the request. */
-    templates_cursor: string
-    /** @description Filter templates by visibility (true = public, false = internal). */
-    templates_public: boolean
-    /** @description Case-insensitive substring match on template names, aliases, and template id. */
-    templates_search: string
-    /** @description Sort column and direction. */
-    templates_sort:
-      | 'created_at_asc'
-      | 'created_at_desc'
-      | 'updated_at_asc'
-      | 'updated_at_desc'
-    /** @description Cursor returned by the previous list response in `assigned_at|assignment_id` format. */
-    tag_assignments_cursor: string
-    /** @description Maximum number of distinct tags to return per page. */
-    tag_groups_limit: number
-    /** @description Cursor returned by the previous list response in `{sort}|{latest_assigned_at}|{tag}` format (sort-tagged, RFC3339Nano). */
-    tag_groups_cursor: string
-    /** @description Case-insensitive substring filter on tag name. Allowed characters are `a-z`, `0-9`, `.`, `_`, `-`. */
-    tag_groups_search: string
-    /** @description Sort order for the returned tag groups. */
-    tag_groups_sort: 'latest_desc' | 'latest_asc' | 'name_asc' | 'name_desc'
-  }
-  requestBodies: never
-  headers: never
-  pathItems: never
+    schemas: {
+        Error: {
+            /**
+             * Format: int32
+             * @description Error code.
+             */
+            code: number;
+            /** @description Error message. */
+            message: string;
+        };
+        AdminAuthProviderProfile: {
+            /**
+             * Format: uuid
+             * @description Internal E2B user identifier.
+             */
+            userId: string;
+            /** @description Email address from the configured auth provider. */
+            email: string | null;
+        };
+        AdminAuthProviderProfilesResponse: {
+            profiles: components["schemas"]["AdminAuthProviderProfile"][];
+        };
+        AdminAuthProviderProfilesResolveRequest: {
+            userIds: string[];
+        };
+        AdminAuthProviderProfilesLookupEmailRequest: {
+            /** Format: email */
+            email: string;
+        };
+        AdminAuthProviderUserBootstrapRequest: {
+            oidc_issuer: string;
+            oidc_user_id: string;
+            /** Format: email */
+            oidc_user_email: string;
+            oidc_user_name?: string | null;
+            signup_ip?: string;
+            signup_user_agent?: string;
+        };
+        AdminTeamBootstrapRequest: {
+            /** @description Team name. */
+            name: string;
+            /**
+             * Format: email
+             * @description Billing/contact email for the team.
+             */
+            email: string;
+        };
+        /**
+         * @description Build status mapped for dashboard clients.
+         * @enum {string}
+         */
+        BuildStatus: "building" | "failed" | "success";
+        ListedBuild: {
+            /**
+             * Format: uuid
+             * @description Identifier of the build.
+             */
+            id: string;
+            /** @description Template alias when present, otherwise template ID. */
+            template: string;
+            /** @description Identifier of the template. */
+            templateId: string;
+            status: components["schemas"]["BuildStatus"];
+            /** @description Failure message when status is `failed`, otherwise `null`. */
+            statusMessage: string | null;
+            /**
+             * Format: date-time
+             * @description Build creation timestamp in RFC3339 format.
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description Build completion timestamp in RFC3339 format, if finished.
+             */
+            finishedAt: string | null;
+            /**
+             * Format: int64
+             * @description CPU cores configured for the build.
+             */
+            cpuCount: number;
+            /**
+             * Format: int64
+             * @description Memory in MiB configured for the build.
+             */
+            memoryMB: number;
+            /**
+             * Format: int64
+             * @description Disk size in MiB configured for the build, if recorded.
+             */
+            diskSizeMB: number | null;
+            /** @description envd version the build was created with, if recorded. */
+            envdVersion: string | null;
+        };
+        BuildsListResponse: {
+            data: components["schemas"]["ListedBuild"][];
+            /** @description Cursor to pass to the next list request, or `null` if there is no next page. */
+            nextCursor: string | null;
+        };
+        BuildStatusItem: {
+            /**
+             * Format: uuid
+             * @description Identifier of the build.
+             */
+            id: string;
+            status: components["schemas"]["BuildStatus"];
+            /**
+             * Format: date-time
+             * @description Build completion timestamp in RFC3339 format, if finished.
+             */
+            finishedAt: string | null;
+            /** @description Failure message when status is `failed`, otherwise `null`. */
+            statusMessage: string | null;
+        };
+        BuildsStatusesResponse: {
+            /** @description List of build statuses */
+            buildStatuses: components["schemas"]["BuildStatusItem"][];
+        };
+        BuildInfo: {
+            /** @description Template names related to this build, if available. */
+            names?: string[] | null;
+            /**
+             * Format: date-time
+             * @description Build creation timestamp in RFC3339 format.
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description Build completion timestamp in RFC3339 format, if finished.
+             */
+            finishedAt: string | null;
+            status: components["schemas"]["BuildStatus"];
+            /** @description Failure message when status is `failed`, otherwise `null`. */
+            statusMessage: string | null;
+        };
+        /**
+         * Format: int64
+         * @description CPU cores for the sandbox
+         */
+        CPUCount: number;
+        /**
+         * Format: int64
+         * @description Memory for the sandbox in MiB
+         */
+        MemoryMB: number;
+        /**
+         * Format: int64
+         * @description Disk size for the sandbox in MiB
+         */
+        DiskSizeMB: number;
+        SandboxRecord: {
+            /** @description Identifier of the template from which is the sandbox created */
+            templateID: string;
+            /** @description Alias of the template */
+            alias?: string;
+            /** @description Identifier of the sandbox */
+            sandboxID: string;
+            /**
+             * Format: date-time
+             * @description Time when the sandbox was started
+             */
+            startedAt: string;
+            /**
+             * Format: date-time
+             * @description Time when the sandbox was stopped
+             */
+            stoppedAt?: string | null;
+            /** @description Base domain where the sandbox traffic is accessible */
+            domain?: string | null;
+            cpuCount: components["schemas"]["CPUCount"];
+            memoryMB: components["schemas"]["MemoryMB"];
+            diskSizeMB: components["schemas"]["DiskSizeMB"];
+            /** @description Whether the sandbox ended more than the retention window ago, so its monitoring, events, and logs data is no longer available */
+            retentionExpired: boolean;
+        };
+        HealthResponse: {
+            /** @description Human-readable health check result. */
+            message: string;
+        };
+        UserTeamLimits: {
+            /** Format: int64 */
+            maxLengthHours: number;
+            /** Format: int32 */
+            concurrentSandboxes: number;
+            /** Format: int32 */
+            concurrentTemplateBuilds: number;
+            /** Format: int32 */
+            maxVcpu: number;
+            /** Format: int32 */
+            maxRamMb: number;
+            /** Format: int32 */
+            diskMb: number;
+        };
+        UserTeam: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            slug: string;
+            tier: string;
+            email: string;
+            profilePictureUrl: string | null;
+            isBlocked: boolean;
+            isBanned: boolean;
+            blockedReason: string | null;
+            isDefault: boolean;
+            limits: components["schemas"]["UserTeamLimits"];
+            /** Format: date-time */
+            createdAt: string;
+        };
+        UserTeamsResponse: {
+            teams: components["schemas"]["UserTeam"][];
+        };
+        TeamMember: {
+            /** Format: uuid */
+            id: string;
+            email: string;
+            name?: string | null;
+            /** Format: uri */
+            profilePictureUrl?: string | null;
+            providers: string[];
+            isDefault: boolean;
+            /** Format: uuid */
+            addedBy?: string | null;
+            /** Format: date-time */
+            createdAt: string | null;
+        };
+        TeamMembersResponse: {
+            members: components["schemas"]["TeamMember"][];
+        };
+        UpdateTeamRequest: {
+            name?: string;
+            profilePictureUrl?: string | null;
+        };
+        UpdateTeamResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            profilePictureUrl?: string | null;
+        };
+        AddTeamMemberRequest: {
+            /** Format: email */
+            email: string;
+        };
+        CreateTeamRequest: {
+            name: string;
+        };
+        DefaultTemplateAlias: {
+            alias: string;
+            namespace?: string | null;
+        };
+        DefaultTemplate: {
+            id: string;
+            aliases: components["schemas"]["DefaultTemplateAlias"][];
+            /** Format: uuid */
+            buildId: string;
+            /** Format: int64 */
+            ramMb: number;
+            /** Format: int64 */
+            vcpu: number;
+            /** Format: int64 */
+            totalDiskSizeMb: number | null;
+            envdVersion?: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            public: boolean;
+            /** Format: int32 */
+            buildCount: number;
+            /** Format: int64 */
+            spawnCount: number;
+        };
+        DefaultTemplatesResponse: {
+            templates: components["schemas"]["DefaultTemplate"][];
+        };
+        TeamTemplate: {
+            templateID: string;
+            /** Format: uuid */
+            buildID: string;
+            /** Format: int64 */
+            cpuCount: number;
+            /** Format: int64 */
+            memoryMB: number;
+            /** Format: int64 */
+            diskSizeMB: number | null;
+            public: boolean;
+            aliases: string[];
+            names: string[];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            createdBy: {
+                /** Format: uuid */
+                id: string;
+                email?: string | null;
+            } | null;
+            /** Format: date-time */
+            lastSpawnedAt: string | null;
+            /** Format: int64 */
+            spawnCount: number;
+            /** Format: int32 */
+            buildCount: number;
+            envdVersion: string | null;
+            isDefault: boolean;
+            defaultDescription?: string | null;
+        };
+        TeamTemplatesResponse: {
+            data: components["schemas"]["TeamTemplate"][];
+            /** @description Cursor to pass to the next list request, or `null` if there is no next page. */
+            nextCursor: string | null;
+        };
+        /** @description Dashboard-shaped single-template read. Mirrors the infra-api `Template` schema fields the dashboard renders. */
+        TemplateDetail: {
+            /** @description Identifier of the template. */
+            templateID: string;
+            /** @description Identifier of the latest ready build for the template, or the zero UUID when none. */
+            buildID: string;
+            /** @description vCPU count of the latest ready default build, or `null` when none. */
+            cpuCount: components["schemas"]["CPUCount"] | null;
+            /** @description Memory in MiB of the latest ready default build, or `null` when none. */
+            memoryMB: components["schemas"]["MemoryMB"] | null;
+            /** @description Disk size in MiB of the latest ready default build, or `null` when none. */
+            diskSizeMB: components["schemas"]["DiskSizeMB"] | null;
+            /** @description Whether the template is public or only accessible by the team. */
+            public: boolean;
+            /**
+             * @deprecated
+             * @description Aliases of the template.
+             */
+            aliases: string[];
+            /** @description Names of the template (namespace/alias format when namespaced). */
+            names: string[];
+            /**
+             * Format: date-time
+             * @description Time when the template was created.
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description Time when the template was last updated.
+             */
+            updatedAt: string;
+            /**
+             * Format: date-time
+             * @description Time when the template was last used.
+             */
+            lastSpawnedAt: string | null;
+            /**
+             * Format: int64
+             * @description Number of times the template was used.
+             */
+            spawnCount: number;
+            /**
+             * Format: int32
+             * @description Number of times the template was built.
+             */
+            buildCount: number;
+            /** @description envd version of the latest ready default build, or `null` when none. */
+            envdVersion: string | null;
+        };
+        TemplateTagAssignment: {
+            /**
+             * Format: uuid
+             * @description Identifier of the tag assignment event.
+             */
+            assignmentId: string;
+            /**
+             * Format: uuid
+             * @description Identifier of the assigned build.
+             */
+            buildId: string;
+            /**
+             * Format: date-time
+             * @description Time when the tag was assigned to the build.
+             */
+            assignedAt: string;
+            /**
+             * Format: date-time
+             * @description Time when the assigned build was created.
+             */
+            buildCreatedAt: string;
+            /**
+             * Format: date-time
+             * @description Time when the assigned build finished.
+             */
+            buildFinishedAt: string | null;
+        };
+        TemplateTagGroup: {
+            /** @description Template tag name. */
+            tag: string;
+            /** @description Ready assignment events for this tag, sorted latest first. */
+            assignments: components["schemas"]["TemplateTagAssignment"][];
+            /** @description Whether more ready assignment events exist beyond the requested assignment limit. */
+            hasMore: boolean;
+        };
+        TemplateTagGroupsResponse: {
+            tags: components["schemas"]["TemplateTagGroup"][];
+            /** @description Cursor to pass as `tagsCursor` for the next page, or `null` if there is no next page. */
+            nextCursor: string | null;
+        };
+        TemplateTagsCountResponse: {
+            /**
+             * Format: int64
+             * @description Total distinct ready tags for the template.
+             */
+            total: number;
+        };
+        TemplateTagExistsResponse: {
+            /** @description Whether the template tag has at least one ready assignment. */
+            exists: boolean;
+            /** @description Normalized template tag name. */
+            normalizedTag: string;
+        };
+        TemplateTagAssignmentsResponse: {
+            /** @description Ready assignment events for the tag, sorted latest first. */
+            data: components["schemas"]["TemplateTagAssignment"][];
+            /** @description Cursor to pass to the next list request, or `null` if there is no next page. */
+            nextCursor: string | null;
+        };
+        TeamResolveResponse: {
+            /** Format: uuid */
+            id: string;
+            slug: string;
+        };
+    };
+    responses: {
+        /** @description Bad request */
+        400: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description Authentication error */
+        401: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description Forbidden */
+        403: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description Not found */
+        404: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description Conflict */
+        409: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description Server error */
+        500: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+        /** @description Upstream error */
+        502: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Error"];
+            };
+        };
+    };
+    parameters: {
+        /** @description Identifier of the build. */
+        build_id: string;
+        /** @description Identifier of the sandbox. */
+        sandboxID: string;
+        /** @description Maximum number of items to return per page. */
+        builds_limit: number;
+        /** @description Cursor returned by the previous list response in `created_at|build_id` format. */
+        builds_cursor: string;
+        /** @description Optional filter by build identifier, template identifier, or template alias. */
+        build_id_or_template: string;
+        /** @description Comma-separated list of build statuses to include. */
+        build_statuses: components["schemas"]["BuildStatus"][];
+        /** @description Comma-separated list of build IDs to get statuses for. */
+        build_ids: string[];
+        /** @description Identifier of the team. */
+        teamID: string;
+        /** @description Identifier of the user. */
+        userId: string;
+        /** @description Team slug to resolve. */
+        teamSlug: string;
+        /** @description Maximum number of items to return per page. */
+        templates_limit: number;
+        /** @description Identifier of the template. */
+        templateID: string;
+        /** @description Template tag name to check. */
+        tag: string;
+        /** @description Maximum number of ready assignment rows to return per tag. */
+        tag_assignment_limit: number;
+        /** @description Template tag name. */
+        tag_path: string;
+        /** @description Maximum number of assignment rows to return per page. */
+        tag_assignments_limit: number;
+        /** @description Cursor returned by the previous list response in `{sort}|{value}|{templateID}` format. Rejected if its sort does not match the request. */
+        templates_cursor: string;
+        /** @description Filter templates by visibility (true = public, false = internal). */
+        templates_public: boolean;
+        /** @description Case-insensitive substring match on template names, aliases, and template id. */
+        templates_search: string;
+        /** @description Sort column and direction. */
+        templates_sort: "created_at_asc" | "created_at_desc" | "updated_at_asc" | "updated_at_desc";
+        /** @description Cursor returned by the previous list response in `assigned_at|assignment_id` format. */
+        tag_assignments_cursor: string;
+        /** @description Maximum number of distinct tags to return per page. */
+        tag_groups_limit: number;
+        /** @description Cursor returned by the previous list response in `{sort}|{latest_assigned_at}|{tag}` format (sort-tagged, RFC3339Nano). */
+        tag_groups_cursor: string;
+        /** @description Case-insensitive substring filter on tag name. Allowed characters are `a-z`, `0-9`, `.`, `_`, `-`. */
+        tag_groups_search: string;
+        /** @description Sort order for the returned tag groups. */
+        tag_groups_sort: "latest_desc" | "latest_asc" | "name_asc" | "name_desc";
+    };
+    requestBodies: never;
+    headers: never;
+    pathItems: never;
 }
-export type $defs = Record<string, never>
-export type operations = Record<string, never>
+export type $defs = Record<string, never>;
+export type operations = Record<string, never>;
