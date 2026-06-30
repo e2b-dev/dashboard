@@ -8,6 +8,10 @@ import { infra } from '@/core/shared/clients/api'
 import type { components as InfraComponents } from '@/core/shared/contracts/infra-api.types'
 import { SandboxIdSchema } from '@/core/shared/schemas/api'
 import DashboardTerminal from '@/features/dashboard/terminal/dashboard-terminal'
+import {
+  hasPtyOptionsSearchParams,
+  parsePtyOptionsFromSearchParams,
+} from '@/features/dashboard/terminal/pty-options'
 import { normalizeTerminalTemplate } from '@/features/dashboard/terminal/template'
 import { Button } from '@/ui/primitives/button'
 
@@ -22,8 +26,11 @@ interface TeamTerminalPageProps {
   }>
   searchParams: Promise<{
     command?: string
+    cwd?: string
+    env?: string | string[]
     sandboxId?: string
     template?: string
+    user?: string
   }>
 }
 
@@ -31,13 +38,16 @@ export default async function TeamTerminalPage({
   params,
   searchParams,
 }: TeamTerminalPageProps) {
-  const [{ teamSlug }, { command = '', sandboxId, template }] =
+  const [{ teamSlug }, terminalSearchParams] =
     await Promise.all([params, searchParams])
+  const { command = '', sandboxId, template } = terminalSearchParams
   const hasTemplateOverride = template !== undefined
   const requestedTemplate = hasTemplateOverride
     ? normalizeTerminalTemplate(template)
     : undefined
   const terminalSandboxId = normalizeTerminalSandboxId(sandboxId)
+  const ptyOptions = parsePtyOptionsFromSearchParams(terminalSearchParams)
+  const requiresConfirmation = hasPtyOptionsSearchParams(terminalSearchParams)
 
   if (!terminalSandboxId && hasTemplateOverride && !requestedTemplate) {
     return <TerminalUnavailable message="The terminal template is invalid." />
@@ -106,6 +116,8 @@ export default async function TeamTerminalPage({
         launchTarget={{
           command,
           forceNewSandbox: !terminalSandboxId && hasTemplateOverride,
+          ptyOptions,
+          requiresConfirmation,
           sandboxId: terminalSandboxId,
           template: terminalSandboxId
             ? terminalTemplate

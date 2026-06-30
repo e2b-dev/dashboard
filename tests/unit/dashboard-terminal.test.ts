@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TERMINAL_SESSION_STORAGE_PREFIX } from '@/features/dashboard/terminal/constants'
+import {
+  hasPtyOptionsSearchParams,
+  normalizePtyOptions,
+  parsePtyOptionsFromSearchParams,
+} from '@/features/dashboard/terminal/pty-options'
+import { parseEnvVars } from '@/features/dashboard/terminal/pty-settings-dialog'
 import { openTerminalSandbox } from '@/features/dashboard/terminal/sandbox-session'
 import {
   clearStoredTerminalSession,
@@ -95,6 +101,58 @@ describe('dashboard terminal helpers', () => {
     it('normalizes explicit overrides', () => {
       expect(resolveTerminalTemplateOverride('  ', 'python')).toBe('base')
       expect(resolveTerminalTemplateOverride('../base', 'python')).toBeNull()
+    })
+  })
+
+  describe('PTY settings', () => {
+    it('normalizes optional PTY create options', () => {
+      expect(
+        normalizePtyOptions({
+          user: ' root ',
+          cwd: ' /app ',
+          envs: {
+            DEBUG: '1',
+            '': 'ignored',
+          },
+        })
+      ).toEqual({
+        user: 'root',
+        cwd: '/app',
+        envs: {
+          DEBUG: '1',
+        },
+      })
+    })
+
+    it('parses newline-delimited environment variables', () => {
+      expect(parseEnvVars('DEBUG=1\nNAME=value=with-equals\n\nbad')).toEqual({
+        DEBUG: '1',
+        NAME: 'value=with-equals',
+      })
+      expect(parseEnvVars('')).toBeUndefined()
+    })
+
+    it('parses PTY options from terminal query params', () => {
+      expect(
+        parsePtyOptionsFromSearchParams({
+          user: ' root ',
+          cwd: ' /app ',
+          env: ['DEBUG=1', 'NAME=value=with-equals', 'bad'],
+        })
+      ).toEqual({
+        user: 'root',
+        cwd: '/app',
+        envs: {
+          DEBUG: '1',
+          NAME: 'value=with-equals',
+        },
+      })
+    })
+
+    it('detects PTY options in terminal query params', () => {
+      expect(hasPtyOptionsSearchParams({})).toBe(false)
+      expect(hasPtyOptionsSearchParams({ user: '' })).toBe(true)
+      expect(hasPtyOptionsSearchParams({ env: ['DEBUG=1'] })).toBe(true)
     })
   })
 

@@ -1,15 +1,27 @@
 'use client'
 
 import type { CommandHandle, Sandbox } from 'e2b'
-import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { useTRPCClient } from '@/trpc/client'
 import {
-  DEFAULT_CWD,
   TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS,
   TERMINAL_AUTOSTART_DEBOUNCE_MS,
 } from './constants'
 import DashboardTerminalCommandDialog from './dashboard-terminal-command-dialog'
+import { normalizePtyOptions, type TerminalPtyOptions } from './pty-options'
+import PtySettingsDialog from './pty-settings-dialog'
 import { openTerminalSandbox } from './sandbox-session'
+import {
+  readStoredTerminalPtyOptions,
+  writeStoredTerminalPtyOptions,
+} from './storage'
 import {
   normalizeTerminalTemplate,
   resolveTerminalTemplateOverride,
@@ -29,6 +41,7 @@ const FLUSH_INPUT_RETRY_INTERVAL_MS = 250
 const MAX_INPUT_FLUSH_RETRIES = 2
 
 interface DashboardTerminalProps {
+  allowPtySettings?: boolean
   autoStart?: boolean
   getSandbox?: TerminalSandboxResolver
   launchTarget?: TerminalLaunchTarget
@@ -41,6 +54,7 @@ interface DashboardTerminalProps {
 }
 
 export default function DashboardTerminal({
+  allowPtySettings = false,
   autoStart = false,
   getSandbox,
   launchTarget,
@@ -58,9 +72,20 @@ export default function DashboardTerminal({
   const [template, setTemplate] = useState(
     normalizeTerminalTemplate(launchTarget?.template) ?? 'base'
   )
+  const launchTargetPtyOptions = useMemo(
+    () => normalizePtyOptions(launchTarget?.ptyOptions ?? {}),
+    [launchTarget?.ptyOptions]
+  )
+  const [ptyOptions, setPtyOptions] =
+    useState<TerminalPtyOptions>(launchTargetPtyOptions)
+  const [arePtySettingsLoaded, setArePtySettingsLoaded] = useState(
+    !allowPtySettings
+  )
+  const [isPtySettingsOpen, setIsPtySettingsOpen] = useState(false)
   const [pendingLaunch, setPendingLaunch] =
     useState<PendingTerminalLaunch | null>(null)
 
+  const ptyOptionsRef = useRef<TerminalPtyOptions>(launchTargetPtyOptions)
   const sandboxRef = useRef<Sandbox | null>(null)
   const ptyRef = useRef<CommandHandle | null>(null)
   const pidRef = useRef<number | undefined>(undefined)
@@ -337,7 +362,7 @@ export default function DashboardTerminal({
           rows: terminalSize.rows,
           timeoutMs: 0,
           requestTimeoutMs: TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS,
-          cwd: DEFAULT_CWD,
+          ...normalizePtyOptions(ptyOptionsRef.current),
           onData: (data) => {
             appendOutput(data)
           },
@@ -445,11 +470,11 @@ export default function DashboardTerminal({
         return
       }
 
-      if (command.trim()) {
-        // Commands can come from links, so require an explicit click before
-        // sending anything into the PTY.
+      if (command.trim() || options.target?.requiresConfirmation) {
+        // Commands and PTY settings can come from links, so require an
+        // explicit click before using them to start or write to a terminal.
         setPendingLaunch({
-          command: command.trim(),
+          command: command.trim() || undefined,
           target: {
             ...options.target,
             template: nextTemplate,
@@ -472,11 +497,11 @@ export default function DashboardTerminal({
   )
 
   const confirmPendingLaunch = useCallback(
-    (command: string) => {
+    (command?: string) => {
       if (!pendingLaunch) return
 
-      const normalizedCommand = command.trim()
-      if (!normalizedCommand) return
+      const normalizedCommand = command?.trim() ?? ''
+      if (pendingLaunch.command && !normalizedCommand) return
 
       const { target: launchTarget } = pendingLaunch
       const launchTemplate = launchTarget?.template ?? 'base'
@@ -489,8 +514,10 @@ export default function DashboardTerminal({
         (!launchSandboxId || activeSandboxId === launchSandboxId)
       ) {
         setPendingLaunch(null)
-        runCommand(normalizedCommand)
-        if (activeSandboxId) {
+        if (normalizedCommand) {
+          runCommand(normalizedCommand)
+        }
+        if (activeSandboxId && normalizedCommand) {
           updateTerminalUrl({
             clearCommand: true,
             sandboxId: activeSandboxId,
@@ -504,10 +531,13 @@ export default function DashboardTerminal({
       }
 
       setPendingLaunch(null)
-      pendingCommandsRef.current = [normalizedCommand]
+      pendingCommandsRef.current = normalizedCommand ? [normalizedCommand] : []
       void startTerminal({
         forceNewSandbox: !launchSandboxId && template !== launchTemplate,
-        target: launchTarget,
+        target: {
+          ...launchTarget,
+          requiresConfirmation: false,
+        },
       })
     },
     [
@@ -555,7 +585,56 @@ export default function DashboardTerminal({
     startTerminal,
   ])
 
+  const applyPtyOptions = useCallback(
+    (
+      options: TerminalPtyOptions,
+      { makeDefault }: { makeDefault: boolean }
+    ) => {
+      ptyOptionsRef.current = options
+      setPtyOptions(options)
+      if (makeDefault) {
+        writeStoredTerminalPtyOptions(userId, options)
+      }
+
+      if (sandboxScoped) {
+        if (!reconnectSandboxId && !getSandbox) return
+
+        void startTerminal({
+          target: reconnectTarget,
+        })
+        return
+      }
+
+      if (status === 'ready') {
+        void startTerminal({ forceNewSandbox: true })
+      }
+    },
+    [
+      getSandbox,
+      reconnectTarget,
+      reconnectSandboxId,
+      sandboxScoped,
+      startTerminal,
+      status,
+      userId,
+    ]
+  )
+
   useEffect(() => {
+    if (!allowPtySettings) return
+
+    const storedOptions = readStoredTerminalPtyOptions(userId)
+    const nextOptions = normalizePtyOptions({
+      ...storedOptions,
+      ...launchTargetPtyOptions,
+    })
+    ptyOptionsRef.current = nextOptions
+    setPtyOptions(nextOptions)
+    setArePtySettingsLoaded(true)
+  }, [allowPtySettings, launchTargetPtyOptions, userId])
+
+  useEffect(() => {
+    if (!arePtySettingsLoaded) return
     if (!autoStart || status !== 'idle' || isStartingRef.current) return
 
     const autoStartTimer = window.setTimeout(() => {
@@ -569,7 +648,13 @@ export default function DashboardTerminal({
     return () => {
       window.clearTimeout(autoStartTimer)
     }
-  }, [autoStart, launchTarget, queueTerminalCommand, status])
+  }, [
+    arePtySettingsLoaded,
+    autoStart,
+    launchTarget,
+    queueTerminalCommand,
+    status,
+  ])
 
   const handlePageHide = useEffectEvent((event: PageTransitionEvent) => {
     if (event.persisted) return
@@ -606,6 +691,7 @@ export default function DashboardTerminal({
   return (
     <>
       <TerminalPanel
+        canConfigurePty={allowPtySettings}
         sandboxId={activeSandboxId}
         restartDisabled={restartDisabled}
         restartLabel={restartLabel}
@@ -613,7 +699,15 @@ export default function DashboardTerminal({
         terminalContainerRef={terminalContainerRef}
         onFocusTerminal={focusTerminal}
         onCopyTerminalText={() => void copyTerminalText()}
+        onConfigurePty={() => setIsPtySettingsOpen(true)}
         onRestartTerminal={restartTerminal}
+      />
+
+      <PtySettingsDialog
+        open={isPtySettingsOpen}
+        options={ptyOptions}
+        onApply={applyPtyOptions}
+        onOpenChange={setIsPtySettingsOpen}
       />
 
       <DashboardTerminalCommandDialog

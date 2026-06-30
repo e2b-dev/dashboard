@@ -1,4 +1,5 @@
 import type { Sandbox } from 'e2b'
+import type { TerminalPtyOptions } from './pty-options'
 
 export type TerminalStatus = 'idle' | 'starting' | 'ready' | 'error'
 
@@ -13,13 +14,15 @@ export type StartTerminalOptions = {
 }
 
 export type PendingTerminalLaunch = {
-  command: string
+  command?: string
   target?: TerminalLaunchTarget
 }
 
 export type TerminalLaunchTarget = {
   command?: string
   forceNewSandbox?: boolean
+  ptyOptions?: TerminalPtyOptions
+  requiresConfirmation?: boolean
   sandboxId?: string
   template?: string
 }

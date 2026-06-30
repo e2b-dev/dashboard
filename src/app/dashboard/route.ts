@@ -69,12 +69,15 @@ export async function GET(request: NextRequest) {
 
   // send everything to terminal if it's terminal
   if (tab === 'terminal') {
-    const terminalParams = ['template', 'sandboxId', 'command']
+    const terminalParams = ['template', 'sandboxId', 'command', 'user', 'cwd']
     terminalParams.forEach((param) => {
       const value = searchParams.get(param)
       if (value) {
         redirectUrl.searchParams.set(param, value)
       }
+    })
+    searchParams.getAll('env').forEach((value) => {
+      redirectUrl.searchParams.append('env', value)
     })
   }
 

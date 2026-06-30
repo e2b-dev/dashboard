@@ -1,0 +1,155 @@
+'use client'
+
+import { useEffect, useId, useState } from 'react'
+import { Button } from '@/ui/primitives/button'
+import { Checkbox } from '@/ui/primitives/checkbox'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/ui/primitives/dialog'
+import { Input } from '@/ui/primitives/input'
+import { Textarea } from '@/ui/primitives/textarea'
+import type { TerminalPtyOptions } from './pty-options'
+
+interface PtySettingsDialogProps {
+  open: boolean
+  options: TerminalPtyOptions
+  onApply: (
+    options: TerminalPtyOptions,
+    settings: { makeDefault: boolean }
+  ) => void
+  onOpenChange: (open: boolean) => void
+}
+
+export default function PtySettingsDialog({
+  open,
+  options,
+  onApply,
+  onOpenChange,
+}: PtySettingsDialogProps) {
+  const userId = useId()
+  const cwdId = useId()
+  const envsId = useId()
+  const [user, setUser] = useState(options.user ?? '')
+  const [cwd, setCwd] = useState(options.cwd ?? '')
+  const [envs, setEnvs] = useState(formatEnvVars(options.envs))
+  const [makeDefault, setMakeDefault] = useState(false)
+
+  useEffect(() => {
+    if (!open) return
+
+    setUser(options.user ?? '')
+    setCwd(options.cwd ?? '')
+    setEnvs(formatEnvVars(options.envs))
+    setMakeDefault(false)
+  }, [open, options])
+
+  const applySettings = () => {
+    onApply(
+      {
+        user,
+        cwd,
+        envs: parseEnvVars(envs),
+      },
+      { makeDefault }
+    )
+    onOpenChange(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[520px]">
+        <DialogHeader>
+          <DialogTitle>PTY settings</DialogTitle>
+          <DialogDescription className="sr-only">
+            Applied when the terminal opens a new PTY.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid gap-3">
+          <label className="grid gap-1" htmlFor={userId}>
+            <span className="prose-label text-fg-tertiary uppercase">User</span>
+            <Input
+              id={userId}
+              value={user}
+              placeholder="template default"
+              onChange={(event) => setUser(event.target.value)}
+            />
+          </label>
+
+          <label className="grid gap-1" htmlFor={cwdId}>
+            <span className="prose-label text-fg-tertiary uppercase">
+              Working directory
+            </span>
+            <Input
+              id={cwdId}
+              value={cwd}
+              placeholder="user home or template workdir"
+              onChange={(event) => setCwd(event.target.value)}
+            />
+          </label>
+
+          <label className="grid gap-1" htmlFor={envsId}>
+            <span className="prose-label text-fg-tertiary uppercase">
+              Environment
+            </span>
+            <Textarea
+              id={envsId}
+              value={envs}
+              placeholder={'NAME=value\nDEBUG=1'}
+              className="min-h-24 font-mono text-xs"
+              onChange={(event) => setEnvs(event.target.value)}
+            />
+          </label>
+
+          <label className="flex items-center gap-2">
+            <Checkbox
+              checked={makeDefault}
+              onCheckedChange={(checked) => setMakeDefault(checked === true)}
+            />
+            <span className="prose-label text-fg-tertiary uppercase">
+              Make default
+            </span>
+          </label>
+        </div>
+
+        <DialogFooter>
+          <Button type="button" variant="secondary" onClick={applySettings}>
+            Apply and reconnect
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function formatEnvVars(envs: TerminalPtyOptions['envs']) {
+  if (!envs) return ''
+
+  return Object.entries(envs)
+    .map(([key, value]) => `${key}=${value}`)
+    .join('\n')
+}
+
+export function parseEnvVars(value: string) {
+  const envs: Record<string, string> = {}
+
+  for (const line of value.split(/\r?\n/)) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+
+    const separator = trimmed.indexOf('=')
+    if (separator <= 0) continue
+
+    const key = trimmed.slice(0, separator).trim()
+    if (!key) continue
+
+    envs[key] = trimmed.slice(separator + 1)
+  }
+
+  return Object.keys(envs).length > 0 ? envs : undefined
+}
