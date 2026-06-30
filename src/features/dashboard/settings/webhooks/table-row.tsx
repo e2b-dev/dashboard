@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Fragment, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { SandboxLifecycleEventTypeSchema } from '@/core/modules/sandboxes/lifecycle-event-types'
@@ -101,7 +101,7 @@ const WebhookNameAndUrl = ({ name, url }: WebhookNameAndUrlProps) => {
           onMouseEnter={() => setIsUrlHovered(true)}
           onMouseLeave={() => setIsUrlHovered(false)}
           aria-label={`Copy webhook URL ${url}`}
-          className="w-fit max-w-full min-w-0 justify-start font-mono uppercase prose-label-numeric"
+          className="relative z-10 w-fit max-w-full min-w-0 justify-start font-mono uppercase prose-label-numeric"
         >
           <span className="truncate">{url}</span>
         </Button>
@@ -134,7 +134,9 @@ const WebhookEventBadges = ({ events }: WebhookEventBadgesProps) => {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
-          <Badge className="cursor-pointer">ALL ({events.length})</Badge>
+          <Badge className="relative z-10 cursor-pointer">
+            ALL ({events.length})
+          </Badge>
         </TooltipTrigger>
         <TooltipContent>
           <div className="flex flex-wrap items-center gap-1 prose-label uppercase">
@@ -167,6 +169,7 @@ const WebhookRowActions = ({ webhook }: WebhookRowActionsProps) => {
       <DropdownMenuTrigger asChild>
         <IconButton
           aria-label={`Open actions for ${webhook.name}`}
+          className="relative z-10 size-5"
           onClick={(e) => e.stopPropagation()}
         >
           <IndicatorDotsIcon className="-rotate-90" />
@@ -198,7 +201,6 @@ const WebhookRowActions = ({ webhook }: WebhookRowActionsProps) => {
 
 export const WebhookTableRow = ({ webhook }: WebhookRowProps) => {
   const { team } = useDashboard()
-  const router = useRouter()
 
   const createdAt = webhook.createdAt
     ? new Date(webhook.createdAt).toLocaleDateString('en-US', {
@@ -209,23 +211,22 @@ export const WebhookTableRow = ({ webhook }: WebhookRowProps) => {
     : '-'
 
   const webhookHref = PROTECTED_URLS.WEBHOOK(team.slug, webhook.id)
-  const handleRowClick = (event: React.MouseEvent<HTMLTableRowElement>) => {
-    if (!(event.target instanceof Node)) return
-    if (!event.currentTarget.contains(event.target)) return
-
-    router.push(webhookHref)
-  }
 
   return (
     <TableRow
       className={cn(
-        'group/row relative cursor-pointer border-b-0 transition-none',
+        'group/row relative z-0 cursor-pointer border-b-0 transition-none',
         'border-stroke/80 hover:z-20 focus-within:z-10',
         'has-[button[aria-haspopup=menu][data-state=open]]:z-10'
       )}
-      onClick={handleRowClick}
     >
       <TableCell className={cn(rowCellClassName, 'max-w-0')}>
+        <Link
+          href={webhookHref}
+          prefetch={false}
+          aria-label={`Open webhook ${webhook.name}`}
+          className="absolute -inset-x-3 -inset-y-px z-1"
+        />
         <RowHoverFrame
           className={cn(
             '-inset-x-3 -z-10 group-hover/row:bg-bg-1',
@@ -251,7 +252,7 @@ export const WebhookTableRow = ({ webhook }: WebhookRowProps) => {
         </div>
       </TableCell>
 
-      <TableCell className={cn(rowCellClassName, 'w-10 pl-6 text-right')}>
+      <TableCell className={cn(rowCellClassName, 'w-10 pl-5 text-right')}>
         <WebhookRowActions webhook={webhook} />
       </TableCell>
     </TableRow>
