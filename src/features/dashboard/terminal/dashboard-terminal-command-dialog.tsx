@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from '@/ui/primitives/dialog'
 import { WarningIcon } from '@/ui/primitives/icons'
+import { Input } from '@/ui/primitives/input'
 import { Textarea } from '@/ui/primitives/textarea'
 import {
   formatEnvVars,
@@ -31,11 +32,15 @@ export default function DashboardTerminalCommandDialog({
   onConfirm,
 }: DashboardTerminalCommandDialogProps) {
   const commandInputId = useId()
+  const userInputId = useId()
   const envInputId = useId()
+  const userInputRef = useRef<HTMLInputElement | null>(null)
   const envInputRef = useRef<HTMLTextAreaElement | null>(null)
   const [command, setCommand] = useState('')
   const hasCommand = !!launch?.command?.trim()
   const normalizedCommand = command.trim()
+  const canEditUser =
+    !!launch?.target?.requiresConfirmation && !!launch.target.ptyOptions?.user
   const canEditEnv = !!launch?.target?.requiresConfirmation
 
   useEffect(() => {
@@ -75,12 +80,20 @@ export default function DashboardTerminalCommandDialog({
                 {launch.target?.template ?? 'base'}
               </code>
             </div>
-            {launch.target?.ptyOptions?.user ? (
+            {canEditUser ? (
               <div className="space-y-1">
-                <p className="prose-label text-fg-tertiary">User</p>
-                <code className="block border bg-bg px-3 py-2 font-mono text-xs text-fg">
-                  {launch.target.ptyOptions.user}
-                </code>
+                <label
+                  className="prose-label text-fg-tertiary"
+                  htmlFor={userInputId}
+                >
+                  User
+                </label>
+                <Input
+                  id={userInputId}
+                  ref={userInputRef}
+                  defaultValue={launch.target?.ptyOptions?.user}
+                  placeholder="template default"
+                />
               </div>
             ) : null}
             {launch.target?.ptyOptions?.cwd ? (
@@ -144,6 +157,9 @@ export default function DashboardTerminalCommandDialog({
                 canEditEnv
                   ? {
                       ...launch?.target?.ptyOptions,
+                      user: canEditUser
+                        ? userInputRef.current?.value
+                        : launch?.target?.ptyOptions?.user,
                       envs: parseEnvVars(envInputRef.current?.value ?? ''),
                     }
                   : undefined
