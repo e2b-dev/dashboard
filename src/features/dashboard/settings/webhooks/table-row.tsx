@@ -163,39 +163,73 @@ const WebhookEventBadges = ({ events }: WebhookEventBadgesProps) => {
 
 const WebhookRowActions = ({ webhook }: WebhookRowActionsProps) => {
   const [dropDownOpen, setDropDownOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [editSecretOpen, setEditSecretOpen] = useState(false)
+
+  const handleDialogSelect = (
+    event: Event,
+    setDialogOpen: (open: boolean) => void
+  ) => {
+    event.preventDefault()
+    setDropDownOpen(false)
+    setDialogOpen(true)
+  }
 
   return (
-    <DropdownMenu open={dropDownOpen} onOpenChange={setDropDownOpen}>
-      <DropdownMenuTrigger asChild>
-        <IconButton
-          aria-label={`Open actions for ${webhook.name}`}
-          className="relative z-10 size-5"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <IndicatorDotsIcon className="-rotate-90" />
-        </IconButton>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent>
-        <DropdownMenuGroup>
-          <UpsertWebhookDialog mode="update" webhook={webhook}>
-            <DropdownMenuItem inset onSelect={(e) => e.preventDefault()}>
+    <>
+      <DropdownMenu open={dropDownOpen} onOpenChange={setDropDownOpen}>
+        <DropdownMenuTrigger asChild>
+          <IconButton
+            aria-label={`Open actions for ${webhook.name}`}
+            className="relative z-10 size-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <IndicatorDotsIcon className="-rotate-90" />
+          </IconButton>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuGroup>
+            <DropdownMenuItem
+              inset
+              onSelect={(event) => handleDialogSelect(event, setEditOpen)}
+            >
               <EditIcon className={actionIconClassName} /> Edit
             </DropdownMenuItem>
-          </UpsertWebhookDialog>
-          <DeleteWebhookDialog webhook={webhook}>
-            <DropdownMenuItem inset onSelect={(e) => e.preventDefault()}>
+            <DropdownMenuItem
+              inset
+              onSelect={(event) => handleDialogSelect(event, setDeleteOpen)}
+            >
               <RemoveIcon className={actionIconClassName} />
               Delete
             </DropdownMenuItem>
-          </DeleteWebhookDialog>
-          <UpdateWebhookSecretDialog webhook={webhook}>
-            <DropdownMenuItem inset onSelect={(e) => e.preventDefault()}>
+            <DropdownMenuItem
+              inset
+              onSelect={(event) => handleDialogSelect(event, setEditSecretOpen)}
+            >
               <PrivateIcon className={actionIconClassName} /> Edit secret
             </DropdownMenuItem>
-          </UpdateWebhookSecretDialog>
-        </DropdownMenuGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <UpsertWebhookDialog
+        mode="update"
+        webhook={webhook}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+      />
+      <DeleteWebhookDialog
+        webhook={webhook}
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+      />
+      <UpdateWebhookSecretDialog
+        webhook={webhook}
+        open={editSecretOpen}
+        onOpenChange={setEditSecretOpen}
+      />
+    </>
   )
 }
 

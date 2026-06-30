@@ -38,20 +38,26 @@ import { Loader } from '@/ui/primitives/loader'
 import type { Webhook } from './types'
 
 interface UpdateWebhookSecretDialogProps {
-  children: React.ReactNode
+  children?: React.ReactNode
   webhook: Webhook
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
 export const UpdateWebhookSecretDialog = ({
   children: trigger,
   webhook,
+  open: controlledOpen,
+  onOpenChange,
 }: UpdateWebhookSecretDialogProps) => {
   'use no memo'
 
   const { team } = useDashboard()
   const trpc = useTRPC()
   const queryClient = useQueryClient()
-  const [open, setOpen] = useState(false)
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
+  const open = controlledOpen ?? uncontrolledOpen
+  const setOpen = onOpenChange ?? setUncontrolledOpen
 
   const listQueryKey = trpc.webhooks.list.queryOptions({
     teamSlug: team.slug,
@@ -103,7 +109,7 @@ export const UpdateWebhookSecretDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={handleDialogChange}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent>
         <DialogHeader className="gap-2">
           <DialogTitle>Edit '{webhook.name}' secret</DialogTitle>

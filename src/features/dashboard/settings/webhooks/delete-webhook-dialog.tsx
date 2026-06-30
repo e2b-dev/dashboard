@@ -24,19 +24,25 @@ import { Loader } from '@/ui/primitives/loader'
 import type { Webhook } from './types'
 
 interface DeleteWebhookDialogProps {
-  children: React.ReactNode
+  children?: React.ReactNode
   webhook: Webhook
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
 export const DeleteWebhookDialog = ({
   children: trigger,
   webhook,
+  open: controlledOpen,
+  onOpenChange,
 }: DeleteWebhookDialogProps) => {
   const { team } = useDashboard()
   const { toast } = useToast()
   const trpc = useTRPC()
   const queryClient = useQueryClient()
-  const [open, setOpen] = useState(false)
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
+  const open = controlledOpen ?? uncontrolledOpen
+  const setOpen = onOpenChange ?? setUncontrolledOpen
 
   const listQueryKey = trpc.webhooks.list.queryOptions({
     teamSlug: team.slug,
@@ -66,7 +72,7 @@ export const DeleteWebhookDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent
         hideClose
         className="flex flex-row items-center gap-6 sm:max-w-[516px] py-4 pr-8 pl-5"
