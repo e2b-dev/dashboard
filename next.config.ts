@@ -21,6 +21,9 @@ const config: NextConfig = {
   output: 'standalone',
   reactStrictMode: true,
   reactCompiler: true,
+  typescript: {
+    ignoreBuildErrors: process.env.NEXT_IGNORE_TYPE_ERRORS === '1',
+  },
   experimental: {
     useCache: true,
     turbopackFileSystemCacheForDev: true,
