@@ -23,6 +23,13 @@ export const FEATURE_FLAGS = {
       'Enables the new sandbox list with pagination and paused sandbox coverage.',
     exposure: 'both',
   },
+  newUsagePage: {
+    kind: 'boolean',
+    key: 'new-usage-page',
+    defaultValue: false,
+    description: 'Enables the redesigned (Dashboard 2.0) usage page skeleton.',
+    exposure: 'server',
+  },
   disableE2BAccessTokenProvisioning: {
     kind: 'boolean',
     key: 'disable_e2b_access_token_provisioning',
