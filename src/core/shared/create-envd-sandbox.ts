@@ -44,6 +44,10 @@ type EnvdSandboxConstructor = new (
 export function createEnvdSandbox(params: EnvdSandboxParams): Sandbox {
   const SandboxCtor = Sandbox as unknown as EnvdSandboxConstructor
 
+  const sandboxUrl =
+    params.sandboxUrl ??
+    (params.domain ? `https://${params.domain}` : params.sandboxUrl)
+
   return new SandboxCtor({
     sandboxId: params.sandboxId,
     sandboxDomain: params.sandboxDomain ?? undefined,
@@ -51,7 +55,7 @@ export function createEnvdSandbox(params: EnvdSandboxParams): Sandbox {
     envdAccessToken: params.envdAccessToken,
     trafficAccessToken: params.trafficAccessToken,
     domain: params.domain,
-    sandboxUrl: resolveBrowserSandboxUrl(params.sandboxUrl, params.sandboxId),
+    sandboxUrl: resolveBrowserSandboxUrl(sandboxUrl, params.sandboxId),
   })
 }
 
