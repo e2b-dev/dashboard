@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { Identity } from '@ory/client-fetch'
 import { type NextRequest, NextResponse } from 'next/server'
+import { formatOidcNameClaim } from '@/core/server/auth/ory/claims'
 import {
   getOryIdentityApi,
   getOryOAuth2Api,
@@ -102,7 +103,7 @@ async function profileClaimsForSubject(
   }
 
   if (grantScope.includes('profile')) {
-    const name = traits.name?.trim()
+    const name = formatOidcNameClaim(traits.name)
     if (name) claims.name = name
   }
 

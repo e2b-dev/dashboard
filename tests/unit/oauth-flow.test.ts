@@ -1,10 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { formatOidcNameClaim } from '@/core/server/auth/ory/claims'
 import {
   type OryFlowState,
   openOryFlowState,
   oryFlowCookieOptions,
   sealOryFlowState,
 } from '@/core/server/auth/ory/oauth-flow'
+import { normalizeOryPageParams } from '@/core/server/auth/ory/page-params'
 
 const flow: OryFlowState = {
   state: 'state-value',
@@ -93,5 +95,40 @@ describe('e2b_oauth_flow cookie', () => {
 
     vi.stubEnv('NODE_ENV', 'development')
     expect(oryFlowCookieOptions().secure).toBe(false)
+  })
+})
+
+describe('normalizeOryPageParams', () => {
+  it('maps Kratos id redirects to Ory flow params', async () => {
+    await expect(
+      normalizeOryPageParams(Promise.resolve({ id: 'flow-id' }))
+    ).resolves.toEqual({
+      id: 'flow-id',
+      flow: 'flow-id',
+    })
+  })
+
+  it('preserves explicit flow params', async () => {
+    await expect(
+      normalizeOryPageParams(
+        Promise.resolve({ flow: 'flow-id', id: 'kratos-id' })
+      )
+    ).resolves.toEqual({
+      flow: 'flow-id',
+      id: 'kratos-id',
+    })
+  })
+})
+
+describe('formatOidcNameClaim', () => {
+  it('trims string names', () => {
+    expect(formatOidcNameClaim('  Local Dev  ')).toBe('Local Dev')
+    expect(formatOidcNameClaim('   ')).toBeNull()
+  })
+
+  it('formats object names from local Kratos traits', () => {
+    expect(formatOidcNameClaim({ first: ' Local ', last: ' Dev ' })).toBe(
+      'Local Dev'
+    )
   })
 })
