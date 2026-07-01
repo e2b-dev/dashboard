@@ -1,9 +1,13 @@
-import { usePathname } from 'next/navigation'
 import posthog, { type Survey } from 'posthog-js'
 import { PostHogProvider as PHProvider } from 'posthog-js/react'
 import { createContext, useContext, useEffect, useState } from 'react'
 
 export type PostHogEnvironment = 'production' | 'preview' | 'development'
+
+interface PostHogBootstrapIdentity {
+  distinctID: string
+  email?: string
+}
 
 interface AppPostHogContextValue {
   enabled: boolean
@@ -11,6 +15,7 @@ interface AppPostHogContextValue {
   isLoaded: boolean
   isInitialized: boolean
   dashboardFeedbackSurvey: Survey | null
+  setBootstrap: (identity: PostHogBootstrapIdentity) => void
 }
 
 const AppPostHogContext = createContext<AppPostHogContextValue | undefined>(
@@ -38,18 +43,22 @@ export function PostHogProvider({
   enabled: boolean
   environment: PostHogEnvironment
 }) {
-  const pathname = usePathname()
   const [dashboardFeedbackSurvey, setDashboardFeedbackSurvey] =
     useState<Survey | null>(null)
   const [isLoaded, setIsLoaded] = useState(() => posthog.__loaded)
   const [isInitialized, setIsInitialized] = useState(false)
+  const [bootstrap, setBootstrap] = useState<PostHogBootstrapIdentity | null>(
+    null
+  )
 
   // Only track the dashboard app — not auth, marketing, or proxied (docs/blog)
-  // paths. PostHog initializes lazily once the user reaches a /dashboard route.
-  const shouldInit = enabled && !!pathname?.startsWith('/dashboard')
+  // paths. PostHog initializes once a bootstrap identity is available, which
+  // only happens inside the dashboard layout (see PostHogBootstrap). Gating on
+  // bootstrap guarantees the first captured pageview is already identified.
+  const shouldInit = enabled && !!bootstrap
 
   useEffect(() => {
-    if (!shouldInit || !process.env.NEXT_PUBLIC_POSTHOG_KEY) {
+    if (!shouldInit || !bootstrap || !process.env.NEXT_PUBLIC_POSTHOG_KEY) {
       return
     }
 
@@ -100,12 +109,17 @@ export function PostHogProvider({
       disable_session_recording: process.env.NODE_ENV !== 'production',
       advanced_disable_toolbar_metrics: true,
       opt_in_site_apps: true,
+      bootstrap: {
+        distinctID: bootstrap.distinctID,
+        isIdentifiedID: true,
+        ...(bootstrap.email ? { $set: { email: bootstrap.email } } : {}),
+      },
       loaded: (posthog) => {
         if (process.env.NODE_ENV === 'development') posthog.debug()
         finishLoading()
       },
     })
-  }, [environment, shouldInit])
+  }, [environment, shouldInit, bootstrap])
 
   return (
     <AppPostHogContext.Provider
@@ -115,6 +129,7 @@ export function PostHogProvider({
         isLoaded,
         dashboardFeedbackSurvey,
         isInitialized,
+        setBootstrap,
       }}
     >
       <PHProvider client={posthog}>{children}</PHProvider>

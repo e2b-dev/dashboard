@@ -12,6 +12,7 @@ import { featureFlags } from '@/core/modules/feature-flags/feature-flags.server'
 import { getAuthContext } from '@/core/server/auth'
 import DashboardLayoutView from '@/features/dashboard/layouts/layout'
 import { DashboardPostHogErrorBoundary } from '@/features/dashboard/posthog-error-boundary'
+import { PostHogBootstrap } from '@/features/posthog-bootstrap'
 import Sidebar from '@/features/dashboard/sidebar/sidebar'
 import {
   getQueryClient,
@@ -86,6 +87,10 @@ export default async function DashboardLayout({
 
   return (
     <HydrateClient>
+      <PostHogBootstrap
+        distinctId={authContext.user.id}
+        email={authContext.user.email ?? undefined}
+      />
       <FeatureFlagsProvider initialFlags={evaluatedFeatureFlags}>
         <DashboardTeamGate teamSlug={teamSlug} fallbackUser={authContext.user}>
           <SidebarProvider

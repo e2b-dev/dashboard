@@ -27,7 +27,10 @@ export function OryPostHogIdentityBridge({
       return
     }
 
-    posthog.identify(user.id, { email: user.email, environment })
+    posthog.identify(user.id, {
+      environment,
+      ...(user.email ? { email: user.email } : {}),
+    })
     posthog.group('team', team.id, {
       environment,
       name: team.name,
