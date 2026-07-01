@@ -32,6 +32,10 @@ export function readRelayOrigin(): string | undefined {
   return value.replace(/\/$/, '')
 }
 
+export function resolvePublicOrigin(requestOrigin: string): string {
+  return process.env.APP_URL?.replace(/\/$/, '') ?? requestOrigin
+}
+
 // Relay mode applies only when a fixed origin is configured AND differs from the
 // request origin. On the fixed host itself (and everywhere relay is unset) the
 // request resolves to its own callback, i.e. today's behavior.

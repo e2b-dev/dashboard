@@ -12,6 +12,7 @@ import {
   sealOryFlowState,
 } from '@/core/server/auth/ory/oauth-flow'
 import {
+  resolvePublicOrigin,
   resolveOryRedirectUri,
   sealRelayState,
 } from '@/core/server/auth/ory/oauth-relay'
@@ -27,7 +28,7 @@ import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 // (PKCE S256, state, nonce), stashes the verifier/state/nonce in a short-lived
 // httpOnly cookie for the callback, and redirects the browser to Hydra.
 export async function GET(request: NextRequest) {
-  const origin = request.nextUrl.origin
+  const origin = resolvePublicOrigin(request.nextUrl.origin)
   const intent = readOryAuthIntent(request.nextUrl.searchParams.get('intent'))
 
   if (!intent) {
