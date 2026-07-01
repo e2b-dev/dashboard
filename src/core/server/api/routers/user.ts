@@ -4,7 +4,7 @@ import { featureFlags } from '@/core/modules/feature-flags/feature-flags.server'
 import {
   type AuthUser,
   getUserProfile,
-  handleCredentialChangeSuccess,
+  handleInSessionPasswordChange,
   updateUser,
 } from '@/core/server/auth'
 import { createTRPCRouter } from '@/core/server/trpc/init'
@@ -129,9 +129,10 @@ export const userRouter = createTRPCRouter({
       })
 
       if (result.ok) {
-        // Invalidate sessions when the password changed.
+        // A password change signs out every OTHER device but keeps the current
+        // one signed in (recovery's sign-out-everywhere path is separate).
         if (input.password) {
-          await handleCredentialChangeSuccess()
+          await handleInSessionPasswordChange()
         }
 
         return { status: 'ok' as const, user: result.user }

@@ -27,11 +27,13 @@ import {
   readIdentityDisplayProfile,
 } from './identity'
 import {
+  disableOtherKratosSessions,
   revokeKratosSession,
   revokeKratosSessionsForIdentity,
 } from './kratos-session'
 import { revokeOryOAuthSessionsForSubject } from './oauth-session'
 import {
+  cookieHeaderWithoutAppOwned,
   E2B_SESSION_COOKIE,
   openSessionCookie,
   sessionCookieDeleteOptions,
@@ -175,6 +177,22 @@ export async function startReauthForAccountSettings(): Promise<ReauthDispatch> {
   return {
     to: buildOryStartURL('reauth', ACCOUNT_SETTINGS_REAUTH_RETURN_TO),
   }
+}
+
+export async function isCurrentSessionFresh(): Promise<boolean> {
+  const kratos = await readKratosSession()
+  return isKratosSessionFresh(kratos?.authenticated_at)
+}
+
+export async function handleInSessionPasswordChange(): Promise<void> {
+  const identityId = (await readKratosSession())?.identity?.id
+  const cookie = cookieHeaderWithoutAppOwned((await cookies()).getAll())
+  if (!identityId || !cookie) return
+
+  await Promise.all([
+    disableOtherKratosSessions(cookie),
+    revokeOryOAuthSessionsForSubject(identityId),
+  ])
 }
 
 export async function handleCredentialChangeSuccess(): Promise<void> {

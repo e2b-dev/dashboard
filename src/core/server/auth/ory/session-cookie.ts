@@ -11,10 +11,23 @@ export const E2B_SESSION_COOKIE = 'e2b_session'
 export const ORY_SIGNUP_METADATA_COOKIE = 'e2b-ory-signup-metadata'
 
 // Cookies the dashboard owns — never forwarded across the Ory trust boundary.
-export const APP_OWNED_COOKIES = new Set<string>([
+const APP_OWNED_COOKIES = new Set<string>([
   E2B_SESSION_COOKIE,
   ORY_SIGNUP_METADATA_COOKIE,
 ])
+
+// Serializes a cookie list into a `Cookie` header for forwarding to Ory, with
+// the app-owned cookies stripped. Takes the cookie list rather than reading
+// next/headers so it stays edge-safe and serves both the middleware
+// (NextRequest cookies) and server components (next/headers cookies).
+export function cookieHeaderWithoutAppOwned(
+  cookieList: ReadonlyArray<{ name: string; value: string }>
+): string {
+  return cookieList
+    .filter((cookie) => !APP_OWNED_COOKIES.has(cookie.name))
+    .map((cookie) => `${cookie.name}=${cookie.value}`)
+    .join('; ')
+}
 
 // Persist across browser restarts. The cookie only caches tokens — a stale or
 // expired cookie is re-minted from the live Kratos session, so the lifetime is
