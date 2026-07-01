@@ -67,6 +67,7 @@ describe('createFeatureFlagService', () => {
       FEATURE_FLAGS.agentsEnabled,
       FEATURE_FLAGS.isAdmin,
       FEATURE_FLAGS.newSandboxList,
+      FEATURE_FLAGS.newUsagePage,
       FEATURE_FLAGS.disableE2BAccessTokenProvisioning,
     ])
     expect(result).toEqual([
@@ -92,6 +93,15 @@ describe('createFeatureFlagService', () => {
         kind: 'boolean',
         description:
           'Enables the new sandbox list with pagination and paused sandbox coverage.',
+        defaultValue: false,
+        value: true,
+      },
+      {
+        id: 'newUsagePage',
+        key: 'new-usage-page',
+        kind: 'boolean',
+        description:
+          'Enables the redesigned (Dashboard 2.0) usage page skeleton.',
         defaultValue: false,
         value: true,
       },

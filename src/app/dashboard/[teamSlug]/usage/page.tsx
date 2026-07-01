@@ -1,4 +1,10 @@
+import { redirect } from 'next/navigation'
+import { AUTH_URLS } from '@/configs/urls'
+import { featureFlags } from '@/core/modules/feature-flags/feature-flags.server'
+import { getAuthContext } from '@/core/server/auth'
+import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
 import { getUsage } from '@/core/server/functions/usage/get-usage'
+import { UsageRedesignPage } from '@/features/dashboard/usage/redesign/usage-redesign'
 import { UsageChartsProvider } from '@/features/dashboard/usage/usage-charts-context'
 import { UsageMetricChart } from '@/features/dashboard/usage/usage-metric-chart'
 import { UsageTopTimeRangeControls } from '@/features/dashboard/usage/usage-top-time-range-controls'
@@ -11,6 +17,30 @@ export default async function UsagePage({
   params: Promise<{ teamSlug: string }>
 }) {
   const { teamSlug } = await params
+
+  const authContext = await getAuthContext()
+
+  if (!authContext) {
+    redirect(AUTH_URLS.SIGN_IN)
+  }
+
+  const teamId = await getTeamIdFromSlug(teamSlug, authContext.accessToken)
+
+  const newUsagePage = await featureFlags.isEnabled('newUsagePage', {
+    user: {
+      id: authContext.user.id,
+      email: authContext.user.email ?? undefined,
+    },
+    team:
+      teamId.ok && teamId.data
+        ? { id: teamId.data, slug: teamSlug }
+        : undefined,
+  })
+
+  if (newUsagePage) {
+    return <UsageRedesignPage />
+  }
+
   const result = await getUsage({ teamSlug })
 
   if (!result?.data || result.serverError || result.validationErrors) {
