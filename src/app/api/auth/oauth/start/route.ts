@@ -12,8 +12,8 @@ import {
   sealOryFlowState,
 } from '@/core/server/auth/ory/oauth-flow'
 import {
-  resolvePublicOrigin,
   resolveOryRedirectUri,
+  resolvePublicOrigin,
   sealRelayState,
 } from '@/core/server/auth/ory/oauth-relay'
 import { ORY_SIGNUP_METADATA_COOKIE } from '@/core/server/auth/ory/session-cookie'
