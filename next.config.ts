@@ -17,6 +17,10 @@ const browserNodeModuleStubs = {
   'node:path': browserStub('path.ts'),
 }
 
+const buildCpus = process.env.NEXT_BUILD_CPUS
+  ? Number(process.env.NEXT_BUILD_CPUS)
+  : undefined
+
 const config: NextConfig = {
   output: 'standalone',
   reactStrictMode: true,
@@ -25,6 +29,9 @@ const config: NextConfig = {
     ignoreBuildErrors: process.env.NEXT_IGNORE_TYPE_ERRORS === '1',
   },
   experimental: {
+    ...(buildCpus ? { cpus: buildCpus } : {}),
+    staticGenerationMaxConcurrency: buildCpus ?? undefined,
+    staticGenerationMinPagesPerWorker: buildCpus ? 1 : undefined,
     useCache: true,
     turbopackFileSystemCacheForDev: true,
     serverActions: {
