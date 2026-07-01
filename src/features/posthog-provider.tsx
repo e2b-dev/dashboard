@@ -109,13 +109,21 @@ export function PostHogProvider({
       disable_session_recording: process.env.NODE_ENV !== 'production',
       advanced_disable_toolbar_metrics: true,
       opt_in_site_apps: true,
+      // bootstrap only carries identity/flag fields (distinctID, isIdentifiedID,
+      // featureFlags, sessionID) — it does NOT send $set person properties.
       bootstrap: {
         distinctID: bootstrap.distinctID,
         isIdentifiedID: true,
-        ...(bootstrap.email ? { $set: { email: bootstrap.email } } : {}),
       },
       loaded: (posthog) => {
         if (process.env.NODE_ENV === 'development') posthog.debug()
+        // `loaded` runs before posthog-js auto-captures the first $pageview, so
+        // setting the email here ensures that pageview is ingested with the
+        // email already on the person (matters in person-on-events mode, where
+        // event-time person properties are frozen at ingestion).
+        if (bootstrap.email) {
+          posthog.setPersonProperties({ email: bootstrap.email })
+        }
         finishLoading()
       },
     })
