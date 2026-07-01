@@ -5,7 +5,7 @@ export function TemplateOverviewSkeleton() {
   return (
     <div className="flex flex-col gap-8">
       <OverviewSection label="Template" divider={false}>
-        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+        <div className="flex flex-col gap-1">
           <Skeleton className="h-8 w-40" />
           <Skeleton className="h-5 w-56" />
         </div>
