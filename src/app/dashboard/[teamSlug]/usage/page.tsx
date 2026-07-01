@@ -37,10 +37,6 @@ export default async function UsagePage({
         : undefined,
   })
 
-  if (newUsagePage) {
-    return <UsageRedesignPage />
-  }
-
   const result = await getUsage({ teamSlug })
 
   if (!result?.data || result.serverError || result.validationErrors) {
@@ -54,6 +50,14 @@ export default async function UsagePage({
         }
         description="Could not load usage data"
       />
+    )
+  }
+
+  if (newUsagePage) {
+    return (
+      <UsageChartsProvider data={result.data}>
+        <UsageRedesignPage />
+      </UsageChartsProvider>
     )
   }
 
