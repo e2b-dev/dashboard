@@ -36,10 +36,11 @@ ENV ORY_SDK_URL=$ORY_SDK_URL
 
 RUN bun node_modules/next/dist/bin/next build --webpack
 
-FROM base AS runner
+FROM node:24-bookworm-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
 
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
