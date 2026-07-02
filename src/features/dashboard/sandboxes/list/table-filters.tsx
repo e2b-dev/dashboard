@@ -1,14 +1,19 @@
 import * as React from 'react'
 import { memo, useCallback } from 'react'
 import { useDebounceValue } from 'usehooks-ts'
+import type { SandboxState } from '@/core/modules/sandboxes/models'
 import type { SandboxStartedAtFilter } from '@/features/dashboard/sandboxes/list/stores/table-store'
-import { useSandboxListTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
+import {
+  sandboxListAllStates,
+  useSandboxListTableStore,
+} from '@/features/dashboard/sandboxes/list/stores/table-store'
 import { cn } from '@/lib/utils'
 import { formatCPUCores, formatMemory } from '@/lib/utils/formatting'
 import { NumberInput } from '@/ui/number-input'
 import { Button } from '@/ui/primitives/button'
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
@@ -24,8 +29,43 @@ import { Input } from '@/ui/primitives/input'
 import { Label } from '@/ui/primitives/label'
 import { Separator } from '@/ui/primitives/separator'
 import { TableFilterButton } from '@/ui/table-filter-button'
+import { StateBadge } from './table-cells'
 
 // Components
+const StateFilter = memo(function StateFilter() {
+  const stateFilter = useSandboxListTableStore((state) => state.stateFilter)
+  const setStateFilter = useSandboxListTableStore(
+    (state) => state.setStateFilter
+  )
+
+  const handleToggle = useCallback(
+    (value: SandboxState) => {
+      const next = stateFilter.includes(value)
+        ? stateFilter.filter((s) => s !== value)
+        : [...stateFilter, value]
+
+      // Always keep at least one state selected; emptying resets to both.
+      setStateFilter(next.length === 0 ? sandboxListAllStates : next)
+    },
+    [stateFilter, setStateFilter]
+  )
+
+  return (
+    <div>
+      {sandboxListAllStates.map((state) => (
+        <DropdownMenuCheckboxItem
+          key={state}
+          checked={stateFilter.includes(state)}
+          onCheckedChange={() => handleToggle(state)}
+          onSelect={(e) => e.preventDefault()}
+        >
+          <StateBadge state={state} />
+        </DropdownMenuCheckboxItem>
+      ))}
+    </div>
+  )
+})
+
 const RunningSinceFilter = memo(function RunningSinceFilter() {
   const startedAtFilter = useSandboxListTableStore(
     (state) => state.startedAtFilter
@@ -271,6 +311,7 @@ const SandboxesTableFilters = memo(function SandboxesTableFilters({
   className,
   ...props
 }: SandboxesTableFiltersProps) {
+  const stateFilter = useSandboxListTableStore((state) => state.stateFilter)
   const startedAtFilter = useSandboxListTableStore(
     (state) => state.startedAtFilter
   )
@@ -279,6 +320,9 @@ const SandboxesTableFilters = memo(function SandboxesTableFilters({
   )
   const cpuCount = useSandboxListTableStore((state) => state.cpuCount)
   const memoryMB = useSandboxListTableStore((state) => state.memoryMB)
+  const setStateFilter = useSandboxListTableStore(
+    (state) => state.setStateFilter
+  )
   const setStartedAtFilter = useSandboxListTableStore(
     (state) => state.setStartedAtFilter
   )
@@ -310,6 +354,14 @@ const SandboxesTableFilters = memo(function SandboxesTableFilters({
           <DropdownMenuGroup>
             <DropdownMenuLabel>Filters</DropdownMenuLabel>
             <DropdownMenuSub>
+              <DropdownMenuSubTrigger>State</DropdownMenuSubTrigger>
+              <DropdownMenuPortal>
+                <DropdownMenuSubContent>
+                  <StateFilter />
+                </DropdownMenuSubContent>
+              </DropdownMenuPortal>
+            </DropdownMenuSub>
+            <DropdownMenuSub>
               <DropdownMenuSubTrigger>Started</DropdownMenuSubTrigger>
               <DropdownMenuPortal>
                 <DropdownMenuSubContent>
@@ -337,6 +389,15 @@ const SandboxesTableFilters = memo(function SandboxesTableFilters({
         </DropdownMenuContent>
       </DropdownMenu>
 
+      {stateFilter.length < sandboxListAllStates.length && (
+        <TableFilterButton
+          label="State"
+          value={stateFilter
+            .map((state) => state.replace(/^./, (c) => c.toUpperCase()))
+            .join(', ')}
+          onClick={() => setStateFilter(sandboxListAllStates)}
+        />
+      )}
       {startedAtFilter && (
         <TableFilterButton
           label="Started"

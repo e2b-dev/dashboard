@@ -34,7 +34,10 @@ import {
 import { SIDEBAR_TRANSITION_CLASSNAMES } from '@/ui/primitives/sidebar'
 import { SandboxesHeader } from './header'
 import type { SandboxStartedAtFilter } from './stores/table-store'
-import { getSandboxListEffectiveSorting } from './stores/table-store'
+import {
+  getSandboxListEffectiveSorting,
+  sandboxListAllStates,
+} from './stores/table-store'
 import { SandboxesTableBody } from './table-body'
 import type { SandboxListRow } from './table-config'
 import {
@@ -97,6 +100,9 @@ interface SandboxesTableViewProps {
   hasNextPage?: boolean
   isFetchingNextPage?: boolean
   fetchNextPage?: () => void
+  // When true the rows arrive already sorted from the server, so the table only
+  // reflects the sort indicator instead of re-sorting client-side.
+  manualSorting?: boolean
 }
 
 function SandboxesTableView({
@@ -107,6 +113,7 @@ function SandboxesTableView({
   hasNextPage,
   isFetchingNextPage,
   fetchNextPage,
+  manualSorting = false,
 }: SandboxesTableViewProps) {
   'use no memo'
 
@@ -122,6 +129,7 @@ function SandboxesTableView({
   )
 
   const {
+    stateFilter,
     startedAtFilter,
     templateFilters,
     cpuCount,
@@ -158,6 +166,7 @@ function SandboxesTableView({
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     enableSorting: true,
+    manualSorting,
     enableMultiSort: false,
     enableSortingRemoval: false,
     columnResizeMode: 'onChange',
@@ -171,8 +180,14 @@ function SandboxesTableView({
 
   const columnSizeVars = useColumnSizeVars(table)
   const scrollResetKey = useMemo(
-    () => JSON.stringify({ activeSorting, globalFilter, columnFilters }),
-    [activeSorting, globalFilter, columnFilters]
+    () =>
+      JSON.stringify({
+        activeSorting,
+        globalFilter,
+        columnFilters,
+        stateFilter,
+      }),
+    [activeSorting, globalFilter, columnFilters, stateFilter]
   )
 
   useEffect(() => {
@@ -256,6 +271,18 @@ export function NewSandboxesTable() {
   const pollingInterval = useSandboxListTableStore(
     (state) => state.pollingInterval
   )
+  const sorting = useSandboxListTableStore((state) => state.sorting)
+  const stateFilter = useSandboxListTableStore((state) => state.stateFilter)
+
+  // The only sortable column is startedAt; map its direction to the server order
+  // so sorting happens across the whole dataset, not just the loaded pages.
+  const order: 'asc' | 'desc' =
+    getSandboxListEffectiveSorting(sorting)[0]?.desc === false ? 'asc' : 'desc'
+
+  // Both states selected means no filter — omit it so the server default (both)
+  // applies and the query key matches the SSR prefetch.
+  const states =
+    stateFilter.length === sandboxListAllStates.length ? undefined : stateFilter
 
   const {
     data,
@@ -266,7 +293,7 @@ export function NewSandboxesTable() {
     isFetchingNextPage,
   } = useSuspenseInfiniteQuery(
     trpc.sandboxes.listSandboxesPaginated.infiniteQueryOptions(
-      { teamSlug, limit: SANDBOXES_PAGE_SIZE },
+      { teamSlug, limit: SANDBOXES_PAGE_SIZE, order, states },
       {
         getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
         initialCursor: undefined,
@@ -292,6 +319,7 @@ export function NewSandboxesTable() {
       hasNextPage={hasNextPage}
       isFetchingNextPage={isFetchingNextPage}
       fetchNextPage={fetchNextPage}
+      manualSorting
     />
   )
 }

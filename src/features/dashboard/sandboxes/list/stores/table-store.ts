@@ -3,6 +3,7 @@
 import type { OnChangeFn, SortingState } from '@tanstack/react-table'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
+import type { SandboxState } from '@/core/modules/sandboxes/models'
 import { areStringArraysEqual } from '@/lib/utils/array'
 import { createHashStorage } from '@/lib/utils/store'
 import { trackSandboxListInteraction } from '../tracking'
@@ -19,6 +20,9 @@ type SandboxListPollingInterval =
   (typeof sandboxListPollingIntervals)[number]['value']
 
 export type SandboxStartedAtFilter = '1h ago' | '6h ago' | '12h ago' | undefined
+
+// Both states selected = no active state filter (server defaults to both).
+export const sandboxListAllStates: SandboxState[] = ['running', 'paused']
 
 export const sandboxListDefaultSorting: SortingState = [
   { id: 'startedAt', desc: true },
@@ -44,6 +48,7 @@ interface SandboxListTableState {
   globalFilter: string
 
   // Filter state
+  stateFilter: SandboxState[]
   startedAtFilter: SandboxStartedAtFilter
   templateFilters: string[]
   cpuCount: number | undefined
@@ -56,6 +61,7 @@ interface SandboxListTableActions {
   setGlobalFilter: OnChangeFn<string>
 
   // Filter actions
+  setStateFilter: (states: SandboxState[]) => void
   setStartedAtFilter: (filter: SandboxStartedAtFilter) => void
   setTemplateFilters: (filters: string[]) => void
   setCpuCount: (count: number | undefined) => void
@@ -77,6 +83,7 @@ const initialState: SandboxListTableState = {
   globalFilter: '',
 
   // Filter state
+  stateFilter: sandboxListAllStates,
   startedAtFilter: undefined,
   templateFilters: [],
   cpuCount: undefined,
@@ -147,6 +154,29 @@ export const useSandboxListTableStore = create<SandboxListTableStore>()(
       },
 
       // Filter actions
+      setStateFilter: (stateFilter) => {
+        let didChangeStateFilter = false
+
+        set((state) => {
+          if (areStringArraysEqual(state.stateFilter, stateFilter)) {
+            return state
+          }
+
+          didChangeStateFilter = true
+
+          return { stateFilter }
+        })
+
+        if (!didChangeStateFilter) {
+          return
+        }
+
+        trackSandboxListInteraction('filtered', {
+          type: 'state',
+          value: stateFilter.join(','),
+        })
+      },
+
       setStartedAtFilter: (startedAtFilter) => {
         let didChangeStartedAtFilter = false
 
@@ -244,6 +274,10 @@ export const useSandboxListTableStore = create<SandboxListTableStore>()(
 
         set((state) => {
           const hasFilterChanges =
+            !areStringArraysEqual(
+              state.stateFilter,
+              initialState.stateFilter
+            ) ||
             state.startedAtFilter !== initialState.startedAtFilter ||
             state.templateFilters.length > 0 ||
             state.cpuCount !== initialState.cpuCount ||
@@ -257,6 +291,7 @@ export const useSandboxListTableStore = create<SandboxListTableStore>()(
           didResetFilters = true
 
           return {
+            stateFilter: initialState.stateFilter,
             startedAtFilter: initialState.startedAtFilter,
             templateFilters: initialState.templateFilters,
             cpuCount: initialState.cpuCount,

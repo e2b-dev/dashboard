@@ -37,6 +37,7 @@ export const SandboxesTableBody = ({
   )
   const hasFilter = useSandboxListTableStore((state) => {
     return (
+      state.stateFilter.length < 2 ||
       state.startedAtFilter !== undefined ||
       state.templateFilters.length > 0 ||
       state.cpuCount !== undefined ||

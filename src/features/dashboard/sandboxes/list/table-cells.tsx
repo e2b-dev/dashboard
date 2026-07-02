@@ -4,6 +4,7 @@ import type { CellContext } from '@tanstack/react-table'
 import Link from 'next/link'
 import { useMemo } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
+import type { SandboxState } from '@/core/modules/sandboxes/models'
 import ResourceUsage from '@/features/dashboard/common/resource-usage'
 import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
 import { JsonPopover } from '@/ui/json-popover'
@@ -144,9 +145,7 @@ export const DiskUsageCell = ({
   </div>
 )
 
-export function StateCell({ row }: CellContext<SandboxListRow, unknown>) {
-  const state = row.original.state
-
+export function StateBadge({ state }: { state: SandboxState }) {
   if (state === 'paused') {
     return (
       <Badge variant="warning" className="uppercase">
@@ -162,6 +161,10 @@ export function StateCell({ row }: CellContext<SandboxListRow, unknown>) {
       Running
     </Badge>
   )
+}
+
+export function StateCell({ row }: CellContext<SandboxListRow, unknown>) {
+  return <StateBadge state={row.original.state} />
 }
 
 export function IdCell({ getValue }: CellContext<SandboxListRow, unknown>) {
