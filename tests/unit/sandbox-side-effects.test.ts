@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTRPCContext } from '@/core/server/trpc/init'
+import { resolveBrowserSandboxUrl } from '@/core/shared/create-envd-sandbox'
 import { SANDBOX_RESUME_TIMEOUT_MS } from '@/features/dashboard/sandbox/inspect/constants'
 import { TERMINAL_SANDBOX_TIMEOUT_MS } from '@/features/dashboard/terminal/constants'
 
@@ -23,6 +24,7 @@ const sdkMock = vi.hoisted(() => ({
 }))
 
 vi.mock('e2b', () => ({
+  default: class Sandbox {},
   Sandbox: {
     connect: sdkMock.connect,
     create: sdkMock.create,
@@ -144,5 +146,30 @@ describe('sandbox inspect/terminal client never calls the control plane', () => 
     const source = read('src/core/shared/create-envd-sandbox.ts')
     expect(source).not.toMatch(/Sandbox\.connect\s*\(/)
     expect(source).not.toMatch(/Sandbox\.create\s*\(/)
+  })
+
+  it('rewrites browser sandboxUrl values to the client-proxy sandbox host', () => {
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      value: {},
+    })
+
+    expect(
+      resolveBrowserSandboxUrl('http://localhost:3002', 'sandbox-123')
+    ).toBe('http://49983-sandbox-123.localhost:3002/')
+    expect(
+      resolveBrowserSandboxUrl(
+        'http://49983-sandbox-123.localhost:3002',
+        'sandbox-123'
+      )
+    ).toBe('http://49983-sandbox-123.localhost:3002/')
+  })
+
+  it('dashboard terminal lets envd resolve the PTY working directory', () => {
+    const source = read(
+      'src/features/dashboard/terminal/dashboard-terminal.tsx'
+    )
+    expect(source).not.toMatch(/cwd\s*:/)
+    expect(source).not.toContain('/home/user')
   })
 })

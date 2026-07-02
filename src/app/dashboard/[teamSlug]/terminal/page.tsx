@@ -8,6 +8,10 @@ import { infra } from '@/core/shared/clients/api'
 import type { components as InfraComponents } from '@/core/shared/contracts/infra-api.types'
 import { SandboxIdSchema } from '@/core/shared/schemas/api'
 import DashboardTerminal from '@/features/dashboard/terminal/dashboard-terminal'
+import {
+  hasPtyOptionsSearchParams,
+  parsePtyOptionsFromSearchParams,
+} from '@/features/dashboard/terminal/pty-options'
 import { normalizeTerminalTemplate } from '@/features/dashboard/terminal/template'
 import { Button } from '@/ui/primitives/button'
 
@@ -22,8 +26,11 @@ interface TeamTerminalPageProps {
   }>
   searchParams: Promise<{
     command?: string
+    cwd?: string
+    env?: string | string[]
     sandboxId?: string
     template?: string
+    user?: string
   }>
 }
 
@@ -31,13 +38,18 @@ export default async function TeamTerminalPage({
   params,
   searchParams,
 }: TeamTerminalPageProps) {
-  const [{ teamSlug }, { command = '', sandboxId, template }] =
-    await Promise.all([params, searchParams])
+  const [{ teamSlug }, terminalSearchParams] = await Promise.all([
+    params,
+    searchParams,
+  ])
+  const { command = '', sandboxId, template } = terminalSearchParams
   const hasTemplateOverride = template !== undefined
   const requestedTemplate = hasTemplateOverride
     ? normalizeTerminalTemplate(template)
     : undefined
   const terminalSandboxId = normalizeTerminalSandboxId(sandboxId)
+  const ptyOptions = parsePtyOptionsFromSearchParams(terminalSearchParams)
+  const requiresConfirmation = hasPtyOptionsSearchParams(terminalSearchParams)
 
   if (!terminalSandboxId && hasTemplateOverride && !requestedTemplate) {
     return <TerminalUnavailable message="The terminal template is invalid." />
@@ -53,11 +65,14 @@ export default async function TeamTerminalPage({
     return (
       <TerminalSignIn
         command={command}
+        cwd={terminalSearchParams.cwd}
+        env={terminalSearchParams.env}
         sandboxId={terminalSandboxId}
         teamSlug={teamSlug}
         template={
           terminalSandboxId ? template : (requestedTemplate ?? undefined)
         }
+        user={terminalSearchParams.user}
       />
     )
   }
@@ -106,6 +121,8 @@ export default async function TeamTerminalPage({
         launchTarget={{
           command,
           forceNewSandbox: !terminalSandboxId && hasTemplateOverride,
+          ptyOptions,
+          requiresConfirmation,
           sandboxId: terminalSandboxId,
           template: terminalSandboxId
             ? terminalTemplate
@@ -157,20 +174,33 @@ async function getSandboxInTeam({
 
 function TerminalSignIn({
   command,
+  cwd,
+  env,
   sandboxId,
   teamSlug,
   template,
+  user,
 }: {
   command?: string
+  cwd?: string
+  env?: string | string[]
   sandboxId?: string
   teamSlug: string
   template?: string
+  user?: string
 }) {
-  const returnToQuery = new URLSearchParams({
+  const returnToParams = new URLSearchParams({
     ...(command ? { command } : {}),
+    ...(cwd ? { cwd } : {}),
     ...(sandboxId ? { sandboxId } : {}),
     ...(template ? { template } : {}),
-  }).toString()
+    ...(user ? { user } : {}),
+  })
+  const envValues = Array.isArray(env) ? env : env ? [env] : []
+  for (const value of envValues) {
+    returnToParams.append('env', value)
+  }
+  const returnToQuery = returnToParams.toString()
   const returnTo = `${PROTECTED_URLS.TERMINAL(teamSlug)}${
     returnToQuery ? `?${returnToQuery}` : ''
   }`

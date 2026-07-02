@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { Button } from '@/ui/primitives/button'
 import {
   Dialog,
@@ -11,13 +11,19 @@ import {
   DialogTitle,
 } from '@/ui/primitives/dialog'
 import { WarningIcon } from '@/ui/primitives/icons'
+import { Input } from '@/ui/primitives/input'
 import { Textarea } from '@/ui/primitives/textarea'
+import {
+  formatEnvVars,
+  parseEnvVars,
+  type TerminalPtyOptions,
+} from './pty-options'
 import type { PendingTerminalLaunch } from './types'
 
 interface DashboardTerminalCommandDialogProps {
   launch: PendingTerminalLaunch | null
   onCancel: () => void
-  onConfirm: (command: string) => void
+  onConfirm: (command?: string, ptyOptions?: TerminalPtyOptions) => void
 }
 
 export default function DashboardTerminalCommandDialog({
@@ -26,8 +32,16 @@ export default function DashboardTerminalCommandDialog({
   onConfirm,
 }: DashboardTerminalCommandDialogProps) {
   const commandInputId = useId()
+  const userInputId = useId()
+  const envInputId = useId()
+  const userInputRef = useRef<HTMLInputElement | null>(null)
+  const envInputRef = useRef<HTMLTextAreaElement | null>(null)
   const [command, setCommand] = useState('')
+  const hasCommand = !!launch?.command?.trim()
   const normalizedCommand = command.trim()
+  const canEditUser =
+    !!launch?.target?.requiresConfirmation && !!launch.target.ptyOptions?.user
+  const canEditEnv = !!launch?.target?.requiresConfirmation
 
   useEffect(() => {
     setCommand(launch?.command ?? '')
@@ -40,10 +54,13 @@ export default function DashboardTerminalCommandDialog({
           <div className="mb-1 flex size-9 items-center justify-center border bg-bg">
             <WarningIcon className="size-5 text-icon-tertiary" />
           </div>
-          <DialogTitle>Review terminal command</DialogTitle>
+          <DialogTitle>
+            {hasCommand ? 'Review terminal command' : 'Review terminal launch'}
+          </DialogTitle>
           <DialogDescription>
-            This command will run inside a persistent E2B sandbox after the
-            terminal opens.
+            {hasCommand
+              ? 'This command will run inside a persistent E2B sandbox after the terminal opens.'
+              : 'This terminal will open with the connection settings from the URL.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -63,21 +80,67 @@ export default function DashboardTerminalCommandDialog({
                 {launch.target?.template ?? 'base'}
               </code>
             </div>
-            <div className="space-y-1">
-              <label
-                className="prose-label text-fg-tertiary"
-                htmlFor={commandInputId}
-              >
-                Command
-              </label>
-              <Textarea
-                className="max-h-48 min-h-24 font-mono text-xs"
-                id={commandInputId}
-                onChange={(event) => setCommand(event.target.value)}
-                spellCheck={false}
-                value={command}
-              />
-            </div>
+            {canEditUser ? (
+              <div className="space-y-1">
+                <label
+                  className="prose-label text-fg-tertiary"
+                  htmlFor={userInputId}
+                >
+                  User
+                </label>
+                <Input
+                  id={userInputId}
+                  ref={userInputRef}
+                  defaultValue={launch.target?.ptyOptions?.user}
+                  placeholder="template default"
+                />
+              </div>
+            ) : null}
+            {launch.target?.ptyOptions?.cwd ? (
+              <div className="space-y-1">
+                <p className="prose-label text-fg-tertiary">
+                  Working directory
+                </p>
+                <code className="block border bg-bg px-3 py-2 font-mono text-xs text-fg">
+                  {launch.target.ptyOptions.cwd}
+                </code>
+              </div>
+            ) : null}
+            {canEditEnv ? (
+              <div className="space-y-1">
+                <label
+                  className="prose-label text-fg-tertiary"
+                  htmlFor={envInputId}
+                >
+                  Environment
+                </label>
+                <Textarea
+                  id={envInputId}
+                  ref={envInputRef}
+                  defaultValue={formatEnvVars(launch.target?.ptyOptions?.envs)}
+                  placeholder={'NAME=value\nDEBUG=1'}
+                  className="max-h-32 min-h-20 font-mono text-xs"
+                  spellCheck={false}
+                />
+              </div>
+            ) : null}
+            {hasCommand ? (
+              <div className="space-y-1">
+                <label
+                  className="prose-label text-fg-tertiary"
+                  htmlFor={commandInputId}
+                >
+                  Command
+                </label>
+                <Textarea
+                  className="max-h-48 min-h-24 font-mono text-xs"
+                  id={commandInputId}
+                  onChange={(event) => setCommand(event.target.value)}
+                  spellCheck={false}
+                  value={command}
+                />
+              </div>
+            ) : null}
           </div>
         ) : null}
 
@@ -87,10 +150,23 @@ export default function DashboardTerminalCommandDialog({
           </Button>
           <Button
             type="button"
-            disabled={!normalizedCommand}
-            onClick={() => onConfirm(normalizedCommand)}
+            disabled={hasCommand && !normalizedCommand}
+            onClick={() =>
+              onConfirm(
+                hasCommand ? normalizedCommand : undefined,
+                canEditEnv
+                  ? {
+                      ...launch?.target?.ptyOptions,
+                      user: canEditUser
+                        ? userInputRef.current?.value
+                        : launch?.target?.ptyOptions?.user,
+                      envs: parseEnvVars(envInputRef.current?.value ?? ''),
+                    }
+                  : undefined
+              )
+            }
           >
-            Run command
+            {hasCommand ? 'Run command' : 'Start terminal'}
           </Button>
         </DialogFooter>
       </DialogContent>

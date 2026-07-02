@@ -1,8 +1,14 @@
 import type { RefObject } from 'react'
 import { IconButton } from '@/ui/primitives/icon-button'
-import { CopyIcon, RefreshIcon, TerminalIcon } from '@/ui/primitives/icons'
+import {
+  CopyIcon,
+  RefreshIcon,
+  SettingsIcon,
+  TerminalIcon,
+} from '@/ui/primitives/icons'
 
 interface TerminalPanelProps {
+  canConfigurePty?: boolean
   sandboxId?: string
   template?: string
   restartDisabled: boolean
@@ -10,10 +16,12 @@ interface TerminalPanelProps {
   terminalContainerRef: RefObject<HTMLDivElement | null>
   onFocusTerminal: () => void
   onCopyTerminalText: () => void
+  onConfigurePty?: () => void
   onRestartTerminal: () => void
 }
 
 export default function TerminalPanel({
+  canConfigurePty = false,
   sandboxId,
   template,
   restartDisabled,
@@ -21,6 +29,7 @@ export default function TerminalPanel({
   terminalContainerRef,
   onFocusTerminal,
   onCopyTerminalText,
+  onConfigurePty,
   onRestartTerminal,
 }: TerminalPanelProps) {
   return (
@@ -31,7 +40,9 @@ export default function TerminalPanel({
           template={template}
           restartDisabled={restartDisabled}
           restartLabel={restartLabel}
+          canConfigurePty={canConfigurePty}
           onCopyTerminalText={onCopyTerminalText}
+          onConfigurePty={onConfigurePty}
           onRestartTerminal={onRestartTerminal}
         />
       </header>
@@ -53,12 +64,16 @@ function TerminalPanelHeader({
   restartLabel,
   onCopyTerminalText,
   onRestartTerminal,
+  canConfigurePty,
+  onConfigurePty,
 }: Pick<
   TerminalPanelProps,
+  | 'canConfigurePty'
   | 'sandboxId'
   | 'template'
   | 'restartDisabled'
   | 'restartLabel'
+  | 'onConfigurePty'
   | 'onCopyTerminalText'
   | 'onRestartTerminal'
 >) {
@@ -82,6 +97,19 @@ function TerminalPanelHeader({
       </div>
 
       <div className="flex items-center gap-1">
+        {canConfigurePty ? (
+          <IconButton
+            type="button"
+            variant="tertiary"
+            className="size-7"
+            aria-label="Configure PTY"
+            title="Configure PTY"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={onConfigurePty}
+          >
+            <SettingsIcon />
+          </IconButton>
+        ) : null}
         <IconButton
           type="button"
           variant="tertiary"

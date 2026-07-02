@@ -3,6 +3,7 @@
 import { type ReactNode, useMemo, useState } from 'react'
 import LoadingLayout from '@/features/dashboard/loading-layout'
 import DashboardTerminal from '@/features/dashboard/terminal/dashboard-terminal'
+import type { TerminalPtyOptions } from '@/features/dashboard/terminal/pty-options'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { useDashboard } from '../../context'
 import { useSandboxContext } from '../context'
@@ -10,6 +11,8 @@ import SandboxInspectNotFound from '../inspect/not-found'
 
 interface SandboxTerminalViewProps {
   command?: string
+  ptyOptions?: TerminalPtyOptions
+  requiresConfirmation?: boolean
   userId: string
 }
 
@@ -17,6 +20,8 @@ const SANDBOX_TERMINAL_RESUME_TIMEOUT_MS = 70_000
 
 export default function SandboxTerminalView({
   command,
+  ptyOptions,
+  requiresConfirmation = false,
   userId,
 }: SandboxTerminalViewProps) {
   const [shouldResumeSandbox, setShouldResumeSandbox] = useState(false)
@@ -34,10 +39,12 @@ export default function SandboxTerminalView({
   const launchTarget = useMemo(
     () => ({
       command,
+      ptyOptions,
+      requiresConfirmation,
       sandboxId,
       template: sandboxTemplate,
     }),
-    [command, sandboxId, sandboxTemplate]
+    [command, ptyOptions, requiresConfirmation, sandboxId, sandboxTemplate]
   )
 
   const finishSandboxResume = async () => {
@@ -84,6 +91,7 @@ export default function SandboxTerminalView({
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden p-3 md:p-6">
       <DashboardTerminal
+        allowPtySettings
         autoStart
         launchTarget={launchTarget}
         onSandboxAttached={() => {

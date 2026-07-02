@@ -1,5 +1,7 @@
 import Sandbox, { type SandboxConnectOpts } from 'e2b'
 
+const SDK_ENVD_PORT = 49983
+
 /**
  * Sandbox-scoped credentials needed to talk to a sandbox's envd daemon
  * (filesystem + PTY). These are safe to expose to the browser: they grant
@@ -49,6 +51,26 @@ export function createEnvdSandbox(params: EnvdSandboxParams): Sandbox {
     envdAccessToken: params.envdAccessToken,
     trafficAccessToken: params.trafficAccessToken,
     domain: params.domain,
-    sandboxUrl: params.sandboxUrl,
+    sandboxUrl: resolveBrowserSandboxUrl(params.sandboxUrl, params.sandboxId),
   })
+}
+
+export function resolveBrowserSandboxUrl(
+  sandboxUrl: string | undefined,
+  sandboxId: string
+) {
+  if (!sandboxUrl || typeof window === 'undefined') return sandboxUrl
+
+  try {
+    const url = new URL(sandboxUrl)
+    const sandboxHostPrefix = `${SDK_ENVD_PORT}-${sandboxId}.`
+
+    if (!url.hostname.startsWith(sandboxHostPrefix)) {
+      url.hostname = `${sandboxHostPrefix}${url.hostname}`
+    }
+
+    return url.toString()
+  } catch {
+    return sandboxUrl
+  }
 }
