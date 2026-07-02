@@ -1,7 +1,15 @@
 'use client'
 
 import type { CommandHandle, Sandbox } from 'e2b'
-import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
+import { useFeatureFlagPayload } from '@/core/modules/feature-flags/feature-flags.client'
 import { useTRPCClient } from '@/trpc/client'
 import {
   DEFAULT_CWD,
@@ -11,6 +19,7 @@ import {
 import DashboardTerminalCommandDialog from './dashboard-terminal-command-dialog'
 import { openTerminalSandbox } from './sandbox-session'
 import {
+  getUntrustedTerminalTemplateProvider,
   normalizeTerminalTemplate,
   resolveTerminalTemplateOverride,
 } from './template'
@@ -52,6 +61,18 @@ export default function DashboardTerminal({
   userId,
 }: DashboardTerminalProps) {
   const trpcClient = useTRPCClient()
+  const trustedTemplateProvidersPayload = useFeatureFlagPayload(
+    'trustedTemplateProviders'
+  )
+  const trustedTemplateProviders = useMemo(
+    () =>
+      Array.isArray(trustedTemplateProvidersPayload)
+        ? trustedTemplateProvidersPayload.filter(
+            (provider): provider is string => typeof provider === 'string'
+          )
+        : [],
+    [trustedTemplateProvidersPayload]
+  )
 
   const [status, setStatus] = useState<TerminalStatus>('idle')
   const [activeSandboxId, setActiveSandboxId] = useState<string>()
@@ -445,15 +466,24 @@ export default function DashboardTerminal({
         return
       }
 
-      if (command.trim()) {
-        // Commands can come from links, so require an explicit click before
-        // sending anything into the PTY.
+      const normalizedCommand = command.trim()
+      const untrustedTemplateProvider = !options.target?.sandboxId
+        ? getUntrustedTerminalTemplateProvider(
+            nextTemplate,
+            trustedTemplateProviders
+          )
+        : undefined
+
+      if (normalizedCommand || untrustedTemplateProvider) {
+        // Commands and third-party template starts can come from links, so
+        // require an explicit click before creating a sandbox or writing PTY input.
         setPendingLaunch({
-          command: command.trim(),
+          command: normalizedCommand || undefined,
           target: {
             ...options.target,
             template: nextTemplate,
           },
+          untrustedTemplateProvider,
         })
         return
       }
@@ -468,21 +498,22 @@ export default function DashboardTerminal({
         })
       }
     },
-    [appendOutput, startTerminal, status, template]
+    [appendOutput, startTerminal, status, template, trustedTemplateProviders]
   )
 
   const confirmPendingLaunch = useCallback(
-    (command: string) => {
+    (command?: string) => {
       if (!pendingLaunch) return
 
-      const normalizedCommand = command.trim()
-      if (!normalizedCommand) return
+      const normalizedCommand = command?.trim() ?? ''
+      if (pendingLaunch.command !== undefined && !normalizedCommand) return
 
       const { target: launchTarget } = pendingLaunch
       const launchTemplate = launchTarget?.template ?? 'base'
       const launchSandboxId = launchTarget?.sandboxId
 
       if (
+        normalizedCommand &&
         status === 'ready' &&
         template === launchTemplate &&
         launchTarget?.forceNewSandbox !== true &&
@@ -504,9 +535,11 @@ export default function DashboardTerminal({
       }
 
       setPendingLaunch(null)
-      pendingCommandsRef.current = [normalizedCommand]
+      pendingCommandsRef.current = normalizedCommand ? [normalizedCommand] : []
       void startTerminal({
-        forceNewSandbox: !launchSandboxId && template !== launchTemplate,
+        forceNewSandbox:
+          pendingLaunch.forceNewSandbox ??
+          (!launchSandboxId && template !== launchTemplate),
         target: launchTarget,
       })
     },
@@ -520,6 +553,14 @@ export default function DashboardTerminal({
       updateTerminalUrl,
     ]
   )
+
+  const cancelPendingLaunch = useCallback(() => {
+    if (pendingLaunch?.untrustedTemplateProvider && !activeSandboxId) {
+      setTemplate('base')
+    }
+
+    setPendingLaunch(null)
+  }, [activeSandboxId, pendingLaunch])
 
   const reconnectTarget = sandboxScoped
     ? launchTarget
@@ -546,6 +587,20 @@ export default function DashboardTerminal({
       return
     }
 
+    const untrustedTemplateProvider = getUntrustedTerminalTemplateProvider(
+      template,
+      trustedTemplateProviders
+    )
+
+    if (untrustedTemplateProvider) {
+      setPendingLaunch({
+        forceNewSandbox: true,
+        target: { template },
+        untrustedTemplateProvider,
+      })
+      return
+    }
+
     void startTerminal({ forceNewSandbox: true })
   }, [
     getSandbox,
@@ -553,6 +608,8 @@ export default function DashboardTerminal({
     reconnectSandboxId,
     sandboxScoped,
     startTerminal,
+    template,
+    trustedTemplateProviders,
   ])
 
   useEffect(() => {
@@ -618,7 +675,7 @@ export default function DashboardTerminal({
 
       <DashboardTerminalCommandDialog
         launch={pendingLaunch}
-        onCancel={() => setPendingLaunch(null)}
+        onCancel={cancelPendingLaunch}
         onConfirm={confirmPendingLaunch}
       />
     </>

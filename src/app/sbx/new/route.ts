@@ -10,6 +10,9 @@ import { normalizeTerminalTemplate } from '@/features/dashboard/terminal/templat
 export const GET = async (req: NextRequest) => {
   try {
     const requestUrl = new URL(req.url)
+    const shouldUseTerminalCreateFlow =
+      requestUrl.searchParams.has('template') ||
+      requestUrl.searchParams.has('command')
     const template = normalizeTerminalTemplate(
       requestUrl.searchParams.get('template') ?? undefined
     )
@@ -39,6 +42,22 @@ export const GET = async (req: NextRequest) => {
       return NextResponse.redirect(new URL(req.url).origin)
     }
 
+    const terminalParams = new URLSearchParams({ template })
+    const command = requestUrl.searchParams.get('command')?.trim()
+
+    if (command) {
+      terminalParams.set('command', command)
+    }
+
+    if (shouldUseTerminalCreateFlow) {
+      return NextResponse.redirect(
+        new URL(
+          `${PROTECTED_URLS.TERMINAL(team.slug)}?${terminalParams.toString()}`,
+          req.url
+        )
+      )
+    }
+
     const sbx = await Sandbox.create(template, {
       apiUrl: process.env.NEXT_PUBLIC_INFRA_API_URL,
       domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
@@ -46,13 +65,6 @@ export const GET = async (req: NextRequest) => {
         ...authHeaders(authContext.accessToken, team.id),
       },
     })
-
-    const terminalParams = new URLSearchParams({ template })
-    const command = requestUrl.searchParams.get('command')?.trim()
-
-    if (command) {
-      terminalParams.set('command', command)
-    }
 
     const terminalUrl = PROTECTED_URLS.SANDBOX_TERMINAL(
       team.slug,

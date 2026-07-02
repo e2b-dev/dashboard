@@ -17,7 +17,7 @@ import type { PendingTerminalLaunch } from './types'
 interface DashboardTerminalCommandDialogProps {
   launch: PendingTerminalLaunch | null
   onCancel: () => void
-  onConfirm: (command: string) => void
+  onConfirm: (command?: string) => void
 }
 
 export default function DashboardTerminalCommandDialog({
@@ -28,6 +28,8 @@ export default function DashboardTerminalCommandDialog({
   const commandInputId = useId()
   const [command, setCommand] = useState('')
   const normalizedCommand = command.trim()
+  const hasCommand = launch?.command !== undefined
+  const untrustedTemplateProvider = launch?.untrustedTemplateProvider
 
   useEffect(() => {
     setCommand(launch?.command ?? '')
@@ -40,10 +42,15 @@ export default function DashboardTerminalCommandDialog({
           <div className="mb-1 flex size-9 items-center justify-center border bg-bg">
             <WarningIcon className="size-5 text-icon-tertiary" />
           </div>
-          <DialogTitle>Review terminal command</DialogTitle>
+          <DialogTitle>
+            {hasCommand
+              ? 'Review terminal command'
+              : 'Review terminal template'}
+          </DialogTitle>
           <DialogDescription>
-            This command will run inside a persistent E2B sandbox after the
-            terminal opens.
+            {hasCommand
+              ? 'This command will run inside a persistent E2B sandbox after the terminal opens.'
+              : 'This terminal will start from a template published by an untrusted provider.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -63,21 +70,33 @@ export default function DashboardTerminalCommandDialog({
                 {launch.target?.template ?? 'base'}
               </code>
             </div>
-            <div className="space-y-1">
-              <label
-                className="prose-label text-fg-tertiary"
-                htmlFor={commandInputId}
-              >
-                Command
-              </label>
-              <Textarea
-                className="max-h-48 min-h-24 font-mono text-xs"
-                id={commandInputId}
-                onChange={(event) => setCommand(event.target.value)}
-                spellCheck={false}
-                value={command}
-              />
-            </div>
+            {untrustedTemplateProvider ? (
+              <div className="space-y-1">
+                <p className="prose-label text-fg-tertiary">
+                  Template provider
+                </p>
+                <code className="block border bg-bg px-3 py-2 font-mono text-xs text-fg">
+                  {untrustedTemplateProvider}
+                </code>
+              </div>
+            ) : null}
+            {hasCommand ? (
+              <div className="space-y-1">
+                <label
+                  className="prose-label text-fg-tertiary"
+                  htmlFor={commandInputId}
+                >
+                  Command
+                </label>
+                <Textarea
+                  className="max-h-48 min-h-24 font-mono text-xs"
+                  id={commandInputId}
+                  onChange={(event) => setCommand(event.target.value)}
+                  spellCheck={false}
+                  value={command}
+                />
+              </div>
+            ) : null}
           </div>
         ) : null}
 
@@ -87,10 +106,12 @@ export default function DashboardTerminalCommandDialog({
           </Button>
           <Button
             type="button"
-            disabled={!normalizedCommand}
-            onClick={() => onConfirm(normalizedCommand)}
+            disabled={hasCommand && !normalizedCommand}
+            onClick={() =>
+              onConfirm(hasCommand ? normalizedCommand : undefined)
+            }
           >
-            Run command
+            {hasCommand ? 'Run command' : 'Start terminal'}
           </Button>
         </DialogFooter>
       </DialogContent>

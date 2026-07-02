@@ -13,8 +13,10 @@ export type StartTerminalOptions = {
 }
 
 export type PendingTerminalLaunch = {
-  command: string
+  command?: string
+  forceNewSandbox?: boolean
   target?: TerminalLaunchTarget
+  untrustedTemplateProvider?: string
 }
 
 export type TerminalLaunchTarget = {

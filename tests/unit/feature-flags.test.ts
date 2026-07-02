@@ -56,7 +56,7 @@ describe('createFeatureFlagService', () => {
     const provider = {
       evaluate: vi.fn().mockResolvedValue({
         getFlagValue: vi.fn().mockReturnValue(true),
-        getPayload: vi.fn(),
+        getPayload: vi.fn().mockReturnValue(['e2b']),
       }),
     }
 
@@ -69,6 +69,7 @@ describe('createFeatureFlagService', () => {
       FEATURE_FLAGS.newSandboxList,
       FEATURE_FLAGS.newUsagePage,
       FEATURE_FLAGS.disableE2BAccessTokenProvisioning,
+      FEATURE_FLAGS.trustedTemplateProviders,
     ])
     expect(result).toEqual([
       {
@@ -114,7 +115,31 @@ describe('createFeatureFlagService', () => {
         defaultValue: false,
         value: true,
       },
+      {
+        id: 'trustedTemplateProviders',
+        key: 'trusted_template_providers',
+        kind: 'payload',
+        description:
+          'Template providers whose namespaced templates can auto-start dashboard terminals.',
+        defaultValue: [],
+        value: ['e2b'],
+      },
     ])
+  })
+
+  it('falls back to a payload default when the provider returns invalid data', async () => {
+    const provider = {
+      evaluate: vi.fn().mockResolvedValue({
+        getFlagValue: vi.fn(),
+        getPayload: vi.fn().mockReturnValue(['e2b', 123]),
+      }),
+    }
+
+    const result = await createFeatureFlagService(provider).evaluateAll(context)
+
+    expect(
+      result.find((flag) => flag.id === 'trustedTemplateProviders')?.value
+    ).toEqual([])
   })
 })
 
