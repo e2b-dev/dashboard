@@ -33,12 +33,14 @@ import HelpTooltip from '@/ui/help-tooltip'
 import { SIDEBAR_TRANSITION_CLASSNAMES } from '@/ui/primitives/sidebar'
 import {
   TEMPLATES_DEFAULT_SORT_BASE,
+  TEMPLATES_DEFAULT_SORT_COLUMN_ID,
   TEMPLATES_DEFAULT_SORT_DESC,
   TEMPLATES_PAGE_SIZE,
 } from './constants'
 import TemplatesHeader from './header'
 import { useTemplateTableStore } from './stores/table-store'
 import { TemplatesTableBody as TableBody } from './table-body'
+import type { TemplatesTableMeta } from './table-cells'
 import { fallbackData, templatesTableConfig, useColumns } from './table-config'
 
 const COLUMN_TO_SORT_BASE: Record<string, string> = {
@@ -71,6 +73,7 @@ export default function TemplatesTable() {
     ? sortColumn.desc !== false
     : TEMPLATES_DEFAULT_SORT_DESC
   const sort = `${sortBase}_${isDesc ? 'desc' : 'asc'}` as TemplatesSort
+  const sortedColumnId = sortColumn?.id ?? TEMPLATES_DEFAULT_SORT_COLUMN_ID
 
   const {
     data,
@@ -140,6 +143,7 @@ export default function TemplatesTable() {
     onGlobalFilterChange: setGlobalFilter,
     onSortingChange: setSorting,
     onColumnSizingChange: setColumnSizing,
+    meta: { sortedColumnId } satisfies TemplatesTableMeta,
   } as TableOptions<Template>)
 
   const columnSizeVars = useColumnSizeVars(table)

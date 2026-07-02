@@ -313,18 +313,59 @@ export function TemplateNameCell({
   )
 }
 
-export function CreatedAtCell({
-  getValue,
-}: CellContext<Template | DefaultTemplate, unknown>) {
+export interface TemplatesTableMeta {
+  sortedColumnId?: string
+}
+
+type DateColumnId = 'createdAt' | 'updatedAt'
+
+const DATE_CELL_FORMAT_OPTIONS = {
+  includeSeconds: false,
+  includeYear: true,
+  includeTimezone: true,
+} as const
+
+function DateTimeCell({
+  ctx,
+  columnId,
+}: {
+  ctx: CellContext<Template | DefaultTemplate, unknown>
+  columnId: DateColumnId
+}) {
+  'use no memo'
+
+  const { getValue, table, row } = ctx
   const dateValue = getValue() as string
 
-  const formattedTimestamp = useMemo(() => {
-    return formatLocalLogStyleTimestamp(dateValue, {
-      includeSeconds: false,
-      includeYear: true,
-      includeTimezone: true,
-    })
-  }, [dateValue])
+  const formatted = useMemo(
+    () => formatLocalLogStyleTimestamp(dateValue, DATE_CELL_FORMAT_OPTIONS),
+    [dateValue]
+  )
+
+  const meta = table.options.meta as TemplatesTableMeta | undefined
+  const isSortedColumn = meta?.sortedColumnId === columnId
+
+  // Compare against the full loaded row model (not the virtualized window) so
+  // the first/last on-screen rows still see their true neighbours. Adjacency is
+  // a best guess over loaded pages; it may shift as more rows load in.
+  const rows = table.getRowModel().rows
+  const datePart = formatted?.datePart
+
+  const isTimePromoted = useMemo(() => {
+    if (!isSortedColumn || !datePart) return false
+
+    const sharesDate = (index: number) => {
+      const neighbor = rows[index]
+      if (!neighbor) return false
+      const neighborValue = neighbor.getValue(columnId) as string
+      return (
+        formatLocalLogStyleTimestamp(neighborValue, DATE_CELL_FORMAT_OPTIONS)
+          ?.datePart === datePart
+      )
+    }
+
+    return sharesDate(row.index - 1) || sharesDate(row.index + 1)
+  }, [isSortedColumn, datePart, rows, row.index, columnId])
 
   return (
     <div
@@ -332,45 +373,27 @@ export function CreatedAtCell({
         'h-full overflow-x-hidden whitespace-nowrap font-mono prose-table-numeric'
       )}
     >
-      <span className="text-fg-tertiary">
-        {formattedTimestamp?.datePart ?? '--'}
+      <span className="text-fg-secondary">{formatted?.datePart ?? '--'}</span>{' '}
+      <span
+        className={isTimePromoted ? 'text-fg-secondary' : 'text-fg-tertiary'}
+      >
+        {formatted?.timePart ?? '--'}
       </span>{' '}
-      {formattedTimestamp?.timePart ?? '--'}{' '}
-      <span className="text-fg-tertiary">
-        {formattedTimestamp?.timezonePart ?? ''}
-      </span>
+      <span className="text-fg-tertiary">{formatted?.timezonePart ?? ''}</span>
     </div>
   )
 }
 
-export function UpdatedAtCell({
-  getValue,
-}: CellContext<Template | DefaultTemplate, unknown>) {
-  const dateValue = getValue() as string
+export function CreatedAtCell(
+  ctx: CellContext<Template | DefaultTemplate, unknown>
+) {
+  return <DateTimeCell ctx={ctx} columnId="createdAt" />
+}
 
-  const formattedTimestamp = useMemo(() => {
-    return formatLocalLogStyleTimestamp(dateValue, {
-      includeSeconds: false,
-      includeYear: true,
-      includeTimezone: true,
-    })
-  }, [dateValue])
-
-  return (
-    <div
-      className={cn(
-        'h-full overflow-x-hidden whitespace-nowrap font-mono prose-table-numeric'
-      )}
-    >
-      <span className="text-fg-tertiary">
-        {formattedTimestamp?.datePart ?? '--'}
-      </span>{' '}
-      {formattedTimestamp?.timePart ?? '--'}{' '}
-      <span className="text-fg-tertiary">
-        {formattedTimestamp?.timezonePart ?? ''}
-      </span>
-    </div>
-  )
+export function UpdatedAtCell(
+  ctx: CellContext<Template | DefaultTemplate, unknown>
+) {
+  return <DateTimeCell ctx={ctx} columnId="updatedAt" />
 }
 
 export function VisibilityCell({
