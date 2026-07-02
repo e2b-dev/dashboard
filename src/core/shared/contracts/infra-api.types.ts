@@ -3325,6 +3325,26 @@ export interface components {
        * @description Total node memory in bytes
        */
       memoryTotalBytes: number
+      /**
+       * Format: uint64
+       * @description Total number of preallocated hugepages on the node
+       */
+      hugePagesTotal: number
+      /**
+       * Format: uint64
+       * @description Number of hugepages in use (total - free)
+       */
+      hugePagesUsed: number
+      /**
+       * Format: uint64
+       * @description Number of reserved hugepages (committed but not yet faulted)
+       */
+      hugePagesReserved: number
+      /**
+       * Format: uint64
+       * @description Size of a single hugepage in bytes
+       */
+      hugePageSizeBytes: number
       /** @description Detailed metrics for each disk/mount point */
       disks: components['schemas']['DiskMetrics'][]
     }
