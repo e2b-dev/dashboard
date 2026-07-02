@@ -43,6 +43,28 @@ export function formatAxisDate(
 }
 
 /**
+ * Human-readable label for a sampled bucket, derived from its start timestamp.
+ * Weekly buckets render as a date range and include the year when needed, so a
+ * 7-day aggregate isn't presented as (or mistaken for) a single day.
+ */
+export function formatBucketLabel(
+  timestamp: number,
+  samplingMode: SamplingMode
+): string {
+  switch (samplingMode) {
+    case 'hourly':
+      return formatHour(timestamp)
+    case 'weekly':
+      return formatDateRange(
+        timestamp,
+        normalizeToEndOfSamplingPeriod(timestamp, 'weekly')
+      )
+    default:
+      return formatDay(timestamp)
+  }
+}
+
+/**
  * Formats display values for a specific sampled data point (when hovering)
  */
 export function formatHoveredValues(

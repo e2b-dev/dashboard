@@ -4,7 +4,8 @@ import { featureFlags } from '@/core/modules/feature-flags/feature-flags.server'
 import { getAuthContext } from '@/core/server/auth'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
 import { getUsage } from '@/core/server/functions/usage/get-usage'
-import { UsageRedesignPage } from '@/features/dashboard/usage/redesign/usage-redesign'
+import { EMPTY_USAGE } from '@/features/dashboard/usage/redesign/usage-fallback'
+import { UsageMetricDetail } from '@/features/dashboard/usage/redesign/usage-metric-detail'
 import { UsageChartsProvider } from '@/features/dashboard/usage/usage-charts-context'
 import { UsageMetricChart } from '@/features/dashboard/usage/usage-metric-chart'
 import { UsageTopTimeRangeControls } from '@/features/dashboard/usage/usage-top-time-range-controls'
@@ -37,11 +38,17 @@ export default async function UsagePage({
         : undefined,
   })
 
-  if (newUsagePage) {
-    return <UsageRedesignPage />
-  }
-
   const result = await getUsage({ teamSlug })
+
+  // The redesign opens on the cost breakdown; it degrades to an empty state
+  // when usage can't be loaded instead of erroring the whole screen.
+  if (newUsagePage) {
+    return (
+      <UsageChartsProvider data={result?.data ?? EMPTY_USAGE}>
+        <UsageMetricDetail metric="cost" />
+      </UsageChartsProvider>
+    )
+  }
 
   if (!result?.data || result.serverError || result.validationErrors) {
     return (
