@@ -26,7 +26,7 @@ export const FEATURE_FLAGS = {
   newUsagePage: {
     kind: 'boolean',
     key: 'new-usage-page',
-    defaultValue: false,
+    defaultValue: true,
     description: 'Enables the redesigned (Dashboard 2.0) usage page skeleton.',
     exposure: 'server',
   },
