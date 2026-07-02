@@ -4,6 +4,7 @@ import { useId, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { ChevronDownIcon, CpuIcon } from '@/ui/primitives/icons'
 import { Tabs, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
+import { RowHoverFrame } from '@/ui/row-hover-frame'
 import { useUsageCharts } from '../usage-charts-context'
 import { UsageTopTimeRangeControls } from '../usage-top-time-range-controls'
 import { USAGE_METRICS, type UsageMetricKey } from './metrics'
@@ -28,7 +29,7 @@ const RESOURCE_META: Record<Resource, ResourceMeta> = {
   },
   ram: {
     label: 'RAM',
-    swatch: { fill: '#8e4f15', border: 'var(--graph-3)' },
+    swatch: { fill: '#9e9185', border: 'var(--graph-1)' },
     unitLabel: 'RAM GiB / hour',
     hoursLabel: 'RAM hours',
   },
@@ -45,19 +46,19 @@ export function UsageMetricDetail({ metric }: { metric: UsageMetricKey }) {
         <SingleMetricChart
           metric={metric}
           className="flex-none border-b-0"
-          plotClassName="h-72"
+          plotClassName="h-[180px]"
         />
 
         <div className="flex flex-col">
           <Tabs defaultValue="resources">
-            <TabsList className="w-full justify-start px-0">
+            <TabsList className="w-full justify-start border-b-0 px-0">
               <TabsTrigger layoutkey="usage-detail-group" value="resources">
                 <CpuIcon />
                 By resources
               </TabsTrigger>
             </TabsList>
           </Tabs>
-
+          <div className="bg-stroke h-px w-full" />
           <ResourceBreakdown />
         </div>
       </div>
@@ -78,8 +79,18 @@ function ResourceBreakdown() {
 
   return (
     <div className="flex flex-col">
-      <ResourceRow resource="vcpu" cost={cost.vcpu} hours={totals.vcpu} />
-      <ResourceRow resource="ram" cost={cost.ram} hours={totals.ram} />
+      <ResourceRow
+        resource="vcpu"
+        cost={cost.vcpu}
+        hours={totals.vcpu}
+        total={totals.cost}
+      />
+      <ResourceRow
+        resource="ram"
+        cost={cost.ram}
+        hours={totals.ram}
+        total={totals.cost}
+      />
     </div>
   )
 }
@@ -88,10 +99,12 @@ function ResourceRow({
   resource,
   cost,
   hours,
+  total,
 }: {
   resource: Resource
   cost: number
   hours: number
+  total: number
 }) {
   const [expanded, setExpanded] = useState(false)
   const meta = RESOURCE_META[resource]
@@ -99,32 +112,43 @@ function ResourceRow({
 
   return (
     <div className="border-stroke border-b">
-      <button
-        type="button"
-        onClick={() => setExpanded((value) => !value)}
-        aria-expanded={expanded}
-        aria-controls={panelId}
-        className="flex w-full items-center justify-between py-3"
-      >
-        <span className="prose-body text-fg">{meta.label}</span>
-        <span className="flex items-center gap-2">
-          <span className="prose-body-numeric text-fg font-mono">
-            {USAGE_METRICS.cost.format(cost)}
+      <div className="group/row relative -mx-2 w-[calc(100%+16px)] hover:z-20">
+        <button
+          type="button"
+          onClick={() => setExpanded((value) => !value)}
+          aria-expanded={expanded}
+          aria-controls={panelId}
+          className="hover:bg-bg-1 flex w-full items-center justify-between px-2 py-3 transition-none"
+        >
+          <span className="prose-body text-fg">{meta.label}</span>
+          <span className="flex items-center gap-2">
+            <span className="prose-body-numeric text-fg font-mono">
+              {USAGE_METRICS.cost.format(cost)}
+            </span>
+            <ChevronDownIcon
+              className={cn(
+                'text-icon-tertiary size-4 transition-transform',
+                expanded && 'rotate-180'
+              )}
+            />
           </span>
-          <ChevronDownIcon
-            className={cn(
-              'text-icon-tertiary size-4 transition-transform',
-              expanded && 'rotate-180'
-            )}
-          />
-        </span>
-      </button>
+        </button>
+        <RowHoverFrame />
+      </div>
       {expanded && (
         <div
           id={panelId}
           className="flex flex-col gap-6 pb-4 md:flex-row md:items-start"
         >
-          <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <div className="flex flex-wrap items-baseline gap-1.5">
+              <span className="text-fg text-[2rem] font-semibold uppercase leading-[2rem] tracking-[-0.32px] [font-family:var(--font-mono)]">
+                {USAGE_METRICS.cost.format(cost)}
+              </span>
+              <span className="prose-label-numeric-highlight text-fg font-mono">
+                / {USAGE_METRICS.cost.format(total)}
+              </span>
+            </div>
             <ResourceChart resource={resource} />
           </div>
           <ResourceSummary resource={resource} cost={cost} hours={hours} />
@@ -149,16 +173,13 @@ function ResourceSummary({
 
   return (
     <div className="flex w-full flex-col gap-1.5 md:max-w-[280px]">
+      <SummaryRow label="Final cost" value={currency(cost)} emphasized />
+      <div className="bg-stroke h-px w-full" />
       <SummaryRow
         label={meta.unitLabel}
         value={currency(hours > 0 ? cost / hours : 0)}
       />
       <SummaryRow label={meta.hoursLabel} value={hoursFormat(hours)} />
-      <SummaryRow
-        label={`${meta.label} total`}
-        value={currency(cost)}
-        emphasized
-      />
     </div>
   )
 }
@@ -173,7 +194,8 @@ function SummaryRow({
   emphasized?: boolean
 }) {
   return (
-    <div className="flex items-center justify-between gap-4">
+    // pr-6 = chevron (size-4) + gap-2 so values align with the row-header value.
+    <div className="flex items-center justify-between gap-4 pr-6">
       <span
         className={cn(
           'prose-label uppercase',
@@ -212,7 +234,7 @@ function ResourceChart({ resource }: { resource: Resource }) {
       series={series}
       color={meta.swatch.border}
       axisFormat={USAGE_METRICS.cost.axisFormat}
-      plotClassName="h-56"
+      plotClassName="h-40"
       labelFor={(index) => bucketLabels[index] ?? series[index]?.x ?? ''}
       segments={() => [{ fraction: 1, ...meta.swatch }]}
       card={(index) => {

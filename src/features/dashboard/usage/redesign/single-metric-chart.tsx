@@ -65,13 +65,13 @@ export function SingleMetricChart({
   return (
     <div
       className={cn(
-        'border-stroke flex min-h-0 flex-1 flex-col gap-1 border-b py-2 last:border-b-0',
+        'border-stroke flex min-h-0 flex-1 flex-col gap-4 border-b py-2 last:border-b-0',
         className
       )}
     >
       <div className="flex items-baseline justify-between gap-3">
-        <div className="flex flex-wrap items-baseline gap-2">
-          <span className="prose-value-big text-fg font-mono uppercase">
+        <div className="flex flex-wrap items-baseline gap-3">
+          <span className="text-fg text-[2rem] font-semibold uppercase leading-[2rem] tracking-[-0.32px] [font-family:var(--font-mono)]">
             {meta.format(totals[metric])}
           </span>
           <span className="prose-label text-fg-tertiary uppercase">

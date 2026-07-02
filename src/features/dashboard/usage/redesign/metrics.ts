@@ -18,7 +18,7 @@ export interface UsageMetricMeta {
 export const USAGE_METRICS: Record<UsageMetricKey, UsageMetricMeta> = {
   cost: {
     label: 'Cost',
-    color: 'var(--graph-3)',
+    color: 'var(--accent-main-highlight)',
     format: (value) => formatCurrency(value),
     axisFormat: (value) => `$${formatAxisNumber(value)}`,
   },
