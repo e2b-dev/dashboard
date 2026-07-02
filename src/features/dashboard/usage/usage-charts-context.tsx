@@ -15,6 +15,7 @@ import { INITIAL_TIMEFRAME_FALLBACK_RANGE_MS } from './constants'
 import {
   calculateTotals,
   formatAxisDate,
+  formatBucketLabel,
   formatEmptyValues,
   formatHoveredValues,
   formatTotalValues,
@@ -39,6 +40,10 @@ interface UsageChartsContextValue {
   setHoveredIndex: (index: number | null) => void
   onBrushEnd: (startIndex: number, endIndex: number) => void
   totals: MetricTotals
+  /** Per-sampled-point cost split into vCPU and RAM, aligned with the series. */
+  costBreakdown: { cpu: number; ram: number }[]
+  /** Full hover label per sampled point (a date range for weekly buckets). */
+  bucketLabels: string[]
   samplingMode: SamplingMode
   displayValues: {
     sandboxes: DisplayValue
@@ -177,6 +182,16 @@ export function UsageChartsProvider({
     [sampledData]
   )
 
+  const costBreakdown = useMemo(
+    () => sampledData.map((d) => ({ cpu: d.cpuCost, ram: d.ramCost })),
+    [sampledData]
+  )
+
+  const bucketLabels = useMemo(
+    () => sampledData.map((d) => formatBucketLabel(d.timestamp, samplingMode)),
+    [sampledData, samplingMode]
+  )
+
   const displayValues = useMemo(() => {
     if (
       hoveredIndex !== null &&
@@ -237,6 +252,8 @@ export function UsageChartsProvider({
       setHoveredIndex,
       onBrushEnd,
       totals,
+      costBreakdown,
+      bucketLabels,
       samplingMode,
       displayValues,
       fullscreenMetric,
@@ -248,6 +265,8 @@ export function UsageChartsProvider({
       onBrushEnd,
       setTimeframe,
       totals,
+      costBreakdown,
+      bucketLabels,
       samplingMode,
       displayValues,
       fullscreenMetric,

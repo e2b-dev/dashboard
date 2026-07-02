@@ -105,6 +105,8 @@ function aggregateHours(
       timestamp: d.timestamp,
       sandboxCount: d.sandbox_count,
       cost: d.price_for_ram + d.price_for_cpu,
+      cpuCost: d.price_for_cpu,
+      ramCost: d.price_for_ram,
       vcpuHours: d.cpu_hours,
       ramGibHours: d.ram_gib_hours,
     }))
@@ -151,6 +153,8 @@ function aggregateHours(
     if (existing) {
       existing.sandboxCount += h.sandbox_count
       existing.cost += h.price_for_ram + h.price_for_cpu
+      existing.cpuCost += h.price_for_cpu
+      existing.ramCost += h.price_for_ram
       existing.vcpuHours += h.cpu_hours
       existing.ramGibHours += h.ram_gib_hours
     } else {
@@ -158,6 +162,8 @@ function aggregateHours(
         timestamp: bucketTimestampKey,
         sandboxCount: h.sandbox_count,
         cost: h.price_for_ram + h.price_for_cpu,
+        cpuCost: h.price_for_cpu,
+        ramCost: h.price_for_ram,
         vcpuHours: h.cpu_hours,
         ramGibHours: h.ram_gib_hours,
       })

@@ -37,6 +37,8 @@ export interface SampledDataPoint {
   timestamp: number //  start of the period (day or week)
   sandboxCount: number
   cost: number
+  cpuCost: number
+  ramCost: number
   vcpuHours: number
   ramGibHours: number
 }
