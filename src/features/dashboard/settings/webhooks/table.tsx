@@ -43,17 +43,13 @@ export const WebhooksTable = ({
       <colgroup>
         <col />
         <col className="w-[264px]" />
-        <col className="w-[184px]" />
-        <col className="w-10" />
+        <col className="w-[128px]" />
       </colgroup>
       <TableHeader className="border-b-0">
         <TableRow className="border-0">
           <TableHead className={headerCellClassName}>NAME & URL</TableHead>
           <TableHead className={headerCellClassName}>EVENTS</TableHead>
           <TableHead className={headerCellClassName}>ADDED</TableHead>
-          <TableHead className={headerCellClassName}>
-            <span className="sr-only">Actions</span>
-          </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody
@@ -73,11 +69,11 @@ export const WebhooksTable = ({
         {isLoading ? (
           <TableLoadingState
             className="pt-2"
-            colSpan={4}
+            colSpan={3}
             label="Loading webhooks"
           />
         ) : webhooks.length === 0 ? (
-          <TableEmptyState className="pt-2" colSpan={4}>
+          <TableEmptyState className="pt-2" colSpan={3}>
             <WebhookIcon
               aria-hidden
               className={cn(

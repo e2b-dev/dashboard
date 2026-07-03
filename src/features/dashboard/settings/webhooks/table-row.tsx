@@ -5,7 +5,6 @@ import { Fragment, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { SandboxLifecycleEventTypeSchema } from '@/core/modules/sandboxes/lifecycle-event-types'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
-import { defaultSuccessToast, toast } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
@@ -34,7 +33,6 @@ import {
 } from '@/ui/primitives/tooltip'
 import { RowHoverFrame } from '@/ui/row-hover-frame'
 import { useDashboard } from '../../context'
-import { UserAvatar } from '../../shared'
 import { WEBHOOK_EVENT_LABELS } from './constants'
 import { DeleteWebhookDialog } from './delete-webhook-dialog'
 import type { Webhook } from './types'
@@ -54,28 +52,12 @@ type WebhookNameAndUrlProps = {
   url: string
 }
 
-type UrlIconState = 'copied' | 'hovered' | 'idle'
-
-const urlIconMap: Record<UrlIconState, typeof WebhookIcon> = {
-  copied: CheckmarkIcon,
-  hovered: CopyIcon,
-  idle: WebhookIcon,
-}
-
 const WebhookNameAndUrl = ({ name, url }: WebhookNameAndUrlProps) => {
   const [wasCopied, copy] = useClipboard(1500)
-  const [isUrlHovered, setIsUrlHovered] = useState(false)
-  const iconState: UrlIconState = wasCopied
-    ? 'copied'
-    : isUrlHovered
-      ? 'hovered'
-      : 'idle'
-  const UrlIcon = urlIconMap[iconState]
 
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation()
     await copy(url)
-    toast(defaultSuccessToast('Webhook URL copied'))
   }
 
   return (
@@ -84,7 +66,7 @@ const WebhookNameAndUrl = ({ name, url }: WebhookNameAndUrlProps) => {
         aria-hidden="true"
         className="border-stroke flex size-8 shrink-0 items-center justify-center border"
       >
-        <UrlIcon className="size-4 text-fg-secondary" />
+        <WebhookIcon className="size-4 text-fg-secondary" />
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 pb-0.5">
@@ -94,17 +76,33 @@ const WebhookNameAndUrl = ({ name, url }: WebhookNameAndUrlProps) => {
         >
           {name}
         </p>
-        <Button
-          variant="quaternary"
-          size="none"
-          onClick={handleCopy}
-          onMouseEnter={() => setIsUrlHovered(true)}
-          onMouseLeave={() => setIsUrlHovered(false)}
-          aria-label={`Copy webhook URL ${url}`}
-          className="relative z-10 w-fit max-w-full min-w-0 justify-start font-mono uppercase prose-label-numeric"
-        >
-          <span className="truncate">{url}</span>
-        </Button>
+        <div className="flex min-w-0 items-center gap-2">
+          <span
+            className="relative z-10 truncate font-mono text-fg-tertiary uppercase prose-label-numeric"
+            title={url}
+          >
+            {url}
+          </span>
+          <Button
+            variant="quaternary"
+            size="none"
+            onClick={handleCopy}
+            aria-label={wasCopied ? 'Copied' : `Copy webhook URL ${url}`}
+            className={cn(
+              'relative z-10 shrink-0 gap-1 font-medium text-fg-tertiary transition-opacity prose-body hover:text-fg hover:[&_svg]:text-icon',
+              wasCopied
+                ? 'opacity-100'
+                : 'opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100'
+            )}
+          >
+            {wasCopied ? (
+              <CheckmarkIcon className="size-4" />
+            ) : (
+              <CopyIcon className="size-4" />
+            )}
+            {wasCopied ? 'Copied' : 'Copy'}
+          </Button>
+        </div>
       </div>
     </div>
   )
@@ -249,7 +247,7 @@ export const WebhookTableRow = ({ webhook }: WebhookRowProps) => {
   return (
     <TableRow
       className={cn(
-        'group/row relative z-0 cursor-pointer border-b-0 transition-none',
+        'group/row relative z-0 h-14 cursor-pointer border-b-0 transition-none',
         'border-stroke/80 hover:z-20 focus-within:z-10',
         'has-[button[aria-haspopup=menu][data-state=open]]:z-10'
       )}
@@ -277,17 +275,13 @@ export const WebhookTableRow = ({ webhook }: WebhookRowProps) => {
         </div>
       </TableCell>
 
-      <TableCell className={cn(rowCellClassName, 'w-[184px]')}>
-        <div className={cn(rowContentClassName, 'justify-end gap-6')}>
-          <p className="w-[92px] whitespace-nowrap text-left text-fg-tertiary prose-body">
+      <TableCell className={rowCellClassName}>
+        <div className={cn(rowContentClassName, 'justify-between gap-6')}>
+          <p className="whitespace-nowrap text-fg-tertiary prose-body">
             {createdAt}
           </p>
-          <UserAvatar label={team.name} />
+          <WebhookRowActions webhook={webhook} />
         </div>
-      </TableCell>
-
-      <TableCell className={cn(rowCellClassName, 'w-10 pl-5 text-right')}>
-        <WebhookRowActions webhook={webhook} />
       </TableCell>
     </TableRow>
   )
