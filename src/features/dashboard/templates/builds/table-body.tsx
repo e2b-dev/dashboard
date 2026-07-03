@@ -7,7 +7,7 @@ import { DataTableBody, DataTableCell, DataTableRow } from '@/ui/data-table'
 import { RowHoverFrame } from '@/ui/row-hover-frame'
 import { ID_COLUMN_ID, isRightAlignedColumn } from './table-config'
 
-const ROW_HEIGHT_PX = 40
+const ROW_HEIGHT_PX = 32
 const VIRTUAL_OVERSCAN = 8
 const INITIAL_FALLBACK_ROW_COUNT = 100
 
@@ -51,7 +51,7 @@ export function BuildsTableBody({
           <DataTableRow
             key={row.id}
             className={cn(
-              'group/row relative h-10 min-w-full cursor-pointer -mx-2 px-2 hover:bg-bg-1 border-b-0 transition-none w-[calc(100%+16px)] gap-8',
+              'group/row relative h-8 min-w-full cursor-pointer -mx-2 px-2 hover:bg-bg-1 border-b-0 transition-none w-[calc(100%+16px)] gap-8',
               'hover:z-20 focus-within:z-10',
               { 'bg-bg-1 animate-pulse': isBuilding }
             )}
