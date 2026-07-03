@@ -18,7 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from './primitives/popover'
 const REFERENCE_DATE = '2024-01-01'
 
 // get timezone identifier in developer-friendly format (e.g., GMT+2, PST, CET)
-function getTimezoneIdentifier(): string {
+export function getTimezoneIdentifier(): string {
   const date = new Date()
 
   // try to get timezone abbreviation first (PST, CET, etc.)

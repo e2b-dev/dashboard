@@ -239,13 +239,15 @@ export function UsageAreaChart({
 
           <div
             aria-hidden
-            className="text-fg prose-label pointer-events-none absolute left-0 flex h-[18px] -translate-y-1/2 items-center px-1.5 font-mono whitespace-nowrap uppercase backdrop-blur-[6px]"
-            style={{
-              top: `${pointY}px`,
-              backgroundColor: 'rgba(255, 255, 255, 0.08)',
-            }}
+            className="pointer-events-none absolute left-0 flex h-[18px] -translate-y-1/2 items-center justify-end"
+            style={{ top: `${pointY}px`, width: `${Y_AXIS_WIDTH}px` }}
           >
-            {axisFormat(point.y)}
+            <span
+              className="text-fg prose-label flex h-[18px] items-center px-1.5 font-mono whitespace-nowrap uppercase backdrop-blur-[6px]"
+              style={{ backgroundColor: 'rgba(255, 255, 255, 0.08)' }}
+            >
+              {axisFormat(point.y)}
+            </span>
           </div>
 
           <div

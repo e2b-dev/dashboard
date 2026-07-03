@@ -1,7 +1,7 @@
 'use client'
 
 import { useUsageCharts } from './usage-charts-context'
-import { UsageTimeRangeControls } from './usage-time-range-controls'
+import { UsageDateRangePicker } from './usage-date-range-picker'
 
 interface UsageTopTimeRangeControlsProps {
   className?: string
@@ -13,7 +13,7 @@ export function UsageTopTimeRangeControls({
   const { timeframe, setTimeframe } = useUsageCharts()
 
   return (
-    <UsageTimeRangeControls
+    <UsageDateRangePicker
       timeframe={timeframe}
       onTimeRangeChange={setTimeframe}
       className={className}
