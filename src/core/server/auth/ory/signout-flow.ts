@@ -4,7 +4,7 @@ import { cookies } from 'next/headers'
 import { BASE_URL } from '@/configs/urls'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { normalizeOryReturnTo } from './build-start-url'
-import { E2B_SESSION_COOKIE, openSessionCookie } from './session-cookie'
+import { joinSessionCookie, openSessionCookie } from './session-cookie'
 import { buildOryLogoutUrl, ORY_POST_LOGOUT_PATH } from './signout'
 
 // Resolves the post-logout landing for the sign-out route.
@@ -34,7 +34,7 @@ export async function completeOrySignOut(
   try {
     const cookieStore = await cookies()
     const tokens = await openSessionCookie(
-      cookieStore.get(E2B_SESSION_COOKIE)?.value
+      joinSessionCookie(cookieStore.getAll())
     )
     idToken = tokens?.idToken
   } catch (error) {

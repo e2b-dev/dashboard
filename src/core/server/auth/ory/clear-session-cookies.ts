@@ -4,6 +4,7 @@ import type { NextRequest, NextResponse } from 'next/server'
 import {
   resolveSessionCookieDomain,
   sessionCookieDeleteOptions,
+  sessionCookieNames,
 } from './session-cookie'
 
 // Ory's identity session cookie: `ory_kratos_session` self-hosted,
@@ -20,7 +21,11 @@ export function clearAppSessionCookies(
   request: NextRequest,
   response: NextResponse
 ): void {
-  response.cookies.delete(sessionCookieDeleteOptions(request.nextUrl.host))
+  for (const name of sessionCookieNames(request.cookies.getAll())) {
+    response.cookies.delete(
+      sessionCookieDeleteOptions(request.nextUrl.host, name)
+    )
+  }
 
   const domain = resolveSessionCookieDomain(request.nextUrl.host)
   for (const { name } of request.cookies.getAll()) {
