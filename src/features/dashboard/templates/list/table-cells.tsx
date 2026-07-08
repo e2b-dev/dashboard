@@ -338,9 +338,6 @@ function DateTimeCell({
     [dateValue]
   )
 
-  // Compare against the full loaded row model (not the virtualized window) so
-  // the first/last on-screen rows still see their true neighbours. Adjacency is
-  // a best guess over loaded pages; it may shift as more rows load in.
   const rows = table.getRowModel().rows
   const datePart = formatted?.datePart
 
