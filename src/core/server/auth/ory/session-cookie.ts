@@ -11,7 +11,7 @@ export const E2B_SESSION_COOKIE = 'e2b_session'
 export const ORY_SIGNUP_METADATA_COOKIE = 'e2b-ory-signup-metadata'
 
 const SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30 // 30 days
-const MAX_SESSION_COOKIE_CHUNK = 2000
+const MAX_SESSION_COOKIE_CHUNK = 3800
 const SESSION_CHUNK_PREFIX = `${E2B_SESSION_COOKIE}.`
 
 // Cookies the dashboard owns — never forwarded across the Ory trust boundary.
