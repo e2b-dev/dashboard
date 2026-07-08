@@ -31,6 +31,7 @@ const badgeVariants = cva(
         hover: 'hover:ring-1 ring-[currentColor]',
       },
       size: {
+        xs: 'h-4 px-1 gap-0.5',
         sm: 'h-4.5 px-1 gap-0.5',
         md: 'h-5.5 px-2 gap-1',
         lg: 'h-6.5 px-2 gap-1.5',

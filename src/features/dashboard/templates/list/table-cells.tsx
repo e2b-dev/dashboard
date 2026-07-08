@@ -45,7 +45,7 @@ function E2BTemplateBadge() {
   return (
     <Tooltip delayDuration={200}>
       <TooltipTrigger tabIndex={-1} asChild>
-        <E2BBadge />
+        <E2BBadge className="relative z-10" />
       </TooltipTrigger>
       <TooltipContent className="max-w-[208px] p-2">
         <p className="text-fg-secondary font-sans text-xs">
@@ -276,7 +276,11 @@ export function TemplateNameCell({
       {additionalNames.length > 0 && (
         <Tooltip delayDuration={200}>
           <TooltipTrigger tabIndex={-1} asChild>
-            <Badge variant="default" className="relative z-10">
+            <Badge
+              variant="default"
+              size="xs"
+              className="relative z-10 text-fg-tertiary"
+            >
               +{additionalNames.length}
             </Badge>
           </TooltipTrigger>
@@ -296,7 +300,8 @@ export function TemplateNameCell({
           </TooltipContent>
         </Tooltip>
       )}
-      {isDefault && <E2BTemplateBadge />}
+      {/* {isDefault && <E2BTemplateBadge />} */}
+      <E2BTemplateBadge />
       {nameValue !== '--' && (
         <button
           type="button"
