@@ -313,10 +313,6 @@ export function TemplateNameCell({
   )
 }
 
-export interface TemplatesTableMeta {
-  sortedColumnId?: string
-}
-
 type DateColumnId = 'createdAt' | 'updatedAt'
 
 const DATE_CELL_FORMAT_OPTIONS = {
@@ -342,17 +338,14 @@ function DateTimeCell({
     [dateValue]
   )
 
-  const meta = table.options.meta as TemplatesTableMeta | undefined
-  const isSortedColumn = meta?.sortedColumnId === columnId
-
   // Compare against the full loaded row model (not the virtualized window) so
   // the first/last on-screen rows still see their true neighbours. Adjacency is
   // a best guess over loaded pages; it may shift as more rows load in.
   const rows = table.getRowModel().rows
   const datePart = formatted?.datePart
 
-  const isTimePromoted = useMemo(() => {
-    if (!isSortedColumn || !datePart) return false
+  const { isDateEmphasized, isTimeEmphasized } = useMemo(() => {
+    if (!datePart) return { isDateEmphasized: false, isTimeEmphasized: false }
 
     const sharesDate = (index: number) => {
       const neighbor = rows[index]
@@ -364,8 +357,14 @@ function DateTimeCell({
       )
     }
 
-    return sharesDate(row.index - 1) || sharesDate(row.index + 1)
-  }, [isSortedColumn, datePart, rows, row.index, columnId])
+    const sameAsAbove = sharesDate(row.index - 1)
+    const sameAsBelow = sharesDate(row.index + 1)
+
+    return {
+      isDateEmphasized: !sameAsAbove,
+      isTimeEmphasized: sameAsAbove || sameAsBelow,
+    }
+  }, [datePart, rows, row.index, columnId])
 
   return (
     <div
@@ -373,10 +372,10 @@ function DateTimeCell({
         'h-full overflow-x-hidden whitespace-nowrap font-mono prose-table-numeric'
       )}
     >
-      <span className="text-fg-secondary">{formatted?.datePart ?? '--'}</span>{' '}
-      <span
-        className={isTimePromoted ? 'text-fg-secondary' : 'text-fg-tertiary'}
-      >
+      <span className={isDateEmphasized ? 'text-fg' : 'text-fg-tertiary'}>
+        {formatted?.datePart ?? '--'}
+      </span>{' '}
+      <span className={isTimeEmphasized ? 'text-fg' : 'text-fg-tertiary'}>
         {formatted?.timePart ?? '--'}
       </span>{' '}
       <span className="text-fg-tertiary">{formatted?.timezonePart ?? ''}</span>
