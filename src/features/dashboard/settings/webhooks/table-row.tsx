@@ -54,23 +54,8 @@ type WebhookNameAndUrlProps = {
   url: string
 }
 
-type UrlIconState = 'copied' | 'hovered' | 'idle'
-
-const urlIconMap: Record<UrlIconState, typeof WebhookIcon> = {
-  copied: CheckmarkIcon,
-  hovered: CopyIcon,
-  idle: WebhookIcon,
-}
-
 const WebhookNameAndUrl = ({ name, url }: WebhookNameAndUrlProps) => {
   const [wasCopied, copy] = useClipboard(1500)
-  const [isUrlHovered, setIsUrlHovered] = useState(false)
-  const iconState: UrlIconState = wasCopied
-    ? 'copied'
-    : isUrlHovered
-      ? 'hovered'
-      : 'idle'
-  const UrlIcon = urlIconMap[iconState]
 
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -84,7 +69,7 @@ const WebhookNameAndUrl = ({ name, url }: WebhookNameAndUrlProps) => {
         aria-hidden="true"
         className="border-stroke flex size-8 shrink-0 items-center justify-center border"
       >
-        <UrlIcon className="size-4 text-fg-secondary" />
+        <WebhookIcon className="size-4 text-fg-secondary" />
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 pb-0.5">
@@ -94,17 +79,34 @@ const WebhookNameAndUrl = ({ name, url }: WebhookNameAndUrlProps) => {
         >
           {name}
         </p>
-        <Button
-          variant="quaternary"
-          size="none"
-          onClick={handleCopy}
-          onMouseEnter={() => setIsUrlHovered(true)}
-          onMouseLeave={() => setIsUrlHovered(false)}
-          aria-label={`Copy webhook URL ${url}`}
-          className="relative z-10 w-fit max-w-full min-w-0 justify-start font-mono uppercase prose-label-numeric"
-        >
-          <span className="truncate">{url}</span>
-        </Button>
+        <div className="flex h-[17px] min-w-0 items-center gap-2">
+          <span className="truncate font-mono uppercase text-fg-tertiary prose-label-numeric">
+            {url}
+          </span>
+          <Button
+            variant="quaternary"
+            size="none"
+            onClick={handleCopy}
+            aria-label={`Copy webhook URL ${url}`}
+            className={cn(
+              'relative z-10 h-full shrink-0 hover:[&_svg]:text-icon',
+              'hidden group-hover/row:inline-flex group-has-[:focus-visible]/row:inline-flex'
+            )}
+          >
+            {wasCopied ? <CheckmarkIcon /> : <CopyIcon />}
+            <span className="grid text-left">
+              <span className="col-start-1 row-start-1">
+                {wasCopied ? 'Copied' : 'Copy'}
+              </span>
+              <span
+                aria-hidden="true"
+                className="invisible col-start-1 row-start-1"
+              >
+                Copied
+              </span>
+            </span>
+          </Button>
+        </div>
       </div>
     </div>
   )
