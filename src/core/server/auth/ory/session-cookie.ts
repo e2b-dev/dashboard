@@ -10,6 +10,10 @@ export const E2B_SESSION_COOKIE = 'e2b_session'
 
 export const ORY_SIGNUP_METADATA_COOKIE = 'e2b-ory-signup-metadata'
 
+const SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30 // 30 days
+const MAX_SESSION_COOKIE_CHUNK = 3800
+const SESSION_CHUNK_PREFIX = `${E2B_SESSION_COOKIE}.`
+
 // Cookies the dashboard owns — never forwarded across the Ory trust boundary.
 // e2b_session may be chunked (e2b_session.0/.1/…), so the chunk names are
 // app-owned too and must be stripped alongside the bare name.
@@ -23,8 +27,7 @@ function isAppOwnedCookie(name: string): boolean {
 
 // Serializes a cookie list into a `Cookie` header for forwarding to Ory, with
 // the app-owned cookies stripped. Takes the cookie list rather than reading
-// next/headers so it stays edge-safe and serves both the middleware
-// (NextRequest cookies) and server components (next/headers cookies).
+// next/headers so it stays edge-safe
 export function cookieHeaderWithoutAppOwned(
   cookieList: ReadonlyArray<{ name: string; value: string }>
 ): string {
@@ -33,11 +36,6 @@ export function cookieHeaderWithoutAppOwned(
     .map((cookie) => `${cookie.name}=${cookie.value}`)
     .join('; ')
 }
-
-// Persist across browser restarts. The cookie only caches tokens — a stale or
-// expired cookie is re-minted from the live Kratos session, so the lifetime is
-// intentionally generous and not the security boundary.
-const SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30
 
 export type SessionTokens = {
   accessToken: string
@@ -89,14 +87,6 @@ export async function openSessionCookie(
   }
 }
 
-// The browser caps a single cookie at ~4096 bytes including its name and
-// attributes. The sealed value is ASCII (base64url JWE), so 3800 bytes of value
-// leaves headroom for `HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=…;
-// Domain=…` and keeps every chunk under the cap.
-const MAX_SESSION_COOKIE_CHUNK = 3800
-
-const SESSION_CHUNK_PREFIX = `${E2B_SESSION_COOKIE}.`
-
 // Numeric chunk index for `e2b_session.N`, or null for anything that isn't a
 // session chunk (including the bare `e2b_session`).
 function sessionChunkIndex(name: string): number | null {
@@ -108,9 +98,6 @@ function sessionChunkIndex(name: string): number | null {
 
 export type SessionCookieChunk = { name: string; value: string }
 
-// The cookies to write plus the names to expire so the browser jar matches the
-// new value. On every write the other shape's leftovers are expired (bare↔chunked
-// transitions, or a shrink from N chunks to fewer) so no orphan cookies linger.
 export type SessionCookieReconciliation = {
   write: SessionCookieChunk[]
   expire: string[]
@@ -118,8 +105,7 @@ export type SessionCookieReconciliation = {
 
 // Splits the sealed value into the cookies to write. Values within one chunk
 // keep the bare `e2b_session` name (backward compatible with cookies already in
-// the wild); larger values fan out to `e2b_session.0`, `e2b_session.1`, … the
-// way authjs chunks its session cookie.
+// the wild); larger values fan out to `e2b_session.0`, `e2b_session.1`...
 export function splitSessionCookie(value: string): SessionCookieChunk[] {
   if (value.length <= MAX_SESSION_COOKIE_CHUNK) {
     return [{ name: E2B_SESSION_COOKIE, value }]
@@ -137,9 +123,7 @@ export function splitSessionCookie(value: string): SessionCookieChunk[] {
 }
 
 // Reassembles the sealed value from whatever cookie shape is present. Prefers
-// numbered chunks (sorted by index); falls back to a bare `e2b_session`. Never
-// mixes the two shapes, so a stale bare cookie sitting beside fresh chunks can't
-// corrupt the value.
+// numbered chunks (sorted by index); falls back to a bare `e2b_session`
 export function joinSessionCookie(
   cookieList: ReadonlyArray<{ name: string; value: string }>
 ): string | undefined {
