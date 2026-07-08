@@ -300,8 +300,7 @@ export function TemplateNameCell({
           </TooltipContent>
         </Tooltip>
       )}
-      {/* {isDefault && <E2BTemplateBadge />} */}
-      <E2BTemplateBadge />
+      {isDefault && <E2BTemplateBadge />}
       {nameValue !== '--' && (
         <button
           type="button"
