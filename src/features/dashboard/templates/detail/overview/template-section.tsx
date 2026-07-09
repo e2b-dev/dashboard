@@ -3,8 +3,9 @@
 import type { CSSProperties, ReactNode } from 'react'
 import type { TemplateDetail } from '@/core/modules/templates/models'
 import { getTemplateDisplayName } from '@/features/dashboard/templates/helpers'
+import { useTimezone } from '@/features/dashboard/timezone'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
-import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
+import { formatDateParts } from '@/lib/utils/formatting'
 import { cn } from '@/lib/utils/ui'
 import { IconButton } from '@/ui/primitives/icon-button'
 import { CheckmarkIcon, CopyIcon } from '@/ui/primitives/icons'
@@ -17,19 +18,20 @@ interface TemplateSectionProps {
 }
 
 export function TemplateSection({ template, teamSlug }: TemplateSectionProps) {
+  const { timezone } = useTimezone()
   const displayName = getTemplateDisplayName(template)
 
-  const created = formatLocalLogStyleTimestamp(template.createdAt, {
-    includeSeconds: false,
-    includeYear: false,
+  const created = formatDateParts(template.createdAt, {
+    timezone,
+    format: 'date-time-no-seconds',
   })
 
   const isModified =
     template.updatedAt && template.updatedAt !== template.createdAt
   const modified = isModified
-    ? formatLocalLogStyleTimestamp(template.updatedAt, {
-        includeSeconds: false,
-        includeYear: false,
+    ? formatDateParts(template.updatedAt, {
+        timezone,
+        format: 'date-time-no-seconds',
       })
     : null
 
@@ -47,10 +49,14 @@ export function TemplateSection({ template, teamSlug }: TemplateSectionProps) {
 
       <div className="flex flex-wrap items-start gap-x-8 gap-y-4">
         <MetaCell label="Created">
-          {created ? `${created.datePart} ${created.timePart}` : '--'}
+          {created
+            ? `${created.datePart}, ${created.timePart} ${created.timezonePart}`
+            : '--'}
         </MetaCell>
         <MetaCell label="Modified">
-          {modified ? `${modified.datePart} ${modified.timePart}` : 'Not yet'}
+          {modified
+            ? `${modified.datePart}, ${modified.timePart} ${modified.timezonePart}`
+            : 'Not yet'}
         </MetaCell>
         <MetaCell label="Visibility" className="ml-auto items-end">
           <TemplateVisibilityDropdown

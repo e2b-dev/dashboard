@@ -11,6 +11,8 @@ export const COOKIE_KEYS = {
   SIDEBAR_STATE: 'e2b-sidebar-state',
 
   SANDBOX_INSPECT_ROOT_PATH: 'e2b-sandbox-inspect-root-path',
+
+  DASHBOARD_TIMEZONE: 'e2b-dashboard-timezone',
 } as const
 
 export const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365 // 1 year
@@ -37,6 +39,9 @@ export const COOKIE_OPTIONS = {
     ...BASE_COOKIE_OPTIONS,
   },
   [COOKIE_KEYS.SANDBOX_INSPECT_ROOT_PATH]: {
+    ...BASE_COOKIE_OPTIONS,
+  },
+  [COOKIE_KEYS.DASHBOARD_TIMEZONE]: {
     ...BASE_COOKIE_OPTIONS,
   },
 } as const

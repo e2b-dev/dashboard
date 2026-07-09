@@ -3,6 +3,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react'
+import type { Timezone } from '@/features/dashboard/timezone'
 import type { TimeframeState } from '@/lib/utils/timeframe'
 import {
   calculatePanelPosition,
@@ -55,8 +56,8 @@ export function useTimeOptionSelection(value: TimeframeState) {
 /**
  * Hook to manage datetime state
  */
-export function useDateTimeState(value: TimeframeState) {
-  const formatted = formatTimeframeValues(value)
+export function useDateTimeState(value: TimeframeState, timezone: Timezone) {
+  const formatted = formatTimeframeValues(value, timezone)
 
   const [startDateTime, setStartDateTime] = useState(formatted.startDateTime)
   const [endDateTime, setEndDateTime] = useState(formatted.endDateTime)
@@ -64,11 +65,11 @@ export function useDateTimeState(value: TimeframeState) {
 
   // sync with external value changes
   useEffect(() => {
-    const formatted = formatTimeframeValues(value)
+    const formatted = formatTimeframeValues(value, timezone)
     setStartDateTime(formatted.startDateTime)
     setEndDateTime(formatted.endDateTime)
     setEndEnabled(value.mode === 'static')
-  }, [value])
+  }, [value, timezone])
 
   return {
     startDateTime,

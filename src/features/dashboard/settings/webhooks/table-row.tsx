@@ -4,9 +4,11 @@ import Link from 'next/link'
 import { Fragment, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { SandboxLifecycleEventTypeSchema } from '@/core/modules/sandboxes/lifecycle-event-types'
+import { useTimezone } from '@/features/dashboard/timezone'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import { defaultSuccessToast, toast } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { formatDate } from '@/lib/utils/formatting'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import {
@@ -237,13 +239,10 @@ const WebhookRowActions = ({ webhook }: WebhookRowActionsProps) => {
 
 export const WebhookTableRow = ({ webhook }: WebhookRowProps) => {
   const { team } = useDashboard()
+  const { timezone } = useTimezone()
 
   const createdAt = webhook.createdAt
-    ? new Date(webhook.createdAt).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      })
+    ? (formatDate(webhook.createdAt, { timezone }) ?? '-')
     : '-'
 
   const webhookHref = PROTECTED_URLS.WEBHOOK(team.slug, webhook.id)

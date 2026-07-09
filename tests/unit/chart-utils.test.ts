@@ -1,13 +1,27 @@
 import { describe, expect, it } from 'vitest'
 import type { ClientTeamMetric } from '@/core/modules/sandboxes/models.client'
-import { transformMetrics } from '@/features/dashboard/sandboxes/monitoring/charts/team-metrics-chart/utils'
+import {
+  createTimeAxisLabelFormatter,
+  transformMetrics,
+} from '@/features/dashboard/sandboxes/monitoring/charts/team-metrics-chart/utils'
 import {
   getDeliveryCountSeriesData,
   getResponseTimeSeriesData,
 } from '@/features/dashboard/settings/webhooks/detail/chart-utils'
 import { calculateAxisMax } from '@/lib/utils/chart'
+import { requireTimezone } from './helpers/timezone'
 
 describe('team-metrics-chart-utils', () => {
+  const newYork = requireTimezone('America/New_York')
+
+  describe('createTimeAxisLabelFormatter', () => {
+    it('uses hour labels for short ranges', () => {
+      const formatter = createTimeAxisLabelFormatter(newYork, 60 * 60 * 1000)
+
+      expect(formatter(Date.UTC(2026, 5, 8, 13, 0, 0))).toBe('09:00')
+    })
+  })
+
   describe('calculateYAxisMax', () => {
     it('should round to nice numbers based on data', () => {
       const data = [

@@ -1,6 +1,9 @@
+'use client'
+
 import type { SandboxLogModel } from '@/core/modules/sandboxes/models'
 import { LogLevelBadge } from '@/features/dashboard/common/log-cells'
-import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
+import { useTimezone } from '@/features/dashboard/timezone'
+import { formatDateParts } from '@/lib/utils/formatting'
 import CopyButtonInline from '@/ui/copy-button-inline'
 
 export const LogLevel = ({ level }: { level: SandboxLogModel['level'] }) => {
@@ -12,21 +15,28 @@ interface TimestampProps {
 }
 
 export const Timestamp = ({ timestampUnix }: TimestampProps) => {
-  const formatted = formatLocalLogStyleTimestamp(timestampUnix, {
-    includeCentiseconds: true,
+  const { timezone } = useTimezone()
+  const formattedTimestamp = formatDateParts(timestampUnix, {
+    timezone,
+    format: 'date-time-with-centiseconds',
   })
 
-  if (!formatted) {
-    return <span className="font-mono prose-table-numeric">--</span>
-  }
+  const copyValue = formattedTimestamp?.iso ?? ''
+  const content = formattedTimestamp ? (
+    <>
+      <span className="text-fg-tertiary">{formattedTimestamp.datePart}</span>{' '}
+      {formattedTimestamp.timePart}.{formattedTimestamp.subsecondPart}
+    </>
+  ) : (
+    '--'
+  )
 
   return (
     <CopyButtonInline
-      value={formatted.iso}
+      value={copyValue}
       className="font-mono group prose-table-numeric truncate"
     >
-      <span className="text-fg-tertiary">{formatted.datePart}</span>{' '}
-      {formatted.timePart}.{formatted.subsecondPart}
+      {content}
     </CopyButtonInline>
   )
 }

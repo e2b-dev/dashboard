@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { CellContext } from '@tanstack/react-table'
 import { useMemo, useState } from 'react'
 import type { DefaultTemplate, Template } from '@/core/modules/templates/models'
+import { useTimezone } from '@/features/dashboard/timezone'
 import { useClipboard } from '@/lib/hooks/use-clipboard'
 import {
   defaultErrorToast,
@@ -11,7 +12,7 @@ import {
   useToast,
 } from '@/lib/hooks/use-toast'
 import { cn } from '@/lib/utils'
-import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
+import { formatDateParts } from '@/lib/utils/formatting'
 import { useTRPC } from '@/trpc/client'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { E2BBadge } from '@/ui/brand'
@@ -329,12 +330,6 @@ export function TemplateNameCell({
 
 type DateColumnId = 'createdAt' | 'updatedAt'
 
-const DATE_CELL_FORMAT_OPTIONS = {
-  includeSeconds: false,
-  includeYear: true,
-  includeTimezone: true,
-} as const
-
 function DateTimeCell({
   ctx,
   columnId,
@@ -345,11 +340,16 @@ function DateTimeCell({
   'use no memo'
 
   const { getValue, table, row } = ctx
+  const { timezone } = useTimezone()
   const dateValue = getValue() as string
 
   const formatted = useMemo(
-    () => formatLocalLogStyleTimestamp(dateValue, DATE_CELL_FORMAT_OPTIONS),
-    [dateValue]
+    () =>
+      formatDateParts(dateValue, {
+        timezone,
+        format: 'date-year-time-no-seconds',
+      }),
+    [dateValue, timezone]
   )
 
   const rows = table.getRowModel().rows
@@ -363,8 +363,10 @@ function DateTimeCell({
       if (!neighbor) return false
       const neighborValue = neighbor.getValue(columnId) as string
       return (
-        formatLocalLogStyleTimestamp(neighborValue, DATE_CELL_FORMAT_OPTIONS)
-          ?.datePart === datePart
+        formatDateParts(neighborValue, {
+          timezone,
+          format: 'date-year-time-no-seconds',
+        })?.datePart === datePart
       )
     }
 
@@ -375,7 +377,7 @@ function DateTimeCell({
       isDateEmphasized: !sameAsAbove,
       isTimeEmphasized: sameAsAbove || sameAsBelow,
     }
-  }, [datePart, rows, row.index, columnId])
+  }, [datePart, rows, row.index, columnId, timezone])
 
   return (
     <div

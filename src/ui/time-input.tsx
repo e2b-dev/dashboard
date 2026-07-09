@@ -1,10 +1,12 @@
 'use client'
 
 import { memo, useCallback, useEffect, useState } from 'react'
+import { useTimezone } from '@/features/dashboard/timezone'
 import { cn } from '@/lib/utils'
 import {
   formatDateWithSpaces,
   formatTimeWithSpaces,
+  formatTimezoneAbbreviation,
   tryParseDatetime,
 } from '@/lib/utils/formatting'
 import { NumberInput } from './number-input'
@@ -16,32 +18,6 @@ import { Popover, PopoverContent, PopoverTrigger } from './primitives/popover'
 
 // reference date for parsing time-only values - actual date doesn't matter
 const REFERENCE_DATE = '2024-01-01'
-
-// get timezone identifier in developer-friendly format (e.g., GMT+2, PST, CET)
-function getTimezoneIdentifier(): string {
-  const date = new Date()
-
-  // try to get timezone abbreviation first (PST, CET, etc.)
-  const shortTimeString = date.toLocaleTimeString('en-US', {
-    timeZoneName: 'short',
-  })
-  const match = shortTimeString.match(/\b([A-Z]{2,5})\b$/)
-
-  if (match && match[1] && !match[1].startsWith('GMT')) {
-    return match[1]
-  }
-
-  // fallback to GMT offset format
-  const offset = -date.getTimezoneOffset()
-  const hours = Math.floor(Math.abs(offset) / 60)
-  const minutes = Math.abs(offset) % 60
-  const sign = offset >= 0 ? '+' : '-'
-
-  if (minutes === 0) {
-    return `GMT${sign}${hours}`
-  }
-  return `GMT${sign}${hours}:${String(minutes).padStart(2, '0')}`
-}
 
 export interface TimeInputProps {
   dateValue: string
@@ -70,6 +46,7 @@ export const TimeInput = memo(function TimeInput({
   maxDate,
   hideTime = false,
 }: TimeInputProps) {
+  const { timezone } = useTimezone()
   const [dateOpen, setDateOpen] = useState(false)
   const [timeOpen, setTimeOpen] = useState(false)
 
@@ -83,6 +60,7 @@ export const TimeInput = memo(function TimeInput({
   const [hours, setHours] = useState(timeDate ? timeDate.getHours() : 0)
   const [minutes, setMinutes] = useState(timeDate ? timeDate.getMinutes() : 0)
   const [seconds, setSeconds] = useState(timeDate ? timeDate.getSeconds() : 0)
+  const timezoneIdentifier = formatTimezoneAbbreviation(Date.now(), timezone)
 
   useEffect(() => {
     setDisplayDate(dateValue || '')
@@ -191,7 +169,7 @@ export const TimeInput = memo(function TimeInput({
             />
             <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
               <span className="prose-label text-fg-tertiary font-mono">
-                {getTimezoneIdentifier()}
+                {timezoneIdentifier}
               </span>
 
               <PopoverTrigger asChild>

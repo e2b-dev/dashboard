@@ -1,5 +1,6 @@
 'use client'
 
+import { useTimezone } from '@/features/dashboard/timezone'
 import { cn } from '@/lib/utils'
 import { formatDateRange } from '@/lib/utils/formatting'
 import { useUsageCharts } from '../usage-charts-context'
@@ -59,6 +60,7 @@ export function SingleMetricChart({
 }: SingleMetricChartProps) {
   const { displayedData, totals, timeframe, costBreakdown, bucketLabels } =
     useUsageCharts()
+  const { timezone } = useTimezone()
   const meta = USAGE_METRICS[metric]
   const series = displayedData[metric]
 
@@ -76,7 +78,7 @@ export function SingleMetricChart({
           </span>
           <span className="prose-label text-fg-tertiary uppercase">
             total {meta.label} for{' '}
-            {formatDateRange(timeframe.start, timeframe.end)}
+            {formatDateRange(timeframe.start, timeframe.end, { timezone })}
           </span>
         </div>
       </div>

@@ -38,9 +38,9 @@ import { getSandboxListEffectiveSorting } from './stores/table-store'
 import { SandboxesTableBody } from './table-body'
 import type { SandboxListRow } from './table-config'
 import {
-  legacySandboxListColumns,
   sandboxIdFuzzyFilter,
   sandboxListColumns,
+  useLegacySandboxListColumns,
 } from './table-config'
 
 const STARTED_AT_FILTER_HOURS: Record<
@@ -299,6 +299,7 @@ export function NewSandboxesTable() {
 export function LegacySandboxesTable() {
   const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/sandboxes'>()
   const trpc = useTRPC()
+  const legacySandboxListColumns = useLegacySandboxListColumns()
 
   const { data, refetch, isFetching } = useSuspenseQuery(
     trpc.sandboxes.getSandboxes.queryOptions(
