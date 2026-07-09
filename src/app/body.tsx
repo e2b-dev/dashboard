@@ -2,7 +2,6 @@
 
 import { useParams } from 'next/navigation'
 import type { ReactNode } from 'react'
-import { GTMBody } from '@/features/google-tag-manager'
 import { cn } from '@/lib/utils'
 
 export function Body({
@@ -14,7 +13,6 @@ export function Body({
 
   return (
     <body className={cn(mode, 'relative flex min-h-[100svh] flex-col')}>
-      <GTMBody />
       {children}
     </body>
   )

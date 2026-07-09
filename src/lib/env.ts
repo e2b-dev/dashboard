@@ -58,6 +58,8 @@ export const serverSchema = z.object({
 export const clientSchema = z.object({
   NEXT_PUBLIC_E2B_DOMAIN: z.string(),
 
+  NEXT_PUBLIC_GTM_ID: z.string().min(1).optional(),
+
   NEXT_PUBLIC_POSTHOG_KEY: z.string().min(1).optional(),
   NEXT_PUBLIC_POSTHOG_DASHBOARD_FEEDBACK_SURVEY_ID: z
     .string()
