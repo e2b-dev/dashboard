@@ -15,7 +15,6 @@ import { formatLocalLogStyleTimestamp } from '@/lib/utils/formatting'
 import { useTRPC } from '@/trpc/client'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { E2BBadge } from '@/ui/brand'
-import HelpTooltip from '@/ui/help-tooltip'
 import { Badge } from '@/ui/primitives/badge'
 import {
   DropdownMenu,
@@ -35,19 +34,25 @@ import {
   UnlockIcon,
 } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/ui/primitives/tooltip'
 import { useDashboard } from '../../context'
 
 function E2BTemplateBadge() {
   return (
-    <HelpTooltip
-      trigger={<E2BBadge />}
-      classNames={{ content: 'max-w-[208px]' }}
-    >
-      <p className="text-fg-secondary font-sans text-xs whitespace-break-spaces">
-        This template was created by&nbsp;E2B. It is one of the default
-        templates every user has access to.
-      </p>
-    </HelpTooltip>
+    <Tooltip delayDuration={200}>
+      <TooltipTrigger tabIndex={-1} asChild>
+        <E2BBadge className="relative z-10" />
+      </TooltipTrigger>
+      <TooltipContent className="max-w-[208px] p-2">
+        <p className="text-fg-secondary font-sans text-xs">
+          Created and managed by E2B. Accessible to everyone.
+        </p>
+      </TooltipContent>
+    </Tooltip>
   )
 }
 
@@ -268,29 +273,38 @@ export function TemplateNameCell({
       )}
     >
       <span className="truncate">{nameValue}</span>
-      {additionalNames.length > 0 && (
-        <HelpTooltip
-          trigger={
-            <span className="relative z-10 text-fg-tertiary bg-bg-muted rounded px-1.5 py-0.5 text-xs font-medium">
-              +{additionalNames.length}
-            </span>
-          }
-        >
-          <div className="flex flex-col gap-1">
-            <span className="text-fg-secondary text-xs">
-              Also available under:
-            </span>
-            <ul className="flex flex-col gap-0.5 list-disc ml-4 mr-2">
-              {additionalNames.map((name) => (
-                <li key={name} className="font-mono text-xs text-fg-tertiary">
-                  {name}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </HelpTooltip>
+      {(additionalNames.length > 0 || isDefault) && (
+        <div className="flex items-center gap-1">
+          {additionalNames.length > 0 && (
+            <Tooltip delayDuration={200}>
+              <TooltipTrigger tabIndex={-1} asChild>
+                <Badge
+                  variant="default"
+                  size="xs"
+                  className="relative z-10 px-0.5 text-fg-tertiary"
+                >
+                  +{additionalNames.length}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent className="p-2">
+                <div className="flex flex-col gap-1 font-sans">
+                  <span className="text-fg-tertiary text-xs">
+                    Also available as:
+                  </span>
+                  <ul className="flex flex-col gap-0.5 list-disc ml-4 mr-2">
+                    {additionalNames.map((name) => (
+                      <li key={name} className="font-mono text-xs text-fg">
+                        {name}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          )}
+          {isDefault && <E2BTemplateBadge />}
+        </div>
       )}
-      {isDefault && <E2BTemplateBadge />}
       {nameValue !== '--' && (
         <button
           type="button"

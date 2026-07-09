@@ -58,7 +58,7 @@ export const E2BLogoSmall = ({
 )
 
 export const E2BBadge = ({ className, ...props }: BadgeProps) => (
-  <Badge className={cn('h-4', className)} variant="default" {...props}>
+  <Badge className={className} variant="default" size="xs" {...props}>
     <span className="inline-flex h-[8px] w-[25px] items-center justify-center">
       <E2BLogoSmall className="h-[7px] w-auto" />
     </span>
