@@ -327,18 +327,55 @@ export function TemplateNameCell({
   )
 }
 
-export function CreatedAtCell({
-  getValue,
-}: CellContext<Template | DefaultTemplate, unknown>) {
+type DateColumnId = 'createdAt' | 'updatedAt'
+
+const DATE_CELL_FORMAT_OPTIONS = {
+  includeSeconds: false,
+  includeYear: true,
+  includeTimezone: true,
+} as const
+
+function DateTimeCell({
+  ctx,
+  columnId,
+}: {
+  ctx: CellContext<Template | DefaultTemplate, unknown>
+  columnId: DateColumnId
+}) {
+  'use no memo'
+
+  const { getValue, table, row } = ctx
   const dateValue = getValue() as string
 
-  const formattedTimestamp = useMemo(() => {
-    return formatLocalLogStyleTimestamp(dateValue, {
-      includeSeconds: false,
-      includeYear: true,
-      includeTimezone: true,
-    })
-  }, [dateValue])
+  const formatted = useMemo(
+    () => formatLocalLogStyleTimestamp(dateValue, DATE_CELL_FORMAT_OPTIONS),
+    [dateValue]
+  )
+
+  const rows = table.getRowModel().rows
+  const datePart = formatted?.datePart
+
+  const { isDateEmphasized, isTimeEmphasized } = useMemo(() => {
+    if (!datePart) return { isDateEmphasized: false, isTimeEmphasized: false }
+
+    const sharesDate = (index: number) => {
+      const neighbor = rows[index]
+      if (!neighbor) return false
+      const neighborValue = neighbor.getValue(columnId) as string
+      return (
+        formatLocalLogStyleTimestamp(neighborValue, DATE_CELL_FORMAT_OPTIONS)
+          ?.datePart === datePart
+      )
+    }
+
+    const sameAsAbove = sharesDate(row.index - 1)
+    const sameAsBelow = sharesDate(row.index + 1)
+
+    return {
+      isDateEmphasized: !sameAsAbove,
+      isTimeEmphasized: sameAsAbove || sameAsBelow,
+    }
+  }, [datePart, rows, row.index, columnId])
 
   return (
     <div
@@ -346,45 +383,27 @@ export function CreatedAtCell({
         'h-full overflow-x-hidden whitespace-nowrap font-mono prose-table-numeric'
       )}
     >
-      <span className="text-fg-tertiary">
-        {formattedTimestamp?.datePart ?? '--'}
+      <span className={isDateEmphasized ? 'text-fg' : 'text-fg-tertiary'}>
+        {formatted?.datePart ?? '--'}
       </span>{' '}
-      {formattedTimestamp?.timePart ?? '--'}{' '}
-      <span className="text-fg-tertiary">
-        {formattedTimestamp?.timezonePart ?? ''}
-      </span>
+      <span className={isTimeEmphasized ? 'text-fg' : 'text-fg-tertiary'}>
+        {formatted?.timePart ?? '--'}
+      </span>{' '}
+      <span className="text-fg-tertiary">{formatted?.timezonePart ?? ''}</span>
     </div>
   )
 }
 
-export function UpdatedAtCell({
-  getValue,
-}: CellContext<Template | DefaultTemplate, unknown>) {
-  const dateValue = getValue() as string
+export function CreatedAtCell(
+  ctx: CellContext<Template | DefaultTemplate, unknown>
+) {
+  return <DateTimeCell ctx={ctx} columnId="createdAt" />
+}
 
-  const formattedTimestamp = useMemo(() => {
-    return formatLocalLogStyleTimestamp(dateValue, {
-      includeSeconds: false,
-      includeYear: true,
-      includeTimezone: true,
-    })
-  }, [dateValue])
-
-  return (
-    <div
-      className={cn(
-        'h-full overflow-x-hidden whitespace-nowrap font-mono prose-table-numeric'
-      )}
-    >
-      <span className="text-fg-tertiary">
-        {formattedTimestamp?.datePart ?? '--'}
-      </span>{' '}
-      {formattedTimestamp?.timePart ?? '--'}{' '}
-      <span className="text-fg-tertiary">
-        {formattedTimestamp?.timezonePart ?? ''}
-      </span>
-    </div>
-  )
+export function UpdatedAtCell(
+  ctx: CellContext<Template | DefaultTemplate, unknown>
+) {
+  return <DateTimeCell ctx={ctx} columnId="updatedAt" />
 }
 
 export function VisibilityCell({
