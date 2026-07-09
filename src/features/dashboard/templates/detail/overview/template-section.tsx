@@ -49,10 +49,14 @@ export function TemplateSection({ template, teamSlug }: TemplateSectionProps) {
 
       <div className="flex flex-wrap items-start gap-x-8 gap-y-4">
         <MetaCell label="Created">
-          {created ? `${created.datePart} ${created.timePart}` : '--'}
+          {created
+            ? `${created.datePart}, ${created.timePart} ${created.timezonePart}`
+            : '--'}
         </MetaCell>
         <MetaCell label="Modified">
-          {modified ? `${modified.datePart} ${modified.timePart}` : 'Not yet'}
+          {modified
+            ? `${modified.datePart}, ${modified.timePart} ${modified.timezonePart}`
+            : 'Not yet'}
         </MetaCell>
         <MetaCell label="Visibility" className="ml-auto items-end">
           <TemplateVisibilityDropdown
