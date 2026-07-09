@@ -71,11 +71,14 @@ export function fromKratosSessionIdentity(identity: {
   external_id?: string | null
   traits?: unknown
   metadata_public?: unknown
+  organization_id?: string | null
 }): AuthUser {
   const traits = parseOryTraits(identity.traits, {
     identityId: identity.id,
     source: 'kratos_session',
   })
+  const organizationId = identity.organization_id || null
+
   return {
     id: requireExternalId(identity),
     identityId: identity.id,
@@ -85,6 +88,8 @@ export function fromKratosSessionIdentity(identity: {
     providers: [],
     canChangeEmail: false,
     canChangePassword: false,
+    organizationId,
+    isSso: organizationId !== null,
   }
 }
 
@@ -122,6 +127,7 @@ export function fromOryIdentity(identity: Identity): AuthUser {
   )
   const hasOidcCredential = hasLinkedOidcCredential(identity.credentials?.oidc)
   const canChangePassword = hasPasswordCredential && !hasOidcCredential
+  const organizationId = identity.organization_id || null
 
   return {
     id: requireExternalId(identity),
@@ -134,6 +140,8 @@ export function fromOryIdentity(identity: Identity): AuthUser {
     // settings/verification flows instead of patching traits directly.
     canChangeEmail: false,
     canChangePassword,
+    organizationId,
+    isSso: organizationId !== null,
   }
 }
 
