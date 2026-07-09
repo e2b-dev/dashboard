@@ -7,7 +7,7 @@
 [![GitHub Stars](https://img.shields.io/github/stars/e2b-dev/dashboard?style=social)](https://github.com/e2b-dev/dashboard)
 
 ## Quick Links
-- 📚 [Documentation](https://e2b.dev/docs)
+- 📚 [Documentation](https://e2b.dev/docs?utm_source=github&utm_medium=referral&utm_campaign=readme&utm_content=dashboard)
 - 💬 [Discord Community](https://discord.gg/e2b)
 - 🐛 [Issue Tracker](https://github.com/e2b-dev/dashboard/issues)
 - 🤝 [Contributing Guide](CONTRIBUTING.md)
@@ -143,7 +143,7 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 ## Support
 If you need help or have questions:
 
-1. Check our [Documentation](https://e2b.dev/docs)
+1. Check our [Documentation](https://e2b.dev/docs?utm_source=github&utm_medium=referral&utm_campaign=readme&utm_content=dashboard)
 2. Join our [Discord Community](https://discord.gg/e2b)
 3. Open an [Issue](https://github.com/e2b-dev/dashboard/issues)
 
