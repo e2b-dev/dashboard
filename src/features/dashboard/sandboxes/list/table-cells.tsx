@@ -253,3 +253,29 @@ export function StartedAtCell({
     </div>
   )
 }
+
+export function LegacyStartedAtCell({
+  getValue,
+}: CellContext<SandboxListRow, unknown>) {
+  const { timezone } = useTimezone()
+  const dateValue = (getValue() as string | undefined) ?? ''
+
+  const formattedTimestamp = useMemo(() => {
+    return formatDateParts(dateValue, {
+      timezone,
+      format: 'date-time-no-seconds',
+    })
+  }, [dateValue, timezone])
+
+  return (
+    <div className="h-full overflow-x-hidden whitespace-nowrap font-mono prose-table-numeric">
+      <span className="text-fg-tertiary">
+        {formattedTimestamp?.datePart ?? '--'}
+      </span>{' '}
+      {formattedTimestamp?.timePart ?? '--'}{' '}
+      <span className="text-fg-tertiary">
+        {formattedTimestamp?.timezonePart ?? ''}
+      </span>
+    </div>
+  )
+}

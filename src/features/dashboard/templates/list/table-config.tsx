@@ -8,6 +8,8 @@ import {
 import posthog from 'posthog-js'
 import { useMemo } from 'react'
 import type { DefaultTemplate, Template } from '@/core/modules/templates/models'
+import { getTimestampColumnSize } from '@/features/dashboard/common/timestamp-column'
+import { useTimezone } from '@/features/dashboard/timezone'
 import {
   ActionsCell,
   CreatedAtCell,
@@ -30,7 +32,15 @@ export const trackTemplateTableInteraction = (
   })
 }
 
+const TIMESTAMP_COLUMN_BASE_SIZE = 172
+
 export const useColumns = (deps: unknown[]) => {
+  const { timezone } = useTimezone()
+  const timestampColumnSize = getTimestampColumnSize(
+    timezone,
+    TIMESTAMP_COLUMN_BASE_SIZE
+  )
+
   return useMemo<ColumnDef<Template | DefaultTemplate>[]>(
     () => [
       {
@@ -57,7 +67,7 @@ export const useColumns = (deps: unknown[]) => {
         enableGlobalFilter: true,
         id: 'createdAt',
         header: 'Created',
-        size: 172,
+        size: timestampColumnSize,
         enableResizing: false,
         cell: CreatedAtCell,
         sortDescFirst: true,
@@ -69,7 +79,7 @@ export const useColumns = (deps: unknown[]) => {
         accessorKey: 'updatedAt',
         id: 'updatedAt',
         header: 'Updated',
-        size: 172,
+        size: timestampColumnSize,
         enableGlobalFilter: true,
         enableResizing: false,
         cell: UpdatedAtCell,
@@ -96,7 +106,7 @@ export const useColumns = (deps: unknown[]) => {
         cell: ActionsCell,
       },
     ],
-    deps
+    [...deps, timestampColumnSize]
   )
 }
 
