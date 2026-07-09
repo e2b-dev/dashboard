@@ -1,5 +1,6 @@
 import * as chrono from 'chrono-node'
 import { format, isValid } from 'date-fns'
+import { enUS } from 'date-fns/locale'
 import { formatInTimeZone, fromZonedTime } from 'date-fns-tz'
 import type { Timezone } from '@/features/dashboard/timezone/schema'
 
@@ -231,10 +232,13 @@ const formatDate = (
   if (format === 'time-with-centiseconds')
     return formatTimeWithCentiseconds(date, timezone)
 
+  // Pin the locale so `zzz` resolves timezone names the same way as
+  // formatTimezoneAbbreviation instead of following the browser locale.
   return formatInTimeZone(
     date,
     timezone,
-    resolveDateFormatPreset(date, timezone, format)
+    resolveDateFormatPreset(date, timezone, format),
+    { locale: enUS }
   )
 }
 
