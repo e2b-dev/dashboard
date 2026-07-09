@@ -273,34 +273,38 @@ export function TemplateNameCell({
       )}
     >
       <span className="truncate">{nameValue}</span>
-      {additionalNames.length > 0 && (
-        <Tooltip delayDuration={200}>
-          <TooltipTrigger tabIndex={-1} asChild>
-            <Badge
-              variant="default"
-              size="xs"
-              className="relative z-10 text-fg-tertiary"
-            >
-              +{additionalNames.length}
-            </Badge>
-          </TooltipTrigger>
-          <TooltipContent className="p-2">
-            <div className="flex flex-col gap-1 font-sans">
-              <span className="text-fg-tertiary text-xs">
-                Also available as:
-              </span>
-              <ul className="flex flex-col gap-0.5 list-disc ml-4 mr-2">
-                {additionalNames.map((name) => (
-                  <li key={name} className="font-mono text-xs text-fg">
-                    {name}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </TooltipContent>
-        </Tooltip>
+      {(additionalNames.length > 0 || isDefault) && (
+        <div className="flex items-center gap-1">
+          {additionalNames.length > 0 && (
+            <Tooltip delayDuration={200}>
+              <TooltipTrigger tabIndex={-1} asChild>
+                <Badge
+                  variant="default"
+                  size="xs"
+                  className="relative z-10 px-0.5 text-fg-tertiary"
+                >
+                  +{additionalNames.length}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent className="p-2">
+                <div className="flex flex-col gap-1 font-sans">
+                  <span className="text-fg-tertiary text-xs">
+                    Also available as:
+                  </span>
+                  <ul className="flex flex-col gap-0.5 list-disc ml-4 mr-2">
+                    {additionalNames.map((name) => (
+                      <li key={name} className="font-mono text-xs text-fg">
+                        {name}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          )}
+          {isDefault && <E2BTemplateBadge />}
+        </div>
       )}
-      {isDefault && <E2BTemplateBadge />}
       {nameValue !== '--' && (
         <button
           type="button"
