@@ -125,6 +125,40 @@ function rewriteAbsoluteHrefsInDoc(
   })
 }
 
+// Substrings identifying analytics tags baked into the proxied Webflow HTML.
+// GTM is the single loader — GA4 and the LinkedIn Insight Tag are injected by it
+// at runtime, so removing the GTM loader stops all three. PostHog and the
+// remaining GA/LinkedIn entries are matched directly as defense-in-depth.
+const ANALYTICS_TAG_MATCHERS = [
+  'googletagmanager.com',
+  'gtm.start',
+  'GTM-',
+  'google-analytics.com',
+  'gtag(',
+  'snap.licdn.com',
+  'px.ads.linkedin.com',
+  '_linkedin_partner_id',
+  'posthog',
+]
+
+/**
+ * Removes third-party analytics tags from an HTML document using Cheerio.
+ * Scans only <script>/<noscript>/<iframe> elements and drops any whose src or
+ * inline content matches a known analytics vendor.
+ *
+ * @param $ The Cheerio API instance.
+ */
+function stripAnalyticsTags($: cheerio.CheerioAPI): void {
+  $('script, noscript, iframe').each((_, element) => {
+    const $element = $(element)
+    const haystack = `${$element.attr('src') ?? ''} ${$element.html() ?? ''}`
+
+    if (ANALYTICS_TAG_MATCHERS.some((matcher) => haystack.includes(matcher))) {
+      $element.remove()
+    }
+  })
+}
+
 /**
  * Rewrites HTML content for content pages by applying multiple transformations.
  * This includes SEO tag rewrites and absolute href rewrites.
@@ -138,6 +172,7 @@ function rewriteContentPagesHtml(
   options: {
     seo: SeoTagOptions
     hrefPrefixes?: string[]
+    stripAnalytics?: boolean
   }
 ): string {
   const $ = cheerio.load(html)
@@ -146,6 +181,10 @@ function rewriteContentPagesHtml(
 
   if (options.hrefPrefixes) {
     rewriteAbsoluteHrefsInDoc($, options.hrefPrefixes)
+  }
+
+  if (options.stripAnalytics) {
+    stripAnalyticsTags($)
   }
 
   return $.html()
