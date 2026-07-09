@@ -1,7 +1,11 @@
 'use client'
 
 import { useTimezone } from '@/features/dashboard/timezone'
-import { formatDate, getRelativeDay } from '@/lib/utils/formatting'
+import {
+  formatDate,
+  formatTimezoneAbbreviation,
+  getRelativeDay,
+} from '@/lib/utils/formatting'
 import CopyButton from '@/ui/copy-button'
 import { useSandboxContext } from '../context'
 
@@ -14,11 +18,12 @@ export default function StartedAt() {
 
   const relativeDay = getRelativeDay(startedAt, timezone)
   const timeStr = formatDate(startedAt, { timezone, format: 'time' })
+  const tzAbbreviation = formatTimezoneAbbreviation(startedAt, timezone)
 
   return (
     <div className="flex items-center gap-1">
       <p>
-        {relativeDay}, {timeStr}
+        {relativeDay}, {timeStr} {tzAbbreviation}
       </p>
       <CopyButton aria-label="Copy started timestamp" value={startedAt} />
     </div>

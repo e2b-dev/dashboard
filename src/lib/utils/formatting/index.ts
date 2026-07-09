@@ -69,35 +69,11 @@ function formatCurrency(amount: number, currency = 'USD', locale = 'en-US') {
   }).format(amount)
 }
 
-/** Formats a timestamp with a relative day label, e.g. "2026-05-19T14:35:10Z" -> "Today, 2:35:10 PM". */
-const formatDisplayTimestamp = (value: string | number | Date) => {
-  const date = new Date(value)
-  const now = new Date()
-  const yesterday = new Date()
-  yesterday.setDate(now.getDate() - 1)
-
-  const isToday = date.toDateString() === now.toDateString()
-  const isYesterday = date.toDateString() === yesterday.toDateString()
-  const prefix = isToday
-    ? 'Today'
-    : isYesterday
-      ? 'Yesterday'
-      : date.toLocaleDateString('en-US')
-  const timeStr = date.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    second: '2-digit',
-  })
-
-  return `${prefix}, ${timeStr}`
-}
-
 export {
   formatAxisNumber,
   formatCPUCores,
   formatCurrency,
   formatDecimal,
-  formatDisplayTimestamp,
   formatMemory,
   formatNumber,
   pluralize,
