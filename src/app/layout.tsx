@@ -1,14 +1,13 @@
 import '@/app/fonts'
 import '@/styles/globals.css'
 
+import { GoogleTagManager } from '@next/third-parties/google'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
-import Head from 'next/head'
 import type { Metadata } from 'next/types'
 import { Suspense } from 'react'
 import { getFaviconIcons } from '@/configs/favicon'
 import ClientProviders from '@/features/client-providers'
-import { GTMHead } from '@/features/google-tag-manager'
 import { Toaster } from '@/ui/primitives/toaster'
 import { Body } from './body'
 
@@ -36,12 +35,11 @@ export default function RootLayout({
 }) {
   const postHogEnabled = !!process.env.NEXT_PUBLIC_POSTHOG_KEY
   const postHogEnvironment = getPostHogEnvironment()
+  const gtmId = process.env.NEXT_PUBLIC_GTM_ID
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <Head>
-        <GTMHead />
-      </Head>
+      {gtmId && <GoogleTagManager gtmId={gtmId} />}
       <Body>
         <ClientProviders
           postHogEnabled={postHogEnabled}
