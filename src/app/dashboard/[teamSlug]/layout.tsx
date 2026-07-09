@@ -13,8 +13,6 @@ import { getAuthContext } from '@/core/server/auth'
 import DashboardLayoutView from '@/features/dashboard/layouts/layout'
 import { DashboardPostHogErrorBoundary } from '@/features/dashboard/posthog-error-boundary'
 import Sidebar from '@/features/dashboard/sidebar/sidebar'
-import { TimezoneProvider } from '@/features/dashboard/timezone/context'
-import { parseTimezone } from '@/features/dashboard/timezone/utils'
 import {
   getQueryClient,
   HydrateClient,
@@ -48,9 +46,6 @@ export default async function DashboardLayout({
 
   const sidebarState = cookieStore.get(COOKIE_KEYS.SIDEBAR_STATE)?.value
   const defaultOpen = sidebarState === 'true'
-  const timezone = parseTimezone(
-    cookieStore.get(COOKIE_KEYS.DASHBOARD_TIMEZONE)?.value
-  )
 
   if (!authContext) {
     throw redirect(AUTH_URLS.SIGN_IN)
@@ -94,26 +89,24 @@ export default async function DashboardLayout({
     <HydrateClient>
       <FeatureFlagsProvider initialFlags={evaluatedFeatureFlags}>
         <DashboardTeamGate teamSlug={teamSlug} fallbackUser={authContext.user}>
-          <TimezoneProvider initialTimezone={timezone}>
-            <SidebarProvider
-              defaultOpen={
-                typeof sidebarState === 'undefined' ? true : defaultOpen
-              }
-            >
-              <div className="fixed inset-0 flex max-h-full min-h-0 w-full flex-col overflow-hidden">
-                <div className="flex h-full max-h-full min-h-0 w-full flex-1 overflow-hidden">
-                  <Sidebar />
-                  <SidebarInset>
-                    <DashboardPostHogErrorBoundary>
-                      <DashboardLayoutView params={params}>
-                        {children}
-                      </DashboardLayoutView>
-                    </DashboardPostHogErrorBoundary>
-                  </SidebarInset>
-                </div>
+          <SidebarProvider
+            defaultOpen={
+              typeof sidebarState === 'undefined' ? true : defaultOpen
+            }
+          >
+            <div className="fixed inset-0 flex max-h-full min-h-0 w-full flex-col overflow-hidden">
+              <div className="flex h-full max-h-full min-h-0 w-full flex-1 overflow-hidden">
+                <Sidebar />
+                <SidebarInset>
+                  <DashboardPostHogErrorBoundary>
+                    <DashboardLayoutView params={params}>
+                      {children}
+                    </DashboardLayoutView>
+                  </DashboardPostHogErrorBoundary>
+                </SidebarInset>
               </div>
-            </SidebarProvider>
-          </TimezoneProvider>
+            </div>
+          </SidebarProvider>
         </DashboardTeamGate>
       </FeatureFlagsProvider>
     </HydrateClient>

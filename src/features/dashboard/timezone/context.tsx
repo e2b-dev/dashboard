@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import {
   createContext,
   type ReactNode,
@@ -46,6 +47,7 @@ export const TimezoneProvider = ({
   children,
   initialTimezone,
 }: TimezoneProviderProps) => {
+  const router = useRouter()
   const parsedInitialTimezone = useMemo(
     () => parseTimezone(initialTimezone),
     [initialTimezone]
@@ -73,9 +75,13 @@ export const TimezoneProvider = ({
         return false
       }
 
+      // route handlers setting cookies don't invalidate the client router
+      // cache, so purge it to keep server-rendered payloads in sync
+      router.refresh()
+
       return true
     },
-    [timezone]
+    [router, timezone]
   )
 
   const value = useMemo(
