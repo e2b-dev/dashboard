@@ -19,8 +19,8 @@ const UsageLimitSectionInfo = ({
 }: Pick<UsageLimitSectionProps, 'email' | 'value'>) => {
   const isValueSet = value !== null
   const limitMessage = isValueSet
-    ? `All API requests are blocked after reaching $${formatNumber(value)}`
-    : 'All API requests are blocked after reaching this limit'
+    ? `All API requests are blocked after reaching $${formatNumber(value)} in the current billing period`
+    : 'All API requests are blocked after reaching this limit in the current billing period'
 
   return (
     <div className="flex flex-col gap-2">
