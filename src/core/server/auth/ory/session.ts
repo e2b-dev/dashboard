@@ -34,9 +34,10 @@ import {
 import { revokeOryOAuthSessionsForSubject } from './oauth-session'
 import {
   cookieHeaderWithoutAppOwned,
-  E2B_SESSION_COOKIE,
+  joinSessionCookie,
   openSessionCookie,
   sessionCookieDeleteOptions,
+  sessionCookieNames,
 } from './session-cookie'
 import { completeOrySignOut } from './signout-flow'
 import { revokeSessionTokens } from './token-revoke'
@@ -123,7 +124,7 @@ export async function getSettingsProfile(): Promise<Pick<
 // without signing the user out of their other devices.
 export async function revokeCurrentSession(): Promise<void> {
   const tokens = await openSessionCookie(
-    (await cookies()).get(E2B_SESSION_COOKIE)?.value
+    joinSessionCookie((await cookies()).getAll())
   )
   if (tokens) {
     await revokeSessionTokens(tokens)
@@ -226,13 +227,16 @@ const readKratosSession = cache(async () => {
 
 const readSessionTokens = cache(async () => {
   const cookieStore = await cookies()
-  return openSessionCookie(cookieStore.get(E2B_SESSION_COOKIE)?.value)
+  return openSessionCookie(joinSessionCookie(cookieStore.getAll()))
 })
 
 async function clearSessionCookie(): Promise<void> {
   try {
     const [cookieStore, headerStore] = await Promise.all([cookies(), headers()])
-    cookieStore.delete(sessionCookieDeleteOptions(headerStore.get('host')))
+    const host = headerStore.get('host')
+    for (const name of sessionCookieNames(cookieStore.getAll())) {
+      cookieStore.delete(sessionCookieDeleteOptions(host, name))
+    }
   } catch (error) {
     l.warn(
       {

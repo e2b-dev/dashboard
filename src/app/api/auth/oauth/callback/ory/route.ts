@@ -12,9 +12,10 @@ import {
 import { resolveOryRedirectUri } from '@/core/server/auth/ory/oauth-relay'
 import { readKratosExternalId } from '@/core/server/auth/ory/session'
 import {
-  E2B_SESSION_COOKIE,
   ORY_SIGNUP_METADATA_COOKIE,
+  reconcileSessionCookies,
   sealSessionCookie,
+  sessionCookieDeleteOptions,
   sessionCookieOptions,
 } from '@/core/server/auth/ory/session-cookie'
 import {
@@ -110,11 +111,19 @@ export async function GET(request: NextRequest) {
     ? parsedReturnTo.data
     : PROTECTED_URLS.DASHBOARD
   const response = finalize(NextResponse.redirect(new URL(destination, origin)))
-  response.cookies.set(
-    E2B_SESSION_COOKIE,
+  const { write, expire } = reconcileSessionCookies(
     sealed,
-    sessionCookieOptions(request.nextUrl.host)
+    request.cookies.getAll()
   )
+  const options = sessionCookieOptions(request.nextUrl.host)
+  for (const chunk of write) {
+    response.cookies.set(chunk.name, chunk.value, options)
+  }
+  for (const name of expire) {
+    response.cookies.delete(
+      sessionCookieDeleteOptions(request.nextUrl.host, name)
+    )
+  }
   return response
 }
 

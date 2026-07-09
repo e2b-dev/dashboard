@@ -30,20 +30,19 @@ vi.mock('next/headers', () => ({
     }),
 }))
 
-vi.mock('@/core/server/auth/ory/session-cookie', () => ({
-  E2B_SESSION_COOKIE: 'e2b_session',
-  cookieHeaderWithoutAppOwned: (
-    cookieList: ReadonlyArray<{ name: string; value: string }>
-  ) => {
-    const appOwned = new Set(['e2b_session', 'e2b-ory-signup-metadata'])
-    return cookieList
-      .filter((c) => !appOwned.has(c.name))
-      .map((c) => `${c.name}=${c.value}`)
-      .join('; ')
-  },
+// Keep the real chunk helpers (join/names) and the app-owned cookie filter; only
+// mock openSessionCookie (crypto) and pin the delete-options domain the tests
+// assert on.
+vi.mock('@/core/server/auth/ory/session-cookie', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('@/core/server/auth/ory/session-cookie')
+  >()),
   openSessionCookie: openSessionCookieMock,
-  sessionCookieDeleteOptions: (host: string | null | undefined) => ({
-    name: 'e2b_session',
+  sessionCookieDeleteOptions: (
+    host: string | null | undefined,
+    name = 'e2b_session'
+  ) => ({
+    name,
     path: '/',
     domain: host ? `.${host}` : undefined,
   }),

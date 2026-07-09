@@ -18,13 +18,14 @@ vi.mock('@/core/server/auth/ory/kratos-session-edge', () => ({
   isKratosSessionActive: isKratosSessionActiveMock,
 }))
 
-vi.mock('@/core/server/auth/ory/session-cookie', () => ({
-  E2B_SESSION_COOKIE: 'e2b_session',
-  ORY_SIGNUP_METADATA_COOKIE: 'e2b-ory-signup-metadata',
+// Keep the real chunk helpers (split/join/reconcile/names) and cookie options;
+// only the crypto seal/open are mocked so tests can drive token state directly.
+vi.mock('@/core/server/auth/ory/session-cookie', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('@/core/server/auth/ory/session-cookie')
+  >()),
   openSessionCookie: openSessionCookieMock,
   sealSessionCookie: sealSessionCookieMock,
-  sessionCookieOptions: () => ({ httpOnly: true, path: '/' }),
-  sessionCookieDeleteOptions: () => ({ name: 'e2b_session', path: '/' }),
 }))
 
 vi.mock('@/core/server/auth/ory/token-refresh', () => ({
@@ -52,6 +53,14 @@ const { GET: oauthStartGET } = await import('@/app/api/auth/oauth/start/route')
 
 function request(path: string): NextRequest {
   return new NextRequest(`https://app.e2b.dev${path}`)
+}
+
+// A request carrying an e2b_session cookie — the realistic state when a token is
+// present, so the refresh's reconcile/clear paths have a cookie to act on.
+function requestWithSession(path: string): NextRequest {
+  return new NextRequest(`https://app.e2b.dev${path}`, {
+    headers: { cookie: 'e2b_session=old-sealed' },
+  })
 }
 
 describe('Ory auth entrypoints — proxy gate', () => {
@@ -151,7 +160,7 @@ describe('Ory auth entrypoints — middleware refresh (Pattern B)', () => {
     })
 
     const response = await proxy(
-      request('/dashboard/acme/sandboxes'),
+      requestWithSession('/dashboard/acme/sandboxes'),
       {} as NextFetchEvent
     )
 
@@ -165,7 +174,7 @@ describe('Ory auth entrypoints — middleware refresh (Pattern B)', () => {
     refreshSessionTokensMock.mockResolvedValue({ status: 'dead' })
 
     const response = await proxy(
-      request('/dashboard/acme/sandboxes'),
+      requestWithSession('/dashboard/acme/sandboxes'),
       {} as NextFetchEvent
     )
 

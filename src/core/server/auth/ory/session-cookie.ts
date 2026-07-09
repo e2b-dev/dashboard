@@ -10,29 +10,32 @@ export const E2B_SESSION_COOKIE = 'e2b_session'
 
 export const ORY_SIGNUP_METADATA_COOKIE = 'e2b-ory-signup-metadata'
 
+const SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30 // 30 days
+const MAX_SESSION_COOKIE_CHUNK = 3800
+const SESSION_CHUNK_PREFIX = `${E2B_SESSION_COOKIE}.`
+
 // Cookies the dashboard owns — never forwarded across the Ory trust boundary.
-const APP_OWNED_COOKIES = new Set<string>([
-  E2B_SESSION_COOKIE,
-  ORY_SIGNUP_METADATA_COOKIE,
-])
+// e2b_session may be chunked (e2b_session.0/.1/…), so the chunk names are
+// app-owned too and must be stripped alongside the bare name.
+function isAppOwnedCookie(name: string): boolean {
+  return (
+    name === ORY_SIGNUP_METADATA_COOKIE ||
+    name === E2B_SESSION_COOKIE ||
+    sessionChunkIndex(name) !== null
+  )
+}
 
 // Serializes a cookie list into a `Cookie` header for forwarding to Ory, with
 // the app-owned cookies stripped. Takes the cookie list rather than reading
-// next/headers so it stays edge-safe and serves both the middleware
-// (NextRequest cookies) and server components (next/headers cookies).
+// next/headers so it stays edge-safe
 export function cookieHeaderWithoutAppOwned(
   cookieList: ReadonlyArray<{ name: string; value: string }>
 ): string {
   return cookieList
-    .filter((cookie) => !APP_OWNED_COOKIES.has(cookie.name))
+    .filter((cookie) => !isAppOwnedCookie(cookie.name))
     .map((cookie) => `${cookie.name}=${cookie.value}`)
     .join('; ')
 }
-
-// Persist across browser restarts. The cookie only caches tokens — a stale or
-// expired cookie is re-minted from the live Kratos session, so the lifetime is
-// intentionally generous and not the security boundary.
-const SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30
 
 export type SessionTokens = {
   accessToken: string
@@ -52,7 +55,7 @@ export type SessionCookieOptions = {
 }
 
 export type SessionCookieDeleteOptions = {
-  name: typeof E2B_SESSION_COOKIE
+  name: string
   path: '/'
   domain?: string
 }
@@ -84,6 +87,91 @@ export async function openSessionCookie(
   }
 }
 
+// Numeric chunk index for `e2b_session.N`, or null for anything that isn't a
+// session chunk (including the bare `e2b_session`).
+function sessionChunkIndex(name: string): number | null {
+  if (!name.startsWith(SESSION_CHUNK_PREFIX)) return null
+  const suffix = name.slice(SESSION_CHUNK_PREFIX.length)
+  if (!/^\d+$/.test(suffix)) return null
+  return Number(suffix)
+}
+
+export type SessionCookieChunk = { name: string; value: string }
+
+export type SessionCookieReconciliation = {
+  write: SessionCookieChunk[]
+  expire: string[]
+}
+
+// Splits the sealed value into the cookies to write. Values within one chunk
+// keep the bare `e2b_session` name (backward compatible with cookies already in
+// the wild); larger values fan out to `e2b_session.0`, `e2b_session.1`...
+export function splitSessionCookie(value: string): SessionCookieChunk[] {
+  if (value.length <= MAX_SESSION_COOKIE_CHUNK) {
+    return [{ name: E2B_SESSION_COOKIE, value }]
+  }
+
+  const chunks: SessionCookieChunk[] = []
+  for (let start = 0, index = 0; start < value.length; index++) {
+    chunks.push({
+      name: `${SESSION_CHUNK_PREFIX}${index}`,
+      value: value.slice(start, start + MAX_SESSION_COOKIE_CHUNK),
+    })
+    start += MAX_SESSION_COOKIE_CHUNK
+  }
+  return chunks
+}
+
+// Reassembles the sealed value from whatever cookie shape is present. Prefers
+// numbered chunks (sorted by index); falls back to a bare `e2b_session`
+export function joinSessionCookie(
+  cookieList: ReadonlyArray<{ name: string; value: string }>
+): string | undefined {
+  const chunks = cookieList
+    .map((cookie) => ({
+      index: sessionChunkIndex(cookie.name),
+      value: cookie.value,
+    }))
+    .filter(
+      (chunk): chunk is { index: number; value: string } => chunk.index !== null
+    )
+    .sort((a, b) => a.index - b.index)
+
+  if (chunks.length > 0) {
+    return chunks.map((chunk) => chunk.value).join('')
+  }
+
+  return cookieList.find((cookie) => cookie.name === E2B_SESSION_COOKIE)?.value
+}
+
+// Every e2b_session cookie name currently in the jar — bare or chunked — so the
+// clear paths can expire all of them, not just the bare name.
+export function sessionCookieNames(
+  cookieList: ReadonlyArray<{ name: string; value: string }>
+): string[] {
+  return cookieList
+    .filter(
+      (cookie) =>
+        cookie.name === E2B_SESSION_COOKIE ||
+        sessionChunkIndex(cookie.name) !== null
+    )
+    .map((cookie) => cookie.name)
+}
+
+// Reconciles the browser jar to a new sealed value: the chunks to write plus the
+// stale names to expire so the previous shape never outlives the new one.
+export function reconcileSessionCookies(
+  value: string,
+  existing: ReadonlyArray<{ name: string; value: string }>
+): SessionCookieReconciliation {
+  const write = splitSessionCookie(value)
+  const writeNames = new Set(write.map((chunk) => chunk.name))
+  const expire = sessionCookieNames(existing).filter(
+    (name) => !writeNames.has(name)
+  )
+  return { write, expire }
+}
+
 export function sessionCookieOptions(
   host?: string | null
 ): SessionCookieOptions {
@@ -100,12 +188,14 @@ export function sessionCookieOptions(
 }
 
 // Deleting a domain-scoped cookie requires the same domain attribute, so the
-// clear paths must pass these options rather than the bare cookie name.
+// clear paths must pass these options rather than the bare cookie name. Defaults
+// to the bare name; chunked clears pass each `e2b_session.N` name explicitly.
 export function sessionCookieDeleteOptions(
-  host?: string | null
+  host?: string | null,
+  name: string = E2B_SESSION_COOKIE
 ): SessionCookieDeleteOptions {
   return {
-    name: E2B_SESSION_COOKIE,
+    name,
     path: '/',
     domain: resolveSessionCookieDomain(host),
   }

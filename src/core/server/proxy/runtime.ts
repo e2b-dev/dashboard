@@ -9,10 +9,12 @@ import {
 import oryConfig from '@/configs/ory'
 import { isKratosSessionActive } from '@/core/server/auth/ory/kratos-session-edge'
 import {
-  E2B_SESSION_COOKIE,
+  joinSessionCookie,
   openSessionCookie,
+  reconcileSessionCookies,
   sealSessionCookie,
   sessionCookieDeleteOptions,
+  sessionCookieNames,
   sessionCookieOptions,
 } from '@/core/server/auth/ory/session-cookie'
 import {
@@ -122,7 +124,7 @@ async function refreshSessionCookie(
   request: NextRequest
 ): Promise<SessionRefresh> {
   const tokens = await openSessionCookie(
-    request.cookies.get(E2B_SESSION_COOKIE)?.value
+    joinSessionCookie(request.cookies.getAll())
   )
 
   if (!tokens) return { hasToken: false, persist: noPersist }
@@ -134,16 +136,25 @@ async function refreshSessionCookie(
 
   if (result.status === 'refreshed') {
     const sealed = await sealSessionCookie(result.tokens)
-    request.cookies.set(E2B_SESSION_COOKIE, sealed)
+    const { write, expire } = reconcileSessionCookies(
+      sealed,
+      request.cookies.getAll()
+    )
+    for (const chunk of write) request.cookies.set(chunk.name, chunk.value)
+    for (const name of expire) request.cookies.delete(name)
     return {
       hasToken: true,
       persist: (response) => {
         if (response instanceof NextResponse) {
-          response.cookies.set(
-            E2B_SESSION_COOKIE,
-            sealed,
-            sessionCookieOptions(request.nextUrl.host)
-          )
+          const options = sessionCookieOptions(request.nextUrl.host)
+          for (const chunk of write) {
+            response.cookies.set(chunk.name, chunk.value, options)
+          }
+          for (const name of expire) {
+            response.cookies.delete(
+              sessionCookieDeleteOptions(request.nextUrl.host, name)
+            )
+          }
         }
         return response
       },
@@ -153,14 +164,17 @@ async function refreshSessionCookie(
   if (result.status === 'dead') {
     // The refresh token is unusable. Drop the cookie; the gate then re-mints
     // from the live Kratos session (or routes to the login UI).
-    request.cookies.delete(E2B_SESSION_COOKIE)
+    const names = sessionCookieNames(request.cookies.getAll())
+    for (const name of names) request.cookies.delete(name)
     return {
       hasToken: false,
       persist: (response) => {
         if (response instanceof NextResponse) {
-          response.cookies.delete(
-            sessionCookieDeleteOptions(request.nextUrl.host)
-          )
+          for (const name of names) {
+            response.cookies.delete(
+              sessionCookieDeleteOptions(request.nextUrl.host, name)
+            )
+          }
         }
         return response
       },
