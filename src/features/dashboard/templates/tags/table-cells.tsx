@@ -72,7 +72,8 @@ export function ActionsCell(ctx: CellContext<TagGroup, unknown>) {
       <div
         className={cn(
           'flex items-center gap-1 max-sm:hidden',
-          'opacity-0 group-hover/section:opacity-100 group-has-focus-visible/section:opacity-100'
+          'opacity-0 group-hover/row:opacity-100',
+          'group-focus-visible/row:opacity-100 group-has-focus-visible/row:opacity-100'
         )}
       >
         <Button
