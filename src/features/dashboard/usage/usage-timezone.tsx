@@ -53,22 +53,24 @@ export function UsageTimezoneProvider({ children }: { children: ReactNode }) {
 
   const setPinnedToUtc = useCallback(
     (pinned: boolean) => {
-      const now = Date.now()
-      const reanchoredTimeframe = reanchorTimeframeToTimezone(
-        {
-          start: params.start ?? now - INITIAL_TIMEFRAME_FALLBACK_RANGE_MS,
-          end: params.end ?? now,
-        },
-        resolveUsageTimezone(userTimezone, isPinnedToUtc),
-        resolveUsageTimezone(userTimezone, pinned)
-      )
+      void setParams((prev) => {
+        const now = Date.now()
+        const reanchoredTimeframe = reanchorTimeframeToTimezone(
+          {
+            start: prev.start ?? now - INITIAL_TIMEFRAME_FALLBACK_RANGE_MS,
+            end: prev.end ?? now,
+          },
+          resolveUsageTimezone(userTimezone, prev.utc),
+          resolveUsageTimezone(userTimezone, pinned)
+        )
 
-      void setParams({
-        utc: pinned || null,
-        ...(reanchoredTimeframe ?? {}),
+        return {
+          utc: pinned || null,
+          ...(reanchoredTimeframe ?? {}),
+        }
       })
     },
-    [params.start, params.end, userTimezone, isPinnedToUtc, setParams]
+    [userTimezone, setParams]
   )
 
   const effectiveTimezone = resolveUsageTimezone(userTimezone, isPinnedToUtc)

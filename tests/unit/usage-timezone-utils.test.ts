@@ -96,4 +96,31 @@ describe('reanchorTimeframeToTimezone', () => {
       )
     ).toBeNull()
   })
+
+  // Near month ends "this-month" also falls within the loose match tolerance
+  // of "last-30-days"; the exact preset must win or a day of usage would be
+  // dropped from the re-anchored range.
+  it.each([
+    '2026-07-30T10:00:00.000Z',
+    '2026-07-31T10:00:00.000Z',
+  ])('keeps "this-month" boundaries when re-anchoring at %s', (systemTime) => {
+    vi.setSystemTime(new Date(systemTime))
+
+    const pragueThisMonth = getPresetRange(prague, 'this-month')
+
+    expect(reanchorOrThrow(pragueThisMonth, prague, UTC_TIMEZONE)).toEqual(
+      getPresetRange(UTC_TIMEZONE, 'this-month')
+    )
+  })
+
+  it('round-trips "this-month" on the last day of a 31-day month', () => {
+    vi.setSystemTime(new Date('2026-07-31T10:00:00.000Z'))
+
+    const pragueThisMonth = getPresetRange(prague, 'this-month')
+    const utcThisMonth = reanchorOrThrow(pragueThisMonth, prague, UTC_TIMEZONE)
+
+    expect(
+      reanchorTimeframeToTimezone(utcThisMonth, UTC_TIMEZONE, prague)
+    ).toEqual(pragueThisMonth)
+  })
 })

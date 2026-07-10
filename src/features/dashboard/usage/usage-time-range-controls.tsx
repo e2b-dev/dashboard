@@ -17,7 +17,10 @@ import {
 import { Separator } from '@/ui/primitives/separator'
 import { TimeRangePicker } from '@/ui/time-range-picker'
 import { type TimeRangePreset, TimeRangePresets } from '@/ui/time-range-presets'
-import { getUsageTimeRangePresets } from './constants'
+import {
+  getUsageTimeRangePresets,
+  PRESET_MATCH_TOLERANCE_MS,
+} from './constants'
 import {
   determineSamplingMode,
   normalizeToEndOfSamplingPeriod,
@@ -56,7 +59,7 @@ export function UsageTimeRangeControls({
         timeRangePresets,
         timeframe.start,
         timeframe.end,
-        1000 * 60 * 60 * 24 // 1 day in tolerance
+        PRESET_MATCH_TOLERANCE_MS
       ),
     [timeRangePresets, timeframe.start, timeframe.end]
   )
