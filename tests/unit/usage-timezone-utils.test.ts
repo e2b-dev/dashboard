@@ -1,0 +1,99 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  TimezoneSchema,
+  UTC_TIMEZONE,
+} from '@/features/dashboard/timezone/schema'
+import { getUsageTimeRangePresets } from '@/features/dashboard/usage/constants'
+import {
+  isBillingTimezoneBannerVisible,
+  reanchorTimeframeToTimezone,
+  resolveUsageTimezone,
+} from '@/features/dashboard/usage/usage-timezone-utils'
+
+const prague = TimezoneSchema.parse('Europe/Prague')
+
+const getPresetRange = (
+  timezone: typeof prague,
+  presetId: string
+): { start: number; end: number } => {
+  const preset = getUsageTimeRangePresets(timezone).find(
+    (option) => option.id === presetId
+  )
+  if (!preset) throw new Error(`Expected ${presetId} preset to exist`)
+
+  return preset.getValue()
+}
+
+describe('resolveUsageTimezone', () => {
+  it('returns the user timezone when not pinned to UTC', () => {
+    expect(resolveUsageTimezone(prague, false)).toBe(prague)
+    expect(resolveUsageTimezone(UTC_TIMEZONE, false)).toBe(UTC_TIMEZONE)
+  })
+
+  it('returns UTC when pinned', () => {
+    expect(resolveUsageTimezone(prague, true)).toBe(UTC_TIMEZONE)
+    expect(resolveUsageTimezone(UTC_TIMEZONE, true)).toBe(UTC_TIMEZONE)
+  })
+})
+
+describe('isBillingTimezoneBannerVisible', () => {
+  it('shows the banner for non-UTC user timezones', () => {
+    expect(isBillingTimezoneBannerVisible(prague)).toBe(true)
+  })
+
+  it('hides the banner when the user timezone is already UTC', () => {
+    expect(isBillingTimezoneBannerVisible(UTC_TIMEZONE)).toBe(false)
+  })
+})
+
+describe('reanchorTimeframeToTimezone', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-07-10T10:00:00.000Z'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  const reanchorOrThrow = (
+    ...args: Parameters<typeof reanchorTimeframeToTimezone>
+  ) => {
+    const reanchored = reanchorTimeframeToTimezone(...args)
+    if (!reanchored) throw new Error('Expected timeframe to re-anchor')
+
+    return reanchored
+  }
+
+  it('re-anchors a preset-aligned range to the target timezone boundaries', () => {
+    const pragueThisMonth = getPresetRange(prague, 'this-month')
+
+    const reanchored = reanchorOrThrow(pragueThisMonth, prague, UTC_TIMEZONE)
+
+    expect(reanchored).toEqual(getPresetRange(UTC_TIMEZONE, 'this-month'))
+    // Prague is UTC+2 in July, so the UTC month starts 2 hours later.
+    expect(reanchored.start - pragueThisMonth.start).toBe(2 * 60 * 60 * 1000)
+  })
+
+  it('round-trips back to the original boundaries', () => {
+    const pragueThisMonth = getPresetRange(prague, 'this-month')
+    const utcThisMonth = reanchorOrThrow(pragueThisMonth, prague, UTC_TIMEZONE)
+
+    expect(
+      reanchorTimeframeToTimezone(utcThisMonth, UTC_TIMEZONE, prague)
+    ).toEqual(pragueThisMonth)
+  })
+
+  it('returns null for custom ranges so they are kept as picked', () => {
+    const twoWeeks = 14 * 24 * 60 * 60 * 1000
+    const customEnd = new Date('2026-06-20T13:37:00.000Z').getTime()
+
+    expect(
+      reanchorTimeframeToTimezone(
+        { start: customEnd - twoWeeks, end: customEnd },
+        prague,
+        UTC_TIMEZONE
+      )
+    ).toBeNull()
+  })
+})

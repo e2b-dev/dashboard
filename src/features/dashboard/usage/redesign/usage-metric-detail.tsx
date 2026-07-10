@@ -4,6 +4,7 @@ import { useId, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { ChevronDownIcon, CpuIcon } from '@/ui/primitives/icons'
 import { Tabs, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
+import { BillingTimezoneBanner } from '../billing-timezone-banner'
 import { useUsageCharts } from '../usage-charts-context'
 import { UsageTopTimeRangeControls } from '../usage-top-time-range-controls'
 import { USAGE_METRICS, type UsageMetricKey } from './metrics'
@@ -38,8 +39,9 @@ export function UsageMetricDetail({ metric }: { metric: UsageMetricKey }) {
   return (
     <div className="h-full max-h-full min-h-0 overflow-y-auto">
       <div className="flex w-full flex-col gap-4 p-6">
-        <div className="flex flex-wrap items-center gap-1">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <UsageTopTimeRangeControls />
+          <BillingTimezoneBanner className="ml-auto" />
         </div>
 
         <SingleMetricChart

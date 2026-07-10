@@ -18,4 +18,6 @@ const TimezoneSchema = z
 
 type Timezone = z.infer<typeof TimezoneSchema>
 
-export { TimezoneSchema, type Timezone }
+const UTC_TIMEZONE = TimezoneSchema.parse('UTC')
+
+export { TimezoneSchema, UTC_TIMEZONE, type Timezone }
