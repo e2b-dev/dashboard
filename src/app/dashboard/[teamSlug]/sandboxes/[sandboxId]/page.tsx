@@ -6,5 +6,5 @@ export default async function SandboxDetailPage({
 }: PageProps<'/dashboard/[teamSlug]/sandboxes/[sandboxId]'>) {
   const { teamSlug, sandboxId } = await params
 
-  redirect(PROTECTED_URLS.SANDBOX_MONITORING(teamSlug, sandboxId))
+  redirect(PROTECTED_URLS.SANDBOX(teamSlug, sandboxId))
 }
