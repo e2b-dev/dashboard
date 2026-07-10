@@ -88,6 +88,22 @@ export async function readKratosExternalId(): Promise<string | null> {
   return kratos?.active ? (kratos.identity?.external_id ?? null) : null
 }
 
+// Signup method for analytics, read off the Kratos session's completed
+// authentication methods: the social provider (github/google) when present,
+// 'email' for password/OTP credentials. Reuses the request-cached session read.
+export async function readKratosAuthMethod(): Promise<string | null> {
+  const methods = (await readKratosSession())?.authentication_methods
+  const latest = methods?.[methods.length - 1]
+  if (!latest) return null
+
+  const provider = latest.provider?.trim().toLowerCase()
+  if (provider) return provider
+
+  return latest.method === 'password' || latest.method === 'code'
+    ? 'email'
+    : (latest.method ?? null)
+}
+
 export async function getUserProfile(): Promise<AuthUser | null> {
   const identityId = (await readKratosSession())?.identity?.id
   if (!identityId) return null
