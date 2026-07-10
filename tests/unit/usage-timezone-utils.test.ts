@@ -11,6 +11,7 @@ import {
 } from '@/features/dashboard/usage/usage-timezone-utils'
 
 const prague = TimezoneSchema.parse('Europe/Prague')
+const tokyo = TimezoneSchema.parse('Asia/Tokyo')
 
 const getPresetRange = (
   timezone: typeof prague,
@@ -109,6 +110,22 @@ describe('reanchorTimeframeToTimezone', () => {
     const pragueThisMonth = getPresetRange(prague, 'this-month')
 
     expect(reanchorOrThrow(pragueThisMonth, prague, UTC_TIMEZONE)).toEqual(
+      getPresetRange(UTC_TIMEZONE, 'this-month')
+    )
+  })
+
+  // On the 30th of a 30-day month "this-month" and "last-30-days" are
+  // identical, so the match is a pure tie; the calendar preset must win. With
+  // Tokyo a calendar day ahead of UTC, guessing "last-30-days" would re-anchor
+  // to UTC May 31 - Jun 29 instead of the June billing month.
+  it('resolves identical-range ties to the calendar preset', () => {
+    // Tokyo 2026-06-30 00:30, UTC date still June 29.
+    vi.setSystemTime(new Date('2026-06-29T15:30:00.000Z'))
+
+    const tokyoThisMonth = getPresetRange(tokyo, 'this-month')
+    expect(tokyoThisMonth).toEqual(getPresetRange(tokyo, 'last-30-days'))
+
+    expect(reanchorOrThrow(tokyoThisMonth, tokyo, UTC_TIMEZONE)).toEqual(
       getPresetRange(UTC_TIMEZONE, 'this-month')
     )
   })
