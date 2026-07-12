@@ -1,7 +1,7 @@
 'use client'
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils'
 import type { TRPCRouterOutputs } from '@/trpc/client'
@@ -182,16 +182,10 @@ export function ByocDeploymentPanel() {
   const [selectedConnectionId, setSelectedConnectionId] = useState<string>()
   const [selectedDeploymentId, setSelectedDeploymentId] = useState<string>()
   const [runningDeploymentId, setRunningDeploymentId] = useState<string>()
-  const [topology, setTopology] = useState<TopologyDraft>({
-    apiNodeCount: 1,
-    apiMachineType: 'e2-standard-4',
-    clientNodeCount: 1,
-    clientMachineType: 'n2-standard-8',
-    clickHouseNodeCount: 1,
-    clickHouseMachineType: 'e2-standard-4',
-  })
-  const [topologyDirty, setTopologyDirty] = useState(false)
-  const [topologyDeploymentId, setTopologyDeploymentId] = useState<string>()
+  const [topologyDraft, setTopologyDraft] = useState<{
+    deploymentId: string
+    value: TopologyDraft
+  }>()
   const [destroyConfirmation, setDestroyConfirmation] = useState({
     deploymentKey: '',
     value: '',
@@ -214,12 +208,9 @@ export function ByocDeploymentPanel() {
     )
   )
 
-  const connection = useMemo(() => {
-    return (
-      connectionsQuery.data?.find((item) => item.id === selectedConnectionId) ??
-      latestByTimestamp(connectionsQuery.data)
-    )
-  }, [connectionsQuery.data, selectedConnectionId])
+  const connection =
+    connectionsQuery.data?.find((item) => item.id === selectedConnectionId) ??
+    latestByTimestamp(connectionsQuery.data)
 
   const projectsQuery = useQuery({
     ...trpc.byoc.listProjects.queryOptions({
@@ -229,47 +220,21 @@ export function ByocDeploymentPanel() {
     enabled: !!connection?.id,
   })
 
-  const deployment = useMemo(() => {
-    return (
-      deploymentsQuery.data?.find((item) => item.id === selectedDeploymentId) ??
-      latestByTimestamp(deploymentsQuery.data)
-    )
-  }, [deploymentsQuery.data, selectedDeploymentId])
+  const deployment =
+    deploymentsQuery.data?.find((item) => item.id === selectedDeploymentId) ??
+    latestByTimestamp(deploymentsQuery.data)
 
-  const savedAPINodeCount = deployment?.terraform_settings?.api_node_count
-  const savedAPIMachineType = deployment?.terraform_settings?.api_machine_type
-  const savedClientNodeCount = deployment?.terraform_settings?.client_node_count
-  const savedClientMachineType =
-    deployment?.terraform_settings?.client_machine_type
-  const savedClickHouseNodeCount =
-    deployment?.terraform_settings?.clickhouse_node_count
-  const savedClickHouseMachineType =
-    deployment?.terraform_settings?.clickhouse_machine_type
-
-  useEffect(() => {
-    const deploymentChanged = deployment?.id !== topologyDeploymentId
-    if (!deploymentChanged && topologyDirty) return
-    setTopology({
-      apiNodeCount: savedAPINodeCount ?? 1,
-      apiMachineType: savedAPIMachineType ?? 'e2-standard-4',
-      clientNodeCount: savedClientNodeCount ?? 1,
-      clientMachineType: savedClientMachineType ?? 'n2-standard-8',
-      clickHouseNodeCount: savedClickHouseNodeCount ?? 1,
-      clickHouseMachineType: savedClickHouseMachineType ?? 'e2-standard-4',
+  const savedTopology = topologyFromDeployment(deployment)
+  const topology =
+    topologyDraft && topologyDraft.deploymentId === deployment?.id
+      ? topologyDraft.value
+      : savedTopology
+  const updateTopology = (patch: Partial<TopologyDraft>) => {
+    setTopologyDraft({
+      deploymentId: deployment?.id ?? '',
+      value: { ...topology, ...patch },
     })
-    setTopologyDeploymentId(deployment?.id)
-    setTopologyDirty(false)
-  }, [
-    deployment?.id,
-    savedAPIMachineType,
-    savedAPINodeCount,
-    savedClickHouseMachineType,
-    savedClickHouseNodeCount,
-    savedClientMachineType,
-    savedClientNodeCount,
-    topologyDeploymentId,
-    topologyDirty,
-  ])
+  }
 
   const eventsQuery = useQuery({
     ...trpc.byoc.listEvents.queryOptions({
@@ -338,7 +303,6 @@ export function ByocDeploymentPanel() {
       },
       onSuccess: async (data) => {
         setSelectedDeploymentId(data.deployment.id)
-        setTopologyDirty(false)
         await refresh()
       },
       onSettled: () => {
@@ -374,25 +338,14 @@ export function ByocDeploymentPanel() {
     destroyConfirmation.deploymentKey === deploymentKey
       ? destroyConfirmation.value
       : ''
-  const healthChecks = useMemo(
-    () =>
-      buildHealthChecks({
-        connection: !!connection,
-        deployment,
-        events: eventsQuery.data ?? [],
-        project: !!selectedProject,
-        runnerHealthy: healthQuery.data?.status === 'ok',
-        target: targetQuery.data,
-      }),
-    [
-      connection,
-      deployment,
-      eventsQuery.data,
-      healthQuery.data?.status,
-      selectedProject,
-      targetQuery.data,
-    ]
-  )
+  const healthChecks = buildHealthChecks({
+    connection: !!connection,
+    deployment,
+    events: eventsQuery.data ?? [],
+    project: !!selectedProject,
+    runnerHealthy: healthQuery.data?.status === 'ok',
+    target: targetQuery.data,
+  })
   const operationPending =
     createDeployment.isPending || deploy.isPending || destroy.isPending
   const selectedDeploymentActive = deployment ? isActive(deployment) : false
@@ -582,17 +535,12 @@ export function ByocDeploymentPanel() {
                     'n2-standard-8',
                   ]}
                   max={20}
-                  onCountChange={(apiNodeCount) => {
-                    setTopologyDirty(true)
-                    setTopology((current) => ({ ...current, apiNodeCount }))
-                  }}
-                  onMachineTypeChange={(apiMachineType) => {
-                    setTopologyDirty(true)
-                    setTopology((current) => ({
-                      ...current,
-                      apiMachineType,
-                    }))
-                  }}
+                  onCountChange={(apiNodeCount) =>
+                    updateTopology({ apiNodeCount })
+                  }
+                  onMachineTypeChange={(apiMachineType) =>
+                    updateTopology({ apiMachineType })
+                  }
                 />
                 <TopologyControl
                   count={topology.clientNodeCount}
@@ -604,17 +552,12 @@ export function ByocDeploymentPanel() {
                     'n2-highmem-8',
                   ]}
                   max={100}
-                  onCountChange={(clientNodeCount) => {
-                    setTopologyDirty(true)
-                    setTopology((current) => ({ ...current, clientNodeCount }))
-                  }}
-                  onMachineTypeChange={(clientMachineType) => {
-                    setTopologyDirty(true)
-                    setTopology((current) => ({
-                      ...current,
-                      clientMachineType,
-                    }))
-                  }}
+                  onCountChange={(clientNodeCount) =>
+                    updateTopology({ clientNodeCount })
+                  }
+                  onMachineTypeChange={(clientMachineType) =>
+                    updateTopology({ clientMachineType })
+                  }
                 />
                 <TopologyControl
                   count={topology.clickHouseNodeCount}
@@ -626,20 +569,12 @@ export function ByocDeploymentPanel() {
                     'n2-standard-8',
                   ]}
                   max={10}
-                  onCountChange={(clickHouseNodeCount) => {
-                    setTopologyDirty(true)
-                    setTopology((current) => ({
-                      ...current,
-                      clickHouseNodeCount,
-                    }))
-                  }}
-                  onMachineTypeChange={(clickHouseMachineType) => {
-                    setTopologyDirty(true)
-                    setTopology((current) => ({
-                      ...current,
-                      clickHouseMachineType,
-                    }))
-                  }}
+                  onCountChange={(clickHouseNodeCount) =>
+                    updateTopology({ clickHouseNodeCount })
+                  }
+                  onMachineTypeChange={(clickHouseMachineType) =>
+                    updateTopology({ clickHouseMachineType })
+                  }
                 />
               </CardContent>
             </Card>
@@ -781,6 +716,22 @@ export function ByocDeploymentPanel() {
 
 const emptyUuid = '00000000-0000-0000-0000-000000000000'
 
+function topologyFromDeployment(deployment?: Deployment): TopologyDraft {
+  return {
+    apiNodeCount: deployment?.terraform_settings?.api_node_count ?? 1,
+    apiMachineType:
+      deployment?.terraform_settings?.api_machine_type ?? 'e2-standard-4',
+    clientNodeCount: deployment?.terraform_settings?.client_node_count ?? 1,
+    clientMachineType:
+      deployment?.terraform_settings?.client_machine_type ?? 'n2-standard-8',
+    clickHouseNodeCount:
+      deployment?.terraform_settings?.clickhouse_node_count ?? 1,
+    clickHouseMachineType:
+      deployment?.terraform_settings?.clickhouse_machine_type ??
+      'e2-standard-4',
+  }
+}
+
 function StatusBadge({ status }: { status?: Deployment['status'] }) {
   const tone =
     status === 'attached'
@@ -824,9 +775,10 @@ function OperationSummary({
             className="prose-caption text-fg-tertiary"
             dateTime={latest.created_at}
           >
-            {new Date(latest.created_at).toLocaleTimeString([], {
+            {new Date(latest.created_at).toLocaleTimeString('en-US', {
               hour: '2-digit',
               minute: '2-digit',
+              timeZone: 'UTC',
             })}
           </time>
         ) : null}
@@ -921,7 +873,9 @@ function EventLog({ events }: { events: DeploymentEvent[] }) {
           key={`${event.deployment_id}-${event.sequence}`}
         >
           <time className="text-fg-tertiary" dateTime={event.created_at}>
-            {new Date(event.created_at).toLocaleString()}
+            {new Date(event.created_at).toLocaleString('en-US', {
+              timeZone: 'UTC',
+            })}
           </time>
           <span className="font-medium text-fg">
             {event.phase.replaceAll('_', ' ')}
