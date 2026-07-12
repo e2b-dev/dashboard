@@ -64,6 +64,7 @@ const bootstrapRoles = [
   'roles/networkconnectivity.admin',
   'roles/iam.roleAdmin',
   'roles/iam.serviceAccountAdmin',
+  'roles/iam.serviceAccountUser',
   'roles/iam.serviceAccountKeyAdmin',
   'roles/resourcemanager.projectIamAdmin',
   'roles/monitoring.admin',
