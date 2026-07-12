@@ -113,6 +113,52 @@ describe('buildDeploymentChecks', () => {
     ])
   })
 
+  it('tracks a failed destroy after routing was detached', () => {
+    const checks = buildDeploymentChecks(
+      [
+        event('operation_started', 'Worker started operation destroy-1.'),
+        event(
+          'worker_access',
+          'Worker can impersonate the GCP deployer identity.'
+        ),
+        event(
+          'terraform_destroy_preflight',
+          'Terraform backend is ready for destroy.'
+        ),
+        event('detaching_cluster', 'Team routing detached.'),
+      ],
+      { id: 'destroy-1', kind: 'destroy', status: 'failed_retryable' }
+    )
+
+    expect(checks.map((check) => check.status)).toEqual([
+      'passed',
+      'passed',
+      'passed',
+      'failed',
+    ])
+  })
+
+  it('recognizes a complete destroy operation', () => {
+    const checks = buildDeploymentChecks(
+      [
+        event('operation_started', 'Worker started operation destroy-1.'),
+        event(
+          'worker_access',
+          'Worker can impersonate the GCP deployer identity.'
+        ),
+        event(
+          'terraform_destroy_preflight',
+          'Terraform backend is ready for destroy.'
+        ),
+        event('detaching_cluster', 'Team routing detached.'),
+        event('terraform_destroy', 'Terraform destroy finished successfully.'),
+      ],
+      { id: 'destroy-1', kind: 'destroy', status: 'succeeded' }
+    )
+
+    expect(checks.every((check) => check.status === 'passed')).toBe(true)
+  })
+
   it('marks omitted stages as skipped after a successful operation', () => {
     const checks = buildDeploymentChecks(
       [event('operation_started', 'Worker started operation operation-1.')],

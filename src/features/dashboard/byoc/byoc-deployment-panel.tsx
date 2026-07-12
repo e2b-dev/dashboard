@@ -544,7 +544,10 @@ export function ByocDeploymentPanel() {
     deployment?.cluster_id && deployment.cluster_endpoint
   )
   const setupInProgress =
-    !deployment || (deployment.status !== 'attached' && !durableRouteAttached)
+    !deployment ||
+    (deployment.status !== 'attached' &&
+      !durableRouteAttached &&
+      latestOperation?.kind !== 'destroy')
 
   if (setupInProgress) {
     return (
@@ -822,7 +825,7 @@ export function ByocDeploymentPanel() {
                       Reset
                     </Button>
                     <Button
-                      disabled={!canDeploy}
+                      disabled={!topologyDirty || !canDeploy}
                       loading={deploy.isPending ? 'Applying' : undefined}
                       onClick={runDeploy}
                     >
