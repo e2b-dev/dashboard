@@ -757,8 +757,11 @@ export function ByocDeploymentPanel() {
         </TabsContent>
 
         <TabsContent value="configuration" className="mt-0 min-w-0">
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-            <Card variant="layer" className="rounded-lg">
+          <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <Card
+              variant="layer"
+              className="min-w-0 overflow-hidden rounded-lg"
+            >
               <CardHeader>
                 <CardTitle>Topology</CardTitle>
               </CardHeader>
@@ -888,8 +891,11 @@ export function ByocDeploymentPanel() {
         </TabsContent>
 
         <TabsContent value="access" className="mt-0 min-w-0">
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-            <Card variant="layer" className="rounded-lg">
+          <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <Card
+              variant="layer"
+              className="min-w-0 overflow-hidden rounded-lg"
+            >
               <CardHeader>
                 <CardTitle>Bootstrap access</CardTitle>
               </CardHeader>
@@ -929,10 +935,10 @@ export function ByocDeploymentPanel() {
                   </TabsList>
                   <TabsContent value="gcloud" className="mt-0 min-w-0">
                     <CodeBlock
-                      className="overflow-hidden rounded-md"
+                      className="min-w-0 max-w-full overflow-hidden rounded-md"
                       icon={<TerminalIcon />}
                       title="GCP bootstrap command"
-                      viewportProps={{ className: 'max-h-[420px]' }}
+                      viewportProps={{ className: 'max-h-[420px] max-w-full' }}
                     >
                       {bootstrapCommand({
                         deployerServiceAccount:
@@ -953,11 +959,11 @@ export function ByocDeploymentPanel() {
                   </TabsContent>
                   <TabsContent value="terraform" className="mt-0 min-w-0">
                     <CodeBlock
-                      className="overflow-hidden rounded-md"
+                      className="min-w-0 max-w-full overflow-hidden rounded-md"
                       icon={<TerminalIcon />}
                       lang="hcl"
                       title="Terraform bootstrap snippet"
-                      viewportProps={{ className: 'max-h-[420px]' }}
+                      viewportProps={{ className: 'max-h-[420px] max-w-full' }}
                     >
                       {bootstrapTerraform({
                         deployerServiceAccount:
