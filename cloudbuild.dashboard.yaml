@@ -1,5 +1,5 @@
 steps:
-  - name: oven/bun:1.2.0
+  - name: node:24-bookworm
     id: build-dashboard
     entrypoint: sh
     env:
@@ -22,6 +22,7 @@ steps:
     args:
       - -euc
       - |
+        npm install --global bun@1.2.0
         bun install --frozen-lockfile
         bun run build
   - name: gcr.io/cloud-builders/docker
