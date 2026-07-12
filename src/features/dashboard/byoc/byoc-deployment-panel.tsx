@@ -720,7 +720,9 @@ export function ByocDeploymentPanel() {
                     >
                       {bootstrapCommand({
                         deployerServiceAccount:
-                          connection?.subject_email.split('@')[0],
+                          deployment?.deployer_service_account.email.split(
+                            '@'
+                          )[0] ?? connection?.subject_email.split('@')[0],
                         e2bPrincipal: selectedProjectPrincipal ?? '',
                         projectId:
                           selectedProject?.id ??
@@ -739,7 +741,9 @@ export function ByocDeploymentPanel() {
                     >
                       {bootstrapTerraform({
                         deployerServiceAccount:
-                          connection?.subject_email.split('@')[0],
+                          deployment?.deployer_service_account.email.split(
+                            '@'
+                          )[0] ?? connection?.subject_email.split('@')[0],
                         e2bPrincipal: selectedProjectPrincipal ?? '',
                         projectId:
                           selectedProject?.id ??
