@@ -244,6 +244,10 @@ export function createByocDeploymentsRepository({
       clientRequestId: string,
       expectedCloudConnectionId?: string
     ) {
+      assertConfiguredProjectId(
+        serviceAccountProjectId(deployerServiceAccountEmail),
+        target
+      )
       const deployment = deploymentId
         ? await getOwnedDeployment(deploymentId)
         : undefined
@@ -563,6 +567,19 @@ function assertConfiguredProjectId(projectId: string, target: ByocTarget) {
       message: 'Only the approved BYOC target project is enabled here.',
     })
   }
+}
+
+function serviceAccountProjectId(email: string) {
+  const suffix = '.iam.gserviceaccount.com'
+  const at = email.lastIndexOf('@')
+  if (at <= 0 || !email.endsWith(suffix)) {
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: 'Enter a Google Cloud service-account email.',
+    })
+  }
+
+  return email.slice(at + 1, -suffix.length)
 }
 
 function assertConfiguredConnection(

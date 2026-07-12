@@ -170,6 +170,22 @@ describe('BYOC deployments repository', () => {
     })
   })
 
+  it('rejects a deployer identity from a different project before calling the worker', async () => {
+    const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
+
+    await expect(
+      repository.createCloudConnection(
+        'e2b-byoc-deployer@other-project.iam.gserviceaccount.com',
+        undefined,
+        '33333333-3333-4333-8333-333333333333'
+      )
+    ).rejects.toMatchObject({
+      code: 'PRECONDITION_FAILED',
+      message: 'Only the approved BYOC target project is enabled here.',
+    })
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
   it('adds runtime principals without replacing the API principal', () => {
     process.env.BYOC_E2B_PRINCIPALS = [
       'serviceAccount:api@test-control.iam.gserviceaccount.com',

@@ -215,6 +215,7 @@ export function ByocDeploymentPanel() {
   const [selectedConnectionId, setSelectedConnectionId] = useState<string>()
   const [connectionDialogOpen, setConnectionDialogOpen] = useState(false)
   const [setupStarted, setSetupStarted] = useState(false)
+  const [setupProjectId, setSetupProjectId] = useState('')
   const [deployerServiceAccountEmail, setDeployerServiceAccountEmail] =
     useState('')
   const [selectedDeploymentId, setSelectedDeploymentId] = useState<string>()
@@ -587,15 +588,21 @@ export function ByocDeploymentPanel() {
             projectId: targetQuery.data?.projectId ?? '',
           })
         }}
-        onDeployerServiceAccountEmailChange={(value) => {
+        onSetupProjectIdChange={(value) => {
           requestIntents.connection.clear()
-          setDeployerServiceAccountEmail(value)
+          const projectId = value.trim()
+          setSetupProjectId(projectId)
+          setDeployerServiceAccountEmail(
+            projectId
+              ? `${DEFAULT_DEPLOYER_SA}@${projectId}.iam.gserviceaccount.com`
+              : ''
+          )
         }}
         onDeploy={runDeploy}
         onRefresh={() => void refresh()}
         onSetupStart={() => setSetupStarted(true)}
         operationPending={operationPending}
-        projectId={targetQuery.data?.projectId ?? ''}
+        projectId={setupProjectId}
         setupStarted={setupStarted || !!connection}
         target={targetQuery.data}
         topology={topology}
@@ -1063,10 +1070,10 @@ function ByocSetupFlow({
   error,
   onConnect,
   onCreateDeployment,
-  onDeployerServiceAccountEmailChange,
   onDeploy,
   onRefresh,
   onSetupStart,
+  onSetupProjectIdChange,
   operationPending,
   projectId,
   setupStarted,
@@ -1089,10 +1096,10 @@ function ByocSetupFlow({
   error?: string
   onConnect: () => void
   onCreateDeployment: () => void
-  onDeployerServiceAccountEmailChange: (value: string) => void
   onDeploy: () => void
   onRefresh: () => void
   onSetupStart: () => void
+  onSetupProjectIdChange: (value: string) => void
   operationPending: boolean
   projectId: string
   setupStarted: boolean
@@ -1198,7 +1205,7 @@ function ByocSetupFlow({
           error={createConnectionError}
           isPending={createConnectionPending || operationPending}
           onConnect={onConnect}
-          onEmailChange={onDeployerServiceAccountEmailChange}
+          onProjectIdChange={onSetupProjectIdChange}
           projectId={projectId}
         />
       ) : configuring ? (
@@ -1312,7 +1319,7 @@ function SetupServiceAccount({
   error,
   isPending,
   onConnect,
-  onEmailChange,
+  onProjectIdChange,
   projectId,
 }: {
   deployerServiceAccountEmail: string
@@ -1320,79 +1327,93 @@ function SetupServiceAccount({
   error?: string
   isPending: boolean
   onConnect: () => void
-  onEmailChange: (value: string) => void
+  onProjectIdChange: (value: string) => void
   projectId: string
 }) {
-  const expectedSuffix = projectId
-    ? `@${projectId}.iam.gserviceaccount.com`
-    : ''
-  const validEmail =
-    !!expectedSuffix && deployerServiceAccountEmail.endsWith(expectedSuffix)
-  const accountId =
-    deployerServiceAccountEmail.split('@')[0] || DEFAULT_DEPLOYER_SA
+  const validProjectId = /^[a-z][a-z0-9-]{4,28}[a-z0-9]$/.test(projectId)
+  const commandProjectId = validProjectId ? projectId : 'YOUR_GCP_PROJECT_ID'
 
   return (
-    <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.7fr)]">
-      <Card variant="layer" className="rounded-lg">
+    <section className="mx-auto w-full max-w-5xl min-w-0">
+      <Card variant="layer" className="min-w-0 overflow-hidden rounded-lg">
         <CardHeader>
-          <CardTitle>1. Create the deployer service account</CardTitle>
+          <CardTitle>Create the deployer service account</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4">
+        <CardContent className="grid min-w-0 gap-5">
           <p className="prose-body max-w-2xl text-fg-secondary">
-            Run this once in the GCP project where E2B should deploy. It creates
-            a project-local identity and allows the E2B deployment worker to
-            impersonate it with short-lived credentials.
+            Choose the GCP project that will own the BYOC region. The deployer
+            is scoped to that project, not to an individual dashboard user.
           </p>
-          <CodeBlock
-            icon={<TerminalIcon />}
-            title="Run in Cloud Shell"
-            viewportProps={{ className: 'max-h-[420px]' }}
-          >
-            {bootstrapCommand({
-              deployerServiceAccount: accountId,
-              e2bPrincipals,
-              projectId,
-            })}
-          </CodeBlock>
-        </CardContent>
-      </Card>
-      <Card variant="layer" className="h-fit rounded-lg">
-        <CardHeader>
-          <CardTitle>Verify access</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4">
-          <label
-            className="grid gap-2 text-sm font-medium"
-            htmlFor="byoc-setup-service-account"
-          >
-            Service account email
-            <input
-              autoComplete="off"
-              className="h-10 rounded-md border border-stroke bg-bg px-3 font-mono text-sm font-normal text-fg outline-none focus:border-stroke-active"
-              id="byoc-setup-service-account"
-              onChange={(event) => onEmailChange(event.currentTarget.value)}
-              placeholder={`${DEFAULT_DEPLOYER_SA}${expectedSuffix}`}
-              spellCheck={false}
-              value={deployerServiceAccountEmail}
-            />
-          </label>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <label
+              className="grid min-w-0 gap-2 text-sm font-medium"
+              htmlFor="byoc-setup-project-id"
+            >
+              Google Cloud project ID
+              <input
+                autoComplete="off"
+                className="h-10 min-w-0 rounded-md border border-stroke bg-bg px-3 font-mono text-sm font-normal text-fg outline-none focus:border-stroke-active"
+                id="byoc-setup-project-id"
+                onChange={(event) =>
+                  onProjectIdChange(event.currentTarget.value)
+                }
+                placeholder="your-gcp-project-id"
+                spellCheck={false}
+                value={projectId}
+              />
+            </label>
+            <div className="grid min-w-0 gap-2 text-sm font-medium">
+              Project deployer identity
+              <div className="flex h-10 min-w-0 items-center rounded-md border border-stroke bg-bg-1 px-3 font-mono text-sm font-normal text-fg-secondary">
+                <span className="truncate">
+                  {validProjectId
+                    ? deployerServiceAccountEmail
+                    : `${DEFAULT_DEPLOYER_SA}@<project>.iam.gserviceaccount.com`}
+                </span>
+              </div>
+            </div>
+          </div>
+
           <div className="flex gap-2 border border-stroke bg-bg p-3 text-xs leading-5 text-fg-secondary">
             <InfoIcon className="mt-0.5 size-4 shrink-0" />
-            No service-account key is created or stored. The worker requests
-            short-lived credentials when it runs.
+            One deployer identity is created in the selected project. E2B uses
+            short-lived impersonation credentials; no service-account key is
+            created or stored.
           </div>
+
+          <CodeBlock
+            className="min-w-0 max-w-full overflow-hidden"
+            icon={<TerminalIcon />}
+            title="Run in Cloud Shell"
+            viewportProps={{ className: 'max-h-[420px] max-w-full' }}
+          >
+            {bootstrapCommand({
+              deployerServiceAccount: DEFAULT_DEPLOYER_SA,
+              e2bPrincipals,
+              projectId: commandProjectId,
+            })}
+          </CodeBlock>
           {error ? (
             <p className="text-sm text-accent-error-highlight">{error}</p>
           ) : null}
+        </CardContent>
+        <CardFooter className="mt-0 justify-between gap-4 border-stroke py-4 max-sm:flex-col max-sm:items-stretch">
+          <p className="text-xs text-fg-secondary">
+            Run the command, then verify that E2B can impersonate the deployer.
+          </p>
           <Button
-            disabled={!validEmail || e2bPrincipals.length === 0 || isPending}
+            className="shrink-0"
+            disabled={
+              !validProjectId || e2bPrincipals.length === 0 || isPending
+            }
             loading={isPending ? 'Verifying' : undefined}
             onClick={onConnect}
           >
             Verify and continue
             <ArrowRightIcon />
           </Button>
-        </CardContent>
+        </CardFooter>
       </Card>
     </section>
   )
