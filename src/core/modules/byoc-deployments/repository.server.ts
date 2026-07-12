@@ -213,13 +213,17 @@ export function createByocDeploymentsRepository({
       return request<{ status: string }>('/health')
     },
 
-    async createCloudConnection(deployerServiceAccountEmail: string) {
+    async createCloudConnection(
+      deployerServiceAccountEmail: string,
+      deploymentId?: string
+    ) {
       const connection = await createCloudConnectionWithMode(
         request,
         teamId,
         getCloudConnectionMode(),
         deployerServiceAccountEmail,
-        target
+        target,
+        deploymentId
       )
 
       assertConfiguredConnection(connection, teamId, target)
@@ -387,9 +391,13 @@ function createCloudConnectionWithMode(
   teamId: string,
   mode: CloudConnection['mode'],
   deployerServiceAccountEmail: string,
-  target: ByocTarget
+  target: ByocTarget,
+  deploymentId?: string
 ) {
-  return request<CloudConnection>('/cloud-connections', {
+  const path = deploymentId
+    ? `/deployments/${deploymentId}/cloud-connection`
+    : '/cloud-connections'
+  return request<CloudConnection | { connection: CloudConnection }>(path, {
     method: 'POST',
     body: JSON.stringify({
       team_id: teamId,
@@ -407,7 +415,9 @@ function createCloudConnectionWithMode(
         },
       ],
     }),
-  })
+  }).then((response) =>
+    'connection' in response ? response.connection : response
+  )
 }
 
 function getCloudConnectionMode(): CloudConnection['mode'] {

@@ -679,6 +679,29 @@ export function ByocDeploymentPanel() {
                 <CardTitle>Bootstrap access</CardTitle>
               </CardHeader>
               <CardContent className="min-w-0">
+                <div className="mb-5 flex flex-col gap-3 border-b border-stroke pb-5 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">Active deployer</p>
+                    <p className="truncate font-mono text-sm text-fg-secondary">
+                      {deployment?.deployer_service_account.email ??
+                        connection?.subject_email ??
+                        'not verified'}
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => {
+                      setDeployerServiceAccountEmail(
+                        deployment?.deployer_service_account.email ??
+                          connection?.subject_email ??
+                          ''
+                      )
+                      setConnectionDialogOpen(true)
+                    }}
+                    variant="secondary"
+                  >
+                    {connection ? 'Replace connection' : 'Connect GCP'}
+                  </Button>
+                </div>
                 <Tabs defaultValue="gcloud" className="min-w-0 gap-3">
                   <TabsList className="h-9 w-fit gap-5 border-b-0 bg-bg p-0 max-md:px-0">
                     <TabsTrigger layoutkey="byoc-access-tabs" value="gcloud">
@@ -777,6 +800,7 @@ export function ByocDeploymentPanel() {
           createConnection.mutate({
             teamSlug,
             deployerServiceAccountEmail,
+            deploymentId: deployment?.id,
           })
         }
         onDeployerServiceAccountEmailChange={setDeployerServiceAccountEmail}

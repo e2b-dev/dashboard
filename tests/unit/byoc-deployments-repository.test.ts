@@ -161,6 +161,40 @@ describe('BYOC deployments repository', () => {
     })
   })
 
+  it('replaces the verified identity on an existing deployment', async () => {
+    const connection = {
+      id: '22222222-2222-4222-8222-222222222222',
+      team_id: 'team-a',
+      provider: 'gcp' as const,
+      mode: 'keyless_impersonation' as const,
+      status: 'connected',
+      subject_email: 'replacement@test-project.iam.gserviceaccount.com',
+      authorized_projects: [
+        {
+          project_id: 'test-project',
+          default_region: 'test-region',
+          default_zone: 'test-zone-a',
+          namespace: 'test-namespace',
+        },
+      ],
+      required_project_roles: [],
+      created_at: '2026-07-11T00:00:00Z',
+      updated_at: '2026-07-11T00:00:00Z',
+    }
+    const fetchMock = vi.mocked(fetch)
+    fetchMock.mockResolvedValueOnce(Response.json({ connection }))
+
+    const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
+    await repository.createCloudConnection(
+      connection.subject_email,
+      '11111111-1111-4111-8111-111111111111'
+    )
+
+    expect(fetchMock.mock.calls[0]?.[0].toString()).toBe(
+      'http://localhost:8098/deployments/11111111-1111-4111-8111-111111111111/cloud-connection'
+    )
+  })
+
   it('sends the selected topology as Terraform variables', async () => {
     const deployment = {
       id: '11111111-1111-4111-8111-111111111111',
