@@ -112,25 +112,34 @@ export const byocRouter = createTRPCRouter({
     }),
 
   deploy: protectedTeamProcedure
-    .input(deploymentIdInput.extend({ topology: topologyInput }))
+    .input(
+      deploymentIdInput.extend({
+        clientRequestId: z.string().uuid(),
+        topology: topologyInput,
+      })
+    )
     .mutation(({ ctx, input }) => {
       return createByocDeploymentsRepository({
         teamId: ctx.teamId,
-      }).deploy(input.deploymentId, {
-        api_node_count: input.topology.apiNodeCount,
-        api_machine_type: input.topology.apiMachineType,
-        client_node_count: input.topology.clientNodeCount,
-        client_machine_type: input.topology.clientMachineType,
-        clickhouse_node_count: input.topology.clickHouseNodeCount,
-        clickhouse_machine_type: input.topology.clickHouseMachineType,
-      })
+      }).deploy(
+        input.deploymentId,
+        {
+          api_node_count: input.topology.apiNodeCount,
+          api_machine_type: input.topology.apiMachineType,
+          client_node_count: input.topology.clientNodeCount,
+          client_machine_type: input.topology.clientMachineType,
+          clickhouse_node_count: input.topology.clickHouseNodeCount,
+          clickhouse_machine_type: input.topology.clickHouseMachineType,
+        },
+        input.clientRequestId
+      )
     }),
 
   destroy: protectedTeamProcedure
-    .input(deploymentIdInput)
+    .input(deploymentIdInput.extend({ clientRequestId: z.string().uuid() }))
     .mutation(({ ctx, input }) => {
       return createByocDeploymentsRepository({
         teamId: ctx.teamId,
-      }).destroy(input.deploymentId)
+      }).destroy(input.deploymentId, input.clientRequestId)
     }),
 })

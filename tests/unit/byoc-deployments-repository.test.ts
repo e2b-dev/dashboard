@@ -81,7 +81,10 @@ describe('BYOC deployments repository', () => {
 
     const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
     await expect(
-      repository.destroy('11111111-1111-4111-8111-111111111111')
+      repository.destroy(
+        '11111111-1111-4111-8111-111111111111',
+        'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+      )
     ).rejects.toMatchObject({ code: 'NOT_FOUND' })
     expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(fetchMock.mock.calls[0]?.[1]?.method).toBeUndefined()
@@ -309,20 +312,25 @@ describe('BYOC deployments repository', () => {
       )
 
     const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
-    await repository.deploy(deployment.id, {
-      api_node_count: 3,
-      api_machine_type: 'e2-standard-8',
-      client_node_count: 5,
-      client_machine_type: 'n2-standard-16',
-      clickhouse_node_count: 2,
-      clickhouse_machine_type: 'n2-standard-8',
-    })
+    await repository.deploy(
+      deployment.id,
+      {
+        api_node_count: 3,
+        api_machine_type: 'e2-standard-8',
+        client_node_count: 5,
+        client_machine_type: 'n2-standard-16',
+        clickhouse_node_count: 2,
+        clickhouse_machine_type: 'n2-standard-8',
+      },
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+    )
 
     const request = fetchMock.mock.calls[1]
     expect(request?.[0].toString()).toBe(
       `http://localhost:8098/deployments/${deployment.id}/operations/deploy`
     )
     expect(JSON.parse(String(request?.[1]?.body))).toEqual({
+      client_request_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
       api_node_count: 3,
       api_machine_type: 'e2-standard-8',
       client_node_count: 5,

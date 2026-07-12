@@ -141,6 +141,7 @@ export interface ByocOperation {
   deployment_id: string
   kind: 'deploy' | 'destroy'
   status: OperationStatus
+  client_request_id: string
   error?: string
   created_at: string
   updated_at: string
@@ -331,13 +332,18 @@ export function createByocDeploymentsRepository({
       return request<ByocOperation[]>(`/deployments/${deploymentId}/operations`)
     },
 
-    async deploy(deploymentId: string, settings: TerraformSettings) {
+    async deploy(
+      deploymentId: string,
+      settings: TerraformSettings,
+      clientRequestId: string
+    ) {
       await getOwnedDeployment(deploymentId)
       return request<ByocOperation>(
         `/deployments/${deploymentId}/operations/deploy`,
         {
           method: 'POST',
           body: JSON.stringify({
+            client_request_id: clientRequestId,
             api_node_count: settings.api_node_count,
             api_machine_type: settings.api_machine_type,
             client_node_count: settings.client_node_count,
@@ -349,13 +355,13 @@ export function createByocDeploymentsRepository({
       )
     },
 
-    async destroy(deploymentId: string) {
+    async destroy(deploymentId: string, clientRequestId: string) {
       await getOwnedDeployment(deploymentId)
       return request<ByocOperation>(
         `/deployments/${deploymentId}/operations/destroy`,
         {
           method: 'POST',
-          body: JSON.stringify({}),
+          body: JSON.stringify({ client_request_id: clientRequestId }),
         }
       )
     },

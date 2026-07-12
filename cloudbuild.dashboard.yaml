@@ -13,6 +13,7 @@ steps:
       - NEXT_PUBLIC_INCLUDE_STATUS_INDICATOR=0
       - AUTH_SECRET=build-only
       - ORY_SDK_URL=${_KRATOS_PUBLIC_URL}
+      - ORY_HYDRA_PUBLIC_URL=${_HYDRA_PUBLIC_URL}
       - ORY_OAUTH2_CLIENT_ID=build-only
       - ORY_OAUTH2_CLIENT_SECRET=build-only
       - ORY_OAUTH2_AUDIENCE=dashboard-api
@@ -49,5 +50,6 @@ substitutions:
   _SANDBOX_URL: required
   _INFRA_API_URL: required
   _KRATOS_PUBLIC_URL: required
+  _HYDRA_PUBLIC_URL: required
   _KRATOS_ADMIN_URL: required
   _HYDRA_ADMIN_URL: required

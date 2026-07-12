@@ -22,6 +22,7 @@ export const serverSchema = z.object({
   // Leave unset in prod/preview.
   AUTH_COOKIE_PREFIX: z.string().min(1).optional(),
   ORY_SDK_URL: z.url().optional(),
+  ORY_HYDRA_PUBLIC_URL: z.url().optional(),
   ORY_OAUTH2_CLIENT_ID: z.string().min(1).optional(),
   ORY_OAUTH2_CLIENT_SECRET: z.string().min(1).optional(),
   ORY_OAUTH2_AUDIENCE: z.string().min(1).optional(),

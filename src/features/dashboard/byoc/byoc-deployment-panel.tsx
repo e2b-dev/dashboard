@@ -205,7 +205,7 @@ export function ByocDeploymentPanel() {
   const [runningDeploymentId, setRunningDeploymentId] = useState<string>()
   const [operationBaseline, setOperationBaseline] = useState<{
     kind: ByocOperation['kind']
-    operationId?: string
+    clientRequestId: string
   }>()
   const [topologyDraft, setTopologyDraft] = useState<{
     deploymentId: string
@@ -373,7 +373,7 @@ export function ByocDeploymentPanel() {
         setRunningDeploymentId(variables.deploymentId)
         setOperationBaseline({
           kind: 'deploy',
-          operationId: latestOperation?.id,
+          clientRequestId: variables.clientRequestId,
         })
       },
       onSuccess: (data) => {
@@ -392,7 +392,7 @@ export function ByocDeploymentPanel() {
         setRunningDeploymentId(variables.deploymentId)
         setOperationBaseline({
           kind: 'destroy',
-          operationId: latestOperation?.id,
+          clientRequestId: variables.clientRequestId,
         })
       },
       onSuccess: (data) => {
@@ -437,7 +437,7 @@ export function ByocDeploymentPanel() {
     destroy.isPending ||
     !!activeOperation ||
     (!!deployment?.id && operationsQuery.isPending) ||
-    operationsQuery.isError
+    (operationsQuery.isError && !operationsQuery.data)
   const selectedDeploymentActive = deployment ? isActive(deployment) : false
   const anyDeploymentActive = deploymentsQuery.data?.some(isActive) ?? false
   const canCreateDeployment =
@@ -460,7 +460,7 @@ export function ByocDeploymentPanel() {
   const discoveredSubmittedOperation =
     !!operationBaseline &&
     latestOperation?.kind === operationBaseline.kind &&
-    latestOperation.id !== operationBaseline.operationId
+    latestOperation.client_request_id === operationBaseline.clientRequestId
   const deployError =
     operationBaseline?.kind === 'deploy' && discoveredSubmittedOperation
       ? undefined
@@ -481,12 +481,13 @@ export function ByocDeploymentPanel() {
     queryError(projectsQuery.error) ??
     queryError(deploymentsQuery.error) ??
     queryError(operationsQuery.error) ??
-    (eventsQuery.data?.length ? undefined : queryError(eventsQuery.error))
+    queryError(eventsQuery.error)
   const runDeploy = () => {
     if (!deployment) return
     deploy.mutate({
       teamSlug,
       deploymentId: deployment.id,
+      clientRequestId: crypto.randomUUID(),
       topology,
     })
   }
@@ -855,6 +856,7 @@ export function ByocDeploymentPanel() {
                   Destroy infrastructure and detach this team's cluster.
                 </p>
                 <input
+                  aria-label="Destroy confirmation"
                   className="h-9 rounded-md border border-stroke bg-bg px-3 font-mono text-sm text-fg outline-none focus:border-stroke-active"
                   disabled={!deployment || deployment.status === 'destroyed'}
                   onChange={(event) =>
@@ -871,7 +873,11 @@ export function ByocDeploymentPanel() {
                   disabled={!canDestroy}
                   onClick={() =>
                     deployment &&
-                    destroy.mutate({ teamSlug, deploymentId: deployment.id })
+                    destroy.mutate({
+                      teamSlug,
+                      deploymentId: deployment.id,
+                      clientRequestId: crypto.randomUUID(),
+                    })
                   }
                   loading={destroy.isPending ? 'Destroying' : undefined}
                 >
