@@ -51,7 +51,9 @@ export async function GET(request: NextRequest) {
         key: 'oauth_bootstrap_failed:missing_logout_context',
         context: {
           has_id_token: true,
-          has_ory_sdk_url: !!process.env.ORY_SDK_URL,
+          has_ory_logout_url: !!(
+            process.env.ORY_HYDRA_PUBLIC_URL ?? process.env.ORY_SDK_URL
+          ),
         },
       },
       'Could not perform Ory logout after bootstrap failure'

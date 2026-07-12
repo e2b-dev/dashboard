@@ -15,12 +15,13 @@ export function buildOryLogoutUrl({
   idToken: string
   origin: string
 }): URL | null {
-  const sdkUrl = process.env.ORY_SDK_URL
-  if (!sdkUrl) return null
+  const hydraPublicUrl =
+    process.env.ORY_HYDRA_PUBLIC_URL ?? process.env.ORY_SDK_URL
+  if (!hydraPublicUrl) return null
 
   const postLogoutUrl = new URL(ORY_POST_LOGOUT_PATH, origin)
   const logoutUrl = new URL(
-    `${sdkUrl.replace(/\/$/, '')}/oauth2/sessions/logout`
+    `${hydraPublicUrl.replace(/\/$/, '')}/oauth2/sessions/logout`
   )
   logoutUrl.searchParams.set('id_token_hint', idToken)
   logoutUrl.searchParams.set(

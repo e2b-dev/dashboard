@@ -53,6 +53,7 @@ describe('Ory Auth.js session boundary', () => {
       })
     )
     vi.stubEnv('ORY_SDK_URL', 'https://project.oryapis.com')
+    vi.stubEnv('ORY_HYDRA_PUBLIC_URL', 'https://hydra.example.test')
   })
 
   it('allows Auth.js sign-in only after dashboard bootstrap succeeds', async () => {
@@ -110,7 +111,10 @@ describe('Ory Auth.js session boundary', () => {
     )
     expect(signOutMock).toHaveBeenCalledWith({ redirect: false })
     expect(withCookie.headers.get('location')).toContain(
-      '/oauth2/sessions/logout'
+      'https://hydra.example.test/oauth2/sessions/logout'
+    )
+    expect(withCookie.headers.get('location')).toContain(
+      'post_logout_redirect_uri=https%3A%2F%2Fapp.e2b.dev%2F'
     )
 
     signOutMock.mockClear()
