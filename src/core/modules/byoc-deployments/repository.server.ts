@@ -146,7 +146,10 @@ export interface ByocOperation {
   updated_at: string
 }
 
-const runnerRequestTimeoutMs = 15_000
+// The runner may spend up to 15 seconds dispatching a durable Cloud Run job
+// after committing the operation. Leave room for transport overhead so the
+// dashboard does not report a false failure for an accepted operation.
+const runnerRequestTimeoutMs = 30_000
 
 export function createByocDeploymentsRepository({
   teamId,

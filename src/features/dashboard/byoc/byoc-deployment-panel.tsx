@@ -445,11 +445,22 @@ export function ByocDeploymentPanel() {
     deployment.status !== 'destroyed' &&
     !operationPending &&
     destroyConfirmationValue === 'destroy'
+  const latestOperationCreatedAt = latestOperation
+    ? new Date(latestOperation.created_at).getTime()
+    : 0
+  const deployError =
+    deploy.submittedAt > 0 && latestOperationCreatedAt >= deploy.submittedAt
+      ? undefined
+      : mutationError(deploy.error)
+  const destroyError =
+    destroy.submittedAt > 0 && latestOperationCreatedAt >= destroy.submittedAt
+      ? undefined
+      : mutationError(destroy.error)
   const error =
     mutationError(createConnection.error) ??
     mutationError(createDeployment.error) ??
-    mutationError(deploy.error) ??
-    mutationError(destroy.error) ??
+    deployError ??
+    destroyError ??
     latestOperation?.error ??
     queryError(targetQuery.error) ??
     queryError(healthQuery.error) ??
