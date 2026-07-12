@@ -29,11 +29,12 @@ function getTabRedirectPath(tab: string | null, teamSlug: string) {
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const tab = searchParams.get('tab')
+  const publicOrigin = process.env.APP_URL ?? request.nextUrl.origin
 
   const authContext = await getAuthContext()
 
   if (!authContext) {
-    return NextResponse.redirect(new URL('/sign-in', request.url))
+    return NextResponse.redirect(new URL('/sign-in', publicOrigin))
   }
 
   const team = await resolveUserTeam(
@@ -51,17 +52,17 @@ export async function GET(request: NextRequest) {
     )
 
     const { redirectTo } = await signOut({
-      origin: request.nextUrl.origin,
+      origin: publicOrigin,
     })
 
-    return NextResponse.redirect(new URL(redirectTo, request.url))
+    return NextResponse.redirect(new URL(redirectTo, publicOrigin))
   }
 
   await setTeamCookies(team.id, team.slug)
 
   const redirectPath = getTabRedirectPath(tab, team.slug)
 
-  const redirectUrl = new URL(redirectPath, request.url)
+  const redirectUrl = new URL(redirectPath, publicOrigin)
 
   if (searchParams.get('support') === 'true') {
     redirectUrl.searchParams.set('support', 'true')

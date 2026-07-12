@@ -74,6 +74,7 @@ describe('Dashboard Route - Team Resolution Integration Tests', () => {
 
   afterEach(() => {
     vi.resetAllMocks()
+    vi.unstubAllEnvs()
   })
 
   /**
@@ -113,6 +114,20 @@ describe('Dashboard Route - Team Resolution Integration Tests', () => {
       expect(response.status).toBe(307) // temporary redirect
       expect(response.headers.get('location')).toContain(
         '/dashboard/my-team/sandboxes'
+      )
+    })
+
+    it('uses the configured public origin instead of the internal listener', async () => {
+      vi.stubEnv('APP_URL', 'https://matt-dev.e2b-test.dev')
+      mockResolveUserTeam.mockResolvedValue({
+        id: 'team-456',
+        slug: 'my-team',
+      })
+
+      const response = await GET(createRequest())
+
+      expect(response.headers.get('location')).toBe(
+        'https://matt-dev.e2b-test.dev/dashboard/my-team/sandboxes/monitoring'
       )
     })
 
