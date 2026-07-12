@@ -60,7 +60,9 @@ const bootstrapRoles = [
   'roles/artifactregistry.admin',
   'roles/certificatemanager.owner',
   'roles/redis.admin',
+  'roles/memorystore.admin',
   'roles/networkconnectivity.admin',
+  'roles/iam.roleAdmin',
   'roles/iam.serviceAccountAdmin',
   'roles/iam.serviceAccountKeyAdmin',
   'roles/resourcemanager.projectIamAdmin',
@@ -471,7 +473,9 @@ export function ByocDeploymentPanel() {
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="prose-headline-medium">BYOC</h1>
-            <StatusBadge status={deployment?.status} />
+            <StatusBadge
+              status={activeOperation?.status ?? deployment?.status}
+            />
           </div>
           <p className="mt-1 truncate text-sm text-fg-secondary">
             {deployment
@@ -1007,13 +1011,15 @@ function topologiesEqual(left: TopologyDraft, right: TopologyDraft) {
   )
 }
 
-function StatusBadge({ status }: { status?: Deployment['status'] }) {
+function StatusBadge({ status }: { status?: string }) {
   const tone =
     status === 'attached'
       ? 'border-accent-success-highlight/40 bg-accent-success-highlight/10 text-accent-success-highlight'
       : status === 'failed'
         ? 'border-accent-error-highlight/40 bg-accent-error-highlight/10 text-accent-error-highlight'
-        : status && isActiveStatus(status)
+        : status &&
+            (isActiveStatus(status as Deployment['status']) ||
+              isActiveOperation(status))
           ? 'border-accent-main-highlight/40 bg-accent-main-highlight/10 text-accent-main-highlight'
           : 'border-stroke bg-bg-1 text-fg-secondary'
 
@@ -1066,7 +1072,8 @@ function OperationSummary({
         {latest?.message ??
           'Connect a GCP project and create a deployment to begin.'}
       </p>
-      {deployment?.error ? (
+      {deployment?.error &&
+      !(operation && isActiveOperation(operation.status)) ? (
         <p className="line-clamp-3 rounded bg-accent-error-highlight/10 p-2 text-sm text-fg">
           {deployment.error}
         </p>
