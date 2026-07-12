@@ -438,8 +438,7 @@ export function ByocDeploymentPanel() {
     !!deployment?.id &&
     !selectedDeploymentActive &&
     canRunDeploy(deployment) &&
-    !operationPending &&
-    (deployment?.status !== 'attached' || topologyDirty)
+    !operationPending
   const canDestroy =
     !!deployment?.id &&
     !selectedDeploymentActive &&
@@ -529,7 +528,7 @@ export function ByocDeploymentPanel() {
               {deployment.status === 'attached'
                 ? topologyDirty
                   ? 'Apply changes'
-                  : 'No changes'
+                  : 'Reconcile'
                 : deployment.status === 'failed'
                   ? 'Retry deployment'
                   : 'Deploy'}
