@@ -110,4 +110,64 @@ describe('BYOC deployments repository', () => {
     ).rejects.toMatchObject({ code: 'NOT_FOUND' })
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
+
+  it('sends the selected topology as Terraform variables', async () => {
+    const deployment = {
+      id: '11111111-1111-4111-8111-111111111111',
+      team_id: 'team-a',
+      provider: 'gcp',
+      gcp: {
+        project_id: 'test-project',
+        region: 'test-region',
+        zone: 'test-zone-a',
+      },
+      domain_name: 'test.example.com',
+      prefix: 'test-',
+      deployer_service_account: {
+        account_id: 'e2b-byoc-deployer',
+        email: 'e2b-byoc-deployer@test-project.iam.gserviceaccount.com',
+        display_name: 'E2B BYOC deployer',
+        project_id: 'test-project',
+        status: 'planned',
+        roles: [],
+      },
+      status: 'draft',
+      created_at: '2026-07-11T00:00:00Z',
+      updated_at: '2026-07-11T00:00:00Z',
+    }
+    const fetchMock = vi.mocked(fetch)
+    fetchMock
+      .mockResolvedValueOnce(Response.json(deployment))
+      .mockResolvedValueOnce(
+        Response.json({
+          deployment: { ...deployment, status: 'attached' },
+          events: [],
+        })
+      )
+
+    const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
+    await repository.deploy(deployment.id, {
+      api_node_count: 3,
+      api_machine_type: 'e2-standard-8',
+      client_node_count: 5,
+      client_machine_type: 'n2-standard-16',
+      clickhouse_node_count: 2,
+      clickhouse_machine_type: 'n2-standard-8',
+    })
+
+    const request = fetchMock.mock.calls[1]
+    expect(request?.[0].toString()).toBe(
+      `http://localhost:8098/deployments/${deployment.id}/deploy`
+    )
+    expect(JSON.parse(String(request?.[1]?.body))).toMatchObject({
+      variables: {
+        api_cluster_size: 3,
+        api_machine_type: 'e2-standard-8',
+        client_cluster_size: 5,
+        client_machine_type: 'n2-standard-16',
+        clickhouse_cluster_size: 2,
+        clickhouse_machine_type: 'n2-standard-8',
+      },
+    })
+  })
 })

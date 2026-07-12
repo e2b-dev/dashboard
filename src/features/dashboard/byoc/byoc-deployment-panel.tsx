@@ -1,7 +1,7 @@
 'use client'
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils'
 import type { TRPCRouterOutputs } from '@/trpc/client'
@@ -10,18 +10,31 @@ import { CodeBlock } from '@/ui/code-block'
 import { Button } from '@/ui/primitives/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/primitives/card'
 import {
-  CheckCircleIcon,
   CloudIcon,
-  KeyIcon,
   RefreshIcon,
   TerminalIcon,
   WarningIcon,
 } from '@/ui/primitives/icons'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/ui/primitives/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
 
 type Deployment = TRPCRouterOutputs['byoc']['listDeployments'][number]
 type DeploymentEvent = TRPCRouterOutputs['byoc']['listEvents'][number]
 type HealthStatus = 'healthy' | 'checking' | 'waiting' | 'warning' | 'failed'
+type TopologyDraft = {
+  apiNodeCount: number
+  apiMachineType: string
+  clientNodeCount: number
+  clientMachineType: string
+  clickHouseNodeCount: number
+  clickHouseMachineType: string
+}
 
 const DEFAULT_DEPLOYER_SA = 'e2b-byoc-deployer'
 const bootstrapRoles = [
@@ -169,6 +182,16 @@ export function ByocDeploymentPanel() {
   const [selectedConnectionId, setSelectedConnectionId] = useState<string>()
   const [selectedDeploymentId, setSelectedDeploymentId] = useState<string>()
   const [runningDeploymentId, setRunningDeploymentId] = useState<string>()
+  const [topology, setTopology] = useState<TopologyDraft>({
+    apiNodeCount: 1,
+    apiMachineType: 'e2-standard-4',
+    clientNodeCount: 1,
+    clientMachineType: 'n2-standard-8',
+    clickHouseNodeCount: 1,
+    clickHouseMachineType: 'e2-standard-4',
+  })
+  const [topologyDirty, setTopologyDirty] = useState(false)
+  const [topologyDeploymentId, setTopologyDeploymentId] = useState<string>()
   const [destroyConfirmation, setDestroyConfirmation] = useState({
     deploymentKey: '',
     value: '',
@@ -213,6 +236,41 @@ export function ByocDeploymentPanel() {
     )
   }, [deploymentsQuery.data, selectedDeploymentId])
 
+  const savedAPINodeCount = deployment?.terraform_settings?.api_node_count
+  const savedAPIMachineType = deployment?.terraform_settings?.api_machine_type
+  const savedClientNodeCount = deployment?.terraform_settings?.client_node_count
+  const savedClientMachineType =
+    deployment?.terraform_settings?.client_machine_type
+  const savedClickHouseNodeCount =
+    deployment?.terraform_settings?.clickhouse_node_count
+  const savedClickHouseMachineType =
+    deployment?.terraform_settings?.clickhouse_machine_type
+
+  useEffect(() => {
+    const deploymentChanged = deployment?.id !== topologyDeploymentId
+    if (!deploymentChanged && topologyDirty) return
+    setTopology({
+      apiNodeCount: savedAPINodeCount ?? 1,
+      apiMachineType: savedAPIMachineType ?? 'e2-standard-4',
+      clientNodeCount: savedClientNodeCount ?? 1,
+      clientMachineType: savedClientMachineType ?? 'n2-standard-8',
+      clickHouseNodeCount: savedClickHouseNodeCount ?? 1,
+      clickHouseMachineType: savedClickHouseMachineType ?? 'e2-standard-4',
+    })
+    setTopologyDeploymentId(deployment?.id)
+    setTopologyDirty(false)
+  }, [
+    deployment?.id,
+    savedAPIMachineType,
+    savedAPINodeCount,
+    savedClickHouseMachineType,
+    savedClickHouseNodeCount,
+    savedClientMachineType,
+    savedClientNodeCount,
+    topologyDeploymentId,
+    topologyDirty,
+  ])
+
   const eventsQuery = useQuery({
     ...trpc.byoc.listEvents.queryOptions({
       teamSlug,
@@ -234,6 +292,16 @@ export function ByocDeploymentPanel() {
       queryClient.invalidateQueries(
         trpc.byoc.listDeployments.queryFilter({ teamSlug })
       ),
+      queryClient.invalidateQueries(trpc.byoc.target.queryFilter({ teamSlug })),
+      queryClient.invalidateQueries(trpc.byoc.health.queryFilter({ teamSlug })),
+      connection?.id
+        ? queryClient.invalidateQueries(
+            trpc.byoc.listProjects.queryFilter({
+              teamSlug,
+              connectionId: connection.id,
+            })
+          )
+        : Promise.resolve(),
       deployment?.id
         ? queryClient.invalidateQueries(
             trpc.byoc.listEvents.queryFilter({
@@ -270,6 +338,7 @@ export function ByocDeploymentPanel() {
       },
       onSuccess: async (data) => {
         setSelectedDeploymentId(data.deployment.id)
+        setTopologyDirty(false)
         await refresh()
       },
       onSettled: () => {
@@ -358,279 +427,519 @@ export function ByocDeploymentPanel() {
     (eventsQuery.data?.length ? undefined : queryError(eventsQuery.error))
 
   return (
-    <main className="flex flex-col gap-5">
-      <section className="flex flex-col gap-3 border-b border-stroke pb-5 md:flex-row md:items-start md:justify-between">
-        <div className="flex max-w-[680px] flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <CloudIcon className="size-5 text-icon" />
-            <h1 className="prose-headline-medium">Bring Your Own Compute</h1>
+    <main className="flex min-w-0 flex-col gap-4">
+      <section className="flex flex-col gap-3 border-b border-stroke pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="prose-headline-medium">BYOC</h1>
+            <StatusBadge status={deployment?.status} />
           </div>
-          <p className="prose-body text-fg-secondary">
-            Authorize a cloud project, deploy a dedicated BYOC region, and
-            attach it to this team after health checks pass.
+          <p className="mt-1 truncate text-sm text-fg-secondary">
+            {deployment
+              ? `${deployment.gcp.region} · ${deployment.domain_name}`
+              : 'Deploy and operate a dedicated E2B region.'}
           </p>
         </div>
-        <Button
-          variant="secondary"
-          onClick={() => void refresh()}
-          loading={
-            deploymentsQuery.isFetching || eventsQuery.isFetching
-              ? 'Refreshing'
-              : undefined
-          }
-        >
-          <RefreshIcon />
-          Refresh
-        </Button>
-      </section>
-
-      <section className="grid gap-3 md:grid-cols-4">
-        <TargetCell label="Project" value={targetQuery.data?.projectId} />
-        <TargetCell label="Region" value={targetQuery.data?.region} />
-        <TargetCell label="Zone" value={targetQuery.data?.zone} />
-        <TargetCell label="Namespace" value={targetQuery.data?.namespace} />
-      </section>
-
-      <div className="rounded-md border border-stroke bg-bg-1 p-3">
-        <div className="prose-caption uppercase text-fg-tertiary">
-          Region policy
+        <div className="flex shrink-0 gap-2">
+          <Button
+            variant="secondary"
+            onClick={() => void refresh()}
+            loading={
+              deploymentsQuery.isFetching || eventsQuery.isFetching
+                ? 'Refreshing'
+                : undefined
+            }
+          >
+            <RefreshIcon />
+            Refresh
+          </Button>
+          {!connection ? (
+            <Button
+              disabled={operationPending || anyDeploymentActive}
+              onClick={() => createConnection.mutate({ teamSlug })}
+              loading={createConnection.isPending ? 'Connecting' : undefined}
+            >
+              <CloudIcon />
+              Connect GCP
+            </Button>
+          ) : !deployment ? (
+            <Button
+              disabled={!canCreateDeployment}
+              onClick={() =>
+                createDeployment.mutate({
+                  teamSlug,
+                  connectionId: connection.id,
+                  projectId: targetQuery.data?.projectId ?? '',
+                })
+              }
+              loading={createDeployment.isPending ? 'Creating' : undefined}
+            >
+              Create deployment
+            </Button>
+          ) : (
+            <Button
+              disabled={!canDeploy}
+              onClick={() =>
+                deploy.mutate({
+                  teamSlug,
+                  deploymentId: deployment.id,
+                  topology,
+                })
+              }
+              loading={deploy.isPending ? 'Deploying' : undefined}
+            >
+              {deployment.status === 'attached' ? 'Apply changes' : 'Deploy'}
+            </Button>
+          )}
         </div>
-        <p className="prose-body mt-1 text-fg-secondary">
-          Each team can attach one BYOC region at a time. Deploying a different
-          region should create a new cluster and replace the team's active BYOC
-          cluster after validation.
-        </p>
-      </div>
+      </section>
 
       {error ? (
         <div className="flex items-start gap-2 rounded-md border border-accent-error-highlight/35 bg-accent-error-highlight/10 p-3 text-fg">
-          <WarningIcon className="mt-0.5 size-4 text-accent-error-highlight" />
-          <p className="prose-body">{error}</p>
+          <WarningIcon className="mt-0.5 size-4 shrink-0 text-accent-error-highlight" />
+          <p className="prose-body line-clamp-3">{error}</p>
         </div>
       ) : null}
 
-      <section className="grid gap-4 lg:grid-cols-[360px_1fr]">
-        <Card variant="layer" className="rounded-lg">
-          <CardHeader>
-            <CardTitle>Cloud Access</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <StepStatus
-              label="Runner"
-              status={
-                healthQuery.error
-                  ? 'failed'
-                  : healthQuery.data?.status === 'ok'
-                    ? 'healthy'
-                    : 'pending'
-              }
-              value={healthQuery.data?.status === 'ok' ? 'healthy' : 'pending'}
-            />
-            <StepStatus
-              label="Connection"
-              status={connection ? 'healthy' : 'pending'}
-              value={connection ? connection.subject_email : 'not connected'}
-            />
-            <StepStatus
-              label="Project"
-              status={selectedProject ? 'healthy' : 'pending'}
-              value={
-                selectedProject
-                  ? `${selectedProject.name} (${selectedProject.id})`
-                  : 'not selected'
-              }
-            />
-            <div className="flex flex-wrap gap-2">
-              <Button
-                disabled={
-                  !!connection || operationPending || anyDeploymentActive
-                }
-                onClick={() => createConnection.mutate({ teamSlug })}
-                loading={createConnection.isPending ? 'Connecting' : undefined}
-              >
-                <CloudIcon />
-                Connect Google Cloud
-              </Button>
-              {connection ? (
-                <Button
-                  variant="secondary"
-                  disabled={!canCreateDeployment}
-                  onClick={() =>
-                    createDeployment.mutate({
-                      teamSlug,
-                      connectionId: connection.id,
-                      projectId: targetQuery.data?.projectId ?? '',
-                    })
-                  }
-                  loading={createDeployment.isPending ? 'Creating' : undefined}
-                >
-                  Create deployment
-                </Button>
-              ) : null}
-            </div>
-          </CardContent>
-        </Card>
+      <Tabs defaultValue="overview" className="min-w-0 gap-4">
+        <TabsList className="h-10 w-full justify-start gap-5 overflow-x-auto border-b border-stroke bg-transparent p-0 max-md:px-0">
+          <TabsTrigger layoutkey="byoc-main-tabs" value="overview">
+            Overview
+          </TabsTrigger>
+          <TabsTrigger layoutkey="byoc-main-tabs" value="configuration">
+            Configuration
+          </TabsTrigger>
+          <TabsTrigger layoutkey="byoc-main-tabs" value="activity">
+            Activity
+          </TabsTrigger>
+          <TabsTrigger layoutkey="byoc-main-tabs" value="access">
+            Access
+          </TabsTrigger>
+        </TabsList>
 
-        <Card variant="layer" className="rounded-lg">
-          <CardHeader>
-            <CardTitle>Deployment</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <DeploymentSummary deployment={deployment} />
-            <div className="flex flex-wrap gap-2">
-              <Button
-                disabled={!canDeploy}
-                onClick={() =>
-                  deployment?.id &&
-                  deploy.mutate({ teamSlug, deploymentId: deployment.id })
-                }
-                loading={deploy.isPending ? 'Deploying' : undefined}
-              >
-                Deploy BYOC
-              </Button>
-              <Button
-                variant="error"
-                disabled={!canDestroy}
-                onClick={() =>
-                  deployment?.id &&
-                  destroy.mutate({ teamSlug, deploymentId: deployment.id })
-                }
-                loading={destroy.isPending ? 'Destroying' : undefined}
-              >
-                Destroy BYOC
-              </Button>
-            </div>
-            {deployment?.id && deployment.status !== 'destroyed' ? (
-              <label className="flex max-w-[320px] flex-col gap-1">
-                <span className="prose-caption uppercase text-fg-tertiary">
-                  Type destroy to enable cleanup
-                </span>
+        <TabsContent value="overview" className="mt-0 min-w-0">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.6fr)]">
+            <Card variant="layer" className="rounded-lg">
+              <CardHeader>
+                <CardTitle>Current operation</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-4">
+                <OperationSummary
+                  deployment={deployment}
+                  events={eventsQuery.data ?? []}
+                />
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  {healthChecks.slice(0, 4).map((check) => (
+                    <HealthCell key={check.label} {...check} />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            <Card variant="layer" className="rounded-lg">
+              <CardHeader>
+                <CardTitle>Attachment</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-3">
+                <SummaryRow
+                  label="Cluster"
+                  value={deployment?.cluster_id ?? 'not attached'}
+                  mono
+                />
+                <SummaryRow
+                  label="Endpoint"
+                  value={
+                    deployment ? `api.${deployment.domain_name}:443` : 'pending'
+                  }
+                  mono
+                />
+                <SummaryRow
+                  label="Team routing"
+                  value={deployment?.cluster_id ? 'attached' : 'pending'}
+                />
+                <p className="prose-caption text-fg-secondary">
+                  Requests resolve this team's cluster ID and connect to the
+                  stored cluster endpoint. Capacity is measured separately.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="configuration" className="mt-0 min-w-0">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <Card variant="layer" className="rounded-lg">
+              <CardHeader>
+                <CardTitle>Topology</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-5 md:grid-cols-3">
+                <TopologyControl
+                  count={topology.apiNodeCount}
+                  label="API nodes"
+                  machineType={topology.apiMachineType}
+                  machineTypes={[
+                    'e2-standard-4',
+                    'e2-standard-8',
+                    'n2-standard-8',
+                  ]}
+                  max={20}
+                  onCountChange={(apiNodeCount) => {
+                    setTopologyDirty(true)
+                    setTopology((current) => ({ ...current, apiNodeCount }))
+                  }}
+                  onMachineTypeChange={(apiMachineType) => {
+                    setTopologyDirty(true)
+                    setTopology((current) => ({
+                      ...current,
+                      apiMachineType,
+                    }))
+                  }}
+                />
+                <TopologyControl
+                  count={topology.clientNodeCount}
+                  label="Sandbox nodes"
+                  machineType={topology.clientMachineType}
+                  machineTypes={[
+                    'n2-standard-8',
+                    'n2-standard-16',
+                    'n2-highmem-8',
+                  ]}
+                  max={100}
+                  onCountChange={(clientNodeCount) => {
+                    setTopologyDirty(true)
+                    setTopology((current) => ({ ...current, clientNodeCount }))
+                  }}
+                  onMachineTypeChange={(clientMachineType) => {
+                    setTopologyDirty(true)
+                    setTopology((current) => ({
+                      ...current,
+                      clientMachineType,
+                    }))
+                  }}
+                />
+                <TopologyControl
+                  count={topology.clickHouseNodeCount}
+                  label="ClickHouse nodes"
+                  machineType={topology.clickHouseMachineType}
+                  machineTypes={[
+                    'e2-standard-4',
+                    'e2-standard-8',
+                    'n2-standard-8',
+                  ]}
+                  max={10}
+                  onCountChange={(clickHouseNodeCount) => {
+                    setTopologyDirty(true)
+                    setTopology((current) => ({
+                      ...current,
+                      clickHouseNodeCount,
+                    }))
+                  }}
+                  onMachineTypeChange={(clickHouseMachineType) => {
+                    setTopologyDirty(true)
+                    setTopology((current) => ({
+                      ...current,
+                      clickHouseMachineType,
+                    }))
+                  }}
+                />
+              </CardContent>
+            </Card>
+            <Card variant="layer" className="rounded-lg">
+              <CardHeader>
+                <CardTitle>Target</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                <TargetCell
+                  label="Project"
+                  value={targetQuery.data?.projectId}
+                />
+                <TargetCell
+                  label="Region / zone"
+                  value={
+                    targetQuery.data
+                      ? `${targetQuery.data.region} / ${targetQuery.data.zone}`
+                      : undefined
+                  }
+                />
+                <TargetCell
+                  label="Namespace"
+                  value={targetQuery.data?.namespace}
+                />
+                <TargetCell
+                  label="Resource prefix"
+                  value={targetQuery.data?.prefix}
+                />
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="activity" className="mt-0 min-w-0">
+          <Card variant="layer" className="rounded-lg">
+            <CardHeader>
+              <CardTitle>Operation log</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <EventLog events={eventsQuery.data ?? []} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="access" className="mt-0 min-w-0">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <Card variant="layer" className="rounded-lg">
+              <CardHeader>
+                <CardTitle>Bootstrap access</CardTitle>
+              </CardHeader>
+              <CardContent className="min-w-0">
+                <Tabs defaultValue="gcloud" className="min-w-0 gap-3">
+                  <TabsList className="h-9 w-fit gap-5 border-b-0 bg-bg p-0 max-md:px-0">
+                    <TabsTrigger layoutkey="byoc-access-tabs" value="gcloud">
+                      gcloud
+                    </TabsTrigger>
+                    <TabsTrigger layoutkey="byoc-access-tabs" value="terraform">
+                      Terraform
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="gcloud" className="mt-0 min-w-0">
+                    <CodeBlock
+                      className="overflow-hidden rounded-md"
+                      icon={<TerminalIcon />}
+                      title="GCP bootstrap command"
+                      viewportProps={{ className: 'max-h-[420px]' }}
+                    >
+                      {bootstrapCommand({
+                        e2bPrincipal: selectedProjectPrincipal ?? '',
+                        projectId:
+                          selectedProject?.id ??
+                          targetQuery.data?.projectId ??
+                          '',
+                      })}
+                    </CodeBlock>
+                  </TabsContent>
+                  <TabsContent value="terraform" className="mt-0 min-w-0">
+                    <CodeBlock
+                      className="overflow-hidden rounded-md"
+                      icon={<TerminalIcon />}
+                      lang="hcl"
+                      title="Terraform bootstrap snippet"
+                      viewportProps={{ className: 'max-h-[420px]' }}
+                    >
+                      {bootstrapTerraform({
+                        e2bPrincipal: selectedProjectPrincipal ?? '',
+                        projectId:
+                          selectedProject?.id ??
+                          targetQuery.data?.projectId ??
+                          '',
+                      })}
+                    </CodeBlock>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+            <Card
+              variant="layer"
+              className="rounded-lg border-accent-error-highlight/30"
+            >
+              <CardHeader>
+                <CardTitle>Danger zone</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-3">
+                <p className="prose-body text-fg-secondary">
+                  Destroy infrastructure and detach this team's cluster.
+                </p>
                 <input
-                  className="h-9 rounded-md border border-stroke bg-bg px-3 font-mono text-sm text-fg outline-none transition-colors placeholder:text-fg-tertiary focus:border-stroke-active"
+                  className="h-9 rounded-md border border-stroke bg-bg px-3 font-mono text-sm text-fg outline-none focus:border-stroke-active"
+                  disabled={!deployment || deployment.status === 'destroyed'}
                   onChange={(event) =>
                     setDestroyConfirmation({
                       deploymentKey,
                       value: event.currentTarget.value,
                     })
                   }
-                  placeholder="destroy"
+                  placeholder="Type destroy"
                   value={destroyConfirmationValue}
                 />
-              </label>
-            ) : null}
-          </CardContent>
-        </Card>
-      </section>
-
-      <Card variant="layer" className="rounded-lg">
-        <CardHeader>
-          <CardTitle>BYOC Health</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          {healthChecks.map((check) => (
-            <HealthCell
-              key={check.label}
-              detail={check.detail}
-              label={check.label}
-              status={check.status}
-              value={check.value}
-            />
-          ))}
-        </CardContent>
-      </Card>
-
-      <Card variant="layer" className="rounded-lg">
-        <CardHeader>
-          <CardTitle>Bootstrap Access</CardTitle>
-        </CardHeader>
-        <CardContent className="flex min-w-0 flex-col gap-3">
-          <div className="flex min-w-0 flex-col gap-3">
-            <div className="flex items-start gap-3 rounded-md border border-stroke bg-bg p-3">
-              <KeyIcon className="mt-0.5 size-4 shrink-0 text-icon" />
-              <div className="min-w-0">
-                <p className="prose-body font-medium text-fg">
-                  Create one deployer service account in the selected project.
-                </p>
-                <p className="prose-body mt-1 text-fg-secondary">
-                  E2B gets impersonation on that account only. The dashboard
-                  does not need a service account JSON key for the intended GCP
-                  flow.
-                </p>
-              </div>
-            </div>
-            <Tabs defaultValue="gcloud" className="min-w-0 gap-3">
-              <TabsList className="h-9 w-fit gap-5 border-b-0 bg-bg p-0 max-md:px-0">
-                <TabsTrigger layoutkey="byoc-access-tabs" value="gcloud">
-                  gcloud
-                </TabsTrigger>
-                <TabsTrigger layoutkey="byoc-access-tabs" value="terraform">
-                  Terraform
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="gcloud" className="mt-0 min-w-0">
-                <CodeBlock
-                  className="overflow-hidden rounded-md"
-                  icon={<TerminalIcon />}
-                  title="GCP bootstrap command"
-                  viewportProps={{ className: 'max-h-[360px]' }}
+                <Button
+                  variant="error"
+                  disabled={!canDestroy}
+                  onClick={() =>
+                    deployment &&
+                    destroy.mutate({ teamSlug, deploymentId: deployment.id })
+                  }
+                  loading={destroy.isPending ? 'Destroying' : undefined}
                 >
-                  {bootstrapCommand({
-                    e2bPrincipal: selectedProjectPrincipal ?? '',
-                    projectId:
-                      selectedProject?.id ?? targetQuery.data?.projectId ?? '',
-                  })}
-                </CodeBlock>
-              </TabsContent>
-              <TabsContent value="terraform" className="mt-0 min-w-0">
-                <CodeBlock
-                  className="overflow-hidden rounded-md"
-                  icon={<TerminalIcon />}
-                  lang="hcl"
-                  title="Terraform bootstrap snippet"
-                  viewportProps={{ className: 'max-h-[360px]' }}
-                >
-                  {bootstrapTerraform({
-                    e2bPrincipal: selectedProjectPrincipal ?? '',
-                    projectId:
-                      selectedProject?.id ?? targetQuery.data?.projectId ?? '',
-                  })}
-                </CodeBlock>
-              </TabsContent>
-            </Tabs>
+                  Destroy BYOC
+                </Button>
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
-
-      <Card variant="layer" className="rounded-lg">
-        <CardHeader>
-          <CardTitle>Progress</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col divide-y divide-stroke">
-            {eventsQuery.data?.length ? (
-              eventsQuery.data.map((event) => (
-                <div
-                  className="grid gap-2 py-3 text-sm md:grid-cols-[80px_160px_1fr]"
-                  key={`${event.deployment_id}-${event.sequence}`}
-                >
-                  <span className="text-fg-tertiary">#{event.sequence}</span>
-                  <span className="font-medium text-fg">{event.phase}</span>
-                  <span className="text-fg-secondary">{event.message}</span>
-                </div>
-              ))
-            ) : (
-              <p className="prose-body text-fg-secondary">
-                Create a deployment to start recording runner events.
-              </p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+        </TabsContent>
+      </Tabs>
     </main>
   )
 }
 
 const emptyUuid = '00000000-0000-0000-0000-000000000000'
+
+function StatusBadge({ status }: { status?: Deployment['status'] }) {
+  const tone =
+    status === 'attached'
+      ? 'border-accent-success-highlight/40 bg-accent-success-highlight/10 text-accent-success-highlight'
+      : status === 'failed'
+        ? 'border-accent-error-highlight/40 bg-accent-error-highlight/10 text-accent-error-highlight'
+        : status && isActiveStatus(status)
+          ? 'border-accent-main-highlight/40 bg-accent-main-highlight/10 text-accent-main-highlight'
+          : 'border-stroke bg-bg-1 text-fg-secondary'
+
+  return (
+    <span
+      className={cn(
+        'rounded-full border px-2 py-0.5 text-xs font-medium',
+        tone
+      )}
+    >
+      {status?.replaceAll('_', ' ') ?? 'not configured'}
+    </span>
+  )
+}
+
+function OperationSummary({
+  deployment,
+  events,
+}: {
+  deployment?: Deployment
+  events: DeploymentEvent[]
+}) {
+  const latest = events.at(-1)
+  return (
+    <div className="flex min-w-0 flex-col gap-2 rounded-md border border-stroke bg-bg p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="font-medium text-fg">
+          {deployment
+            ? deployment.status.replaceAll('_', ' ')
+            : 'Waiting for setup'}
+        </div>
+        {latest ? (
+          <time
+            className="prose-caption text-fg-tertiary"
+            dateTime={latest.created_at}
+          >
+            {new Date(latest.created_at).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </time>
+        ) : null}
+      </div>
+      <p className="prose-body text-fg-secondary">
+        {latest?.message ??
+          'Connect a GCP project and create a deployment to begin.'}
+      </p>
+      {deployment?.error ? (
+        <p className="line-clamp-3 rounded bg-accent-error-highlight/10 p-2 text-sm text-fg">
+          {deployment.error}
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
+function TopologyControl({
+  count,
+  label,
+  machineType,
+  machineTypes,
+  max,
+  onCountChange,
+  onMachineTypeChange,
+}: {
+  count: number
+  label: string
+  machineType: string
+  machineTypes: string[]
+  max: number
+  onCountChange: (count: number) => void
+  onMachineTypeChange: (machineType: string) => void
+}) {
+  const options = machineTypes.includes(machineType)
+    ? machineTypes
+    : [machineType, ...machineTypes]
+
+  return (
+    <fieldset className="min-w-0 space-y-3 rounded-md border border-stroke bg-bg p-4">
+      <legend className="px-1 text-sm font-medium text-fg">{label}</legend>
+      <label className="block space-y-1">
+        <span className="prose-caption uppercase text-fg-tertiary">Count</span>
+        <input
+          className="h-9 w-full rounded-md border border-stroke bg-bg-1 px-3 text-sm text-fg outline-none focus:border-stroke-active"
+          max={max}
+          min={1}
+          onChange={(event) =>
+            onCountChange(
+              Math.max(1, Math.min(max, event.currentTarget.valueAsNumber || 1))
+            )
+          }
+          type="number"
+          value={count}
+        />
+      </label>
+      <div className="space-y-1">
+        <span className="prose-caption uppercase text-fg-tertiary">
+          Machine type
+        </span>
+        <Select onValueChange={onMachineTypeChange} value={machineType}>
+          <SelectTrigger className="h-9 w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((type) => (
+              <SelectItem key={type} value={type}>
+                {type}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </fieldset>
+  )
+}
+
+function EventLog({ events }: { events: DeploymentEvent[] }) {
+  if (!events.length) {
+    return (
+      <p className="prose-body text-fg-secondary">
+        No deployment activity yet.
+      </p>
+    )
+  }
+
+  return (
+    <div className="flex flex-col divide-y divide-stroke">
+      {events.toReversed().map((event) => (
+        <div
+          className="grid gap-1 py-3 text-sm md:grid-cols-[150px_180px_1fr]"
+          key={`${event.deployment_id}-${event.sequence}`}
+        >
+          <time className="text-fg-tertiary" dateTime={event.created_at}>
+            {new Date(event.created_at).toLocaleString()}
+          </time>
+          <span className="font-medium text-fg">
+            {event.phase.replaceAll('_', ' ')}
+          </span>
+          <span
+            className={cn(
+              'min-w-0 break-words text-fg-secondary',
+              event.level === 'warning' && 'text-accent-warning-highlight',
+              event.level === 'error' && 'text-accent-error-highlight'
+            )}
+          >
+            {event.message}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 function TargetCell({ label, value }: { label: string; value?: string }) {
   return (
@@ -639,41 +948,6 @@ function TargetCell({ label, value }: { label: string; value?: string }) {
       <div className="mt-1 min-w-0 truncate font-mono text-sm text-fg">
         {value ?? 'pending'}
       </div>
-    </div>
-  )
-}
-
-function StepStatus({
-  label,
-  status,
-  value,
-}: {
-  label: string
-  status: 'healthy' | 'pending' | 'failed'
-  value: string
-}) {
-  return (
-    <div className="flex items-start justify-between gap-3">
-      <span className="prose-body text-fg-secondary">{label}</span>
-      <span className="flex min-w-0 items-center gap-1 text-right text-sm font-medium text-fg">
-        {status === 'healthy' ? (
-          <CheckCircleIcon
-            aria-hidden="true"
-            className="size-4 text-accent-success-highlight"
-          />
-        ) : status === 'failed' ? (
-          <WarningIcon
-            aria-hidden="true"
-            className="size-4 text-accent-error-highlight"
-          />
-        ) : (
-          <span
-            aria-hidden="true"
-            className="size-2.5 rounded-full bg-fg-tertiary"
-          />
-        )}
-        <span className="min-w-0 truncate">{value}</span>
-      </span>
     </div>
   )
 }
@@ -711,45 +985,6 @@ function HealthCell({
         <p className="prose-caption mt-2 line-clamp-2 text-fg-secondary">
           {detail}
         </p>
-      ) : null}
-    </div>
-  )
-}
-
-function DeploymentSummary({ deployment }: { deployment?: Deployment }) {
-  if (!deployment) {
-    return (
-      <p className="prose-body text-fg-secondary">
-        No deployment draft yet. Create one after connecting Google Cloud.
-      </p>
-    )
-  }
-
-  return (
-    <div className="grid gap-3 md:grid-cols-2">
-      <SummaryRow label="Deployment" value={deployment.id} mono />
-      <SummaryRow label="Status" value={deployment.status} />
-      <SummaryRow label="Region" value={deployment.gcp.region} mono />
-      <SummaryRow label="Zone" value={deployment.gcp.zone} mono />
-      <SummaryRow label="Prefix" value={deployment.prefix} mono />
-      <SummaryRow label="Domain" value={deployment.domain_name} mono />
-      <SummaryRow
-        className="md:col-span-2"
-        label="Team region policy"
-        value={`One active BYOC region per team; this deployment targets ${deployment.gcp.region}.`}
-      />
-      <SummaryRow
-        className="md:col-span-2"
-        label="Planned deployer"
-        value={deployment.deployer_service_account.email}
-        mono
-      />
-      {deployment.error ? (
-        <SummaryRow
-          className="md:col-span-2"
-          label="Error"
-          value={deployment.error}
-        />
       ) : null}
     </div>
   )
@@ -919,6 +1154,10 @@ function latestByTimestamp<
 }
 
 function isActive(deployment: Deployment) {
+  return isActiveStatus(deployment.status)
+}
+
+function isActiveStatus(status: Deployment['status']) {
   return [
     'planning',
     'preparing_artifacts',
@@ -930,7 +1169,7 @@ function isActive(deployment: Deployment) {
     'building_base_template',
     'smoke_testing',
     'destroying',
-  ].includes(deployment.status)
+  ].includes(status)
 }
 
 function canRunDeploy(deployment: Deployment) {
@@ -940,6 +1179,7 @@ function canRunDeploy(deployment: Deployment) {
     'plan_changed',
     'plan_noop',
     'applied',
+    'attached',
     'failed',
   ].includes(deployment.status)
 }

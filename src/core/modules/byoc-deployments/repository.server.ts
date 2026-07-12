@@ -94,10 +94,21 @@ export interface Deployment {
     status: string
     roles: string[]
   }
+  terraform_settings?: TerraformSettings
+  cluster_id?: string
   status: DeploymentStatus
   error?: string
   created_at: string
   updated_at: string
+}
+
+export interface TerraformSettings {
+  api_node_count?: number
+  api_machine_type?: string
+  client_node_count?: number
+  client_machine_type?: string
+  clickhouse_node_count?: number
+  clickhouse_machine_type?: string
 }
 
 export interface DeploymentEvent {
@@ -285,7 +296,7 @@ export function createByocDeploymentsRepository({
       return response.events
     },
 
-    async deploy(deploymentId: string) {
+    async deploy(deploymentId: string, settings: TerraformSettings) {
       await getOwnedDeployment(deploymentId)
       const response = await request<DeployResponse>(
         `/deployments/${deploymentId}/deploy`,
@@ -293,6 +304,14 @@ export function createByocDeploymentsRepository({
           method: 'POST',
           body: JSON.stringify({
             execute: true,
+            variables: {
+              api_cluster_size: settings.api_node_count,
+              api_machine_type: settings.api_machine_type,
+              client_cluster_size: settings.client_node_count,
+              client_machine_type: settings.client_machine_type,
+              clickhouse_cluster_size: settings.clickhouse_node_count,
+              clickhouse_machine_type: settings.clickhouse_machine_type,
+            },
             stages: [
               {
                 name: 'base_infra',

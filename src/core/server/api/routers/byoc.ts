@@ -11,6 +11,24 @@ const connectionIdInput = z.object({
   connectionId: z.string().uuid(),
 })
 
+const topologyInput = z.object({
+  apiNodeCount: z.number().int().min(1).max(20),
+  apiMachineType: z
+    .string()
+    .regex(/^[a-z0-9-]+$/)
+    .max(64),
+  clientNodeCount: z.number().int().min(1).max(100),
+  clientMachineType: z
+    .string()
+    .regex(/^[a-z0-9-]+$/)
+    .max(64),
+  clickHouseNodeCount: z.number().int().min(1).max(10),
+  clickHouseMachineType: z
+    .string()
+    .regex(/^[a-z0-9-]+$/)
+    .max(64),
+})
+
 export const byocRouter = createTRPCRouter({
   target: protectedTeamProcedure.query(({ ctx }) => {
     return createByocDeploymentsRepository({ teamId: ctx.teamId }).target()
@@ -76,11 +94,18 @@ export const byocRouter = createTRPCRouter({
     }),
 
   deploy: protectedTeamProcedure
-    .input(deploymentIdInput)
+    .input(deploymentIdInput.extend({ topology: topologyInput }))
     .mutation(({ ctx, input }) => {
       return createByocDeploymentsRepository({
         teamId: ctx.teamId,
-      }).deploy(input.deploymentId)
+      }).deploy(input.deploymentId, {
+        api_node_count: input.topology.apiNodeCount,
+        api_machine_type: input.topology.apiMachineType,
+        client_node_count: input.topology.clientNodeCount,
+        client_machine_type: input.topology.clientMachineType,
+        clickhouse_node_count: input.topology.clickHouseNodeCount,
+        clickhouse_machine_type: input.topology.clickHouseMachineType,
+      })
     }),
 
   plan: protectedTeamProcedure
