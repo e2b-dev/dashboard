@@ -70,6 +70,7 @@ describe('buildDeploymentChecks', () => {
     )
 
     expect(checks.map((check) => check.label)).toEqual([
+      'Terraform access verified',
       'Team routing detached',
       'Infrastructure destroyed',
     ])

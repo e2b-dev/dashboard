@@ -64,6 +64,11 @@ const deployDefinitions = [
 
 const destroyDefinitions = [
   {
+    label: 'Terraform access verified',
+    phase: 'terraform_destroy_preflight',
+    messageIncludes: 'Terraform backend is ready',
+  },
+  {
     label: 'Team routing detached',
     phase: 'detaching_cluster',
     messageIncludes: 'Team routing detached',
