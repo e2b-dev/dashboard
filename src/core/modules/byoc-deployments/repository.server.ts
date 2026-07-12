@@ -543,6 +543,8 @@ function assertConfiguredDeployment(
     deployment.gcp.project_id !== target.projectId ||
     deployment.gcp.region !== target.region ||
     deployment.gcp.zone !== target.zone ||
+    deployment.domain_name !== target.domainName ||
+    deployment.prefix !== target.prefix ||
     deployment.deployer_service_account.project_id !== target.projectId
   ) {
     throw new TRPCError({

@@ -18,6 +18,7 @@ const browserNodeModuleStubs = {
 }
 
 const config: NextConfig = {
+  output: 'standalone',
   reactStrictMode: true,
   reactCompiler: true,
   experimental: {
