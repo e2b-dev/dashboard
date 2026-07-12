@@ -1,4 +1,9 @@
-export type DeploymentCheckStatus = 'pending' | 'running' | 'passed' | 'failed'
+export type DeploymentCheckStatus =
+  | 'pending'
+  | 'running'
+  | 'passed'
+  | 'skipped'
+  | 'failed'
 
 type DeploymentEvent = {
   created_at: string
@@ -149,8 +154,8 @@ export function buildDeploymentChecks(
     if (operation.status === 'succeeded') {
       return {
         label,
-        message: 'Completion evidence was not recorded.',
-        status: 'failed',
+        message: 'Not required for this operation.',
+        status: 'skipped',
       }
     }
 

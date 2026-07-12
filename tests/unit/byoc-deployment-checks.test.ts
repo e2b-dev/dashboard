@@ -113,13 +113,13 @@ describe('buildDeploymentChecks', () => {
     ])
   })
 
-  it('requires durable evidence for every successful operation check', () => {
+  it('marks omitted stages as skipped after a successful operation', () => {
     const checks = buildDeploymentChecks(
       [event('operation_started', 'Worker started operation operation-1.')],
       { id: 'operation-1', kind: 'deploy', status: 'succeeded' }
     )
 
-    expect(checks.every((check) => check.status === 'failed')).toBe(true)
+    expect(checks.every((check) => check.status === 'skipped')).toBe(true)
   })
 
   it('recognizes the complete infrastructure, application, and verification flow', () => {

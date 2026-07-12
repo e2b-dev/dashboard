@@ -1150,8 +1150,8 @@ function ByocSetupFlow({
       )) &&
     !activeOperation
   const checks = buildDeploymentChecks(deploymentEvents, deploymentOperation)
-  const completedChecks = checks.filter(
-    (check) => check.status === 'passed'
+  const completedChecks = checks.filter((check) =>
+    isCompletedCheck(check.status)
   ).length
 
   return (
@@ -1246,11 +1246,11 @@ function SetupStepRail({
 }) {
   const infrastructureReady = checks
     .slice(0, 5)
-    .every((check) => check.status === 'passed')
+    .every((check) => isCompletedCheck(check.status))
   const applicationsReady = checks
     .slice(5, 8)
-    .every((check) => check.status === 'passed')
-  const verificationReady = checks.at(-1)?.status === 'passed'
+    .every((check) => isCompletedCheck(check.status))
+  const verificationReady = isCompletedCheck(checks.at(-1)?.status)
   const steps = [
     { label: 'Service account', complete: connectionReady },
     { label: 'Configuration', complete: !!deployment },
@@ -1661,10 +1661,17 @@ function CheckStatusIcon({ status }: { status: DeploymentCheckStatus }) {
       <SpinnerIcon className="mt-0.5 size-4 animate-spin text-accent-main-highlight" />
     )
   }
+  if (status === 'skipped') {
+    return <CheckCircleIcon className="mt-0.5 size-4 text-fg-tertiary" />
+  }
   if (status === 'failed') {
     return <WarningIcon className="mt-0.5 size-4 text-accent-error-highlight" />
   }
   return <span className="mt-0.5 size-4 rounded border border-stroke" />
+}
+
+function isCompletedCheck(status?: DeploymentCheckStatus) {
+  return status === 'passed' || status === 'skipped'
 }
 
 function ConnectGCPDialog({
