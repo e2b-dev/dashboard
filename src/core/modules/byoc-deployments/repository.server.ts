@@ -96,6 +96,7 @@ export interface Deployment {
   }
   terraform_settings?: TerraformSettings
   cluster_id?: string
+  cluster_endpoint?: string
   status: DeploymentStatus
   error?: string
   created_at: string

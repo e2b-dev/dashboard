@@ -500,9 +500,7 @@ export function ByocDeploymentPanel() {
                 />
                 <SummaryRow
                   label="Endpoint"
-                  value={
-                    deployment ? `api.${deployment.domain_name}:443` : 'pending'
-                  }
+                  value={deployment?.cluster_endpoint ?? 'pending'}
                   mono
                 />
                 <SummaryRow
@@ -1027,11 +1025,11 @@ function buildHealthChecks({
     },
     {
       detail: nodeID
-        ? `Latest validation observed node ${nodeID}.`
-        : 'Node count needs a backend readiness endpoint; validation currently reports the observed node.',
-      label: 'Nodes',
+        ? `The latest sandbox smoke was placed on node ${nodeID}.`
+        : 'Waiting for a sandbox smoke through the attached cluster route.',
+      label: 'Placement',
       status: nodeID ? 'healthy' : attached ? 'warning' : 'waiting',
-      value: nodeID ? '1 observed' : 'pending',
+      value: nodeID ? 'verified' : 'pending',
     },
   ] satisfies Array<{
     detail?: string
