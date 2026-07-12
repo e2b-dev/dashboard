@@ -40,6 +40,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
 
 type Deployment = TRPCRouterOutputs['byoc']['listDeployments'][number]
 type DeploymentEvent = TRPCRouterOutputs['byoc']['listEvents'][number]
+type ByocOperation = TRPCRouterOutputs['byoc']['listOperations'][number]
 type HealthStatus = 'healthy' | 'checking' | 'waiting' | 'warning' | 'failed'
 type TopologyDraft = {
   apiNodeCount: number
@@ -559,6 +560,7 @@ export function ByocDeploymentPanel() {
                 <OperationSummary
                   deployment={deployment}
                   events={eventsQuery.data ?? []}
+                  operation={latestOperation}
                 />
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   {healthChecks.slice(0, 4).map((check) => (
@@ -1024,18 +1026,22 @@ function StatusBadge({ status }: { status?: Deployment['status'] }) {
 function OperationSummary({
   deployment,
   events,
+  operation,
 }: {
   deployment?: Deployment
   events: DeploymentEvent[]
+  operation?: ByocOperation
 }) {
   const latest = events.at(-1)
   return (
     <div className="flex min-w-0 flex-col gap-2 rounded-md border border-stroke bg-bg p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="font-medium text-fg">
-          {deployment
-            ? deployment.status.replaceAll('_', ' ')
-            : 'Waiting for setup'}
+          {operation && isActiveOperation(operation.status)
+            ? `${operation.kind} · ${operation.status.replaceAll('_', ' ')}`
+            : deployment
+              ? deployment.status.replaceAll('_', ' ')
+              : 'Waiting for setup'}
         </div>
         {latest ? (
           <time
@@ -1057,6 +1063,11 @@ function OperationSummary({
       {deployment?.error ? (
         <p className="line-clamp-3 rounded bg-accent-error-highlight/10 p-2 text-sm text-fg">
           {deployment.error}
+        </p>
+      ) : null}
+      {operation?.error && operation.error !== deployment?.error ? (
+        <p className="rounded bg-accent-error-highlight/10 p-2 text-sm text-fg">
+          {operation.error}
         </p>
       ) : null}
     </div>
