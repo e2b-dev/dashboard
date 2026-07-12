@@ -122,26 +122,28 @@ export interface DeploymentEvent {
   created_at: string
 }
 
-export interface PlanResponse {
-  deployment: Deployment
-  executed: boolean
-  changed: boolean
-  var_file_path?: string
-  plan_path?: string
-}
+export type OperationStatus =
+  | 'queued'
+  | 'starting'
+  | 'planning'
+  | 'plan_ready'
+  | 'applying'
+  | 'validating'
+  | 'attaching'
+  | 'succeeded'
+  | 'failed_retryable'
+  | 'failed_terminal'
+  | 'cancelled'
+  | 'stale'
 
-export interface ApplyResponse {
-  deployment: Deployment
-  outputs?: Record<string, unknown>
-}
-
-export interface DestroyResponse {
-  deployment: Deployment
-}
-
-export interface DeployResponse {
-  deployment: Deployment
-  events: DeploymentEvent[]
+export interface ByocOperation {
+  id: string
+  deployment_id: string
+  kind: 'deploy' | 'destroy'
+  status: OperationStatus
+  error?: string
+  created_at: string
+  updated_at: string
 }
 
 export function createByocDeploymentsRepository({
@@ -304,84 +306,38 @@ export function createByocDeploymentsRepository({
       return response.events
     },
 
+    async listOperations(deploymentId: string) {
+      await getOwnedDeployment(deploymentId)
+      return request<ByocOperation[]>(`/deployments/${deploymentId}/operations`)
+    },
+
     async deploy(deploymentId: string, settings: TerraformSettings) {
       await getOwnedDeployment(deploymentId)
-      const response = await request<DeployResponse>(
-        `/deployments/${deploymentId}/deploy`,
+      return request<ByocOperation>(
+        `/deployments/${deploymentId}/operations/deploy`,
         {
           method: 'POST',
           body: JSON.stringify({
-            execute: true,
-            variables: {
-              api_cluster_size: settings.api_node_count,
-              api_machine_type: settings.api_machine_type,
-              client_cluster_size: settings.client_node_count,
-              client_machine_type: settings.client_machine_type,
-              clickhouse_cluster_size: settings.clickhouse_node_count,
-              clickhouse_machine_type: settings.clickhouse_machine_type,
-            },
-            stages: [
-              {
-                name: 'base_infra',
-                targets: ['module.init', 'module.redis', 'module.cluster'],
-              },
-              {
-                name: 'nomad_services',
-                targets: ['module.nomad'],
-              },
-              {
-                name: 'final_converge',
-              },
-            ],
-            wait_for_nomad: true,
-            health_check: true,
-            register_cluster: true,
-            build_base_template: true,
-            smoke_test: true,
+            api_node_count: settings.api_node_count,
+            api_machine_type: settings.api_machine_type,
+            client_node_count: settings.client_node_count,
+            client_machine_type: settings.client_machine_type,
+            clickhouse_node_count: settings.clickhouse_node_count,
+            clickhouse_machine_type: settings.clickhouse_machine_type,
           }),
         }
       )
-      assertConfiguredDeployment(response.deployment, teamId, target)
-      return response
-    },
-
-    async plan(deploymentId: string) {
-      await getOwnedDeployment(deploymentId)
-      const response = await request<PlanResponse>(
-        `/deployments/${deploymentId}/plan`,
-        {
-          method: 'POST',
-          body: JSON.stringify({ execute: true }),
-        }
-      )
-      assertConfiguredDeployment(response.deployment, teamId, target)
-      return response
-    },
-
-    async apply(deploymentId: string) {
-      await getOwnedDeployment(deploymentId)
-      const response = await request<ApplyResponse>(
-        `/deployments/${deploymentId}/apply`,
-        {
-          method: 'POST',
-          body: JSON.stringify({}),
-        }
-      )
-      assertConfiguredDeployment(response.deployment, teamId, target)
-      return response
     },
 
     async destroy(deploymentId: string) {
       await getOwnedDeployment(deploymentId)
-      const response = await request<DestroyResponse>(
-        `/deployments/${deploymentId}/destroy`,
+      return request<ByocOperation>(
+        `/deployments/${deploymentId}/operations/destroy`,
         {
           method: 'POST',
           body: JSON.stringify({}),
         }
       )
-      assertConfiguredDeployment(response.deployment, teamId, target)
-      return response
     },
   }
 }

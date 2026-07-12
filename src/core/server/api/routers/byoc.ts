@@ -103,6 +103,14 @@ export const byocRouter = createTRPCRouter({
       }).listEvents(input.deploymentId)
     }),
 
+  listOperations: protectedTeamProcedure
+    .input(deploymentIdInput)
+    .query(({ ctx, input }) => {
+      return createByocDeploymentsRepository({
+        teamId: ctx.teamId,
+      }).listOperations(input.deploymentId)
+    }),
+
   deploy: protectedTeamProcedure
     .input(deploymentIdInput.extend({ topology: topologyInput }))
     .mutation(({ ctx, input }) => {
@@ -116,22 +124,6 @@ export const byocRouter = createTRPCRouter({
         clickhouse_node_count: input.topology.clickHouseNodeCount,
         clickhouse_machine_type: input.topology.clickHouseMachineType,
       })
-    }),
-
-  plan: protectedTeamProcedure
-    .input(deploymentIdInput)
-    .mutation(({ ctx, input }) => {
-      return createByocDeploymentsRepository({
-        teamId: ctx.teamId,
-      }).plan(input.deploymentId)
-    }),
-
-  applyDeployment: protectedTeamProcedure
-    .input(deploymentIdInput)
-    .mutation(({ ctx, input }) => {
-      return createByocDeploymentsRepository({
-        teamId: ctx.teamId,
-      }).apply(input.deploymentId)
     }),
 
   destroy: protectedTeamProcedure

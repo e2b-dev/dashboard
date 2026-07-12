@@ -195,7 +195,7 @@ describe('BYOC deployments repository', () => {
     )
   })
 
-  it('sends the selected topology as Terraform variables', async () => {
+  it('queues a topology-only deploy operation', async () => {
     const deployment = {
       id: '11111111-1111-4111-8111-111111111111',
       team_id: 'team-a',
@@ -224,8 +224,12 @@ describe('BYOC deployments repository', () => {
       .mockResolvedValueOnce(Response.json(deployment))
       .mockResolvedValueOnce(
         Response.json({
-          deployment: { ...deployment, status: 'attached' },
-          events: [],
+          id: '22222222-2222-4222-8222-222222222222',
+          deployment_id: deployment.id,
+          kind: 'deploy',
+          status: 'queued',
+          created_at: '2026-07-11T00:00:01Z',
+          updated_at: '2026-07-11T00:00:01Z',
         })
       )
 
@@ -241,17 +245,15 @@ describe('BYOC deployments repository', () => {
 
     const request = fetchMock.mock.calls[1]
     expect(request?.[0].toString()).toBe(
-      `http://localhost:8098/deployments/${deployment.id}/deploy`
+      `http://localhost:8098/deployments/${deployment.id}/operations/deploy`
     )
-    expect(JSON.parse(String(request?.[1]?.body))).toMatchObject({
-      variables: {
-        api_cluster_size: 3,
-        api_machine_type: 'e2-standard-8',
-        client_cluster_size: 5,
-        client_machine_type: 'n2-standard-16',
-        clickhouse_cluster_size: 2,
-        clickhouse_machine_type: 'n2-standard-8',
-      },
+    expect(JSON.parse(String(request?.[1]?.body))).toEqual({
+      api_node_count: 3,
+      api_machine_type: 'e2-standard-8',
+      client_node_count: 5,
+      client_machine_type: 'n2-standard-16',
+      clickhouse_node_count: 2,
+      clickhouse_machine_type: 'n2-standard-8',
     })
   })
 })

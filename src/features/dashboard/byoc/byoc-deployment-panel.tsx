@@ -1,7 +1,7 @@
 'use client'
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils'
 import type { TRPCRouterOutputs } from '@/trpc/client'
@@ -267,6 +267,42 @@ export function ByocDeploymentPanel() {
         : false,
   })
 
+  const operationsQuery = useQuery({
+    ...trpc.byoc.listOperations.queryOptions({
+      teamSlug,
+      deploymentId: deployment?.id ?? emptyUuid,
+    }),
+    enabled: !!deployment?.id,
+    refetchInterval: (query) =>
+      query.state.data?.some((operation) => isActiveOperation(operation.status))
+        ? 1500
+        : false,
+  })
+  const activeOperation = operationsQuery.data?.find((operation) =>
+    isActiveOperation(operation.status)
+  )
+  const latestOperation = operationsQuery.data?.[0]
+
+  useEffect(() => {
+    if (!deployment?.id || !latestOperation?.updated_at) return
+    void queryClient.invalidateQueries(
+      trpc.byoc.listDeployments.queryFilter({ teamSlug })
+    )
+    void queryClient.invalidateQueries(
+      trpc.byoc.listEvents.queryFilter({
+        teamSlug,
+        deploymentId: deployment.id,
+      })
+    )
+  }, [
+    deployment?.id,
+    latestOperation?.updated_at,
+    queryClient,
+    teamSlug,
+    trpc.byoc.listDeployments,
+    trpc.byoc.listEvents,
+  ])
+
   const refresh = async () => {
     await Promise.all([
       queryClient.invalidateQueries(
@@ -288,6 +324,14 @@ export function ByocDeploymentPanel() {
       deployment?.id
         ? queryClient.invalidateQueries(
             trpc.byoc.listEvents.queryFilter({
+              teamSlug,
+              deploymentId: deployment.id,
+            })
+          )
+        : Promise.resolve(),
+      deployment?.id
+        ? queryClient.invalidateQueries(
+            trpc.byoc.listOperations.queryFilter({
               teamSlug,
               deploymentId: deployment.id,
             })
@@ -321,7 +365,7 @@ export function ByocDeploymentPanel() {
         setRunningDeploymentId(variables.deploymentId)
       },
       onSuccess: async (data) => {
-        setSelectedDeploymentId(data.deployment.id)
+        setSelectedDeploymentId(data.deployment_id)
         await refresh()
       },
       onSettled: () => {
@@ -336,7 +380,7 @@ export function ByocDeploymentPanel() {
         setRunningDeploymentId(variables.deploymentId)
       },
       onSuccess: async (data) => {
-        setSelectedDeploymentId(data.deployment.id)
+        setSelectedDeploymentId(data.deployment_id)
         setDestroyConfirmation({ deploymentKey: '', value: '' })
         await refresh()
       },
@@ -366,7 +410,12 @@ export function ByocDeploymentPanel() {
     target: targetQuery.data,
   })
   const operationPending =
-    createDeployment.isPending || deploy.isPending || destroy.isPending
+    createDeployment.isPending ||
+    deploy.isPending ||
+    destroy.isPending ||
+    !!activeOperation ||
+    (!!deployment?.id && operationsQuery.isPending) ||
+    operationsQuery.isError
   const selectedDeploymentActive = deployment ? isActive(deployment) : false
   const anyDeploymentActive = deploymentsQuery.data?.some(isActive) ?? false
   const canCreateDeployment =
@@ -392,11 +441,13 @@ export function ByocDeploymentPanel() {
     mutationError(createDeployment.error) ??
     mutationError(deploy.error) ??
     mutationError(destroy.error) ??
+    latestOperation?.error ??
     queryError(targetQuery.error) ??
     queryError(healthQuery.error) ??
     queryError(connectionsQuery.error) ??
     queryError(projectsQuery.error) ??
     queryError(deploymentsQuery.error) ??
+    queryError(operationsQuery.error) ??
     (eventsQuery.data?.length ? undefined : queryError(eventsQuery.error))
   const runDeploy = () => {
     if (!deployment) return
@@ -1325,6 +1376,19 @@ function latestByTimestamp<
 
 function isActive(deployment: Deployment) {
   return isActiveStatus(deployment.status)
+}
+
+function isActiveOperation(status: string) {
+  return [
+    'queued',
+    'starting',
+    'planning',
+    'plan_ready',
+    'applying',
+    'validating',
+    'attaching',
+    'stale',
+  ].includes(status)
 }
 
 function isActiveStatus(status: Deployment['status']) {
