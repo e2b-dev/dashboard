@@ -1,0 +1,52 @@
+steps:
+  - name: oven/bun:1.2.0
+    id: build-dashboard
+    entrypoint: sh
+    env:
+      - NEXT_PUBLIC_E2B_DOMAIN=${_E2B_DOMAIN}
+      - NEXT_PUBLIC_DASHBOARD_API_URL=${_DASHBOARD_API_URL}
+      - NEXT_PUBLIC_E2B_SANDBOX_URL=${_SANDBOX_URL}
+      - NEXT_PUBLIC_INFRA_API_URL=${_INFRA_API_URL}
+      - NEXT_PUBLIC_ORY_SDK_URL=${_KRATOS_PUBLIC_URL}
+      - NEXT_PUBLIC_INCLUDE_BILLING=0
+      - NEXT_PUBLIC_INCLUDE_REPORT_ISSUE=0
+      - NEXT_PUBLIC_INCLUDE_STATUS_INDICATOR=0
+      - AUTH_SECRET=build-only
+      - ORY_SDK_URL=${_KRATOS_PUBLIC_URL}
+      - ORY_OAUTH2_CLIENT_ID=build-only
+      - ORY_OAUTH2_CLIENT_SECRET=build-only
+      - ORY_OAUTH2_AUDIENCE=dashboard-api
+      - ORY_KRATOS_ADMIN_URL=${_KRATOS_ADMIN_URL}
+      - ORY_HYDRA_ADMIN_URL=${_HYDRA_ADMIN_URL}
+      - DASHBOARD_API_ADMIN_TOKEN=build-only
+    args:
+      - -euc
+      - |
+        bun install --frozen-lockfile
+        bun run build
+  - name: gcr.io/cloud-builders/docker
+    id: build-image
+    args:
+      - build
+      - --label=org.opencontainers.image.revision=${_DASHBOARD_SHA}
+      - --tag=${_IMAGE}
+      - --file=Dockerfile.cloud-run
+      - .
+  - name: gcr.io/cloud-builders/docker
+    id: push-image
+    args: [push, "${_IMAGE}"]
+images:
+  - ${_IMAGE}
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: E2_HIGHCPU_8
+substitutions:
+  _DASHBOARD_SHA: required
+  _IMAGE: required
+  _E2B_DOMAIN: required
+  _DASHBOARD_API_URL: required
+  _SANDBOX_URL: required
+  _INFRA_API_URL: required
+  _KRATOS_PUBLIC_URL: required
+  _KRATOS_ADMIN_URL: required
+  _HYDRA_ADMIN_URL: required
