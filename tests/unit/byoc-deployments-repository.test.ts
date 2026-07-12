@@ -147,11 +147,14 @@ describe('BYOC deployments repository', () => {
 
     const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
     await repository.createCloudConnection(
-      'e2b-byoc-deployer@test-project.iam.gserviceaccount.com'
+      'e2b-byoc-deployer@test-project.iam.gserviceaccount.com',
+      undefined,
+      '33333333-3333-4333-8333-333333333333'
     )
 
     const request = fetchMock.mock.calls[0]
     expect(JSON.parse(String(request?.[1]?.body))).toMatchObject({
+      client_request_id: '33333333-3333-4333-8333-333333333333',
       team_id: 'team-a',
       subject_email: 'e2b-byoc-deployer@test-project.iam.gserviceaccount.com',
       authorized_projects: [
@@ -187,10 +190,77 @@ describe('BYOC deployments repository', () => {
     )
   })
 
+  it('sends the deployment idempotency key unchanged', async () => {
+    const connection = {
+      id: '22222222-2222-4222-8222-222222222222',
+      team_id: 'team-a',
+      provider: 'gcp' as const,
+      mode: 'keyless_impersonation' as const,
+      status: 'connected',
+      subject_email: 'e2b-byoc-deployer@test-project.iam.gserviceaccount.com',
+      authorized_projects: [
+        {
+          project_id: 'test-project',
+          default_region: 'test-region',
+          default_zone: 'test-zone-a',
+          namespace: 'test-namespace',
+        },
+      ],
+      required_project_roles: [],
+      created_at: '2026-07-11T00:00:00Z',
+      updated_at: '2026-07-11T00:00:00Z',
+    }
+    const fetchMock = vi.mocked(fetch)
+    fetchMock
+      .mockResolvedValueOnce(Response.json({ cloud_connections: [connection] }))
+      .mockResolvedValueOnce(
+        Response.json({
+          id: '11111111-1111-4111-8111-111111111111',
+          team_id: 'team-a',
+          provider: 'gcp',
+          gcp: {
+            project_id: 'test-project',
+            region: 'test-region',
+            zone: 'test-zone-a',
+          },
+          domain_name: 'test.example.com',
+          prefix: 'test-',
+          deployer_service_account: {
+            account_id: 'e2b-byoc-deployer',
+            email: 'e2b-byoc-deployer@test-project.iam.gserviceaccount.com',
+            display_name: 'E2B BYOC deployer',
+            project_id: 'test-project',
+            status: 'planned',
+            roles: [],
+          },
+          status: 'draft',
+          created_at: '2026-07-11T00:00:00Z',
+          updated_at: '2026-07-11T00:00:00Z',
+        })
+      )
+
+    const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
+    await repository.createDeployment(
+      connection.id,
+      'test-project',
+      '33333333-3333-4333-8333-333333333333'
+    )
+
+    expect(
+      JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body))
+    ).toMatchObject({
+      client_request_id: '33333333-3333-4333-8333-333333333333',
+      cloud_connection_id: connection.id,
+      cloud_project_id: 'test-project',
+      team_id: 'team-a',
+    })
+  })
+
   it('replaces the verified identity on an existing deployment', async () => {
     const deployment = {
       id: '11111111-1111-4111-8111-111111111111',
       team_id: 'team-a',
+      cloud_connection_id: '22222222-2222-4222-8222-222222222222',
       provider: 'gcp',
       gcp: {
         project_id: 'test-project',
@@ -238,12 +308,20 @@ describe('BYOC deployments repository', () => {
     const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
     await repository.createCloudConnection(
       connection.subject_email,
-      '11111111-1111-4111-8111-111111111111'
+      '11111111-1111-4111-8111-111111111111',
+      '33333333-3333-4333-8333-333333333333',
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
     )
 
     expect(fetchMock.mock.calls[1]?.[0].toString()).toBe(
       'http://localhost:8098/deployments/11111111-1111-4111-8111-111111111111/cloud-connection'
     )
+    expect(
+      JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body))
+    ).toMatchObject({
+      client_request_id: '33333333-3333-4333-8333-333333333333',
+      expected_cloud_connection_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    })
   })
 
   it('checks deployment ownership before replacing its connection', async () => {
@@ -278,9 +356,49 @@ describe('BYOC deployments repository', () => {
     await expect(
       repository.createCloudConnection(
         'replacement@test-project.iam.gserviceaccount.com',
-        '11111111-1111-4111-8111-111111111111'
+        '11111111-1111-4111-8111-111111111111',
+        '33333333-3333-4333-8333-333333333333'
       )
     ).rejects.toMatchObject({ code: 'NOT_FOUND' })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not replace a deployment without current connection state', async () => {
+    const fetchMock = vi.mocked(fetch)
+    fetchMock.mockResolvedValueOnce(
+      Response.json({
+        id: '11111111-1111-4111-8111-111111111111',
+        team_id: 'team-a',
+        provider: 'gcp',
+        gcp: {
+          project_id: 'test-project',
+          region: 'test-region',
+          zone: 'test-zone-a',
+        },
+        domain_name: 'test.example.com',
+        prefix: 'test-',
+        deployer_service_account: {
+          account_id: 'e2b-byoc-deployer',
+          email: 'e2b-byoc-deployer@test-project.iam.gserviceaccount.com',
+          display_name: 'E2B BYOC deployer',
+          project_id: 'test-project',
+          status: 'planned',
+          roles: [],
+        },
+        status: 'attached',
+        created_at: '2026-07-11T00:00:00Z',
+        updated_at: '2026-07-11T00:00:00Z',
+      })
+    )
+
+    const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
+    await expect(
+      repository.createCloudConnection(
+        'replacement@test-project.iam.gserviceaccount.com',
+        '11111111-1111-4111-8111-111111111111',
+        '33333333-3333-4333-8333-333333333333'
+      )
+    ).rejects.toMatchObject({ code: 'CONFLICT' })
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 

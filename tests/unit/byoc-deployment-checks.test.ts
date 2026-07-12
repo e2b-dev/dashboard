@@ -113,15 +113,12 @@ describe('buildDeploymentChecks', () => {
     ])
   })
 
-  it('requires durable worker access evidence when the operation succeeds', () => {
+  it('requires durable evidence for every successful operation check', () => {
     const checks = buildDeploymentChecks(
       [event('operation_started', 'Worker started operation operation-1.')],
       { id: 'operation-1', kind: 'deploy', status: 'succeeded' }
     )
 
-    expect(checks[0]?.status).toBe('failed')
-    expect(checks.slice(1).every((check) => check.status === 'passed')).toBe(
-      true
-    )
+    expect(checks.every((check) => check.status === 'failed')).toBe(true)
   })
 })

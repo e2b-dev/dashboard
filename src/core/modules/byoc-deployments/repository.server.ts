@@ -34,6 +34,7 @@ export type DeploymentStatus =
 
 export interface CloudConnection {
   id: string
+  client_request_id?: string
   team_id: string
   provider: 'gcp'
   mode: 'keyless_impersonation' | 'mock'
@@ -77,6 +78,7 @@ export interface CloudProject {
 
 export interface Deployment {
   id: string
+  client_request_id?: string
   team_id: string
   cloud_connection_id?: string
   cloud_project_id?: string
@@ -238,16 +240,31 @@ export function createByocDeploymentsRepository({
 
     async createCloudConnection(
       deployerServiceAccountEmail: string,
-      deploymentId?: string
+      deploymentId: string | undefined,
+      clientRequestId: string,
+      expectedCloudConnectionId?: string
     ) {
-      if (deploymentId) await getOwnedDeployment(deploymentId)
+      const deployment = deploymentId
+        ? await getOwnedDeployment(deploymentId)
+        : undefined
+      const expectedConnectionId =
+        expectedCloudConnectionId ?? deployment?.cloud_connection_id
+      if (deploymentId && !expectedConnectionId) {
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message:
+            'The deployment connection changed or is unavailable. Refresh before replacing it.',
+        })
+      }
       const connection = await createCloudConnectionWithMode(
         request,
         teamId,
         getCloudConnectionMode(),
         deployerServiceAccountEmail,
         target,
-        deploymentId
+        deploymentId,
+        clientRequestId,
+        expectedConnectionId
       )
 
       assertConfiguredConnection(connection, teamId, target)
@@ -281,13 +298,18 @@ export function createByocDeploymentsRepository({
       return projects
     },
 
-    async createDeployment(connectionId: string, projectId: string) {
+    async createDeployment(
+      connectionId: string,
+      projectId: string,
+      clientRequestId: string
+    ) {
       assertConfiguredProjectId(projectId, target)
       await getOwnedCloudConnection(connectionId)
 
       const deployment = await request<Deployment>('/deployments', {
         method: 'POST',
         body: JSON.stringify({
+          client_request_id: clientRequestId,
           team_id: teamId,
           cloud_connection_id: connectionId,
           cloud_project_id: projectId,
@@ -375,7 +397,9 @@ function createCloudConnectionWithMode(
   mode: CloudConnection['mode'],
   deployerServiceAccountEmail: string,
   target: ByocTarget,
-  deploymentId?: string
+  deploymentId: string | undefined,
+  clientRequestId: string,
+  expectedCloudConnectionId?: string
 ) {
   const path = deploymentId
     ? `/deployments/${deploymentId}/cloud-connection`
@@ -383,6 +407,8 @@ function createCloudConnectionWithMode(
   return request<CloudConnection | { connection: CloudConnection }>(path, {
     method: 'POST',
     body: JSON.stringify({
+      client_request_id: clientRequestId,
+      expected_cloud_connection_id: expectedCloudConnectionId,
       team_id: teamId,
       provider: 'gcp',
       mode,

@@ -23,7 +23,6 @@ const workerAccessDefinition = {
   label: 'Worker access verified',
   phase: 'worker_access',
   messageIncludes: 'Worker can impersonate',
-  required: true,
 } as const
 
 const deployDefinitions = [
@@ -147,27 +146,11 @@ export function buildDeploymentChecks(
       }
     }
 
-    if (operation.status === 'succeeded' && 'required' in definition) {
-      return {
-        label,
-        message: 'Required completion evidence was not recorded.',
-        status: 'failed',
-      }
-    }
-
     if (operation.status === 'succeeded') {
       return {
         label,
-        message: 'Already satisfied; no work was required in this operation.',
-        status: 'passed',
-      }
-    }
-
-    if (matches.slice(index + 1).some(Boolean)) {
-      return {
-        label,
-        message: 'Already satisfied before the next deployment phase.',
-        status: 'passed',
+        message: 'Completion evidence was not recorded.',
+        status: 'failed',
       }
     }
 

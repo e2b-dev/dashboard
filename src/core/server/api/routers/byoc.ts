@@ -12,8 +12,10 @@ const connectionIdInput = z.object({
 })
 
 const createCloudConnectionInput = z.object({
+  clientRequestId: z.string().uuid(),
   deployerServiceAccountEmail: z.string().email().max(254),
   deploymentId: z.string().uuid().optional(),
+  expectedCloudConnectionId: z.string().uuid().optional(),
 })
 
 const topologyInput = z.object({
@@ -50,7 +52,9 @@ export const byocRouter = createTRPCRouter({
         teamId: ctx.teamId,
       }).createCloudConnection(
         input.deployerServiceAccountEmail,
-        input.deploymentId
+        input.deploymentId,
+        input.clientRequestId,
+        input.expectedCloudConnectionId
       )
     }),
 
@@ -71,6 +75,7 @@ export const byocRouter = createTRPCRouter({
   createDeployment: protectedTeamProcedure
     .input(
       z.object({
+        clientRequestId: z.string().uuid(),
         connectionId: z.string().uuid(),
         projectId: z.string().min(1),
       })
@@ -78,7 +83,11 @@ export const byocRouter = createTRPCRouter({
     .mutation(({ ctx, input }) => {
       return createByocDeploymentsRepository({
         teamId: ctx.teamId,
-      }).createDeployment(input.connectionId, input.projectId)
+      }).createDeployment(
+        input.connectionId,
+        input.projectId,
+        input.clientRequestId
+      )
     }),
 
   listDeployments: protectedTeamProcedure.query(({ ctx }) => {

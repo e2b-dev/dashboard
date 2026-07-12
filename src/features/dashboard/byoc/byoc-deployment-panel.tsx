@@ -43,6 +43,7 @@ import {
   buildDeploymentChecks,
   type DeploymentCheckStatus,
 } from './deployment-checks'
+import { useByocRequestIntents } from './use-byoc-request-intents'
 
 type Deployment = TRPCRouterOutputs['byoc']['listDeployments'][number]
 type DeploymentEvent = TRPCRouterOutputs['byoc']['listEvents'][number]
@@ -57,6 +58,7 @@ type TopologyDraft = {
 }
 
 const DEFAULT_DEPLOYER_SA = 'e2b-byoc-deployer'
+
 const bootstrapRoles = [
   'roles/serviceusage.serviceUsageAdmin',
   'roles/compute.admin',
@@ -221,6 +223,7 @@ export function ByocDeploymentPanel() {
     deploymentId: string
     value: TopologyDraft
   }>()
+  const requestIntents = useByocRequestIntents()
   const [destroyConfirmation, setDestroyConfirmation] = useState({
     deploymentKey: '',
     value: '',
@@ -258,6 +261,15 @@ export function ByocDeploymentPanel() {
   const deployment =
     deploymentsQuery.data?.find((item) => item.id === selectedDeploymentId) ??
     latestByTimestamp(deploymentsQuery.data)
+  useEffect(() => {
+    requestIntents.connection.acknowledge(connection?.client_request_id)
+    requestIntents.createDeployment.acknowledge(deployment?.client_request_id)
+  }, [
+    connection?.client_request_id,
+    deployment?.client_request_id,
+    requestIntents.connection,
+    requestIntents.createDeployment,
+  ])
 
   const savedTopology = topologyFromDeployment(deployment)
   const topology =
@@ -266,6 +278,7 @@ export function ByocDeploymentPanel() {
       : savedTopology
   const topologyDirty = !topologiesEqual(topology, savedTopology)
   const updateTopology = (patch: Partial<TopologyDraft>) => {
+    requestIntents.deploy.clear()
     setTopologyDraft({
       deploymentId: deployment?.id ?? '',
       value: { ...topology, ...patch },
@@ -361,6 +374,7 @@ export function ByocDeploymentPanel() {
   const createConnection = useMutation(
     trpc.byoc.createCloudConnection.mutationOptions({
       onSuccess: async (data) => {
+        requestIntents.connection.clear()
         setSelectedConnectionId(data.id)
         setConnectionDialogOpen(false)
         await refresh()
@@ -371,6 +385,7 @@ export function ByocDeploymentPanel() {
   const createDeployment = useMutation(
     trpc.byoc.createDeployment.mutationOptions({
       onSuccess: async (data) => {
+        requestIntents.createDeployment.clear()
         setSelectedDeploymentId(data.id)
         await refresh()
       },
@@ -387,6 +402,7 @@ export function ByocDeploymentPanel() {
         })
       },
       onSuccess: (data) => {
+        requestIntents.deploy.clear()
         setSelectedDeploymentId(data.deployment_id)
       },
       onSettled: () =>
@@ -406,6 +422,7 @@ export function ByocDeploymentPanel() {
         })
       },
       onSuccess: (data) => {
+        requestIntents.destroy.clear()
         setSelectedDeploymentId(data.deployment_id)
         setDestroyConfirmation({ deploymentKey: '', value: '' })
       },
@@ -457,6 +474,11 @@ export function ByocDeploymentPanel() {
     !!operationBaseline &&
     latestOperation?.kind === operationBaseline.kind &&
     latestOperation.client_request_id === operationBaseline.clientRequestId
+  useEffect(() => {
+    if (!discoveredSubmittedOperation || !operationBaseline) return
+    if (operationBaseline.kind === 'deploy') requestIntents.deploy.clear()
+    if (operationBaseline.kind === 'destroy') requestIntents.destroy.clear()
+  }, [discoveredSubmittedOperation, operationBaseline, requestIntents])
   const deployError =
     operationBaseline?.kind === 'deploy' && discoveredSubmittedOperation
       ? undefined
@@ -479,10 +501,11 @@ export function ByocDeploymentPanel() {
     queryError(eventsQuery.error)
   const runDeploy = () => {
     if (!deployment) return
+    const clientRequestId = requestIntents.deploy.get()
     deploy.mutate({
       teamSlug,
       deploymentId: deployment.id,
-      clientRequestId: crypto.randomUUID(),
+      clientRequestId,
       topology,
     })
   }
@@ -528,13 +551,15 @@ export function ByocDeploymentPanel() {
           ) : !deployment ? (
             <Button
               disabled={!canCreateDeployment}
-              onClick={() =>
+              onClick={() => {
+                const clientRequestId = requestIntents.createDeployment.get()
                 createDeployment.mutate({
+                  clientRequestId,
                   teamSlug,
                   connectionId: connection.id,
                   projectId: targetQuery.data?.projectId ?? '',
                 })
-              }
+              }}
               loading={createDeployment.isPending ? 'Creating' : undefined}
             >
               Create deployment
@@ -695,7 +720,10 @@ export function ByocDeploymentPanel() {
                   <div className="flex shrink-0 gap-2">
                     <Button
                       disabled={!topologyDirty || operationPending}
-                      onClick={() => setTopologyDraft(undefined)}
+                      onClick={() => {
+                        requestIntents.deploy.clear()
+                        setTopologyDraft(undefined)
+                      }}
                       variant="secondary"
                     >
                       Reset
@@ -873,14 +901,15 @@ export function ByocDeploymentPanel() {
                 <Button
                   variant="error"
                   disabled={!canDestroy}
-                  onClick={() =>
-                    deployment &&
+                  onClick={() => {
+                    if (!deployment) return
+                    const clientRequestId = requestIntents.destroy.get()
                     destroy.mutate({
                       teamSlug,
                       deploymentId: deployment.id,
-                      clientRequestId: crypto.randomUUID(),
+                      clientRequestId,
                     })
-                  }
+                  }}
                   loading={destroy.isPending ? 'Destroying' : undefined}
                 >
                   Destroy BYOC
@@ -896,14 +925,22 @@ export function ByocDeploymentPanel() {
         e2bPrincipals={targetQuery.data?.e2bPrincipals ?? []}
         error={mutationError(createConnection.error)}
         isPending={createConnection.isPending || operationPending}
-        onConnect={() =>
+        onConnect={() => {
+          const intent = requestIntents.connection.get(
+            deployment?.cloud_connection_id
+          )
           createConnection.mutate({
+            clientRequestId: intent.requestId,
+            expectedCloudConnectionId: intent.expectedCloudConnectionId,
             teamSlug,
             deployerServiceAccountEmail,
             deploymentId: deployment?.id,
           })
-        }
-        onDeployerServiceAccountEmailChange={setDeployerServiceAccountEmail}
+        }}
+        onDeployerServiceAccountEmailChange={(value) => {
+          requestIntents.connection.clear()
+          setDeployerServiceAccountEmail(value)
+        }}
         onOpenChange={setConnectionDialogOpen}
         open={connectionDialogOpen}
         projectId={targetQuery.data?.projectId ?? ''}
