@@ -517,6 +517,29 @@ export function ByocDeploymentPanel() {
     })
   }
 
+  if (
+    targetQuery.isPending ||
+    connectionsQuery.isPending ||
+    deploymentsQuery.isPending
+  ) {
+    return (
+      <main className="flex min-w-0 flex-col gap-4">
+        <section className="border-b border-stroke pb-4">
+          <h1 className="prose-headline-medium">BYOC</h1>
+          <p className="mt-1 text-sm text-fg-secondary">
+            Run E2B sandboxes in infrastructure owned by your team.
+          </p>
+        </section>
+        <div className="grid min-h-80 place-items-center border border-stroke bg-bg-1">
+          <div className="flex items-center gap-2 text-sm text-fg-secondary">
+            <SpinnerIcon className="size-4 animate-spin" />
+            Loading deployment state
+          </div>
+        </div>
+      </main>
+    )
+  }
+
   const durableRouteAttached = Boolean(
     deployment?.cluster_id && deployment.cluster_endpoint
   )
