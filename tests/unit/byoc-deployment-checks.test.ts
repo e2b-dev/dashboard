@@ -26,6 +26,34 @@ describe('buildDeploymentChecks', () => {
     expect(checks.at(-1)?.status).toBe('pending')
   })
 
+  it('uses only the latest worker attempt for a reclaimed operation', () => {
+    const checks = buildDeploymentChecks(
+      [
+        event('operation_started', 'Worker started operation operation-1.'),
+        event(
+          'worker_access',
+          'Worker can impersonate the GCP deployer identity.'
+        ),
+        event('prepare_artifacts', 'Runtime artifacts are ready.'),
+        event('operation_started', 'Worker restarted operation operation-1.'),
+      ],
+      { id: 'operation-1', kind: 'deploy', status: 'starting' }
+    )
+
+    expect(checks[0]?.status).toBe('running')
+    expect(checks[1]?.status).toBe('pending')
+  })
+
+  it('keeps checks pending until a queued operation starts', () => {
+    const checks = buildDeploymentChecks([], {
+      id: 'operation-1',
+      kind: 'deploy',
+      status: 'queued',
+    })
+
+    expect(checks.every((check) => check.status === 'pending')).toBe(true)
+  })
+
   it('advances checks from durable phase events', () => {
     const checks = buildDeploymentChecks(
       [
@@ -85,12 +113,15 @@ describe('buildDeploymentChecks', () => {
     ])
   })
 
-  it('marks no-op phases complete when the operation succeeds', () => {
+  it('requires durable worker access evidence when the operation succeeds', () => {
     const checks = buildDeploymentChecks(
       [event('operation_started', 'Worker started operation operation-1.')],
       { id: 'operation-1', kind: 'deploy', status: 'succeeded' }
     )
 
-    expect(checks.every((check) => check.status === 'passed')).toBe(true)
+    expect(checks[0]?.status).toBe('failed')
+    expect(checks.slice(1).every((check) => check.status === 'passed')).toBe(
+      true
+    )
   })
 })

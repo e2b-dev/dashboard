@@ -23,12 +23,13 @@ const workerAccessDefinition = {
   label: 'Worker access verified',
   phase: 'worker_access',
   messageIncludes: 'Worker can impersonate',
+  required: true,
 } as const
 
 const deployDefinitions = [
   workerAccessDefinition,
   {
-    label: 'Infrastructure applied',
+    label: 'Runtime artifacts ready',
     phase: 'prepare_artifacts',
     messageIncludes: 'Runtime artifacts are ready',
   },
@@ -43,7 +44,7 @@ const deployDefinitions = [
     messageIncludes: 'Nomad is reachable',
   },
   {
-    label: 'Services converged',
+    label: 'Terraform stages applied',
     phase: 'health_check',
     messageIncludes: 'Terraform stages finished',
   },
@@ -113,7 +114,7 @@ export function buildDeploymentChecks(
     }))
   }
 
-  const startIndex = events.findIndex(
+  const startIndex = events.findLastIndex(
     (event) =>
       event.phase === 'operation_started' &&
       event.message.includes(operation.id)
@@ -134,7 +135,8 @@ export function buildDeploymentChecks(
     'cancelled',
   ]).has(operation.status)
 
-  return definitions.map(({ label }, index) => {
+  return definitions.map((definition, index) => {
+    const { label } = definition
     const event = matches[index]
     if (event) {
       return {
@@ -142,6 +144,14 @@ export function buildDeploymentChecks(
         message: event.message,
         status: 'passed',
         timestamp: event.created_at,
+      }
+    }
+
+    if (operation.status === 'succeeded' && 'required' in definition) {
+      return {
+        label,
+        message: 'Required completion evidence was not recorded.',
+        status: 'failed',
       }
     }
 
@@ -167,13 +177,13 @@ export function buildDeploymentChecks(
       message:
         isCurrent && failed
           ? 'The operation stopped before this check completed.'
-          : isCurrent && active
+          : isCurrent && active && startIndex >= 0
             ? 'In progress.'
             : 'Waiting for the previous check.',
       status:
         isCurrent && failed
           ? 'failed'
-          : isCurrent && active
+          : isCurrent && active && startIndex >= 0
             ? 'running'
             : 'pending',
     }
