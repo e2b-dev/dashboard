@@ -365,12 +365,15 @@ export function ByocDeploymentPanel() {
       onMutate: (variables) => {
         setRunningDeploymentId(variables.deploymentId)
       },
-      onSuccess: async (data) => {
+      onSuccess: (data) => {
         setSelectedDeploymentId(data.deployment_id)
-        await refresh()
       },
-      onSettled: () => {
-        setRunningDeploymentId(undefined)
+      onSettled: async () => {
+        try {
+          await refresh()
+        } finally {
+          setRunningDeploymentId(undefined)
+        }
       },
     })
   )
@@ -380,13 +383,16 @@ export function ByocDeploymentPanel() {
       onMutate: (variables) => {
         setRunningDeploymentId(variables.deploymentId)
       },
-      onSuccess: async (data) => {
+      onSuccess: (data) => {
         setSelectedDeploymentId(data.deployment_id)
         setDestroyConfirmation({ deploymentKey: '', value: '' })
-        await refresh()
       },
-      onSettled: () => {
-        setRunningDeploymentId(undefined)
+      onSettled: async () => {
+        try {
+          await refresh()
+        } finally {
+          setRunningDeploymentId(undefined)
+        }
       },
     })
   )
