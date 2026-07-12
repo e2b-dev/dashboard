@@ -403,6 +403,11 @@ export function ByocDeploymentPanel() {
   const selectedProject = projectsQuery.data?.find(
     (project) => project.id === targetQuery.data?.projectId
   )
+  const targetProjectAuthorized =
+    !!targetQuery.data &&
+    !!connection?.authorized_projects.some(
+      (project) => project.project_id === targetQuery.data.projectId
+    )
   const selectedProjectPrincipal =
     selectedProject?.e2b_principal ??
     connection?.authorized_projects[0]?.e2b_principal
@@ -415,7 +420,8 @@ export function ByocDeploymentPanel() {
     connection: !!connection,
     deployment,
     events: eventsQuery.data ?? [],
-    project: !!selectedProject,
+    operation: latestOperation,
+    project: !!selectedProject || targetProjectAuthorized,
     runnerHealthy: healthQuery.data?.status === 'ok',
     target: targetQuery.data,
   })
@@ -1049,7 +1055,7 @@ function OperationSummary({
     <div className="flex min-w-0 flex-col gap-2 rounded-md border border-stroke bg-bg p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="font-medium text-fg">
-          {operation && isActiveOperation(operation.status)
+          {operation
             ? `${operation.kind} · ${operation.status.replaceAll('_', ' ')}`
             : deployment
               ? deployment.status.replaceAll('_', ' ')
@@ -1070,7 +1076,9 @@ function OperationSummary({
       </div>
       <p className="prose-body text-fg-secondary">
         {latest?.message ??
-          'Connect a GCP project and create a deployment to begin.'}
+          (deployment
+            ? `Deployment is ${deployment.status.replaceAll('_', ' ')}.`
+            : 'Connect a GCP project and create a deployment to begin.')}
       </p>
       {deployment?.error &&
       !(operation && isActiveOperation(operation.status)) ? (
@@ -1239,6 +1247,7 @@ function buildHealthChecks({
   connection,
   deployment,
   events,
+  operation,
   project,
   runnerHealthy,
   target,
@@ -1246,12 +1255,14 @@ function buildHealthChecks({
   connection: boolean
   deployment?: Deployment
   events: DeploymentEvent[]
+  operation?: ByocOperation
   project: boolean
   runnerHealthy: boolean
   target?: { projectId: string; region: string }
 }) {
   const attached = deployment?.status === 'attached'
   const failed = deployment?.status === 'failed'
+  const deploymentVerified = attached && operation?.status === 'succeeded'
   const edgeHealthEvent = findEvent(events, 'health_check', 'passed')
   const clusterEvent = findEvent(events, 'registering_cluster', 'attached')
   const baseTemplateEvent = findEvent(events, 'building_base_template', 'ready')
@@ -1290,8 +1301,13 @@ function buildHealthChecks({
     {
       detail: edgeHealthEvent?.message ?? 'Waiting for edge health check.',
       label: 'Edge API',
-      status: edgeHealthEvent ? 'healthy' : attached ? 'warning' : 'waiting',
-      value: edgeHealthEvent ? 'healthy' : 'pending',
+      status:
+        edgeHealthEvent || deploymentVerified
+          ? 'healthy'
+          : attached
+            ? 'warning'
+            : 'waiting',
+      value: edgeHealthEvent || deploymentVerified ? 'verified' : 'pending',
     },
     {
       detail:
@@ -1306,23 +1322,38 @@ function buildHealthChecks({
         baseTemplateEvent?.message ??
         'Base template build runs after the cluster is attached.',
       label: 'Base template',
-      status: baseTemplateEvent ? 'healthy' : attached ? 'warning' : 'waiting',
-      value: baseTemplateEvent ? 'ready' : 'pending',
+      status:
+        baseTemplateEvent || deploymentVerified
+          ? 'healthy'
+          : attached
+            ? 'warning'
+            : 'waiting',
+      value: baseTemplateEvent || deploymentVerified ? 'verified' : 'pending',
     },
     {
       detail:
         smokeEvent?.message ?? 'Sandbox validation verifies BYOC placement.',
       label: 'Sandbox validation',
-      status: smokeEvent ? 'healthy' : attached ? 'warning' : 'waiting',
-      value: smokeEvent ? 'passed' : 'pending',
+      status:
+        smokeEvent || deploymentVerified
+          ? 'healthy'
+          : attached
+            ? 'warning'
+            : 'waiting',
+      value: smokeEvent || deploymentVerified ? 'verified' : 'pending',
     },
     {
       detail: nodeID
         ? `The latest sandbox smoke was placed on node ${nodeID}.`
         : 'Waiting for a sandbox smoke through the attached cluster route.',
       label: 'Placement',
-      status: nodeID ? 'healthy' : attached ? 'warning' : 'waiting',
-      value: nodeID ? 'verified' : 'pending',
+      status:
+        nodeID || deploymentVerified
+          ? 'healthy'
+          : attached
+            ? 'warning'
+            : 'waiting',
+      value: nodeID || deploymentVerified ? 'verified' : 'pending',
     },
   ] satisfies Array<{
     detail?: string
