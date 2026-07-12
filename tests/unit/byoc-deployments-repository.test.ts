@@ -9,6 +9,7 @@ const originalTarget = {
   prefix: process.env.BYOC_RESOURCE_PREFIX,
   projectId: process.env.BYOC_GCP_PROJECT_ID,
   e2bPrincipal: process.env.BYOC_E2B_PRINCIPAL,
+  e2bPrincipals: process.env.BYOC_E2B_PRINCIPALS,
   region: process.env.BYOC_GCP_REGION,
   zone: process.env.BYOC_GCP_ZONE,
 }
@@ -25,6 +26,7 @@ describe('BYOC deployments repository', () => {
     process.env.BYOC_RESOURCE_PREFIX = 'test-'
     process.env.BYOC_E2B_PRINCIPAL =
       'serviceAccount:runner@test-control.iam.gserviceaccount.com'
+    delete process.env.BYOC_E2B_PRINCIPALS
     vi.stubGlobal('fetch', vi.fn())
   })
 
@@ -38,6 +40,7 @@ describe('BYOC deployments repository', () => {
     process.env.BYOC_DOMAIN_NAME = originalTarget.domainName
     process.env.BYOC_RESOURCE_PREFIX = originalTarget.prefix
     process.env.BYOC_E2B_PRINCIPAL = originalTarget.e2bPrincipal
+    process.env.BYOC_E2B_PRINCIPALS = originalTarget.e2bPrincipals
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
   })
@@ -162,6 +165,26 @@ describe('BYOC deployments repository', () => {
         },
       ],
     })
+  })
+
+  it('adds runtime principals without replacing the API principal', () => {
+    process.env.BYOC_E2B_PRINCIPALS = [
+      'serviceAccount:api@test-control.iam.gserviceaccount.com',
+      'serviceAccount:worker@test-control.iam.gserviceaccount.com',
+    ].join(',')
+
+    const target = createByocDeploymentsRepository({
+      teamId: 'team-a',
+    }).target()
+
+    expect(target.e2bPrincipals).toEqual([
+      'serviceAccount:runner@test-control.iam.gserviceaccount.com',
+      'serviceAccount:api@test-control.iam.gserviceaccount.com',
+      'serviceAccount:worker@test-control.iam.gserviceaccount.com',
+    ])
+    expect(target.e2bPrincipal).toBe(
+      'serviceAccount:runner@test-control.iam.gserviceaccount.com'
+    )
   })
 
   it('replaces the verified identity on an existing deployment', async () => {

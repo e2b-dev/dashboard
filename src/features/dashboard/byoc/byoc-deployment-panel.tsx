@@ -77,16 +77,16 @@ const bootstrapRoles = [
 ]
 function bootstrapCommand({
   deployerServiceAccount = DEFAULT_DEPLOYER_SA,
-  e2bPrincipal,
+  e2bPrincipals,
   projectId,
 }: {
   deployerServiceAccount?: string
-  e2bPrincipal: string
+  e2bPrincipals: string[]
   projectId: string
 }) {
   return `export PROJECT_ID="${projectId}"
 export DEPLOYER_SA="${deployerServiceAccount}"
-export E2B_PRINCIPAL="${e2bPrincipal}"
+E2B_PRINCIPALS=(${e2bPrincipals.map((principal) => `"${principal}"`).join(' ')})
 
 gcloud services enable \\
   iam.googleapis.com \\
@@ -107,20 +107,23 @@ do
     --condition=None
 done
 
-gcloud iam service-accounts add-iam-policy-binding \\
-  "\${DEPLOYER_SA}@\${PROJECT_ID}.iam.gserviceaccount.com" \\
-  --project="$PROJECT_ID" \\
-  --member="$E2B_PRINCIPAL" \\
-  --role="roles/iam.serviceAccountTokenCreator"`
+for E2B_PRINCIPAL in "\${E2B_PRINCIPALS[@]}"
+do
+  gcloud iam service-accounts add-iam-policy-binding \\
+    "\${DEPLOYER_SA}@\${PROJECT_ID}.iam.gserviceaccount.com" \\
+    --project="$PROJECT_ID" \\
+    --member="$E2B_PRINCIPAL" \\
+    --role="roles/iam.serviceAccountTokenCreator"
+done`
 }
 
 function bootstrapTerraform({
   deployerServiceAccount = DEFAULT_DEPLOYER_SA,
-  e2bPrincipal,
+  e2bPrincipals,
   projectId,
 }: {
   deployerServiceAccount?: string
-  e2bPrincipal: string
+  e2bPrincipals: string[]
   projectId: string
 }) {
   return `terraform {
@@ -142,9 +145,9 @@ variable "deployer_account_id" {
   default = "${deployerServiceAccount}"
 }
 
-variable "e2b_principal" {
-  type    = string
-  default = "${e2bPrincipal}"
+variable "e2b_principals" {
+  type    = set(string)
+  default = [${e2bPrincipals.map((principal) => `"${principal}"`).join(', ')}]
 }
 
 provider "google" {
@@ -188,9 +191,11 @@ resource "google_project_iam_member" "byoc_deployer_roles" {
 }
 
 resource "google_service_account_iam_member" "e2b_impersonation" {
+  for_each = var.e2b_principals
+
   service_account_id = google_service_account.byoc_deployer.name
   role               = "roles/iam.serviceAccountTokenCreator"
-  member             = var.e2b_principal
+  member             = each.value
 }
 
 output "byoc_deployer_service_account" {
@@ -801,7 +806,11 @@ export function ByocDeploymentPanel() {
                           deployment?.deployer_service_account.email.split(
                             '@'
                           )[0] ?? connection?.subject_email.split('@')[0],
-                        e2bPrincipal: selectedProjectPrincipal ?? '',
+                        e2bPrincipals:
+                          targetQuery.data?.e2bPrincipals ??
+                          (selectedProjectPrincipal
+                            ? [selectedProjectPrincipal]
+                            : []),
                         projectId:
                           selectedProject?.id ??
                           targetQuery.data?.projectId ??
@@ -822,7 +831,11 @@ export function ByocDeploymentPanel() {
                           deployment?.deployer_service_account.email.split(
                             '@'
                           )[0] ?? connection?.subject_email.split('@')[0],
-                        e2bPrincipal: selectedProjectPrincipal ?? '',
+                        e2bPrincipals:
+                          targetQuery.data?.e2bPrincipals ??
+                          (selectedProjectPrincipal
+                            ? [selectedProjectPrincipal]
+                            : []),
                         projectId:
                           selectedProject?.id ??
                           targetQuery.data?.projectId ??
@@ -880,7 +893,7 @@ export function ByocDeploymentPanel() {
 
       <ConnectGCPDialog
         deployerServiceAccountEmail={deployerServiceAccountEmail}
-        e2bPrincipal={targetQuery.data?.e2bPrincipal ?? ''}
+        e2bPrincipals={targetQuery.data?.e2bPrincipals ?? []}
         error={mutationError(createConnection.error)}
         isPending={createConnection.isPending || operationPending}
         onConnect={() =>
@@ -962,7 +975,7 @@ function CheckStatusIcon({ status }: { status: DeploymentCheckStatus }) {
 
 function ConnectGCPDialog({
   deployerServiceAccountEmail,
-  e2bPrincipal,
+  e2bPrincipals,
   error,
   isPending,
   onConnect,
@@ -972,7 +985,7 @@ function ConnectGCPDialog({
   projectId,
 }: {
   deployerServiceAccountEmail: string
-  e2bPrincipal: string
+  e2bPrincipals: string[]
   error?: string
   isPending: boolean
   onConnect: () => void
@@ -1030,7 +1043,7 @@ function ConnectGCPDialog({
           >
             {bootstrapCommand({
               deployerServiceAccount: accountId,
-              e2bPrincipal,
+              e2bPrincipals,
               projectId,
             })}
           </CodeBlock>
@@ -1051,7 +1064,7 @@ function ConnectGCPDialog({
             Cancel
           </Button>
           <Button
-            disabled={!validEmail || !e2bPrincipal || isPending}
+            disabled={!validEmail || e2bPrincipals.length === 0 || isPending}
             loading={isPending ? 'Verifying' : undefined}
             onClick={onConnect}
           >

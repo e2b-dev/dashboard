@@ -19,7 +19,14 @@ export type DeploymentCheck = {
   timestamp?: string
 }
 
+const workerAccessDefinition = {
+  label: 'Worker access verified',
+  phase: 'worker_access',
+  messageIncludes: 'Worker can impersonate',
+} as const
+
 const deployDefinitions = [
+  workerAccessDefinition,
   {
     label: 'Infrastructure applied',
     phase: 'prepare_artifacts',
@@ -63,6 +70,7 @@ const deployDefinitions = [
 ] as const
 
 const destroyDefinitions = [
+  workerAccessDefinition,
   {
     label: 'Terraform access verified',
     phase: 'terraform_destroy_preflight',

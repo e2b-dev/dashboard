@@ -30,6 +30,10 @@ describe('buildDeploymentChecks', () => {
     const checks = buildDeploymentChecks(
       [
         event('operation_started', 'Worker started operation operation-1.'),
+        event(
+          'worker_access',
+          'Worker can impersonate the GCP deployer identity.'
+        ),
         event('prepare_artifacts', 'Runtime artifacts are ready.'),
         event('dns_ready', 'Deployment DNS resolved.'),
         event('wait_for_nomad', 'Nomad is reachable.'),
@@ -38,6 +42,7 @@ describe('buildDeploymentChecks', () => {
     )
 
     expect(checks.map((check) => check.status)).toEqual([
+      'passed',
       'passed',
       'passed',
       'passed',
@@ -53,7 +58,10 @@ describe('buildDeploymentChecks', () => {
     const checks = buildDeploymentChecks(
       [
         event('operation_started', 'Worker started operation operation-1.'),
-        event('prepare_artifacts', 'Runtime artifacts are ready.'),
+        event(
+          'worker_access',
+          'Worker can impersonate the GCP deployer identity.'
+        ),
       ],
       { id: 'operation-1', kind: 'deploy', status: 'failed_terminal' }
     )
@@ -70,6 +78,7 @@ describe('buildDeploymentChecks', () => {
     )
 
     expect(checks.map((check) => check.label)).toEqual([
+      'Worker access verified',
       'Terraform access verified',
       'Team routing detached',
       'Infrastructure destroyed',

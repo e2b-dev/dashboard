@@ -8,6 +8,7 @@ interface ByocTarget {
   domainName: string
   prefix: string
   e2bPrincipal: string
+  e2bPrincipals: string[]
 }
 
 export type DeploymentStatus =
@@ -490,6 +491,13 @@ function getPublicRunnerError(status: number) {
 }
 
 function getByocTarget(): ByocTarget {
+  const e2bPrincipal = requiredEnv('BYOC_E2B_PRINCIPAL')
+  const additionalPrincipals = process.env.BYOC_E2B_PRINCIPALS?.split(',')
+    .map((principal) => principal.trim())
+    .filter(Boolean)
+  const e2bPrincipals = [
+    ...new Set([e2bPrincipal, ...(additionalPrincipals ?? [])]),
+  ]
   return {
     projectId: requiredEnv('BYOC_GCP_PROJECT_ID'),
     region: requiredEnv('BYOC_GCP_REGION'),
@@ -497,7 +505,8 @@ function getByocTarget(): ByocTarget {
     namespace: requiredEnv('BYOC_NAMESPACE'),
     domainName: requiredEnv('BYOC_DOMAIN_NAME'),
     prefix: requiredEnv('BYOC_RESOURCE_PREFIX'),
-    e2bPrincipal: requiredEnv('BYOC_E2B_PRINCIPAL'),
+    e2bPrincipal,
+    e2bPrincipals,
   }
 }
 
