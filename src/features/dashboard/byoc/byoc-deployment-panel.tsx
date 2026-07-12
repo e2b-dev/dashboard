@@ -23,9 +23,6 @@ type Deployment = TRPCRouterOutputs['byoc']['listDeployments'][number]
 type DeploymentEvent = TRPCRouterOutputs['byoc']['listEvents'][number]
 type HealthStatus = 'healthy' | 'checking' | 'waiting' | 'warning' | 'failed'
 
-const MATT_DEV_PROJECT_ID = 'e2b-dev-matt'
-const E2B_PRINCIPAL =
-  'serviceAccount:byoc-testing-deployer@e2b-dev-matt.iam.gserviceaccount.com'
 const DEFAULT_DEPLOYER_SA = 'e2b-byoc-deployer'
 const bootstrapRoles = [
   'roles/serviceusage.serviceUsageAdmin',
@@ -44,12 +41,12 @@ const bootstrapRoles = [
 ]
 function bootstrapCommand({
   deployerServiceAccount = DEFAULT_DEPLOYER_SA,
-  e2bPrincipal = E2B_PRINCIPAL,
-  projectId = MATT_DEV_PROJECT_ID,
+  e2bPrincipal,
+  projectId,
 }: {
   deployerServiceAccount?: string
-  e2bPrincipal?: string
-  projectId?: string
+  e2bPrincipal: string
+  projectId: string
 }) {
   return `export PROJECT_ID="${projectId}"
 export DEPLOYER_SA="${deployerServiceAccount}"
@@ -83,12 +80,12 @@ gcloud iam service-accounts add-iam-policy-binding \\
 
 function bootstrapTerraform({
   deployerServiceAccount = DEFAULT_DEPLOYER_SA,
-  e2bPrincipal = E2B_PRINCIPAL,
-  projectId = MATT_DEV_PROJECT_ID,
+  e2bPrincipal,
+  projectId,
 }: {
   deployerServiceAccount?: string
-  e2bPrincipal?: string
-  projectId?: string
+  e2bPrincipal: string
+  projectId: string
 }) {
   return `terraform {
   required_providers {
@@ -171,8 +168,11 @@ export function ByocDeploymentPanel() {
   const queryClient = useQueryClient()
   const [selectedConnectionId, setSelectedConnectionId] = useState<string>()
   const [selectedDeploymentId, setSelectedDeploymentId] = useState<string>()
-  const [deployingDeploymentId, setDeployingDeploymentId] = useState<string>()
-  const [destroyConfirmation, setDestroyConfirmation] = useState('')
+  const [runningDeploymentId, setRunningDeploymentId] = useState<string>()
+  const [destroyConfirmation, setDestroyConfirmation] = useState({
+    deploymentKey: '',
+    value: '',
+  })
 
   const targetQuery = useQuery(trpc.byoc.target.queryOptions({ teamSlug }))
   const healthQuery = useQuery(trpc.byoc.health.queryOptions({ teamSlug }))
@@ -180,7 +180,15 @@ export function ByocDeploymentPanel() {
     trpc.byoc.listCloudConnections.queryOptions({ teamSlug })
   )
   const deploymentsQuery = useQuery(
-    trpc.byoc.listDeployments.queryOptions({ teamSlug })
+    trpc.byoc.listDeployments.queryOptions(
+      { teamSlug },
+      {
+        refetchInterval: (query) =>
+          runningDeploymentId || query.state.data?.some(isActive)
+            ? 1500
+            : false,
+      }
+    )
   )
 
   const connection = useMemo(() => {
@@ -213,7 +221,7 @@ export function ByocDeploymentPanel() {
     enabled: !!deployment?.id,
     refetchInterval:
       deployment &&
-      (isActive(deployment) || deployingDeploymentId === deployment.id)
+      (isActive(deployment) || runningDeploymentId === deployment.id)
         ? 1500
         : false,
   })
@@ -258,33 +266,45 @@ export function ByocDeploymentPanel() {
   const deploy = useMutation(
     trpc.byoc.deploy.mutationOptions({
       onMutate: (variables) => {
-        setDeployingDeploymentId(variables.deploymentId)
+        setRunningDeploymentId(variables.deploymentId)
       },
       onSuccess: async (data) => {
         setSelectedDeploymentId(data.deployment.id)
         await refresh()
       },
       onSettled: () => {
-        setDeployingDeploymentId(undefined)
+        setRunningDeploymentId(undefined)
       },
     })
   )
 
   const destroy = useMutation(
     trpc.byoc.destroy.mutationOptions({
+      onMutate: (variables) => {
+        setRunningDeploymentId(variables.deploymentId)
+      },
       onSuccess: async (data) => {
         setSelectedDeploymentId(data.deployment.id)
-        setDestroyConfirmation('')
+        setDestroyConfirmation({ deploymentKey: '', value: '' })
         await refresh()
+      },
+      onSettled: () => {
+        setRunningDeploymentId(undefined)
       },
     })
   )
 
   const selectedProject = projectsQuery.data?.find(
-    (project) => project.id === MATT_DEV_PROJECT_ID
+    (project) => project.id === targetQuery.data?.projectId
   )
   const selectedProjectPrincipal =
-    selectedProject?.e2b_principal ?? E2B_PRINCIPAL
+    selectedProject?.e2b_principal ??
+    connection?.authorized_projects[0]?.e2b_principal
+  const deploymentKey = `${teamSlug}:${deployment?.id ?? ''}`
+  const destroyConfirmationValue =
+    destroyConfirmation.deploymentKey === deploymentKey
+      ? destroyConfirmation.value
+      : ''
   const healthChecks = useMemo(
     () =>
       buildHealthChecks({
@@ -293,6 +313,7 @@ export function ByocDeploymentPanel() {
         events: eventsQuery.data ?? [],
         project: !!selectedProject,
         runnerHealthy: healthQuery.data?.status === 'ok',
+        target: targetQuery.data,
       }),
     [
       connection,
@@ -300,19 +321,30 @@ export function ByocDeploymentPanel() {
       eventsQuery.data,
       healthQuery.data?.status,
       selectedProject,
+      targetQuery.data,
     ]
   )
-  const canCreateDeployment = !!connection?.id && !!selectedProject
+  const operationPending =
+    createDeployment.isPending || deploy.isPending || destroy.isPending
+  const selectedDeploymentActive = deployment ? isActive(deployment) : false
+  const anyDeploymentActive = deploymentsQuery.data?.some(isActive) ?? false
+  const canCreateDeployment =
+    !!connection?.id &&
+    !!selectedProject &&
+    !operationPending &&
+    !anyDeploymentActive &&
+    !deploymentsQuery.data?.some((item) => item.status !== 'destroyed')
   const canDeploy =
     !!deployment?.id &&
-    !isActive(deployment) &&
+    !selectedDeploymentActive &&
     canRunDeploy(deployment) &&
-    !deploy.isPending
+    !operationPending
   const canDestroy =
     !!deployment?.id &&
-    !isActive(deployment) &&
+    !selectedDeploymentActive &&
     deployment.status !== 'destroyed' &&
-    destroyConfirmation === 'destroy'
+    !operationPending &&
+    destroyConfirmationValue === 'destroy'
   const error =
     mutationError(createConnection.error) ??
     mutationError(createDeployment.error) ??
@@ -385,14 +417,23 @@ export function ByocDeploymentPanel() {
           <CardContent className="flex flex-col gap-4">
             <StepStatus
               label="Runner"
+              status={
+                healthQuery.error
+                  ? 'failed'
+                  : healthQuery.data?.status === 'ok'
+                    ? 'healthy'
+                    : 'pending'
+              }
               value={healthQuery.data?.status === 'ok' ? 'healthy' : 'pending'}
             />
             <StepStatus
               label="Connection"
+              status={connection ? 'healthy' : 'pending'}
               value={connection ? connection.subject_email : 'not connected'}
             />
             <StepStatus
               label="Project"
+              status={selectedProject ? 'healthy' : 'pending'}
               value={
                 selectedProject
                   ? `${selectedProject.name} (${selectedProject.id})`
@@ -401,6 +442,9 @@ export function ByocDeploymentPanel() {
             />
             <div className="flex flex-wrap gap-2">
               <Button
+                disabled={
+                  !!connection || operationPending || anyDeploymentActive
+                }
                 onClick={() => createConnection.mutate({ teamSlug })}
                 loading={createConnection.isPending ? 'Connecting' : undefined}
               >
@@ -415,7 +459,7 @@ export function ByocDeploymentPanel() {
                     createDeployment.mutate({
                       teamSlug,
                       connectionId: connection.id,
-                      projectId: MATT_DEV_PROJECT_ID,
+                      projectId: targetQuery.data?.projectId ?? '',
                     })
                   }
                   loading={createDeployment.isPending ? 'Creating' : undefined}
@@ -464,10 +508,13 @@ export function ByocDeploymentPanel() {
                 <input
                   className="h-9 rounded-md border border-stroke bg-bg px-3 font-mono text-sm text-fg outline-none transition-colors placeholder:text-fg-tertiary focus:border-stroke-active"
                   onChange={(event) =>
-                    setDestroyConfirmation(event.currentTarget.value)
+                    setDestroyConfirmation({
+                      deploymentKey,
+                      value: event.currentTarget.value,
+                    })
                   }
                   placeholder="destroy"
-                  value={destroyConfirmation}
+                  value={destroyConfirmationValue}
                 />
               </label>
             ) : null}
@@ -528,8 +575,9 @@ export function ByocDeploymentPanel() {
                   viewportProps={{ className: 'max-h-[360px]' }}
                 >
                   {bootstrapCommand({
-                    e2bPrincipal: selectedProjectPrincipal,
-                    projectId: selectedProject?.id ?? MATT_DEV_PROJECT_ID,
+                    e2bPrincipal: selectedProjectPrincipal ?? '',
+                    projectId:
+                      selectedProject?.id ?? targetQuery.data?.projectId ?? '',
                   })}
                 </CodeBlock>
               </TabsContent>
@@ -542,8 +590,9 @@ export function ByocDeploymentPanel() {
                   viewportProps={{ className: 'max-h-[360px]' }}
                 >
                   {bootstrapTerraform({
-                    e2bPrincipal: selectedProjectPrincipal,
-                    projectId: selectedProject?.id ?? MATT_DEV_PROJECT_ID,
+                    e2bPrincipal: selectedProjectPrincipal ?? '',
+                    projectId:
+                      selectedProject?.id ?? targetQuery.data?.projectId ?? '',
                   })}
                 </CodeBlock>
               </TabsContent>
@@ -594,12 +643,35 @@ function TargetCell({ label, value }: { label: string; value?: string }) {
   )
 }
 
-function StepStatus({ label, value }: { label: string; value: string }) {
+function StepStatus({
+  label,
+  status,
+  value,
+}: {
+  label: string
+  status: 'healthy' | 'pending' | 'failed'
+  value: string
+}) {
   return (
     <div className="flex items-start justify-between gap-3">
       <span className="prose-body text-fg-secondary">{label}</span>
       <span className="flex min-w-0 items-center gap-1 text-right text-sm font-medium text-fg">
-        <CheckCircleIcon className="size-4 text-accent-success-highlight" />
+        {status === 'healthy' ? (
+          <CheckCircleIcon
+            aria-hidden="true"
+            className="size-4 text-accent-success-highlight"
+          />
+        ) : status === 'failed' ? (
+          <WarningIcon
+            aria-hidden="true"
+            className="size-4 text-accent-error-highlight"
+          />
+        ) : (
+          <span
+            aria-hidden="true"
+            className="size-2.5 rounded-full bg-fg-tertiary"
+          />
+        )}
         <span className="min-w-0 truncate">{value}</span>
       </span>
     </div>
@@ -689,12 +761,14 @@ function buildHealthChecks({
   events,
   project,
   runnerHealthy,
+  target,
 }: {
   connection: boolean
   deployment?: Deployment
   events: DeploymentEvent[]
   project: boolean
   runnerHealthy: boolean
+  target?: { projectId: string; region: string }
 }) {
   const attached = deployment?.status === 'attached'
   const failed = deployment?.status === 'failed'
@@ -713,7 +787,7 @@ function buildHealthChecks({
     },
     {
       detail: project
-        ? `Selected ${MATT_DEV_PROJECT_ID} in us-central1.`
+        ? `Selected ${target?.projectId ?? 'configured project'} in ${target?.region ?? 'the configured region'}.`
         : 'Connect Google Cloud and select the approved project.',
       label: 'Project',
       status: project ? 'healthy' : connection ? 'checking' : 'waiting',

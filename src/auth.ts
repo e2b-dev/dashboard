@@ -45,7 +45,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     OryHydra({
       id: 'ory',
       name: 'Ory',
-      issuer: process.env.ORY_SDK_URL,
+      issuer: process.env.ORY_HYDRA_PUBLIC_URL ?? process.env.ORY_SDK_URL,
       clientId: process.env.ORY_OAUTH2_CLIENT_ID,
       clientSecret: process.env.ORY_OAUTH2_CLIENT_SECRET,
       authorization: {

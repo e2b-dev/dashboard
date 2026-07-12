@@ -1,14 +1,13 @@
 import { TRPCError } from '@trpc/server'
 
-const MATT_DEV_PROJECT_ID = 'e2b-dev-matt'
-const MATT_DEV_REGION = 'us-central1'
-const MATT_DEV_ZONE = 'us-central1-a'
-const BYOC_TESTING_NAMESPACE = 'byoc-testing'
-const RUNNER_HOSTS = new Set([
-  'localhost',
-  '127.0.0.1',
-  'e2b-byoc-deployments-h6wbjcn56a-uw.a.run.app',
-])
+interface ByocTarget {
+  projectId: string
+  region: string
+  zone: string
+  namespace: string
+  domainName: string
+  prefix: string
+}
 
 export type DeploymentStatus =
   | 'draft'
@@ -137,6 +136,7 @@ export function createByocDeploymentsRepository({
 }: {
   teamId: string
 }) {
+  const target = getByocTarget()
   const baseUrl = getRunnerBaseUrl()
   const token = getRunnerToken()
 
@@ -153,22 +153,47 @@ export function createByocDeploymentsRepository({
 
     if (!response.ok) {
       throw new TRPCError({
-        code: response.status === 404 ? 'NOT_FOUND' : 'BAD_REQUEST',
-        message: await getRunnerError(response),
+        code: runnerStatusCode(response.status),
+        message: getPublicRunnerError(response.status),
       })
     }
 
-    return (await response.json()) as T
+    try {
+      return (await response.json()) as T
+    } catch {
+      throw new TRPCError({
+        code: 'BAD_GATEWAY',
+        message: 'BYOC deployments runner returned an invalid response.',
+      })
+    }
+  }
+
+  async function getOwnedCloudConnection(connectionId: string) {
+    const response = await request<{ cloud_connections: CloudConnection[] }>(
+      '/cloud-connections'
+    )
+    const connection = response.cloud_connections.find(
+      (item) => item.id === connectionId
+    )
+    if (!connection || connection.team_id !== teamId) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Cloud connection not found.',
+      })
+    }
+    assertConfiguredConnection(connection, teamId, target)
+    return connection
+  }
+
+  async function getOwnedDeployment(deploymentId: string) {
+    const deployment = await request<Deployment>(`/deployments/${deploymentId}`)
+    assertConfiguredDeployment(deployment, teamId, target)
+    return deployment
   }
 
   return {
     target() {
-      return {
-        projectId: MATT_DEV_PROJECT_ID,
-        region: MATT_DEV_REGION,
-        zone: MATT_DEV_ZONE,
-        namespace: BYOC_TESTING_NAMESPACE,
-      }
+      return target
     },
 
     health() {
@@ -182,7 +207,7 @@ export function createByocDeploymentsRepository({
         getCloudConnectionMode()
       )
 
-      assertMattDevConnection(connection)
+      assertConfiguredConnection(connection, teamId, target)
       return connection
     },
 
@@ -196,10 +221,13 @@ export function createByocDeploymentsRepository({
     },
 
     async listProjects(connectionId: string) {
+      await getOwnedCloudConnection(connectionId)
       const response = await request<{ projects: CloudProject[] }>(
         `/cloud-connections/${connectionId}/projects`
       )
-      const projects = response.projects.filter(isMattDevProject)
+      const projects = response.projects.filter((project) =>
+        isConfiguredProject(project, target)
+      )
       if (projects.length === 0) {
         throw new TRPCError({
           code: 'PRECONDITION_FAILED',
@@ -211,7 +239,8 @@ export function createByocDeploymentsRepository({
     },
 
     async createDeployment(connectionId: string, projectId: string) {
-      assertMattDevProjectId(projectId)
+      assertConfiguredProjectId(projectId, target)
+      await getOwnedCloudConnection(connectionId)
 
       const deployment = await request<Deployment>('/deployments', {
         method: 'POST',
@@ -219,12 +248,12 @@ export function createByocDeploymentsRepository({
           team_id: teamId,
           cloud_connection_id: connectionId,
           cloud_project_id: projectId,
-          domain_name: 'dashboard-byoc-smoke.e2b-test.dev',
-          prefix: 'byoc-testing-',
+          domain_name: target.domainName,
+          prefix: target.prefix,
         }),
       })
 
-      assertMattDevDeployment(deployment)
+      assertConfiguredDeployment(deployment, teamId, target)
       return deployment
     },
 
@@ -236,7 +265,7 @@ export function createByocDeploymentsRepository({
         .filter((deployment) => deployment.team_id === teamId)
         .filter((deployment) => {
           try {
-            assertMattDevDeployment(deployment)
+            assertConfiguredDeployment(deployment, teamId, target)
             return true
           } catch {
             return false
@@ -245,14 +274,11 @@ export function createByocDeploymentsRepository({
     },
 
     async getDeployment(deploymentId: string) {
-      const deployment = await request<Deployment>(
-        `/deployments/${deploymentId}`
-      )
-      assertMattDevDeployment(deployment)
-      return deployment
+      return getOwnedDeployment(deploymentId)
     },
 
     async listEvents(deploymentId: string) {
+      await getOwnedDeployment(deploymentId)
       const response = await request<{ events: DeploymentEvent[] }>(
         `/deployments/${deploymentId}/events`
       )
@@ -260,6 +286,7 @@ export function createByocDeploymentsRepository({
     },
 
     async deploy(deploymentId: string) {
+      await getOwnedDeployment(deploymentId)
       const response = await request<DeployResponse>(
         `/deployments/${deploymentId}/deploy`,
         {
@@ -287,11 +314,12 @@ export function createByocDeploymentsRepository({
           }),
         }
       )
-      assertMattDevDeployment(response.deployment)
+      assertConfiguredDeployment(response.deployment, teamId, target)
       return response
     },
 
     async plan(deploymentId: string) {
+      await getOwnedDeployment(deploymentId)
       const response = await request<PlanResponse>(
         `/deployments/${deploymentId}/plan`,
         {
@@ -299,11 +327,12 @@ export function createByocDeploymentsRepository({
           body: JSON.stringify({ execute: true }),
         }
       )
-      assertMattDevDeployment(response.deployment)
+      assertConfiguredDeployment(response.deployment, teamId, target)
       return response
     },
 
     async apply(deploymentId: string) {
+      await getOwnedDeployment(deploymentId)
       const response = await request<ApplyResponse>(
         `/deployments/${deploymentId}/apply`,
         {
@@ -311,11 +340,12 @@ export function createByocDeploymentsRepository({
           body: JSON.stringify({}),
         }
       )
-      assertMattDevDeployment(response.deployment)
+      assertConfiguredDeployment(response.deployment, teamId, target)
       return response
     },
 
     async destroy(deploymentId: string) {
+      await getOwnedDeployment(deploymentId)
       const response = await request<DestroyResponse>(
         `/deployments/${deploymentId}/destroy`,
         {
@@ -323,7 +353,7 @@ export function createByocDeploymentsRepository({
           body: JSON.stringify({}),
         }
       )
-      assertMattDevDeployment(response.deployment)
+      assertConfiguredDeployment(response.deployment, teamId, target)
       return response
     },
   }
@@ -363,10 +393,18 @@ function getRunnerBaseUrl() {
   }
 
   const url = new URL(raw)
-  if (!RUNNER_HOSTS.has(url.hostname)) {
+  const local = url.hostname === 'localhost' || url.hostname === '127.0.0.1'
+  if (
+    (!local && url.protocol !== 'https:') ||
+    (local && !['http:', 'https:'].includes(url.protocol)) ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash
+  ) {
     throw new TRPCError({
       code: 'PRECONDITION_FAILED',
-      message: 'BYOC deployments runner is not an approved matt-dev endpoint.',
+      message: 'BYOC deployments runner URL is invalid.',
     })
   }
 
@@ -385,26 +423,75 @@ function getRunnerToken() {
   return token
 }
 
-async function getRunnerError(response: Response) {
-  try {
-    const body = (await response.json()) as { error?: string }
-    return body.error ?? `BYOC deployments runner returned ${response.status}.`
-  } catch {
-    return `BYOC deployments runner returned ${response.status}.`
+function runnerStatusCode(status: number) {
+  switch (status) {
+    case 400:
+    case 422:
+      return 'BAD_REQUEST'
+    case 401:
+      return 'UNAUTHORIZED'
+    case 403:
+      return 'FORBIDDEN'
+    case 404:
+      return 'NOT_FOUND'
+    case 409:
+      return 'CONFLICT'
+    case 429:
+      return 'TOO_MANY_REQUESTS'
+    default:
+      return status >= 500 ? 'BAD_GATEWAY' : 'INTERNAL_SERVER_ERROR'
   }
 }
 
-function isMattDevProject(project: CloudProject) {
+function getPublicRunnerError(status: number) {
+  if (status === 401 || status === 403) {
+    return 'BYOC deployments runner authentication failed.'
+  }
+  if (status === 404) {
+    return 'BYOC deployment resource not found.'
+  }
+  if (status === 409) {
+    return 'BYOC deployment is already running another operation.'
+  }
+  if (status === 429 || status >= 500) {
+    return 'BYOC deployments runner is temporarily unavailable.'
+  }
+  return 'BYOC deployment request was rejected.'
+}
+
+function getByocTarget(): ByocTarget {
+  return {
+    projectId: requiredEnv('BYOC_GCP_PROJECT_ID'),
+    region: requiredEnv('BYOC_GCP_REGION'),
+    zone: requiredEnv('BYOC_GCP_ZONE'),
+    namespace: requiredEnv('BYOC_NAMESPACE'),
+    domainName: requiredEnv('BYOC_DOMAIN_NAME'),
+    prefix: requiredEnv('BYOC_RESOURCE_PREFIX'),
+  }
+}
+
+function requiredEnv(name: string) {
+  const value = process.env[name]?.trim()
+  if (!value) {
+    throw new TRPCError({
+      code: 'PRECONDITION_FAILED',
+      message: `${name} is not configured.`,
+    })
+  }
+  return value
+}
+
+function isConfiguredProject(project: CloudProject, target: ByocTarget) {
   return (
-    project.id === MATT_DEV_PROJECT_ID &&
-    project.default_region === MATT_DEV_REGION &&
-    project.default_zone === MATT_DEV_ZONE &&
-    project.namespace === BYOC_TESTING_NAMESPACE
+    project.id === target.projectId &&
+    project.default_region === target.region &&
+    project.default_zone === target.zone &&
+    project.namespace === target.namespace
   )
 }
 
-function assertMattDevProjectId(projectId: string) {
-  if (projectId !== MATT_DEV_PROJECT_ID) {
+function assertConfiguredProjectId(projectId: string, target: ByocTarget) {
+  if (projectId !== target.projectId) {
     throw new TRPCError({
       code: 'PRECONDITION_FAILED',
       message: 'Only the approved BYOC target project is enabled here.',
@@ -412,17 +499,27 @@ function assertMattDevProjectId(projectId: string) {
   }
 }
 
-function assertMattDevConnection(connection: CloudConnection) {
-  const hasMattDev = connection.authorized_projects.some((project) => {
+function assertConfiguredConnection(
+  connection: CloudConnection,
+  teamId: string,
+  target: ByocTarget
+) {
+  if (connection.team_id !== teamId) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: 'Cloud connection not found.',
+    })
+  }
+  const hasTarget = connection.authorized_projects.some((project) => {
     return (
-      project.project_id === MATT_DEV_PROJECT_ID &&
-      project.default_region === MATT_DEV_REGION &&
-      project.default_zone === MATT_DEV_ZONE &&
-      project.namespace === BYOC_TESTING_NAMESPACE
+      project.project_id === target.projectId &&
+      project.default_region === target.region &&
+      project.default_zone === target.zone &&
+      project.namespace === target.namespace
     )
   })
 
-  if (!hasMattDev) {
+  if (!hasTarget) {
     throw new TRPCError({
       code: 'PRECONDITION_FAILED',
       message: 'Cloud connection is missing the approved BYOC target project.',
@@ -430,17 +527,27 @@ function assertMattDevConnection(connection: CloudConnection) {
   }
 }
 
-function assertMattDevDeployment(deployment: Deployment) {
+function assertConfiguredDeployment(
+  deployment: Deployment,
+  teamId: string,
+  target: ByocTarget
+) {
+  if (deployment.team_id !== teamId) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: 'BYOC deployment resource not found.',
+    })
+  }
   if (
     deployment.provider !== 'gcp' ||
-    deployment.gcp.project_id !== MATT_DEV_PROJECT_ID ||
-    deployment.gcp.region !== MATT_DEV_REGION ||
-    deployment.gcp.zone !== MATT_DEV_ZONE ||
-    deployment.deployer_service_account.project_id !== MATT_DEV_PROJECT_ID
+    deployment.gcp.project_id !== target.projectId ||
+    deployment.gcp.region !== target.region ||
+    deployment.gcp.zone !== target.zone ||
+    deployment.deployer_service_account.project_id !== target.projectId
   ) {
     throw new TRPCError({
       code: 'PRECONDITION_FAILED',
-      message: 'Deployment target is outside matt-dev guardrails.',
+      message: 'Deployment target does not match the configured BYOC target.',
     })
   }
 }
