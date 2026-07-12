@@ -146,6 +146,8 @@ export interface ByocOperation {
   updated_at: string
 }
 
+const runnerRequestTimeoutMs = 15_000
+
 export function createByocDeploymentsRepository({
   teamId,
 }: {
@@ -156,15 +158,29 @@ export function createByocDeploymentsRepository({
   const token = getRunnerToken()
 
   async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-    const response = await fetch(new URL(path, baseUrl), {
-      ...init,
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Admin-Token': token,
-        ...init.headers,
-      },
-      cache: 'no-store',
-    })
+    let response: Response
+    try {
+      response = await fetch(new URL(path, baseUrl), {
+        ...init,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Admin-Token': token,
+          ...init.headers,
+        },
+        cache: 'no-store',
+        signal: init.signal
+          ? AbortSignal.any([
+              init.signal,
+              AbortSignal.timeout(runnerRequestTimeoutMs),
+            ])
+          : AbortSignal.timeout(runnerRequestTimeoutMs),
+      })
+    } catch {
+      throw new TRPCError({
+        code: 'BAD_GATEWAY',
+        message: 'BYOC deployments runner is unavailable.',
+      })
+    }
 
     if (!response.ok) {
       throw new TRPCError({
@@ -219,6 +235,7 @@ export function createByocDeploymentsRepository({
       deployerServiceAccountEmail: string,
       deploymentId?: string
     ) {
+      if (deploymentId) await getOwnedDeployment(deploymentId)
       const connection = await createCloudConnectionWithMode(
         request,
         teamId,

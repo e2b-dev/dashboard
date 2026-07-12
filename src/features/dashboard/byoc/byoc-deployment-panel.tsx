@@ -752,6 +752,7 @@ export function ByocDeploymentPanel() {
                     </p>
                   </div>
                   <Button
+                    disabled={operationPending}
                     onClick={() => {
                       setDeployerServiceAccountEmail(
                         deployment?.deployer_service_account.email ??
@@ -862,7 +863,7 @@ export function ByocDeploymentPanel() {
         deployerServiceAccountEmail={deployerServiceAccountEmail}
         e2bPrincipal={targetQuery.data?.e2bPrincipal ?? ''}
         error={mutationError(createConnection.error)}
-        isPending={createConnection.isPending}
+        isPending={createConnection.isPending || operationPending}
         onConnect={() =>
           createConnection.mutate({
             teamSlug,
@@ -1257,10 +1258,33 @@ function buildHealthChecks({
   const attached = deployment?.status === 'attached'
   const failed = deployment?.status === 'failed'
   const deploymentVerified = attached && operation?.status === 'succeeded'
-  const edgeHealthEvent = findEvent(events, 'health_check', 'passed')
-  const clusterEvent = findEvent(events, 'registering_cluster', 'attached')
-  const baseTemplateEvent = findEvent(events, 'building_base_template', 'ready')
-  const smokeEvent = findEvent(events, 'smoke_testing', 'Sandbox smoke passed')
+  const currentOperationEvents = operation
+    ? events.filter(
+        (event) =>
+          new Date(event.created_at).getTime() >=
+          new Date(operation.created_at).getTime()
+      )
+    : events
+  const edgeHealthEvent = findEvent(
+    currentOperationEvents,
+    'health_check',
+    'passed'
+  )
+  const clusterEvent = findEvent(
+    currentOperationEvents,
+    'registering_cluster',
+    'attached'
+  )
+  const baseTemplateEvent = findEvent(
+    currentOperationEvents,
+    'building_base_template',
+    'ready'
+  )
+  const smokeEvent = findEvent(
+    currentOperationEvents,
+    'smoke_testing',
+    'Sandbox smoke passed'
+  )
   const nodeID = smokeEvent?.message.match(/node ([^ ]+)/)?.[1]
 
   return [

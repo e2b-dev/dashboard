@@ -162,6 +162,29 @@ describe('BYOC deployments repository', () => {
   })
 
   it('replaces the verified identity on an existing deployment', async () => {
+    const deployment = {
+      id: '11111111-1111-4111-8111-111111111111',
+      team_id: 'team-a',
+      provider: 'gcp',
+      gcp: {
+        project_id: 'test-project',
+        region: 'test-region',
+        zone: 'test-zone-a',
+      },
+      domain_name: 'test.example.com',
+      prefix: 'test-',
+      deployer_service_account: {
+        account_id: 'e2b-byoc-deployer',
+        email: 'e2b-byoc-deployer@test-project.iam.gserviceaccount.com',
+        display_name: 'E2B BYOC deployer',
+        project_id: 'test-project',
+        status: 'planned',
+        roles: [],
+      },
+      status: 'attached',
+      created_at: '2026-07-11T00:00:00Z',
+      updated_at: '2026-07-11T00:00:00Z',
+    }
     const connection = {
       id: '22222222-2222-4222-8222-222222222222',
       team_id: 'team-a',
@@ -182,7 +205,9 @@ describe('BYOC deployments repository', () => {
       updated_at: '2026-07-11T00:00:00Z',
     }
     const fetchMock = vi.mocked(fetch)
-    fetchMock.mockResolvedValueOnce(Response.json({ connection }))
+    fetchMock
+      .mockResolvedValueOnce(Response.json(deployment))
+      .mockResolvedValueOnce(Response.json({ connection }))
 
     const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
     await repository.createCloudConnection(
@@ -190,9 +215,59 @@ describe('BYOC deployments repository', () => {
       '11111111-1111-4111-8111-111111111111'
     )
 
-    expect(fetchMock.mock.calls[0]?.[0].toString()).toBe(
+    expect(fetchMock.mock.calls[1]?.[0].toString()).toBe(
       'http://localhost:8098/deployments/11111111-1111-4111-8111-111111111111/cloud-connection'
     )
+  })
+
+  it('checks deployment ownership before replacing its connection', async () => {
+    const fetchMock = vi.mocked(fetch)
+    fetchMock.mockResolvedValueOnce(
+      Response.json({
+        id: '11111111-1111-4111-8111-111111111111',
+        team_id: 'team-b',
+        provider: 'gcp',
+        gcp: {
+          project_id: 'test-project',
+          region: 'test-region',
+          zone: 'test-zone-a',
+        },
+        domain_name: 'test.example.com',
+        prefix: 'test-',
+        deployer_service_account: {
+          account_id: 'e2b-byoc-deployer',
+          email: 'e2b-byoc-deployer@test-project.iam.gserviceaccount.com',
+          display_name: 'E2B BYOC deployer',
+          project_id: 'test-project',
+          status: 'planned',
+          roles: [],
+        },
+        status: 'attached',
+        created_at: '2026-07-11T00:00:00Z',
+        updated_at: '2026-07-11T00:00:00Z',
+      })
+    )
+
+    const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
+    await expect(
+      repository.createCloudConnection(
+        'replacement@test-project.iam.gserviceaccount.com',
+        '11111111-1111-4111-8111-111111111111'
+      )
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('maps runner transport failures to a bounded gateway error', async () => {
+    vi.mocked(fetch).mockRejectedValueOnce(
+      new DOMException('timed out', 'TimeoutError')
+    )
+
+    const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
+    await expect(repository.health()).rejects.toMatchObject({
+      code: 'BAD_GATEWAY',
+      message: 'BYOC deployments runner is unavailable.',
+    })
   })
 
   it('queues a topology-only deploy operation', async () => {
