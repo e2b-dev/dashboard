@@ -7,6 +7,7 @@ interface ByocTarget {
   namespace: string
   domainName: string
   prefix: string
+  e2bPrincipal: string
 }
 
 export type DeploymentStatus =
@@ -212,11 +213,13 @@ export function createByocDeploymentsRepository({
       return request<{ status: string }>('/health')
     },
 
-    async createCloudConnection() {
+    async createCloudConnection(deployerServiceAccountEmail: string) {
       const connection = await createCloudConnectionWithMode(
         request,
         teamId,
-        getCloudConnectionMode()
+        getCloudConnectionMode(),
+        deployerServiceAccountEmail,
+        target
       )
 
       assertConfiguredConnection(connection, teamId, target)
@@ -382,7 +385,9 @@ export function createByocDeploymentsRepository({
 function createCloudConnectionWithMode(
   request: <T>(path: string, init?: RequestInit) => Promise<T>,
   teamId: string,
-  mode: CloudConnection['mode']
+  mode: CloudConnection['mode'],
+  deployerServiceAccountEmail: string,
+  target: ByocTarget
 ) {
   return request<CloudConnection>('/cloud-connections', {
     method: 'POST',
@@ -390,7 +395,17 @@ function createCloudConnectionWithMode(
       team_id: teamId,
       provider: 'gcp',
       mode,
-      subject_email: 'customer-admin@example.com',
+      subject_email: deployerServiceAccountEmail,
+      authorized_projects: [
+        {
+          project_id: target.projectId,
+          name: target.projectId,
+          default_region: target.region,
+          default_zone: target.zone,
+          namespace: target.namespace,
+          e2b_principal: target.e2bPrincipal,
+        },
+      ],
     }),
   })
 }
@@ -473,6 +488,9 @@ function getPublicRunnerError(status: number) {
   if (status === 409) {
     return 'BYOC deployment is already running another operation.'
   }
+  if (status === 422) {
+    return 'Could not verify the deployer service account. Check its Token Creator binding and try again.'
+  }
   if (status === 429 || status >= 500) {
     return 'BYOC deployments runner is temporarily unavailable.'
   }
@@ -487,6 +505,7 @@ function getByocTarget(): ByocTarget {
     namespace: requiredEnv('BYOC_NAMESPACE'),
     domainName: requiredEnv('BYOC_DOMAIN_NAME'),
     prefix: requiredEnv('BYOC_RESOURCE_PREFIX'),
+    e2bPrincipal: requiredEnv('BYOC_E2B_PRINCIPAL'),
   }
 }
 

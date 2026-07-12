@@ -11,6 +11,10 @@ const connectionIdInput = z.object({
   connectionId: z.string().uuid(),
 })
 
+const createCloudConnectionInput = z.object({
+  deployerServiceAccountEmail: z.string().email().max(254),
+})
+
 const topologyInput = z.object({
   apiNodeCount: z.number().int().min(1).max(20),
   apiMachineType: z
@@ -38,11 +42,13 @@ export const byocRouter = createTRPCRouter({
     return createByocDeploymentsRepository({ teamId: ctx.teamId }).health()
   }),
 
-  createCloudConnection: protectedTeamProcedure.mutation(({ ctx }) => {
-    return createByocDeploymentsRepository({
-      teamId: ctx.teamId,
-    }).createCloudConnection()
-  }),
+  createCloudConnection: protectedTeamProcedure
+    .input(createCloudConnectionInput)
+    .mutation(({ ctx, input }) => {
+      return createByocDeploymentsRepository({
+        teamId: ctx.teamId,
+      }).createCloudConnection(input.deployerServiceAccountEmail)
+    }),
 
   listCloudConnections: protectedTeamProcedure.query(({ ctx }) => {
     return createByocDeploymentsRepository({

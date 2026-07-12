@@ -8,7 +8,21 @@ import type { TRPCRouterOutputs } from '@/trpc/client'
 import { useTRPC } from '@/trpc/client'
 import { CodeBlock } from '@/ui/code-block'
 import { Button } from '@/ui/primitives/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/ui/primitives/card'
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/ui/primitives/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/ui/primitives/dialog'
 import {
   CloudIcon,
   RefreshIcon,
@@ -180,6 +194,9 @@ export function ByocDeploymentPanel() {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const [selectedConnectionId, setSelectedConnectionId] = useState<string>()
+  const [connectionDialogOpen, setConnectionDialogOpen] = useState(false)
+  const [deployerServiceAccountEmail, setDeployerServiceAccountEmail] =
+    useState('')
   const [selectedDeploymentId, setSelectedDeploymentId] = useState<string>()
   const [runningDeploymentId, setRunningDeploymentId] = useState<string>()
   const [topologyDraft, setTopologyDraft] = useState<{
@@ -229,6 +246,7 @@ export function ByocDeploymentPanel() {
     topologyDraft && topologyDraft.deploymentId === deployment?.id
       ? topologyDraft.value
       : savedTopology
+  const topologyDirty = !topologiesEqual(topology, savedTopology)
   const updateTopology = (patch: Partial<TopologyDraft>) => {
     setTopologyDraft({
       deploymentId: deployment?.id ?? '',
@@ -282,6 +300,7 @@ export function ByocDeploymentPanel() {
     trpc.byoc.createCloudConnection.mutationOptions({
       onSuccess: async (data) => {
         setSelectedConnectionId(data.id)
+        setConnectionDialogOpen(false)
         await refresh()
       },
     })
@@ -360,7 +379,8 @@ export function ByocDeploymentPanel() {
     !!deployment?.id &&
     !selectedDeploymentActive &&
     canRunDeploy(deployment) &&
-    !operationPending
+    !operationPending &&
+    (deployment?.status !== 'attached' || topologyDirty)
   const canDestroy =
     !!deployment?.id &&
     !selectedDeploymentActive &&
@@ -378,6 +398,14 @@ export function ByocDeploymentPanel() {
     queryError(projectsQuery.error) ??
     queryError(deploymentsQuery.error) ??
     (eventsQuery.data?.length ? undefined : queryError(eventsQuery.error))
+  const runDeploy = () => {
+    if (!deployment) return
+    deploy.mutate({
+      teamSlug,
+      deploymentId: deployment.id,
+      topology,
+    })
+  }
 
   return (
     <main className="flex min-w-0 flex-col gap-4">
@@ -409,7 +437,7 @@ export function ByocDeploymentPanel() {
           {!connection ? (
             <Button
               disabled={operationPending || anyDeploymentActive}
-              onClick={() => createConnection.mutate({ teamSlug })}
+              onClick={() => setConnectionDialogOpen(true)}
               loading={createConnection.isPending ? 'Connecting' : undefined}
             >
               <CloudIcon />
@@ -432,16 +460,16 @@ export function ByocDeploymentPanel() {
           ) : (
             <Button
               disabled={!canDeploy}
-              onClick={() =>
-                deploy.mutate({
-                  teamSlug,
-                  deploymentId: deployment.id,
-                  topology,
-                })
-              }
+              onClick={runDeploy}
               loading={deploy.isPending ? 'Deploying' : undefined}
             >
-              {deployment.status === 'attached' ? 'Apply changes' : 'Deploy'}
+              {deployment.status === 'attached'
+                ? topologyDirty
+                  ? 'Apply changes'
+                  : 'No changes'
+                : deployment.status === 'failed'
+                  ? 'Retry deployment'
+                  : 'Deploy'}
             </Button>
           )}
         </div>
@@ -450,7 +478,7 @@ export function ByocDeploymentPanel() {
       {error ? (
         <div className="flex items-start gap-2 rounded-md border border-accent-error-highlight/35 bg-accent-error-highlight/10 p-3 text-fg">
           <WarningIcon className="mt-0.5 size-4 shrink-0 text-accent-error-highlight" />
-          <p className="prose-body line-clamp-3">{error}</p>
+          <p className="prose-body whitespace-pre-wrap">{error}</p>
         </div>
       ) : null}
 
@@ -575,6 +603,33 @@ export function ByocDeploymentPanel() {
                   }
                 />
               </CardContent>
+              {deployment ? (
+                <CardFooter className="mt-0 justify-between gap-3 border-stroke py-4">
+                  <p className="prose-caption text-fg-secondary">
+                    {topologyDirty
+                      ? 'Topology differs from the attached configuration.'
+                      : 'Topology matches the attached configuration.'}
+                  </p>
+                  <div className="flex shrink-0 gap-2">
+                    <Button
+                      disabled={!topologyDirty || operationPending}
+                      onClick={() => setTopologyDraft(undefined)}
+                      variant="secondary"
+                    >
+                      Reset
+                    </Button>
+                    <Button
+                      disabled={!canDeploy}
+                      loading={deploy.isPending ? 'Applying' : undefined}
+                      onClick={runDeploy}
+                    >
+                      {deployment.status === 'attached'
+                        ? 'Apply changes'
+                        : 'Deploy'}
+                    </Button>
+                  </div>
+                </CardFooter>
+              ) : null}
             </Card>
             <Card variant="layer" className="rounded-lg">
               <CardHeader>
@@ -641,6 +696,8 @@ export function ByocDeploymentPanel() {
                       viewportProps={{ className: 'max-h-[420px]' }}
                     >
                       {bootstrapCommand({
+                        deployerServiceAccount:
+                          connection?.subject_email.split('@')[0],
                         e2bPrincipal: selectedProjectPrincipal ?? '',
                         projectId:
                           selectedProject?.id ??
@@ -658,6 +715,8 @@ export function ByocDeploymentPanel() {
                       viewportProps={{ className: 'max-h-[420px]' }}
                     >
                       {bootstrapTerraform({
+                        deployerServiceAccount:
+                          connection?.subject_email.split('@')[0],
                         e2bPrincipal: selectedProjectPrincipal ?? '',
                         projectId:
                           selectedProject?.id ??
@@ -708,7 +767,127 @@ export function ByocDeploymentPanel() {
           </div>
         </TabsContent>
       </Tabs>
+
+      <ConnectGCPDialog
+        deployerServiceAccountEmail={deployerServiceAccountEmail}
+        e2bPrincipal={targetQuery.data?.e2bPrincipal ?? ''}
+        error={mutationError(createConnection.error)}
+        isPending={createConnection.isPending}
+        onConnect={() =>
+          createConnection.mutate({
+            teamSlug,
+            deployerServiceAccountEmail,
+          })
+        }
+        onDeployerServiceAccountEmailChange={setDeployerServiceAccountEmail}
+        onOpenChange={setConnectionDialogOpen}
+        open={connectionDialogOpen}
+        projectId={targetQuery.data?.projectId ?? ''}
+      />
     </main>
+  )
+}
+
+function ConnectGCPDialog({
+  deployerServiceAccountEmail,
+  e2bPrincipal,
+  error,
+  isPending,
+  onConnect,
+  onDeployerServiceAccountEmailChange,
+  onOpenChange,
+  open,
+  projectId,
+}: {
+  deployerServiceAccountEmail: string
+  e2bPrincipal: string
+  error?: string
+  isPending: boolean
+  onConnect: () => void
+  onDeployerServiceAccountEmailChange: (value: string) => void
+  onOpenChange: (open: boolean) => void
+  open: boolean
+  projectId: string
+}) {
+  const expectedSuffix = projectId
+    ? `@${projectId}.iam.gserviceaccount.com`
+    : ''
+  const validEmail =
+    !!expectedSuffix && deployerServiceAccountEmail.endsWith(expectedSuffix)
+  const accountId =
+    deployerServiceAccountEmail.split('@')[0] || DEFAULT_DEPLOYER_SA
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[min(760px,90vh)] max-w-2xl overflow-y-auto">
+        <DialogHeader className="gap-2 text-left">
+          <DialogTitle>Connect Google Cloud</DialogTitle>
+          <DialogDescription>
+            Create a project-local deployer identity, grant E2B permission to
+            impersonate it, then verify the connection.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid gap-5">
+          <div className="grid gap-2">
+            <label className="text-sm font-medium" htmlFor="byoc-deployer-sa">
+              Deployer service account
+            </label>
+            <input
+              autoComplete="off"
+              className="h-10 rounded-md border border-stroke bg-bg px-3 font-mono text-sm text-fg outline-none focus:border-stroke-active"
+              id="byoc-deployer-sa"
+              onChange={(event) =>
+                onDeployerServiceAccountEmailChange(event.currentTarget.value)
+              }
+              placeholder={`${DEFAULT_DEPLOYER_SA}${expectedSuffix}`}
+              spellCheck={false}
+              value={deployerServiceAccountEmail}
+            />
+            <p className="prose-caption text-fg-secondary">
+              Terraform runs as this identity using short-lived credentials. No
+              service-account key is stored.
+            </p>
+          </div>
+
+          <CodeBlock
+            className="overflow-hidden rounded-md"
+            icon={<TerminalIcon />}
+            title="Bootstrap access"
+            viewportProps={{ className: 'max-h-64' }}
+          >
+            {bootstrapCommand({
+              deployerServiceAccount: accountId,
+              e2bPrincipal,
+              projectId,
+            })}
+          </CodeBlock>
+
+          {error ? (
+            <div className="rounded-md border border-accent-error-highlight/35 bg-accent-error-highlight/10 p-3 text-sm text-fg">
+              {error}
+            </div>
+          ) : null}
+        </div>
+
+        <DialogFooter>
+          <Button
+            disabled={isPending}
+            onClick={() => onOpenChange(false)}
+            variant="tertiary"
+          >
+            Cancel
+          </Button>
+          <Button
+            disabled={!validEmail || !e2bPrincipal || isPending}
+            loading={isPending ? 'Verifying' : undefined}
+            onClick={onConnect}
+          >
+            Verify connection
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -728,6 +907,17 @@ function topologyFromDeployment(deployment?: Deployment): TopologyDraft {
       deployment?.terraform_settings?.clickhouse_machine_type ??
       'e2-standard-4',
   }
+}
+
+function topologiesEqual(left: TopologyDraft, right: TopologyDraft) {
+  return (
+    left.apiNodeCount === right.apiNodeCount &&
+    left.apiMachineType === right.apiMachineType &&
+    left.clientNodeCount === right.clientNodeCount &&
+    left.clientMachineType === right.clientMachineType &&
+    left.clickHouseNodeCount === right.clickHouseNodeCount &&
+    left.clickHouseMachineType === right.clickHouseMachineType
+  )
 }
 
 function StatusBadge({ status }: { status?: Deployment['status'] }) {

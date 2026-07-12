@@ -8,6 +8,7 @@ const originalTarget = {
   namespace: process.env.BYOC_NAMESPACE,
   prefix: process.env.BYOC_RESOURCE_PREFIX,
   projectId: process.env.BYOC_GCP_PROJECT_ID,
+  e2bPrincipal: process.env.BYOC_E2B_PRINCIPAL,
   region: process.env.BYOC_GCP_REGION,
   zone: process.env.BYOC_GCP_ZONE,
 }
@@ -22,6 +23,8 @@ describe('BYOC deployments repository', () => {
     process.env.BYOC_NAMESPACE = 'test-namespace'
     process.env.BYOC_DOMAIN_NAME = 'test.example.com'
     process.env.BYOC_RESOURCE_PREFIX = 'test-'
+    process.env.BYOC_E2B_PRINCIPAL =
+      'serviceAccount:runner@test-control.iam.gserviceaccount.com'
     vi.stubGlobal('fetch', vi.fn())
   })
 
@@ -34,6 +37,7 @@ describe('BYOC deployments repository', () => {
     process.env.BYOC_NAMESPACE = originalTarget.namespace
     process.env.BYOC_DOMAIN_NAME = originalTarget.domainName
     process.env.BYOC_RESOURCE_PREFIX = originalTarget.prefix
+    process.env.BYOC_E2B_PRINCIPAL = originalTarget.e2bPrincipal
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
   })
@@ -109,6 +113,52 @@ describe('BYOC deployments repository', () => {
       repository.listProjects('22222222-2222-4222-8222-222222222222')
     ).rejects.toMatchObject({ code: 'NOT_FOUND' })
     expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('sends the selected deployer identity and target for verification', async () => {
+    const fetchMock = vi.mocked(fetch)
+    fetchMock.mockResolvedValueOnce(
+      Response.json({
+        id: '22222222-2222-4222-8222-222222222222',
+        team_id: 'team-a',
+        provider: 'gcp',
+        mode: 'keyless_impersonation',
+        status: 'connected',
+        subject_email: 'e2b-byoc-deployer@test-project.iam.gserviceaccount.com',
+        authorized_projects: [
+          {
+            project_id: 'test-project',
+            default_region: 'test-region',
+            default_zone: 'test-zone-a',
+            namespace: 'test-namespace',
+          },
+        ],
+        required_project_roles: [],
+        created_at: '2026-07-11T00:00:00Z',
+        updated_at: '2026-07-11T00:00:00Z',
+      })
+    )
+
+    const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
+    await repository.createCloudConnection(
+      'e2b-byoc-deployer@test-project.iam.gserviceaccount.com'
+    )
+
+    const request = fetchMock.mock.calls[0]
+    expect(JSON.parse(String(request?.[1]?.body))).toMatchObject({
+      team_id: 'team-a',
+      subject_email: 'e2b-byoc-deployer@test-project.iam.gserviceaccount.com',
+      authorized_projects: [
+        {
+          project_id: 'test-project',
+          default_region: 'test-region',
+          default_zone: 'test-zone-a',
+          namespace: 'test-namespace',
+          e2b_principal:
+            'serviceAccount:runner@test-control.iam.gserviceaccount.com',
+        },
+      ],
+    })
   })
 
   it('sends the selected topology as Terraform variables', async () => {
