@@ -203,6 +203,10 @@ export function ByocDeploymentPanel() {
     useState('')
   const [selectedDeploymentId, setSelectedDeploymentId] = useState<string>()
   const [runningDeploymentId, setRunningDeploymentId] = useState<string>()
+  const [operationBaseline, setOperationBaseline] = useState<{
+    kind: ByocOperation['kind']
+    operationId?: string
+  }>()
   const [topologyDraft, setTopologyDraft] = useState<{
     deploymentId: string
     value: TopologyDraft
@@ -367,6 +371,10 @@ export function ByocDeploymentPanel() {
     trpc.byoc.deploy.mutationOptions({
       onMutate: (variables) => {
         setRunningDeploymentId(variables.deploymentId)
+        setOperationBaseline({
+          kind: 'deploy',
+          operationId: latestOperation?.id,
+        })
       },
       onSuccess: (data) => {
         setSelectedDeploymentId(data.deployment_id)
@@ -382,6 +390,10 @@ export function ByocDeploymentPanel() {
     trpc.byoc.destroy.mutationOptions({
       onMutate: (variables) => {
         setRunningDeploymentId(variables.deploymentId)
+        setOperationBaseline({
+          kind: 'destroy',
+          operationId: latestOperation?.id,
+        })
       },
       onSuccess: (data) => {
         setSelectedDeploymentId(data.deployment_id)
@@ -445,15 +457,16 @@ export function ByocDeploymentPanel() {
     deployment.status !== 'destroyed' &&
     !operationPending &&
     destroyConfirmationValue === 'destroy'
-  const latestOperationCreatedAt = latestOperation
-    ? new Date(latestOperation.created_at).getTime()
-    : 0
+  const discoveredSubmittedOperation =
+    !!operationBaseline &&
+    latestOperation?.kind === operationBaseline.kind &&
+    latestOperation.id !== operationBaseline.operationId
   const deployError =
-    deploy.submittedAt > 0 && latestOperationCreatedAt >= deploy.submittedAt
+    operationBaseline?.kind === 'deploy' && discoveredSubmittedOperation
       ? undefined
       : mutationError(deploy.error)
   const destroyError =
-    destroy.submittedAt > 0 && latestOperationCreatedAt >= destroy.submittedAt
+    operationBaseline?.kind === 'destroy' && discoveredSubmittedOperation
       ? undefined
       : mutationError(destroy.error)
   const error =
