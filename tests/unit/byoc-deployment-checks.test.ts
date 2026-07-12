@@ -121,4 +121,28 @@ describe('buildDeploymentChecks', () => {
 
     expect(checks.every((check) => check.status === 'failed')).toBe(true)
   })
+
+  it('recognizes the complete infrastructure, application, and verification flow', () => {
+    const checks = buildDeploymentChecks(
+      [
+        event('operation_started', 'Worker started operation operation-1.'),
+        event(
+          'worker_access',
+          'Worker can impersonate the GCP deployer identity.'
+        ),
+        event('prepare_artifacts', 'Runtime artifacts are ready.'),
+        event('dns_ready', 'Deployment DNS resolved.'),
+        event('wait_for_nomad', 'Nomad is reachable.'),
+        event('health_check', 'Terraform stages finished successfully.'),
+        event('health_check', 'Edge API health check passed.'),
+        event('registering_cluster', 'Team attached to cluster cluster-1.'),
+        event('building_base_template', 'Base template is ready.'),
+        event('smoke_testing', 'Sandbox smoke passed with sandbox sandbox-1.'),
+      ],
+      { id: 'operation-1', kind: 'deploy', status: 'succeeded' }
+    )
+
+    expect(checks).toHaveLength(9)
+    expect(checks.every((check) => check.status === 'passed')).toBe(true)
+  })
 })

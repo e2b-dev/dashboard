@@ -24,9 +24,12 @@ import {
   DialogTitle,
 } from '@/ui/primitives/dialog'
 import {
+  ArrowRightIcon,
   CheckCircleIcon,
   CloudIcon,
+  InfoIcon,
   RefreshIcon,
+  SettingsIcon,
   SpinnerIcon,
   TerminalIcon,
   WarningIcon,
@@ -211,6 +214,7 @@ export function ByocDeploymentPanel() {
   const queryClient = useQueryClient()
   const [selectedConnectionId, setSelectedConnectionId] = useState<string>()
   const [connectionDialogOpen, setConnectionDialogOpen] = useState(false)
+  const [setupStarted, setSetupStarted] = useState(false)
   const [deployerServiceAccountEmail, setDeployerServiceAccountEmail] =
     useState('')
   const [selectedDeploymentId, setSelectedDeploymentId] = useState<string>()
@@ -258,9 +262,12 @@ export function ByocDeploymentPanel() {
     enabled: !!connection?.id,
   })
 
+  const availableDeployments = deploymentsQuery.data?.filter(
+    (item) => item.status !== 'destroyed'
+  )
   const deployment =
-    deploymentsQuery.data?.find((item) => item.id === selectedDeploymentId) ??
-    latestByTimestamp(deploymentsQuery.data)
+    availableDeployments?.find((item) => item.id === selectedDeploymentId) ??
+    latestByTimestamp(availableDeployments)
   useEffect(() => {
     requestIntents.connection.acknowledge(connection?.client_request_id)
     requestIntents.createDeployment.acknowledge(deployment?.client_request_id)
@@ -510,6 +517,67 @@ export function ByocDeploymentPanel() {
     })
   }
 
+  const durableRouteAttached = Boolean(
+    deployment?.cluster_id && deployment.cluster_endpoint
+  )
+  const setupInProgress =
+    !deployment || (deployment.status !== 'attached' && !durableRouteAttached)
+
+  if (setupInProgress) {
+    return (
+      <ByocSetupFlow
+        activeOperation={activeOperation}
+        canCreateDeployment={canCreateDeployment}
+        canDeploy={canDeploy}
+        connection={connection}
+        createConnectionError={mutationError(createConnection.error)}
+        createConnectionPending={createConnection.isPending}
+        createDeploymentPending={createDeployment.isPending}
+        deployerServiceAccountEmail={deployerServiceAccountEmail}
+        deployment={deployment}
+        deploymentEvents={eventsQuery.data ?? []}
+        deploymentOperation={latestOperation}
+        e2bPrincipals={targetQuery.data?.e2bPrincipals ?? []}
+        error={error}
+        onConnect={() => {
+          const intent = requestIntents.connection.get(
+            deployment?.cloud_connection_id
+          )
+          createConnection.mutate({
+            clientRequestId: intent.requestId,
+            expectedCloudConnectionId: intent.expectedCloudConnectionId,
+            teamSlug,
+            deployerServiceAccountEmail,
+            deploymentId: deployment?.id,
+          })
+        }}
+        onCreateDeployment={() => {
+          if (!connection) return
+          const clientRequestId = requestIntents.createDeployment.get()
+          createDeployment.mutate({
+            clientRequestId,
+            teamSlug,
+            connectionId: connection.id,
+            projectId: targetQuery.data?.projectId ?? '',
+          })
+        }}
+        onDeployerServiceAccountEmailChange={(value) => {
+          requestIntents.connection.clear()
+          setDeployerServiceAccountEmail(value)
+        }}
+        onDeploy={runDeploy}
+        onRefresh={() => void refresh()}
+        onSetupStart={() => setSetupStarted(true)}
+        operationPending={operationPending}
+        projectId={targetQuery.data?.projectId ?? ''}
+        setupStarted={setupStarted || !!connection}
+        target={targetQuery.data}
+        topology={topology}
+        updateTopology={updateTopology}
+      />
+    )
+  }
+
   return (
     <main className="flex min-w-0 flex-col gap-4">
       <section className="flex flex-col gap-3 border-b border-stroke pb-4 sm:flex-row sm:items-center sm:justify-between">
@@ -564,12 +632,14 @@ export function ByocDeploymentPanel() {
             >
               Create deployment
             </Button>
-          ) : (
+          ) : latestOperation?.kind === 'destroy' &&
+            deployment.status === 'failed' ? null : (
             <Button
               disabled={!canDeploy}
               onClick={runDeploy}
               loading={deploy.isPending ? 'Deploying' : undefined}
             >
+              <SettingsIcon />
               {deployment.status === 'attached'
                 ? topologyDirty
                   ? 'Apply changes'
@@ -640,7 +710,7 @@ export function ByocDeploymentPanel() {
                 />
                 <SummaryRow
                   label="Team routing"
-                  value={deployment?.cluster_id ? 'attached' : 'pending'}
+                  value={durableRouteAttached ? 'attached' : 'incomplete'}
                 />
                 <p className="prose-caption text-fg-secondary">
                   Requests resolve this team's cluster ID and connect to the
@@ -946,6 +1016,570 @@ export function ByocDeploymentPanel() {
         projectId={targetQuery.data?.projectId ?? ''}
       />
     </main>
+  )
+}
+
+type ByocTarget = TRPCRouterOutputs['byoc']['target']
+
+function ByocSetupFlow({
+  activeOperation,
+  canCreateDeployment,
+  canDeploy,
+  connection,
+  createConnectionError,
+  createConnectionPending,
+  createDeploymentPending,
+  deployerServiceAccountEmail,
+  deployment,
+  deploymentEvents,
+  deploymentOperation,
+  e2bPrincipals,
+  error,
+  onConnect,
+  onCreateDeployment,
+  onDeployerServiceAccountEmailChange,
+  onDeploy,
+  onRefresh,
+  onSetupStart,
+  operationPending,
+  projectId,
+  setupStarted,
+  target,
+  topology,
+  updateTopology,
+}: {
+  activeOperation?: ByocOperation
+  canCreateDeployment: boolean
+  canDeploy: boolean
+  connection?: TRPCRouterOutputs['byoc']['listCloudConnections'][number]
+  createConnectionError?: string
+  createConnectionPending: boolean
+  createDeploymentPending: boolean
+  deployerServiceAccountEmail: string
+  deployment?: Deployment
+  deploymentEvents: DeploymentEvent[]
+  deploymentOperation?: ByocOperation
+  e2bPrincipals: string[]
+  error?: string
+  onConnect: () => void
+  onCreateDeployment: () => void
+  onDeployerServiceAccountEmailChange: (value: string) => void
+  onDeploy: () => void
+  onRefresh: () => void
+  onSetupStart: () => void
+  operationPending: boolean
+  projectId: string
+  setupStarted: boolean
+  target?: ByocTarget
+  topology: TopologyDraft
+  updateTopology: (patch: Partial<TopologyDraft>) => void
+}) {
+  if (!setupStarted && !connection) {
+    return (
+      <main className="flex min-w-0 flex-col gap-6">
+        <section className="border-b border-stroke pb-4">
+          <h1 className="prose-headline-medium">BYOC</h1>
+          <p className="mt-1 text-sm text-fg-secondary">
+            Run E2B sandboxes in infrastructure owned by your team.
+          </p>
+        </section>
+        <section className="grid min-h-[420px] place-items-center border border-stroke bg-bg-1 px-6 py-12">
+          <div className="w-full max-w-xl text-center">
+            <div className="mx-auto grid size-12 place-items-center border border-stroke bg-bg">
+              <CloudIcon className="size-5 text-fg-secondary" />
+            </div>
+            <h2 className="mt-5 text-xl font-medium text-fg">
+              Deploy sandboxes in your own Google Cloud project
+            </h2>
+            <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-fg-secondary">
+              E2B provisions and operates a dedicated region in your project.
+              Your sandbox workloads stay on infrastructure your team controls.
+            </p>
+            <div className="mt-6 grid gap-px border border-stroke bg-stroke text-left sm:grid-cols-3">
+              <SetupBenefit
+                label="Your project"
+                text="Infrastructure and workload boundaries remain in your GCP account."
+              />
+              <SetupBenefit
+                label="Managed deployment"
+                text="E2B applies infrastructure, deploys services, and verifies the region."
+              />
+              <SetupBenefit
+                label="Adjustable capacity"
+                text="Change API, sandbox, and ClickHouse capacity after setup."
+              />
+            </div>
+            <Button className="mt-6" onClick={onSetupStart}>
+              Start setup
+              <ArrowRightIcon />
+            </Button>
+          </div>
+        </section>
+      </main>
+    )
+  }
+
+  const configuring =
+    !!connection &&
+    (!deployment ||
+      ['draft', 'plan_ready', 'plan_changed', 'plan_noop'].includes(
+        deployment.status
+      )) &&
+    !activeOperation
+  const checks = buildDeploymentChecks(deploymentEvents, deploymentOperation)
+  const completedChecks = checks.filter(
+    (check) => check.status === 'passed'
+  ).length
+
+  return (
+    <main className="flex min-w-0 flex-col gap-5">
+      <section className="flex flex-col gap-3 border-b border-stroke pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="prose-headline-medium">Set up BYOC</h1>
+            <StatusBadge
+              status={activeOperation?.status ?? deployment?.status}
+            />
+          </div>
+          <p className="mt-1 text-sm text-fg-secondary">
+            Connect your project, choose the initial capacity, and let E2B
+            deploy the region.
+          </p>
+        </div>
+        <Button variant="secondary" onClick={onRefresh}>
+          <RefreshIcon />
+          Refresh
+        </Button>
+      </section>
+
+      <SetupStepRail
+        connectionReady={!!connection}
+        deployment={deployment}
+        checks={checks}
+      />
+
+      {error ? (
+        <div className="flex items-start gap-2 border border-accent-error-highlight/35 bg-accent-error-highlight/10 p-3 text-fg">
+          <WarningIcon className="mt-0.5 size-4 shrink-0 text-accent-error-highlight" />
+          <p className="prose-body whitespace-pre-wrap">{error}</p>
+        </div>
+      ) : null}
+
+      {!connection ? (
+        <SetupServiceAccount
+          deployerServiceAccountEmail={deployerServiceAccountEmail}
+          e2bPrincipals={e2bPrincipals}
+          error={createConnectionError}
+          isPending={createConnectionPending || operationPending}
+          onConnect={onConnect}
+          onEmailChange={onDeployerServiceAccountEmailChange}
+          projectId={projectId}
+        />
+      ) : configuring ? (
+        <SetupConfiguration
+          canCreateDeployment={canCreateDeployment}
+          canDeploy={canDeploy}
+          createDeploymentPending={createDeploymentPending}
+          deployment={deployment}
+          onCreateDeployment={onCreateDeployment}
+          onDeploy={onDeploy}
+          operationPending={operationPending}
+          target={target}
+          topology={topology}
+          updateTopology={updateTopology}
+        />
+      ) : (
+        <SetupDeploymentProgress
+          checks={checks}
+          completedChecks={completedChecks}
+          deployment={deployment}
+          events={deploymentEvents}
+          onRetry={onDeploy}
+          operation={deploymentOperation}
+          operationPending={operationPending}
+        />
+      )}
+    </main>
+  )
+}
+
+function SetupBenefit({ label, text }: { label: string; text: string }) {
+  return (
+    <div className="bg-bg p-4">
+      <p className="text-sm font-medium text-fg">{label}</p>
+      <p className="mt-1 text-xs leading-5 text-fg-secondary">{text}</p>
+    </div>
+  )
+}
+
+function SetupStepRail({
+  checks,
+  connectionReady,
+  deployment,
+}: {
+  checks: ReturnType<typeof buildDeploymentChecks>
+  connectionReady: boolean
+  deployment?: Deployment
+}) {
+  const infrastructureReady = checks
+    .slice(0, 5)
+    .every((check) => check.status === 'passed')
+  const applicationsReady = checks
+    .slice(5, 8)
+    .every((check) => check.status === 'passed')
+  const verificationReady = checks.at(-1)?.status === 'passed'
+  const steps = [
+    { label: 'Service account', complete: connectionReady },
+    { label: 'Configuration', complete: !!deployment },
+    { label: 'Infrastructure', complete: infrastructureReady },
+    { label: 'Applications', complete: applicationsReady },
+    { label: 'Verification', complete: verificationReady },
+  ]
+  const current = Math.max(
+    0,
+    steps.findIndex((step) => !step.complete)
+  )
+
+  return (
+    <ol className="grid gap-px border border-stroke bg-stroke sm:grid-cols-5">
+      {steps.map((step, index) => (
+        <li
+          className={cn(
+            'flex min-w-0 items-center gap-2 bg-bg px-3 py-3 text-sm',
+            index === current && 'bg-accent-main-highlight/5'
+          )}
+          key={step.label}
+        >
+          <span
+            className={cn(
+              'grid size-5 shrink-0 place-items-center border text-[11px]',
+              step.complete
+                ? 'border-accent-success-highlight/40 bg-accent-success-highlight/10 text-accent-success-highlight'
+                : index === current
+                  ? 'border-accent-main-highlight text-accent-main-highlight'
+                  : 'border-stroke text-fg-tertiary'
+            )}
+          >
+            {step.complete ? (
+              <CheckCircleIcon className="size-3.5" />
+            ) : (
+              index + 1
+            )}
+          </span>
+          <span
+            className={cn(
+              'truncate',
+              index === current ? 'font-medium text-fg' : 'text-fg-secondary'
+            )}
+          >
+            {step.label}
+          </span>
+        </li>
+      ))}
+    </ol>
+  )
+}
+
+function SetupServiceAccount({
+  deployerServiceAccountEmail,
+  e2bPrincipals,
+  error,
+  isPending,
+  onConnect,
+  onEmailChange,
+  projectId,
+}: {
+  deployerServiceAccountEmail: string
+  e2bPrincipals: string[]
+  error?: string
+  isPending: boolean
+  onConnect: () => void
+  onEmailChange: (value: string) => void
+  projectId: string
+}) {
+  const expectedSuffix = projectId
+    ? `@${projectId}.iam.gserviceaccount.com`
+    : ''
+  const validEmail =
+    !!expectedSuffix && deployerServiceAccountEmail.endsWith(expectedSuffix)
+  const accountId =
+    deployerServiceAccountEmail.split('@')[0] || DEFAULT_DEPLOYER_SA
+
+  return (
+    <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.7fr)]">
+      <Card variant="layer" className="rounded-lg">
+        <CardHeader>
+          <CardTitle>1. Create the deployer service account</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <p className="prose-body max-w-2xl text-fg-secondary">
+            Run this once in the GCP project where E2B should deploy. It creates
+            a project-local identity and allows the E2B deployment worker to
+            impersonate it with short-lived credentials.
+          </p>
+          <CodeBlock
+            icon={<TerminalIcon />}
+            title="Run in Cloud Shell"
+            viewportProps={{ className: 'max-h-[420px]' }}
+          >
+            {bootstrapCommand({
+              deployerServiceAccount: accountId,
+              e2bPrincipals,
+              projectId,
+            })}
+          </CodeBlock>
+        </CardContent>
+      </Card>
+      <Card variant="layer" className="h-fit rounded-lg">
+        <CardHeader>
+          <CardTitle>Verify access</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <label
+            className="grid gap-2 text-sm font-medium"
+            htmlFor="byoc-setup-service-account"
+          >
+            Service account email
+            <input
+              autoComplete="off"
+              className="h-10 rounded-md border border-stroke bg-bg px-3 font-mono text-sm font-normal text-fg outline-none focus:border-stroke-active"
+              id="byoc-setup-service-account"
+              onChange={(event) => onEmailChange(event.currentTarget.value)}
+              placeholder={`${DEFAULT_DEPLOYER_SA}${expectedSuffix}`}
+              spellCheck={false}
+              value={deployerServiceAccountEmail}
+            />
+          </label>
+          <div className="flex gap-2 border border-stroke bg-bg p-3 text-xs leading-5 text-fg-secondary">
+            <InfoIcon className="mt-0.5 size-4 shrink-0" />
+            No service-account key is created or stored. The worker requests
+            short-lived credentials when it runs.
+          </div>
+          {error ? (
+            <p className="text-sm text-accent-error-highlight">{error}</p>
+          ) : null}
+          <Button
+            disabled={!validEmail || e2bPrincipals.length === 0 || isPending}
+            loading={isPending ? 'Verifying' : undefined}
+            onClick={onConnect}
+          >
+            Verify and continue
+            <ArrowRightIcon />
+          </Button>
+        </CardContent>
+      </Card>
+    </section>
+  )
+}
+
+function SetupConfiguration({
+  canCreateDeployment,
+  canDeploy,
+  createDeploymentPending,
+  deployment,
+  onCreateDeployment,
+  onDeploy,
+  operationPending,
+  target,
+  topology,
+  updateTopology,
+}: {
+  canCreateDeployment: boolean
+  canDeploy: boolean
+  createDeploymentPending: boolean
+  deployment?: Deployment
+  onCreateDeployment: () => void
+  onDeploy: () => void
+  operationPending: boolean
+  target?: ByocTarget
+  topology: TopologyDraft
+  updateTopology: (patch: Partial<TopologyDraft>) => void
+}) {
+  return (
+    <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
+      <Card variant="layer" className="rounded-lg">
+        <CardHeader>
+          <CardTitle>2. Choose the initial configuration</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-5 md:grid-cols-3">
+          <TopologyControl
+            count={topology.apiNodeCount}
+            label="API nodes"
+            machineType={topology.apiMachineType}
+            machineTypes={['e2-standard-4', 'e2-standard-8', 'n2-standard-8']}
+            max={20}
+            onCountChange={(apiNodeCount) => updateTopology({ apiNodeCount })}
+            onMachineTypeChange={(apiMachineType) =>
+              updateTopology({ apiMachineType })
+            }
+          />
+          <TopologyControl
+            count={topology.clientNodeCount}
+            label="Sandbox nodes"
+            machineType={topology.clientMachineType}
+            machineTypes={['n2-standard-8', 'n2-standard-16', 'n2-highmem-8']}
+            max={100}
+            onCountChange={(clientNodeCount) =>
+              updateTopology({ clientNodeCount })
+            }
+            onMachineTypeChange={(clientMachineType) =>
+              updateTopology({ clientMachineType })
+            }
+          />
+          <TopologyControl
+            count={topology.clickHouseNodeCount}
+            label="ClickHouse nodes"
+            machineType={topology.clickHouseMachineType}
+            machineTypes={['e2-standard-4', 'e2-standard-8', 'n2-standard-8']}
+            max={10}
+            onCountChange={(clickHouseNodeCount) =>
+              updateTopology({ clickHouseNodeCount })
+            }
+            onMachineTypeChange={(clickHouseMachineType) =>
+              updateTopology({ clickHouseMachineType })
+            }
+          />
+        </CardContent>
+        <CardFooter className="mt-0 justify-end border-stroke py-4">
+          {!deployment ? (
+            <Button
+              disabled={!canCreateDeployment || operationPending}
+              loading={createDeploymentPending ? 'Saving' : undefined}
+              onClick={onCreateDeployment}
+            >
+              Save initial configuration
+              <ArrowRightIcon />
+            </Button>
+          ) : (
+            <Button
+              disabled={!canDeploy || operationPending}
+              onClick={onDeploy}
+            >
+              Deploy initial configuration
+              <ArrowRightIcon />
+            </Button>
+          )}
+        </CardFooter>
+      </Card>
+      <Card variant="layer" className="h-fit rounded-lg">
+        <CardHeader>
+          <CardTitle>Deployment target</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-3">
+          <TargetCell label="Project" value={target?.projectId} />
+          <TargetCell
+            label="Region / zone"
+            value={target ? `${target.region} / ${target.zone}` : undefined}
+          />
+          <TargetCell label="Domain" value={target?.domainName} />
+        </CardContent>
+      </Card>
+    </section>
+  )
+}
+
+function SetupDeploymentProgress({
+  checks,
+  completedChecks,
+  deployment,
+  events,
+  onRetry,
+  operation,
+  operationPending,
+}: {
+  checks: ReturnType<typeof buildDeploymentChecks>
+  completedChecks: number
+  deployment?: Deployment
+  events: DeploymentEvent[]
+  onRetry: () => void
+  operation?: ByocOperation
+  operationPending: boolean
+}) {
+  const failed =
+    deployment?.status === 'failed' || operation?.status.startsWith('failed')
+  const canRetryDeploy = failed && operation?.kind !== 'destroy'
+  return (
+    <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+      <Card variant="layer" className="rounded-lg">
+        <CardHeader className="flex-row items-start justify-between gap-4">
+          <div>
+            <CardTitle>Deploying your BYOC region</CardTitle>
+            <p className="mt-1 text-sm text-fg-secondary">
+              {completedChecks} of {checks.length} checks complete
+            </p>
+          </div>
+          {canRetryDeploy ? (
+            <Button disabled={operationPending} onClick={onRetry}>
+              Retry deployment
+            </Button>
+          ) : failed ? (
+            <WarningIcon className="size-5 text-accent-error-highlight" />
+          ) : (
+            <SpinnerIcon className="size-5 animate-spin text-accent-main-highlight" />
+          )}
+        </CardHeader>
+        <CardContent className="grid gap-5">
+          <SetupPhase
+            title="Infrastructure"
+            description="Network, compute, storage, DNS, and Terraform resources."
+            checks={checks.slice(0, 5)}
+          />
+          <SetupPhase
+            title="Applications"
+            description="E2B control-plane services, routing, and the base template."
+            checks={checks.slice(5, 8)}
+          />
+          <SetupPhase
+            title="Verification"
+            description="A real sandbox is started and checked before traffic is attached."
+            checks={checks.slice(8)}
+          />
+        </CardContent>
+      </Card>
+      <Card variant="layer" className="h-fit rounded-lg">
+        <CardHeader>
+          <CardTitle>Latest activity</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <EventLog events={events.slice(-6)} />
+        </CardContent>
+      </Card>
+    </section>
+  )
+}
+
+function SetupPhase({
+  checks,
+  description,
+  title,
+}: {
+  checks: ReturnType<typeof buildDeploymentChecks>
+  description: string
+  title: string
+}) {
+  return (
+    <div className="border border-stroke bg-bg">
+      <div className="border-b border-stroke px-4 py-3">
+        <h3 className="text-sm font-medium text-fg">{title}</h3>
+        <p className="mt-0.5 text-xs text-fg-secondary">{description}</p>
+      </div>
+      <ol className="divide-y divide-stroke">
+        {checks.map((check) => (
+          <li
+            className="grid grid-cols-[20px_minmax(0,1fr)] gap-2 px-4 py-3"
+            key={check.label}
+          >
+            <CheckStatusIcon status={check.status} />
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-fg">{check.label}</p>
+              <p className="mt-0.5 text-xs text-fg-secondary">
+                {check.message}
+              </p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
   )
 }
 
