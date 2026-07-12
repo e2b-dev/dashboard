@@ -371,13 +371,10 @@ export function ByocDeploymentPanel() {
       onSuccess: (data) => {
         setSelectedDeploymentId(data.deployment_id)
       },
-      onSettled: async () => {
-        try {
-          await refresh()
-        } finally {
+      onSettled: () =>
+        refresh().finally(() => {
           setRunningDeploymentId(undefined)
-        }
-      },
+        }),
     })
   )
 
@@ -390,13 +387,10 @@ export function ByocDeploymentPanel() {
         setSelectedDeploymentId(data.deployment_id)
         setDestroyConfirmation({ deploymentKey: '', value: '' })
       },
-      onSettled: async () => {
-        try {
-          await refresh()
-        } finally {
+      onSettled: () =>
+        refresh().finally(() => {
           setRunningDeploymentId(undefined)
-        }
-      },
+        }),
     })
   )
 
