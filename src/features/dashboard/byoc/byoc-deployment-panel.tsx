@@ -474,7 +474,6 @@ export function ByocDeploymentPanel() {
     mutationError(createDeployment.error) ??
     deployError ??
     destroyError ??
-    latestOperation?.error ??
     queryError(targetQuery.error) ??
     queryError(healthQuery.error) ??
     queryError(connectionsQuery.error) ??
@@ -1106,12 +1105,16 @@ function OperationSummary({
             : 'Connect a GCP project and create a deployment to begin.')}
       </p>
       {deployment?.error &&
+      deployment.error !== latest?.message &&
+      deployment.error !== operation?.error &&
       !(operation && isActiveOperation(operation.status)) ? (
         <p className="line-clamp-3 rounded bg-accent-error-highlight/10 p-2 text-sm text-fg">
           {deployment.error}
         </p>
       ) : null}
-      {operation?.error && operation.error !== deployment?.error ? (
+      {operation?.error &&
+      operation.error !== latest?.message &&
+      operation.error !== deployment?.error ? (
         <p className="rounded bg-accent-error-highlight/10 p-2 text-sm text-fg">
           {operation.error}
         </p>
