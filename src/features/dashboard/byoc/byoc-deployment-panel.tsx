@@ -24,8 +24,10 @@ import {
   DialogTitle,
 } from '@/ui/primitives/dialog'
 import {
+  CheckCircleIcon,
   CloudIcon,
   RefreshIcon,
+  SpinnerIcon,
   TerminalIcon,
   WarningIcon,
 } from '@/ui/primitives/icons'
@@ -37,11 +39,14 @@ import {
   SelectValue,
 } from '@/ui/primitives/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
+import {
+  buildDeploymentChecks,
+  type DeploymentCheckStatus,
+} from './deployment-checks'
 
 type Deployment = TRPCRouterOutputs['byoc']['listDeployments'][number]
 type DeploymentEvent = TRPCRouterOutputs['byoc']['listEvents'][number]
 type ByocOperation = TRPCRouterOutputs['byoc']['listOperations'][number]
-type HealthStatus = 'healthy' | 'checking' | 'waiting' | 'warning' | 'failed'
 type TopologyDraft = {
   apiNodeCount: number
   apiMachineType: string
@@ -409,11 +414,6 @@ export function ByocDeploymentPanel() {
   const selectedProject = projectsQuery.data?.find(
     (project) => project.id === targetQuery.data?.projectId
   )
-  const targetProjectAuthorized =
-    !!targetQuery.data &&
-    !!connection?.authorized_projects.some(
-      (project) => project.project_id === targetQuery.data.projectId
-    )
   const selectedProjectPrincipal =
     selectedProject?.e2b_principal ??
     connection?.authorized_projects[0]?.e2b_principal
@@ -422,15 +422,6 @@ export function ByocDeploymentPanel() {
     destroyConfirmation.deploymentKey === deploymentKey
       ? destroyConfirmation.value
       : ''
-  const healthChecks = buildHealthChecks({
-    connection: !!connection,
-    deployment,
-    events: eventsQuery.data ?? [],
-    operation: latestOperation,
-    project: !!selectedProject || targetProjectAuthorized,
-    runnerHealthy: healthQuery.data?.status === 'ok',
-    target: targetQuery.data,
-  })
   const operationPending =
     createDeployment.isPending ||
     deploy.isPending ||
@@ -596,11 +587,10 @@ export function ByocDeploymentPanel() {
                   events={eventsQuery.data ?? []}
                   operation={latestOperation}
                 />
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  {healthChecks.slice(0, 4).map((check) => (
-                    <HealthCell key={check.label} {...check} />
-                  ))}
-                </div>
+                <DeploymentChecklist
+                  events={eventsQuery.data ?? []}
+                  operation={latestOperation}
+                />
               </CardContent>
             </Card>
             <Card variant="layer" className="rounded-lg">
@@ -907,6 +897,67 @@ export function ByocDeploymentPanel() {
       />
     </main>
   )
+}
+
+function DeploymentChecklist({
+  events,
+  operation,
+}: {
+  events: DeploymentEvent[]
+  operation?: ByocOperation
+}) {
+  const checks = buildDeploymentChecks(events, operation)
+
+  return (
+    <ol aria-live="polite" className="grid gap-1">
+      {checks.map((check) => (
+        <li
+          className="grid grid-cols-[20px_minmax(0,1fr)_auto] items-start gap-2 rounded-md px-2 py-2"
+          key={check.label}
+        >
+          <CheckStatusIcon status={check.status} />
+          <div className="min-w-0">
+            <p className="prose-body font-medium text-fg">
+              {check.label}
+              <span className="sr-only">: {check.status}</span>
+            </p>
+            <p className="prose-caption truncate text-fg-secondary">
+              {check.message}
+            </p>
+          </div>
+          {check.timestamp ? (
+            <time
+              className="prose-caption text-fg-tertiary"
+              dateTime={check.timestamp}
+            >
+              {new Date(check.timestamp).toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                timeZone: 'UTC',
+              })}
+            </time>
+          ) : null}
+        </li>
+      ))}
+    </ol>
+  )
+}
+
+function CheckStatusIcon({ status }: { status: DeploymentCheckStatus }) {
+  if (status === 'passed') {
+    return (
+      <CheckCircleIcon className="mt-0.5 size-4 text-accent-success-highlight" />
+    )
+  }
+  if (status === 'running') {
+    return (
+      <SpinnerIcon className="mt-0.5 size-4 animate-spin text-accent-main-highlight" />
+    )
+  }
+  if (status === 'failed') {
+    return <WarningIcon className="mt-0.5 size-4 text-accent-error-highlight" />
+  }
+  return <span className="mt-0.5 size-4 rounded border border-stroke" />
 }
 
 function ConnectGCPDialog({
@@ -1231,216 +1282,6 @@ function TargetCell({ label, value }: { label: string; value?: string }) {
       </div>
     </div>
   )
-}
-
-function HealthCell({
-  detail,
-  label,
-  status,
-  value,
-}: {
-  detail?: string
-  label: string
-  status: HealthStatus
-  value: string
-}) {
-  return (
-    <div className="min-w-0 rounded-md border border-stroke bg-bg p-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="prose-caption uppercase text-fg-tertiary">
-            {label}
-          </div>
-          <div className="mt-1 truncate text-sm font-medium text-fg">
-            {value}
-          </div>
-        </div>
-        <span
-          className={cn(
-            'mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full',
-            healthStatusClassName(status)
-          )}
-        />
-      </div>
-      {detail ? (
-        <p className="prose-caption mt-2 line-clamp-2 text-fg-secondary">
-          {detail}
-        </p>
-      ) : null}
-    </div>
-  )
-}
-
-function buildHealthChecks({
-  connection,
-  deployment,
-  events,
-  operation,
-  project,
-  runnerHealthy,
-  target,
-}: {
-  connection: boolean
-  deployment?: Deployment
-  events: DeploymentEvent[]
-  operation?: ByocOperation
-  project: boolean
-  runnerHealthy: boolean
-  target?: { projectId: string; region: string }
-}) {
-  const attached = deployment?.status === 'attached'
-  const failed = deployment?.status === 'failed'
-  const deploymentVerified = attached && operation?.status === 'succeeded'
-  const currentOperationEvents = operation
-    ? events.filter(
-        (event) =>
-          new Date(event.created_at).getTime() >=
-          new Date(operation.created_at).getTime()
-      )
-    : events
-  const edgeHealthEvent = findEvent(
-    currentOperationEvents,
-    'health_check',
-    'passed'
-  )
-  const clusterEvent = findEvent(
-    currentOperationEvents,
-    'registering_cluster',
-    'attached'
-  )
-  const baseTemplateEvent = findEvent(
-    currentOperationEvents,
-    'building_base_template',
-    'ready'
-  )
-  const smokeEvent = findEvent(
-    currentOperationEvents,
-    'smoke_testing',
-    'Sandbox smoke passed'
-  )
-  const nodeID = smokeEvent?.message.match(/node ([^ ]+)/)?.[1]
-
-  return [
-    {
-      detail: 'Dashboard can reach the protected Belt deployment service.',
-      label: 'Deployer',
-      status: runnerHealthy ? 'healthy' : 'failed',
-      value: runnerHealthy ? 'reachable' : 'unreachable',
-    },
-    {
-      detail: project
-        ? `Selected ${target?.projectId ?? 'configured project'} in ${target?.region ?? 'the configured region'}.`
-        : 'Connect Google Cloud and select the approved project.',
-      label: 'Project',
-      status: project ? 'healthy' : connection ? 'checking' : 'waiting',
-      value: project ? 'selected' : 'pending',
-    },
-    {
-      detail: deployment
-        ? `Deployment status is ${deployment.status}.`
-        : 'Create a deployment draft to start checks.',
-      label: 'Deployment',
-      status: failed
-        ? 'failed'
-        : attached
-          ? 'healthy'
-          : deployment
-            ? 'checking'
-            : 'waiting',
-      value: deployment?.status ?? 'not created',
-    },
-    {
-      detail: edgeHealthEvent?.message ?? 'Waiting for edge health check.',
-      label: 'Edge API',
-      status:
-        edgeHealthEvent || deploymentVerified
-          ? 'healthy'
-          : attached
-            ? 'warning'
-            : 'waiting',
-      value: edgeHealthEvent || deploymentVerified ? 'verified' : 'pending',
-    },
-    {
-      detail:
-        clusterEvent?.message ??
-        'Cluster registration attaches this team to the BYOC region.',
-      label: 'Control plane',
-      status: clusterEvent || attached ? 'healthy' : 'waiting',
-      value: clusterEvent || attached ? 'attached' : 'pending',
-    },
-    {
-      detail:
-        baseTemplateEvent?.message ??
-        'Base template build runs after the cluster is attached.',
-      label: 'Base template',
-      status:
-        baseTemplateEvent || deploymentVerified
-          ? 'healthy'
-          : attached
-            ? 'warning'
-            : 'waiting',
-      value: baseTemplateEvent || deploymentVerified ? 'verified' : 'pending',
-    },
-    {
-      detail:
-        smokeEvent?.message ?? 'Sandbox validation verifies BYOC placement.',
-      label: 'Sandbox validation',
-      status:
-        smokeEvent || deploymentVerified
-          ? 'healthy'
-          : attached
-            ? 'warning'
-            : 'waiting',
-      value: smokeEvent || deploymentVerified ? 'verified' : 'pending',
-    },
-    {
-      detail: nodeID
-        ? `The latest sandbox smoke was placed on node ${nodeID}.`
-        : 'Waiting for a sandbox smoke through the attached cluster route.',
-      label: 'Placement',
-      status:
-        nodeID || deploymentVerified
-          ? 'healthy'
-          : attached
-            ? 'warning'
-            : 'waiting',
-      value: nodeID || deploymentVerified ? 'verified' : 'pending',
-    },
-  ] satisfies Array<{
-    detail?: string
-    label: string
-    status: HealthStatus
-    value: string
-  }>
-}
-
-function findEvent(
-  events: DeploymentEvent[],
-  phase: string,
-  messageIncludes: string
-) {
-  return events
-    .slice()
-    .reverse()
-    .find(
-      (event) =>
-        event.phase === phase && event.message.includes(messageIncludes)
-    )
-}
-
-function healthStatusClassName(status: HealthStatus) {
-  switch (status) {
-    case 'healthy':
-      return 'bg-accent-success-highlight'
-    case 'checking':
-      return 'bg-accent-main-highlight'
-    case 'warning':
-      return 'bg-accent-warning-highlight'
-    case 'failed':
-      return 'bg-accent-error-highlight'
-    case 'waiting':
-      return 'bg-fg-tertiary'
-  }
 }
 
 function SummaryRow({
