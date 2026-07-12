@@ -170,20 +170,42 @@ describe('BYOC deployments repository', () => {
     })
   })
 
-  it('rejects a deployer identity from a different project before calling the worker', async () => {
+  it('uses the deployer identity project as the authorized project', async () => {
+    const fetchMock = vi.mocked(fetch)
+    fetchMock.mockResolvedValueOnce(
+      Response.json({
+        id: '22222222-2222-4222-8222-222222222222',
+        team_id: 'team-a',
+        provider: 'gcp',
+        mode: 'keyless_impersonation',
+        status: 'connected',
+        subject_email:
+          'e2b-byoc-deployer@other-project.iam.gserviceaccount.com',
+        authorized_projects: [
+          {
+            project_id: 'other-project',
+            default_region: 'test-region',
+            default_zone: 'test-zone-a',
+            namespace: 'test-namespace',
+          },
+        ],
+        required_project_roles: [],
+        created_at: '2026-07-11T00:00:00Z',
+        updated_at: '2026-07-11T00:00:00Z',
+      })
+    )
     const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
 
-    await expect(
-      repository.createCloudConnection(
-        'e2b-byoc-deployer@other-project.iam.gserviceaccount.com',
-        undefined,
-        '33333333-3333-4333-8333-333333333333'
-      )
-    ).rejects.toMatchObject({
-      code: 'PRECONDITION_FAILED',
-      message: 'Only the approved BYOC target project is enabled here.',
-    })
-    expect(fetch).not.toHaveBeenCalled()
+    await repository.createCloudConnection(
+      'e2b-byoc-deployer@other-project.iam.gserviceaccount.com',
+      undefined,
+      '33333333-3333-4333-8333-333333333333'
+    )
+
+    expect(
+      JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))
+        .authorized_projects[0].project_id
+    ).toBe('other-project')
   })
 
   it('adds runtime principals without replacing the API principal', () => {
@@ -204,6 +226,44 @@ describe('BYOC deployments repository', () => {
     expect(target.e2bPrincipal).toBe(
       'serviceAccount:runner@test-control.iam.gserviceaccount.com'
     )
+  })
+
+  it('rejects deployment projects not authorized by the cloud connection', async () => {
+    const connection = {
+      id: '22222222-2222-4222-8222-222222222222',
+      team_id: 'team-a',
+      provider: 'gcp' as const,
+      mode: 'keyless_impersonation' as const,
+      status: 'connected',
+      subject_email: 'e2b-byoc-deployer@test-project.iam.gserviceaccount.com',
+      authorized_projects: [
+        {
+          project_id: 'test-project',
+          default_region: 'test-region',
+          default_zone: 'test-zone-a',
+          namespace: 'test-namespace',
+        },
+      ],
+      required_project_roles: [],
+      created_at: '2026-07-11T00:00:00Z',
+      updated_at: '2026-07-11T00:00:00Z',
+    }
+    vi.mocked(fetch).mockResolvedValueOnce(
+      Response.json({ cloud_connections: [connection] })
+    )
+
+    const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
+    await expect(
+      repository.createDeployment(
+        connection.id,
+        'other-project',
+        '33333333-3333-4333-8333-333333333333'
+      )
+    ).rejects.toMatchObject({
+      code: 'PRECONDITION_FAILED',
+      message: 'Select a project authorized by this cloud connection.',
+    })
+    expect(fetch).toHaveBeenCalledTimes(1)
   })
 
   it('sends the deployment idempotency key unchanged', async () => {

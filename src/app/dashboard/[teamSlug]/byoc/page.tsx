@@ -17,7 +17,7 @@ export default async function ByocPage({ params }: ByocPageProps) {
   return (
     <HydrateClient>
       <Page className="max-w-[1080px]">
-        <ByocDeploymentPanel />
+        <ByocDeploymentPanel key={teamSlug} />
       </Page>
     </HydrateClient>
   )

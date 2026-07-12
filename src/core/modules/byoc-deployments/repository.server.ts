@@ -244,10 +244,7 @@ export function createByocDeploymentsRepository({
       clientRequestId: string,
       expectedCloudConnectionId?: string
     ) {
-      assertConfiguredProjectId(
-        serviceAccountProjectId(deployerServiceAccountEmail),
-        target
-      )
+      const projectId = serviceAccountProjectId(deployerServiceAccountEmail)
       const deployment = deploymentId
         ? await getOwnedDeployment(deploymentId)
         : undefined
@@ -265,6 +262,7 @@ export function createByocDeploymentsRepository({
         teamId,
         getCloudConnectionMode(),
         deployerServiceAccountEmail,
+        projectId,
         target,
         deploymentId,
         clientRequestId,
@@ -307,8 +305,17 @@ export function createByocDeploymentsRepository({
       projectId: string,
       clientRequestId: string
     ) {
-      assertConfiguredProjectId(projectId, target)
-      await getOwnedCloudConnection(connectionId)
+      const connection = await getOwnedCloudConnection(connectionId)
+      if (
+        !connection.authorized_projects.some(
+          (project) => project.project_id === projectId
+        )
+      ) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'Select a project authorized by this cloud connection.',
+        })
+      }
 
       const deployment = await request<Deployment>('/deployments', {
         method: 'POST',
@@ -400,6 +407,7 @@ function createCloudConnectionWithMode(
   teamId: string,
   mode: CloudConnection['mode'],
   deployerServiceAccountEmail: string,
+  projectId: string,
   target: ByocTarget,
   deploymentId: string | undefined,
   clientRequestId: string,
@@ -419,8 +427,8 @@ function createCloudConnectionWithMode(
       subject_email: deployerServiceAccountEmail,
       authorized_projects: [
         {
-          project_id: target.projectId,
-          name: target.projectId,
+          project_id: projectId,
+          name: projectId,
           default_region: target.region,
           default_zone: target.zone,
           namespace: target.namespace,
@@ -553,20 +561,10 @@ function requiredEnv(name: string) {
 
 function isConfiguredProject(project: CloudProject, target: ByocTarget) {
   return (
-    project.id === target.projectId &&
     project.default_region === target.region &&
     project.default_zone === target.zone &&
     project.namespace === target.namespace
   )
-}
-
-function assertConfiguredProjectId(projectId: string, target: ByocTarget) {
-  if (projectId !== target.projectId) {
-    throw new TRPCError({
-      code: 'PRECONDITION_FAILED',
-      message: 'Only the approved BYOC target project is enabled here.',
-    })
-  }
 }
 
 function serviceAccountProjectId(email: string) {
@@ -593,16 +591,17 @@ function assertConfiguredConnection(
       message: 'Cloud connection not found.',
     })
   }
-  const hasTarget = connection.authorized_projects.some((project) => {
-    return (
-      project.project_id === target.projectId &&
-      project.default_region === target.region &&
-      project.default_zone === target.zone &&
-      project.namespace === target.namespace
-    )
-  })
+  const hasConfiguredProject = connection.authorized_projects.some(
+    (project) => {
+      return (
+        project.default_region === target.region &&
+        project.default_zone === target.zone &&
+        project.namespace === target.namespace
+      )
+    }
+  )
 
-  if (!hasTarget) {
+  if (!hasConfiguredProject) {
     throw new TRPCError({
       code: 'PRECONDITION_FAILED',
       message: 'Cloud connection is missing the approved BYOC target project.',
@@ -623,12 +622,11 @@ function assertConfiguredDeployment(
   }
   if (
     deployment.provider !== 'gcp' ||
-    deployment.gcp.project_id !== target.projectId ||
     deployment.gcp.region !== target.region ||
     deployment.gcp.zone !== target.zone ||
     deployment.domain_name !== target.domainName ||
     deployment.prefix !== target.prefix ||
-    deployment.deployer_service_account.project_id !== target.projectId
+    deployment.deployer_service_account.project_id !== deployment.gcp.project_id
   ) {
     throw new TRPCError({
       code: 'PRECONDITION_FAILED',

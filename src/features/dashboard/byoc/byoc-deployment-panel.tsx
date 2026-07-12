@@ -441,9 +441,10 @@ export function ByocDeploymentPanel() {
     })
   )
 
-  const selectedProject = projectsQuery.data?.find(
-    (project) => project.id === targetQuery.data?.projectId
-  )
+  const selectedProject =
+    projectsQuery.data?.find(
+      (project) => project.id === deployment?.gcp.project_id
+    ) ?? projectsQuery.data?.[0]
   const selectedProjectPrincipal =
     selectedProject?.e2b_principal ??
     connection?.authorized_projects[0]?.e2b_principal
@@ -585,11 +586,12 @@ export function ByocDeploymentPanel() {
             clientRequestId,
             teamSlug,
             connectionId: connection.id,
-            projectId: targetQuery.data?.projectId ?? '',
+            projectId: selectedProject?.id ?? '',
           })
         }}
         onSetupProjectIdChange={(value) => {
           requestIntents.connection.clear()
+          createConnection.reset()
           const projectId = value.trim()
           setSetupProjectId(projectId)
           setDeployerServiceAccountEmail(
@@ -851,7 +853,7 @@ export function ByocDeploymentPanel() {
               <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
                 <TargetCell
                   label="Project"
-                  value={targetQuery.data?.projectId}
+                  value={deployment?.gcp.project_id ?? selectedProject?.id}
                 />
                 <TargetCell
                   label="Region / zone"
@@ -1042,11 +1044,16 @@ export function ByocDeploymentPanel() {
         }}
         onDeployerServiceAccountEmailChange={(value) => {
           requestIntents.connection.clear()
+          createConnection.reset()
           setDeployerServiceAccountEmail(value)
         }}
         onOpenChange={setConnectionDialogOpen}
         open={connectionDialogOpen}
-        projectId={targetQuery.data?.projectId ?? ''}
+        projectId={
+          deployment?.gcp.project_id ??
+          connection?.authorized_projects[0]?.project_id ??
+          ''
+        }
       />
     </main>
   )
@@ -1272,44 +1279,65 @@ function SetupStepRail({
     0,
     steps.findIndex((step) => !step.complete)
   )
+  const currentStep = steps[current] ?? steps[0]
 
   return (
-    <ol className="grid gap-px border border-stroke bg-stroke sm:grid-cols-5">
-      {steps.map((step, index) => (
-        <li
-          className={cn(
-            'flex min-w-0 items-center gap-2 bg-bg px-3 py-3 text-sm',
-            index === current && 'bg-accent-main-highlight/5'
-          )}
-          key={step.label}
-        >
-          <span
-            className={cn(
-              'grid size-5 shrink-0 place-items-center border text-[11px]',
-              step.complete
-                ? 'border-accent-success-highlight/40 bg-accent-success-highlight/10 text-accent-success-highlight'
-                : index === current
-                  ? 'border-accent-main-highlight text-accent-main-highlight'
-                  : 'border-stroke text-fg-tertiary'
-            )}
-          >
-            {step.complete ? (
-              <CheckCircleIcon className="size-3.5" />
-            ) : (
-              index + 1
-            )}
+    <>
+      <div className="flex items-center justify-between gap-4 border border-stroke bg-accent-main-highlight/5 px-3 py-3 lg:hidden">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="grid size-6 shrink-0 place-items-center border border-accent-main-highlight text-xs text-accent-main-highlight">
+            {current + 1}
           </span>
-          <span
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-fg">
+              {currentStep?.label}
+            </p>
+            <p className="text-xs text-fg-secondary">
+              Step {current + 1} of {steps.length}
+            </p>
+          </div>
+        </div>
+        <span className="shrink-0 text-xs text-fg-tertiary">
+          {steps.filter((step) => step.complete).length} complete
+        </span>
+      </div>
+      <ol className="hidden grid-cols-5 gap-px border border-stroke bg-stroke lg:grid">
+        {steps.map((step, index) => (
+          <li
             className={cn(
-              'truncate',
-              index === current ? 'font-medium text-fg' : 'text-fg-secondary'
+              'flex min-w-0 items-center gap-2 bg-bg px-3 py-3 text-sm',
+              index === current && 'bg-accent-main-highlight/5'
             )}
+            key={step.label}
           >
-            {step.label}
-          </span>
-        </li>
-      ))}
-    </ol>
+            <span
+              className={cn(
+                'grid size-5 shrink-0 place-items-center border text-[11px]',
+                step.complete
+                  ? 'border-accent-success-highlight/40 bg-accent-success-highlight/10 text-accent-success-highlight'
+                  : index === current
+                    ? 'border-accent-main-highlight text-accent-main-highlight'
+                    : 'border-stroke text-fg-tertiary'
+              )}
+            >
+              {step.complete ? (
+                <CheckCircleIcon className="size-3.5" />
+              ) : (
+                index + 1
+              )}
+            </span>
+            <span
+              className={cn(
+                'truncate',
+                index === current ? 'font-medium text-fg' : 'text-fg-secondary'
+              )}
+            >
+              {step.label}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </>
   )
 }
 
@@ -1643,7 +1671,7 @@ function DeploymentChecklist({
     <ol aria-live="polite" className="grid gap-1">
       {checks.map((check) => (
         <li
-          className="grid grid-cols-[20px_minmax(0,1fr)_auto] items-start gap-2 rounded-md px-2 py-2"
+          className="grid grid-cols-[20px_minmax(0,1fr)] items-start gap-2 rounded-md px-2 py-2 sm:grid-cols-[20px_minmax(0,1fr)_auto]"
           key={check.label}
         >
           <CheckStatusIcon status={check.status} />
@@ -1652,13 +1680,13 @@ function DeploymentChecklist({
               {check.label}
               <span className="sr-only">: {check.status}</span>
             </p>
-            <p className="prose-caption truncate text-fg-secondary">
+            <p className="prose-caption break-words text-fg-secondary">
               {check.message}
             </p>
           </div>
           {check.timestamp ? (
             <time
-              className="prose-caption text-fg-tertiary"
+              className="prose-caption col-start-2 text-fg-tertiary sm:col-start-auto"
               dateTime={check.timestamp}
             >
               {new Date(check.timestamp).toLocaleTimeString('en-US', {
