@@ -23,6 +23,7 @@ steps:
     args:
       - -euc
       - |
+        test "${_DASHBOARD_API_URL}" != "${_INFRA_API_URL}"
         npm install --global bun@1.2.0
         bun install --frozen-lockfile
         bun run build
