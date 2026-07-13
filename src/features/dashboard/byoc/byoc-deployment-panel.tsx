@@ -91,7 +91,6 @@ const bootstrapRoles = [
   'roles/networkconnectivity.admin',
   'roles/servicenetworking.networksAdmin',
   'roles/iap.tunnelResourceAccessor',
-  'roles/iam.roleAdmin',
   'roles/iam.serviceAccountAdmin',
   'roles/iam.serviceAccountUser',
   'roles/iam.serviceAccountKeyAdmin',
@@ -1911,8 +1910,9 @@ function SetupServiceAccount({
             {locationLocked
               ? 'This team location is now reserved and cannot be changed in place.'
               : 'Choose carefully: generating the deployer identity permanently reserves this team location.'}{' '}
-            E2B uses short-lived impersonation credentials; no service-account
-            key is created or stored.
+            E2B uses short-lived impersonation credentials and never receives a
+            deployer service-account key. Runtime credentials created by the
+            current modules remain in customer-owned Terraform state.
           </div>
 
           {target ? (
