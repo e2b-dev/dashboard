@@ -12,6 +12,7 @@ const originalEnv = {
   domainName: process.env.BYOC_DOMAIN_NAME,
   e2bPrincipal: process.env.BYOC_E2B_PRINCIPAL,
   e2bPrincipals: process.env.BYOC_E2B_PRINCIPALS,
+  locations: process.env.BYOC_GCP_LOCATIONS,
   region: process.env.BYOC_GCP_REGION,
   sdkDomain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
   zone: process.env.BYOC_GCP_ZONE,
@@ -75,6 +76,13 @@ function mockRunner({
       const { key, url } = requestKey(input, init)
       if (key === 'POST /target-identities') {
         return Response.json({ ...targetIdentity, ...identity })
+      }
+
+      if (key === `GET /target-identities/${teamId}` && !routes[key]) {
+        return Response.json(
+          { error: 'target identity not found' },
+          { status: 404 }
+        )
       }
 
       const handler = routes[key]
@@ -158,6 +166,7 @@ describe('BYOC deployments repository', () => {
       'serviceAccount:runner@test-control.iam.gserviceaccount.com'
     process.env.BYOC_GCP_REGION = 'test-region'
     process.env.BYOC_GCP_ZONE = 'test-zone-a'
+    delete process.env.BYOC_GCP_LOCATIONS
     process.env.NEXT_PUBLIC_E2B_DOMAIN = 'test.example.com'
     delete process.env.BYOC_E2B_PRINCIPALS
     vi.stubGlobal('fetch', vi.fn())
@@ -169,6 +178,7 @@ describe('BYOC deployments repository', () => {
     process.env.BYOC_DOMAIN_NAME = originalEnv.domainName
     process.env.BYOC_E2B_PRINCIPAL = originalEnv.e2bPrincipal
     process.env.BYOC_E2B_PRINCIPALS = originalEnv.e2bPrincipals
+    process.env.BYOC_GCP_LOCATIONS = originalEnv.locations
     process.env.BYOC_GCP_REGION = originalEnv.region
     process.env.BYOC_GCP_ZONE = originalEnv.zone
     process.env.NEXT_PUBLIC_E2B_DOMAIN = originalEnv.sdkDomain
@@ -188,7 +198,10 @@ describe('BYOC deployments repository', () => {
   it('maps the persisted target identity and sends required request metadata', async () => {
     mockRunner()
 
-    const target = await createByocDeploymentsRepository({ teamId }).target()
+    const target = await createByocDeploymentsRepository({ teamId }).target({
+      region: 'test-region',
+      zone: 'test-zone-a',
+    })
 
     expect(target).toEqual({
       deployerAccountId: targetStem,
@@ -204,8 +217,8 @@ describe('BYOC deployments repository', () => {
         'serviceAccount:runner@test-control.iam.gserviceaccount.com',
       ],
     })
-    expect(fetch).toHaveBeenCalledTimes(1)
-    const [url, init] = fetchCall(0)
+    expect(fetch).toHaveBeenCalledTimes(2)
+    const [url, init] = fetchCall(1)
     expect(new URL(String(url)).pathname).toBe('/target-identities')
     expect(init).toMatchObject({
       method: 'POST',
@@ -230,17 +243,230 @@ describe('BYOC deployments repository', () => {
     expect(init?.signal).toBeInstanceOf(AbortSignal)
   })
 
+  it('keeps the legacy target caller on the configured default location', async () => {
+    mockRunner()
+
+    const target = await createByocDeploymentsRepository({ teamId }).target()
+
+    expect(target).toMatchObject({
+      region: 'test-region',
+      zone: 'test-zone-a',
+    })
+    expect(JSON.parse(String(fetchCall(1)[1]?.body))).toMatchObject({
+      region: 'test-region',
+      zone: 'test-zone-a',
+    })
+  })
+
+  it('keeps legacy target callers on an existing non-default allocation', async () => {
+    process.env.BYOC_GCP_LOCATIONS = JSON.stringify([
+      { region: 'default-region', zone: 'default-region-a' },
+      { region: 'test-region', zone: 'test-zone-a' },
+    ])
+    mockRunner({
+      routes: {
+        [`GET /target-identities/${teamId}`]: () =>
+          Response.json(targetIdentity),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).target()
+    ).resolves.toMatchObject({
+      region: 'test-region',
+      zone: 'test-zone-a',
+    })
+    expect(fetch).toHaveBeenCalledTimes(1)
+  })
+
   it('keeps one stable target for repeated same-team lookups', async () => {
     mockRunner()
     const repository = createByocDeploymentsRepository({ teamId })
 
     const [first, second] = await Promise.all([
-      repository.target(),
-      repository.target(),
+      repository.target({ region: 'test-region', zone: 'test-zone-a' }),
+      repository.target({ region: 'test-region', zone: 'test-zone-a' }),
     ])
 
     expect(second).toBe(first)
+    expect(fetch).toHaveBeenCalledTimes(2)
+  })
+
+  it('returns configured allowed locations without allocating a target', () => {
+    process.env.BYOC_GCP_LOCATIONS = JSON.stringify([
+      { region: 'us-central1', zone: 'us-central1-a' },
+      { region: 'us-east4', zone: 'us-east4-a' },
+      { region: 'us-central1', zone: 'us-central1-a' },
+    ])
+
+    const locations = createByocDeploymentsRepository({ teamId }).locations()
+
+    expect(locations).toEqual([
+      { region: 'us-central1', zone: 'us-central1-a' },
+      { region: 'us-east4', zone: 'us-east4-a' },
+    ])
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it('loads an allocated target without mutating it', async () => {
+    mockRunner({
+      routes: {
+        [`GET /target-identities/${teamId}`]: () =>
+          Response.json(targetIdentity),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).allocatedTarget()
+    ).resolves.toMatchObject({
+      deployerAccountId: targetStem,
+      region: 'test-region',
+      zone: 'test-zone-a',
+    })
+    expect(requestKey(...fetchCall(0)).key).toBe(
+      `GET /target-identities/${teamId}`
+    )
+  })
+
+  it('returns no allocated target for a new team', async () => {
+    mockRunner({
+      routes: {
+        [`GET /target-identities/${teamId}`]: () =>
+          Response.json(
+            { error: 'target identity not found' },
+            { status: 404 }
+          ),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).allocatedTarget()
+    ).resolves.toBeUndefined()
+  })
+
+  it('rejects a new location outside the configured allowlist', async () => {
+    process.env.BYOC_GCP_LOCATIONS = JSON.stringify([
+      { region: 'us-central1', zone: 'us-central1-a' },
+    ])
+    mockRunner()
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).target({
+        region: 'us-east4',
+        zone: 'us-east4-a',
+      })
+    ).rejects.toThrow('Select an allowed BYOC region and zone.')
     expect(fetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not allocate a target while listing a new team', async () => {
+    mockRunner({
+      routes: {
+        'GET /deployments': () => Response.json({ deployments: [] }),
+      },
+    })
+
+    const deployments = await createByocDeploymentsRepository({
+      teamId,
+    }).listDeployments()
+
+    expect(deployments).toEqual([])
+    expect(fetch).toHaveBeenCalledTimes(1)
+    expect(requestKey(...fetchCall(0)).key).toBe('GET /deployments')
+  })
+
+  it('keeps retired locations visible and destroyable', async () => {
+    process.env.BYOC_GCP_LOCATIONS = JSON.stringify([
+      { region: 'new-region', zone: 'new-region-a' },
+    ])
+    const retiredDeployment = deployment()
+    mockRunner({
+      routes: {
+        'GET /deployments': () =>
+          Response.json({ deployments: [retiredDeployment] }),
+        [`GET /deployments/${deploymentId}`]: () =>
+          Response.json(retiredDeployment),
+        [`POST /deployments/${deploymentId}/operations/destroy`]: () =>
+          Response.json({
+            id: clientRequestId,
+            deployment_id: deploymentId,
+            kind: 'destroy',
+            status: 'queued',
+            client_request_id: clientRequestId,
+            created_at: '2026-07-11T00:00:00Z',
+            updated_at: '2026-07-11T00:00:00Z',
+          }),
+      },
+    })
+
+    const repository = createByocDeploymentsRepository({ teamId })
+
+    expect(await repository.listDeployments()).toHaveLength(1)
+    await expect(
+      repository.destroy(deploymentId, clientRequestId)
+    ).resolves.toMatchObject({ kind: 'destroy', status: 'queued' })
+    expect(
+      vi
+        .mocked(fetch)
+        .mock.calls.map(([input, init]) => requestKey(input, init).key)
+    ).toEqual([
+      'GET /deployments',
+      `GET /deployments/${deploymentId}`,
+      `POST /deployments/${deploymentId}/operations/destroy`,
+    ])
+  })
+
+  it('revalidates existing deployments and sanitizes backend metadata', async () => {
+    mockRunner({
+      routes: {
+        'GET /deployments': () =>
+          Response.json({
+            deployments: [
+              {
+                ...deployment({
+                  terraform_plan_text:
+                    'Plan: 2 to add, 0 to change, 0 to destroy.',
+                  terraform_settings: {
+                    api_node_count: 1,
+                    internal_state: 'never-expose',
+                  } as Deployment['terraform_settings'],
+                }),
+                terraform_backend_configs: [
+                  'bucket=customer-state',
+                  'prefix=deployments/team-a',
+                  'credentials=/tmp/never-expose.json',
+                ],
+                terraform_backend: { credentials: 'never-expose' },
+                internal_state: 'never-expose',
+              },
+            ],
+          }),
+      },
+    })
+
+    const deployments = await createByocDeploymentsRepository({
+      teamId,
+    }).listDeployments()
+
+    expect(deployments).toHaveLength(1)
+    expect(deployments[0]).toMatchObject({
+      terraform_plan_text: 'Plan: 2 to add, 0 to change, 0 to destroy.',
+      terraform_backend: {
+        bucket: 'customer-state',
+        prefix: 'deployments/team-a',
+      },
+    })
+    expect(deployments[0]).not.toHaveProperty('terraform_backend_configs')
+    expect(deployments[0]).not.toHaveProperty('terraform_backend.credentials')
+    expect(deployments[0]).not.toHaveProperty('internal_state')
+    expect(deployments[0]).not.toHaveProperty(
+      'terraform_settings.internal_state'
+    )
+    expect(
+      vi
+        .mocked(fetch)
+        .mock.calls.map(([input, init]) => requestKey(input, init).key)
+    ).toEqual(['GET /deployments'])
   })
 
   it('rejects a target identity returned for another team', async () => {
@@ -249,7 +475,10 @@ describe('BYOC deployments repository', () => {
     })
 
     await expect(
-      createByocDeploymentsRepository({ teamId }).target()
+      createByocDeploymentsRepository({ teamId }).target({
+        region: 'test-region',
+        zone: 'test-zone-a',
+      })
     ).rejects.toMatchObject({ code: 'BAD_GATEWAY' })
   })
 
@@ -259,7 +488,10 @@ describe('BYOC deployments repository', () => {
     })
 
     await expect(
-      createByocDeploymentsRepository({ teamId }).target()
+      createByocDeploymentsRepository({ teamId }).target({
+        region: 'test-region',
+        zone: 'test-zone-a',
+      })
     ).rejects.toMatchObject({ code: 'BAD_GATEWAY' })
   })
 
@@ -267,7 +499,10 @@ describe('BYOC deployments repository', () => {
     vi.mocked(fetch).mockResolvedValue(Response.json(null))
 
     await expect(
-      createByocDeploymentsRepository({ teamId }).target()
+      createByocDeploymentsRepository({ teamId }).target({
+        region: 'test-region',
+        zone: 'test-zone-a',
+      })
     ).rejects.toMatchObject({ code: 'BAD_GATEWAY' })
   })
 
@@ -283,19 +518,130 @@ describe('BYOC deployments repository', () => {
       createByocDeploymentsRepository({ teamId }).createCloudConnection(
         deployerEmail,
         undefined,
-        clientRequestId
+        clientRequestId,
+        undefined,
+        { region: 'test-region', zone: 'test-zone-a' }
       )
     ).rejects.toMatchObject({ code: 'BAD_GATEWAY' })
     expect(fetch).toHaveBeenCalledTimes(1)
   })
 
+  it('keeps legacy cloud-connection callers on the default location', async () => {
+    mockRunner({
+      routes: {
+        'POST /cloud-connections': (_url, init) => {
+          expect(JSON.parse(String(init.body))).toMatchObject({
+            authorized_projects: [
+              {
+                default_region: 'test-region',
+                default_zone: 'test-zone-a',
+              },
+            ],
+          })
+          return Response.json(cloudConnection())
+        },
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).createCloudConnection(
+        deployerEmail,
+        undefined,
+        clientRequestId
+      )
+    ).resolves.toMatchObject({ id: connectionId })
+  })
+
+  it('grandfathers a retired allocated location through connection setup', async () => {
+    process.env.BYOC_GCP_LOCATIONS = JSON.stringify([
+      { region: 'new-region', zone: 'new-region-a' },
+    ])
+    mockRunner({
+      routes: {
+        [`GET /target-identities/${teamId}`]: () =>
+          Response.json(targetIdentity),
+        'POST /cloud-connections': (_url, init) => {
+          expect(JSON.parse(String(init.body))).toMatchObject({
+            authorized_projects: [
+              {
+                default_region: 'test-region',
+                default_zone: 'test-zone-a',
+              },
+            ],
+          })
+          return Response.json(cloudConnection())
+        },
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).createCloudConnection(
+        deployerEmail,
+        undefined,
+        clientRequestId
+      )
+    ).resolves.toMatchObject({ id: connectionId })
+  })
+
+  it('keeps a connection visible after its allocated location is retired', async () => {
+    process.env.BYOC_GCP_LOCATIONS = JSON.stringify([
+      { region: 'new-region', zone: 'new-region-a' },
+    ])
+    mockRunner({
+      routes: {
+        [`GET /target-identities/${teamId}`]: () =>
+          Response.json(targetIdentity),
+        'GET /cloud-connections': () =>
+          Response.json({ cloud_connections: [cloudConnection()] }),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).listCloudConnections()
+    ).resolves.toEqual([expect.objectContaining({ id: connectionId })])
+  })
+
+  it('uses a connection after its allocated location is retired', async () => {
+    process.env.BYOC_GCP_LOCATIONS = JSON.stringify([
+      { region: 'new-region', zone: 'new-region-a' },
+    ])
+    mockRunner({
+      routes: {
+        [`GET /target-identities/${teamId}`]: () =>
+          Response.json(targetIdentity),
+        'GET /cloud-connections': () =>
+          Response.json({ cloud_connections: [cloudConnection()] }),
+        'POST /deployments': () => Response.json(deployment()),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).createDeployment(
+        connectionId,
+        projectId,
+        clientRequestId
+      )
+    ).resolves.toMatchObject({ id: deploymentId })
+  })
+
   it('reports a stored target configuration conflict', async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      Response.json({ error: 'target identity conflict' }, { status: 409 })
+    mockRunner()
+    vi.mocked(fetch).mockImplementationOnce(() =>
+      Promise.resolve(
+        Response.json({ error: 'target identity not found' }, { status: 404 })
+      )
+    )
+    vi.mocked(fetch).mockImplementationOnce(() =>
+      Promise.resolve(
+        Response.json({ error: 'target identity conflict' }, { status: 409 })
+      )
     )
 
     await expect(
-      createByocDeploymentsRepository({ teamId }).target()
+      createByocDeploymentsRepository({ teamId }).target({
+        region: 'test-region',
+        zone: 'test-zone-a',
+      })
     ).rejects.toMatchObject({
       code: 'CONFLICT',
       message:
@@ -334,13 +680,26 @@ describe('BYOC deployments repository', () => {
 
     await createByocDeploymentsRepository({
       teamId,
-    }).createCloudConnection(deployerEmail, undefined, clientRequestId)
+    }).createCloudConnection(
+      deployerEmail,
+      undefined,
+      clientRequestId,
+      undefined,
+      {
+        region: 'test-region',
+        zone: 'test-zone-a',
+      }
+    )
 
     expect(
       vi
         .mocked(fetch)
         .mock.calls.map(([input, init]) => requestKey(input, init).key)
-    ).toEqual(['POST /target-identities', 'POST /cloud-connections'])
+    ).toEqual([
+      `GET /target-identities/${teamId}`,
+      'POST /target-identities',
+      'POST /cloud-connections',
+    ])
   })
 
   it('maps coded deployer verification failures for initial connections', async () => {
@@ -361,7 +720,9 @@ describe('BYOC deployments repository', () => {
       createByocDeploymentsRepository({ teamId }).createCloudConnection(
         deployerEmail,
         undefined,
-        clientRequestId
+        clientRequestId,
+        undefined,
+        { region: 'test-region', zone: 'test-zone-a' }
       )
     ).rejects.toMatchObject({
       code: 'BAD_GATEWAY',
@@ -424,7 +785,9 @@ describe('BYOC deployments repository', () => {
       createByocDeploymentsRepository({ teamId }).createCloudConnection(
         deployerEmail,
         undefined,
-        clientRequestId
+        clientRequestId,
+        undefined,
+        { region: 'test-region', zone: 'test-zone-a' }
       )
     ).rejects.toMatchObject({
       code: 'BAD_REQUEST',
@@ -471,7 +834,7 @@ describe('BYOC deployments repository', () => {
       vi
         .mocked(fetch)
         .mock.calls.map(([input, init]) => requestKey(input, init).key)
-    ).toEqual(['POST /target-identities', 'GET /cloud-connections'])
+    ).toEqual(['GET /cloud-connections'])
   })
 
   it('checks deployment ownership before a destructive request', async () => {
@@ -492,7 +855,7 @@ describe('BYOC deployments repository', () => {
       vi
         .mocked(fetch)
         .mock.calls.map(([input, init]) => requestKey(input, init).key)
-    ).toEqual([`GET /deployments/${deploymentId}`, 'POST /target-identities'])
+    ).toEqual([`GET /deployments/${deploymentId}`])
   })
 
   it('blocks destruction when persisted target metadata does not match', async () => {
@@ -590,8 +953,9 @@ describe('BYOC deployments repository', () => {
         .mocked(fetch)
         .mock.calls.map(([input, init]) => requestKey(input, init).key)
     ).toEqual([
-      'POST /target-identities',
       'GET /cloud-connections',
+      `GET /target-identities/${teamId}`,
+      'POST /target-identities',
       'POST /deployments',
     ])
   })
@@ -600,7 +964,10 @@ describe('BYOC deployments repository', () => {
     vi.mocked(fetch).mockRejectedValue(new Error('connection reset'))
 
     await expect(
-      createByocDeploymentsRepository({ teamId }).target()
+      createByocDeploymentsRepository({ teamId }).target({
+        region: 'test-region',
+        zone: 'test-zone-a',
+      })
     ).rejects.toMatchObject({ code: 'BAD_GATEWAY' })
   })
 })

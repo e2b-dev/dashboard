@@ -13,6 +13,18 @@ interface ByocTarget {
   e2bPrincipals: string[]
 }
 
+export interface ByocLocation {
+  region: string
+  zone: string
+}
+
+const byocLocationSchema = z.object({
+  region: z.string().regex(/^[a-z][a-z0-9-]+$/),
+  zone: z.string().regex(/^[a-z][a-z0-9-]+$/),
+})
+
+const byocLocationsSchema = z.array(byocLocationSchema).min(1)
+
 const byocTargetIdentitySchema = z.object({
   team_id: z.string().min(1).max(128),
   target_key: z.string().regex(/^[a-z][a-z0-9]{11}$/),
@@ -121,12 +133,21 @@ export interface Deployment {
     roles: string[]
   }
   terraform_settings?: TerraformSettings
+  terraform_plan_text?: string
+  terraform_backend?: {
+    bucket?: string
+    prefix?: string
+  }
   cluster_id?: string
   cluster_endpoint?: string
   status: DeploymentStatus
   error?: string
   created_at: string
   updated_at: string
+}
+
+interface RunnerDeployment extends Deployment {
+  terraform_backend_configs?: string[]
 }
 
 export interface TerraformSettings {
@@ -185,9 +206,20 @@ export function createByocDeploymentsRepository({
   const sdkDomain = requiredEnv('NEXT_PUBLIC_E2B_DOMAIN')
   const baseUrl = getRunnerBaseUrl()
   const token = getRunnerToken()
-  let targetPromise: Promise<ByocTarget> | undefined
+  const targetPromises = new Map<string, Promise<ByocTarget>>()
+  let allocatedTargetPromise: Promise<ByocTarget | undefined> | undefined
 
-  async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  async function request<T>(path: string, init?: RequestInit): Promise<T>
+  async function request<T>(
+    path: string,
+    init: RequestInit,
+    options: { allowNotFound: true }
+  ): Promise<T | undefined>
+  async function request<T>(
+    path: string,
+    init: RequestInit = {},
+    options?: { allowNotFound?: boolean }
+  ): Promise<T | undefined> {
     let response: Response
     try {
       response = await fetch(new URL(path, baseUrl), {
@@ -212,6 +244,7 @@ export function createByocDeploymentsRepository({
       })
     }
 
+    if (response.status === 404 && options?.allowNotFound) return undefined
     if (!response.ok) {
       const runnerErrorCode = await readRunnerErrorCode(response)
       throw new TRPCError({
@@ -230,10 +263,14 @@ export function createByocDeploymentsRepository({
     }
   }
 
-  function getTarget() {
-    const desiredTarget = getByocTargetBase()
+  function getTarget(location: ByocLocation) {
+    const desiredTarget = getByocTargetBase(location)
     const domainBase = requiredEnv('BYOC_DOMAIN_NAME')
-    targetPromise ??= request<unknown>('/target-identities', {
+    const targetKey = `${location.region}/${location.zone}`
+    const existingTarget = targetPromises.get(targetKey)
+    if (existingTarget) return existingTarget
+
+    const targetPromise = request<unknown>('/target-identities', {
       method: 'POST',
       body: JSON.stringify({
         team_id: teamId,
@@ -261,7 +298,50 @@ export function createByocDeploymentsRepository({
       }
       return getByocTarget(identity, desiredTarget, sdkDomain, domainBase)
     })
+    targetPromises.set(targetKey, targetPromise)
     return targetPromise
+  }
+
+  async function getAllocatedTarget() {
+    allocatedTargetPromise ??= request<unknown>(
+      `/target-identities/${encodeURIComponent(teamId)}`,
+      {},
+      { allowNotFound: true }
+    ).then((response) => {
+      if (response === undefined) return undefined
+      const parsed = byocTargetIdentitySchema.safeParse(response)
+      if (!parsed.success || parsed.data.team_id !== teamId) {
+        throw new TRPCError({
+          code: 'BAD_GATEWAY',
+          message: 'BYOC deployments runner returned an invalid target.',
+        })
+      }
+      return storedByocTarget(parsed.data, sdkDomain)
+    })
+    return allocatedTargetPromise
+  }
+
+  async function resolveTarget(requestedLocation?: ByocLocation) {
+    const allocatedTarget = await getAllocatedTarget()
+    if (allocatedTarget) {
+      if (
+        requestedLocation &&
+        (allocatedTarget.region !== requestedLocation.region ||
+          allocatedTarget.zone !== requestedLocation.zone)
+      ) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'This team already has a different BYOC location reserved.',
+        })
+      }
+      return allocatedTarget
+    }
+
+    const [defaultLocation] = getAllowedLocations()
+    const selectedLocation = requestedLocation ?? defaultLocation
+    if (!selectedLocation) throw invalidLocationsConfiguration()
+    assertAllowedLocation(selectedLocation)
+    return getTarget(selectedLocation)
   }
 
   async function getOwnedCloudConnection(connectionId: string) {
@@ -277,7 +357,26 @@ export function createByocDeploymentsRepository({
         message: 'Cloud connection not found.',
       })
     }
-    const target = await getTarget()
+    const allocatedTarget = await getAllocatedTarget()
+    const authorization = connection.authorized_projects.find((project) =>
+      allocatedTarget
+        ? project.default_region === allocatedTarget.region &&
+          project.default_zone === allocatedTarget.zone
+        : isAllowedLocation({
+            region: project.default_region,
+            zone: project.default_zone,
+          })
+    )
+    if (!authorization) {
+      throw new TRPCError({
+        code: 'PRECONDITION_FAILED',
+        message: 'Cloud connection does not use an allowed BYOC location.',
+      })
+    }
+    const target = await resolveTarget({
+      region: authorization.default_region,
+      zone: authorization.default_zone,
+    })
     if (!isConfiguredConnection(connection, teamId, target)) {
       throw new TRPCError({
         code: 'PRECONDITION_FAILED',
@@ -289,14 +388,24 @@ export function createByocDeploymentsRepository({
   }
 
   async function getOwnedDeployment(deploymentId: string) {
-    const deployment = await request<Deployment>(`/deployments/${deploymentId}`)
-    assertConfiguredDeployment(deployment, teamId, [await getTarget()])
-    return deployment
+    const deployment = await request<RunnerDeployment>(
+      `/deployments/${deploymentId}`
+    )
+    assertAllowedDeployment(deployment, teamId)
+    return sanitizeDeployment(deployment)
   }
 
   return {
-    target() {
-      return getTarget()
+    locations() {
+      return getAllowedLocations()
+    },
+
+    allocatedTarget() {
+      return getAllocatedTarget()
+    },
+
+    target(location?: ByocLocation) {
+      return resolveTarget(location)
     },
 
     health() {
@@ -307,13 +416,15 @@ export function createByocDeploymentsRepository({
       deployerServiceAccountEmail: string,
       deploymentId: string | undefined,
       clientRequestId: string,
-      expectedCloudConnectionId?: string
+      expectedCloudConnectionId?: string,
+      location?: ByocLocation
     ) {
-      const target = await getTarget()
       const projectId = serviceAccountProjectId(deployerServiceAccountEmail)
       const deployment = deploymentId
         ? await getOwnedDeployment(deploymentId)
         : undefined
+      const selectedLocation = deployment?.gcp ?? location
+      const target = await resolveTarget(selectedLocation)
       const connectionTarget = deployment
         ? configuredTargetForDeployment(deployment, [target])
         : target
@@ -361,12 +472,37 @@ export function createByocDeploymentsRepository({
     },
 
     async listCloudConnections() {
-      const target = await getTarget()
-      const response = await request<{ cloud_connections: CloudConnection[] }>(
-        '/cloud-connections'
+      const [response, allocatedTarget] = await Promise.all([
+        request<{ cloud_connections: CloudConnection[] }>('/cloud-connections'),
+        getAllocatedTarget(),
+      ])
+      const connections = await Promise.all(
+        response.cloud_connections.map(async (connection) => {
+          if (connection.team_id !== teamId || connection.provider !== 'gcp') {
+            return undefined
+          }
+          const authorization = connection.authorized_projects.find(
+            (project) =>
+              allocatedTarget
+                ? project.default_region === allocatedTarget.region &&
+                  project.default_zone === allocatedTarget.zone
+                : isAllowedLocation({
+                    region: project.default_region,
+                    zone: project.default_zone,
+                  })
+          )
+          if (!authorization) return undefined
+          const target = await resolveTarget({
+            region: authorization.default_region,
+            zone: authorization.default_zone,
+          })
+          return isConfiguredConnection(connection, teamId, target)
+            ? connection
+            : undefined
+        })
       )
-      return response.cloud_connections.filter((connection) =>
-        isConfiguredConnection(connection, teamId, target)
+      return connections.filter(
+        (connection): connection is CloudConnection => !!connection
       )
     },
 
@@ -393,16 +529,9 @@ export function createByocDeploymentsRepository({
       projectId: string,
       clientRequestId: string
     ) {
-      const target = await getTarget()
       const ownedConnection = await getOwnedCloudConnection(connectionId)
       const connection = ownedConnection.connection
-      if (!sameTargetIdentity(ownedConnection.target, target)) {
-        throw new TRPCError({
-          code: 'PRECONDITION_FAILED',
-          message:
-            'Reconnect this project before creating an isolated BYOC deployment.',
-        })
-      }
+      const target = ownedConnection.target
       assertExpectedDeployerAccount(
         connection.subject_email,
         target.deployerAccountId
@@ -418,7 +547,7 @@ export function createByocDeploymentsRepository({
         })
       }
 
-      const deployment = await request<Deployment>('/deployments', {
+      const deployment = await request<RunnerDeployment>('/deployments', {
         method: 'POST',
         body: JSON.stringify({
           client_request_id: clientRequestId,
@@ -433,24 +562,26 @@ export function createByocDeploymentsRepository({
         deployment.deployer_service_account.email,
         target.deployerAccountId
       )
-      return deployment
+      return sanitizeDeployment(deployment)
     },
 
     async listDeployments() {
-      const target = await getTarget()
-      const response = await request<{ deployments: Deployment[] }>(
+      const response = await request<{ deployments: RunnerDeployment[] }>(
         '/deployments'
       )
-      return response.deployments
-        .filter((deployment) => deployment.team_id === teamId)
-        .filter((deployment) => {
+      const deployments = await Promise.all(
+        response.deployments.map((deployment) => {
           try {
-            assertConfiguredDeployment(deployment, teamId, [target])
-            return true
+            assertAllowedDeployment(deployment, teamId)
           } catch {
-            return false
+            return undefined
           }
+          return sanitizeDeployment(deployment)
         })
+      )
+      return deployments.filter(
+        (deployment): deployment is Deployment => !!deployment
+      )
     },
 
     async getDeployment(deploymentId: string) {
@@ -681,6 +812,31 @@ function getByocTarget(
   sdkDomain: string,
   domainBase: string
 ): ByocTarget {
+  const target = storedByocTarget(identity, sdkDomain)
+  const resourceStem = `t${identity.target_key}`
+  if (
+    target.region !== desired.region ||
+    target.zone !== desired.zone ||
+    target.namespace !== resourceStem ||
+    target.prefix !== `${resourceStem}-` ||
+    target.domainName !== `${resourceStem}.${domainBase}` ||
+    target.deployerAccountId !== resourceStem ||
+    target.e2bPrincipal !== desired.e2bPrincipal ||
+    !sameStringSet(target.e2bPrincipals, desired.e2bPrincipals)
+  ) {
+    throw new TRPCError({
+      code: 'PRECONDITION_FAILED',
+      message:
+        'The stored BYOC target does not match this dashboard configuration.',
+    })
+  }
+  return target
+}
+
+function storedByocTarget(
+  identity: ByocTargetIdentity,
+  sdkDomain: string
+): ByocTarget {
   if (!/^[a-z][a-z0-9]{11}$/.test(identity.target_key)) {
     throw new TRPCError({
       code: 'BAD_GATEWAY',
@@ -701,14 +857,11 @@ function getByocTarget(
   }
   if (
     identity.provider !== 'gcp' ||
-    target.region !== desired.region ||
-    target.zone !== desired.zone ||
     target.namespace !== resourceStem ||
     target.prefix !== `${resourceStem}-` ||
-    target.domainName !== `${resourceStem}.${domainBase}` ||
+    !target.domainName.startsWith(`${resourceStem}.`) ||
     target.deployerAccountId !== resourceStem ||
-    target.e2bPrincipal !== desired.e2bPrincipal ||
-    !sameStringSet(target.e2bPrincipals, desired.e2bPrincipals)
+    target.e2bPrincipals.length === 0
   ) {
     throw new TRPCError({
       code: 'PRECONDITION_FAILED',
@@ -720,22 +873,23 @@ function getByocTarget(
 }
 
 function sameStringSet(left: string[], right: string[]) {
+  const leftValues = new Set(left)
+  const rightValues = new Set(right)
   return (
-    left.length === right.length && left.every((value) => right.includes(value))
+    leftValues.size === rightValues.size &&
+    [...leftValues].every((value) => rightValues.has(value))
   )
 }
 
-function getByocTargetBase(): Pick<
-  ByocTarget,
-  'region' | 'zone' | 'e2bPrincipal' | 'e2bPrincipals'
-> {
+function getByocTargetBase(
+  location: ByocLocation
+): Pick<ByocTarget, 'region' | 'zone' | 'e2bPrincipal' | 'e2bPrincipals'> {
   const e2bPrincipal = requiredEnv('BYOC_E2B_PRINCIPAL')
   const additionalPrincipals = process.env.BYOC_E2B_PRINCIPALS?.split(',')
     .map((principal) => principal.trim())
     .filter(Boolean)
   return {
-    region: requiredEnv('BYOC_GCP_REGION'),
-    zone: requiredEnv('BYOC_GCP_ZONE'),
+    ...location,
     e2bPrincipal,
     e2bPrincipals: [
       ...new Set([e2bPrincipal, ...(additionalPrincipals ?? [])]),
@@ -743,14 +897,56 @@ function getByocTargetBase(): Pick<
   }
 }
 
-function sameTargetIdentity(left: ByocTarget, right: ByocTarget) {
-  return (
-    left.region === right.region &&
-    left.zone === right.zone &&
-    left.namespace === right.namespace &&
-    left.domainName === right.domainName &&
-    left.prefix === right.prefix
+function getAllowedLocations(): ByocLocation[] {
+  const configured = process.env.BYOC_GCP_LOCATIONS?.trim()
+  if (configured) {
+    let value: unknown
+    try {
+      value = JSON.parse(configured)
+    } catch {
+      throw invalidLocationsConfiguration()
+    }
+    const parsed = byocLocationsSchema.safeParse(value)
+    if (!parsed.success) throw invalidLocationsConfiguration()
+    return parsed.data.filter(
+      (location, index, locations) =>
+        locations.findIndex(
+          (candidate) =>
+            candidate.region === location.region &&
+            candidate.zone === location.zone
+        ) === index
+    )
+  }
+
+  return [
+    byocLocationSchema.parse({
+      region: requiredEnv('BYOC_GCP_REGION'),
+      zone: requiredEnv('BYOC_GCP_ZONE'),
+    }),
+  ]
+}
+
+function invalidLocationsConfiguration() {
+  return new TRPCError({
+    code: 'PRECONDITION_FAILED',
+    message: 'BYOC_GCP_LOCATIONS is not configured correctly.',
+  })
+}
+
+function isAllowedLocation(location: ByocLocation) {
+  return getAllowedLocations().some(
+    (allowed) =>
+      allowed.region === location.region && allowed.zone === location.zone
   )
+}
+
+function assertAllowedLocation(location: ByocLocation) {
+  if (!isAllowedLocation(location)) {
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: 'Select an allowed BYOC region and zone.',
+    })
+  }
 }
 
 function requiredEnv(name: string) {
@@ -845,6 +1041,108 @@ function assertConfiguredDeployment(
       message: 'Deployment target does not match the configured BYOC target.',
     })
   }
+}
+
+function assertAllowedDeployment(deployment: Deployment, teamId: string) {
+  if (deployment.team_id !== teamId) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: 'BYOC deployment resource not found.',
+    })
+  }
+  const account = deployment.prefix.replace(/-+$/, '')
+  const expectedEmail = `${account}@${deployment.gcp.project_id}.iam.gserviceaccount.com`
+  if (
+    deployment.provider !== 'gcp' ||
+    deployment.deployer_service_account.project_id !==
+      deployment.gcp.project_id ||
+    deployment.deployer_service_account.account_id !== account ||
+    deployment.deployer_service_account.email !== expectedEmail ||
+    !deployment.domain_name.startsWith(`${account}.`)
+  ) {
+    throw new TRPCError({
+      code: 'PRECONDITION_FAILED',
+      message: 'Deployment target metadata is inconsistent.',
+    })
+  }
+}
+
+function sanitizeDeployment(deployment: RunnerDeployment): Deployment {
+  const terraformBackend = sanitizeTerraformBackend(
+    deployment.terraform_backend_configs
+  )
+  return {
+    id: deployment.id,
+    client_request_id: deployment.client_request_id,
+    team_id: deployment.team_id,
+    cloud_connection_id: deployment.cloud_connection_id,
+    cloud_project_id: deployment.cloud_project_id,
+    provider: deployment.provider,
+    gcp: {
+      project_id: deployment.gcp.project_id,
+      region: deployment.gcp.region,
+      zone: deployment.gcp.zone,
+    },
+    domain_name: deployment.domain_name,
+    prefix: deployment.prefix,
+    deployer_service_account: {
+      account_id: deployment.deployer_service_account.account_id,
+      email: deployment.deployer_service_account.email,
+      display_name: deployment.deployer_service_account.display_name,
+      project_id: deployment.deployer_service_account.project_id,
+      status: deployment.deployer_service_account.status,
+      roles: [...deployment.deployer_service_account.roles],
+    },
+    terraform_settings: deployment.terraform_settings
+      ? {
+          api_node_count: deployment.terraform_settings.api_node_count,
+          api_machine_type: deployment.terraform_settings.api_machine_type,
+          client_node_count: deployment.terraform_settings.client_node_count,
+          client_machine_type:
+            deployment.terraform_settings.client_machine_type,
+          clickhouse_node_count:
+            deployment.terraform_settings.clickhouse_node_count,
+          clickhouse_machine_type:
+            deployment.terraform_settings.clickhouse_machine_type,
+        }
+      : undefined,
+    terraform_plan_text: deployment.terraform_plan_text,
+    ...(terraformBackend && { terraform_backend: terraformBackend }),
+    cluster_id: deployment.cluster_id,
+    cluster_endpoint: deployment.cluster_endpoint,
+    status: deployment.status,
+    error: deployment.error,
+    created_at: deployment.created_at,
+    updated_at: deployment.updated_at,
+  }
+}
+
+function sanitizeTerraformBackend(configs?: string[]) {
+  if (!configs) return undefined
+
+  const metadata: NonNullable<Deployment['terraform_backend']> = {}
+  for (const config of configs) {
+    const separator = config.indexOf('=')
+    if (separator <= 0) continue
+    const key = config.slice(0, separator).trim()
+    const value = config.slice(separator + 1).trim()
+    if (!value) continue
+    if (
+      key === 'bucket' &&
+      value.length <= 222 &&
+      /^[a-z0-9][a-z0-9._-]*[a-z0-9]$/.test(value)
+    ) {
+      metadata.bucket = value
+    }
+    if (
+      key === 'prefix' &&
+      value.length <= 1024 &&
+      /^[A-Za-z0-9._/-]+$/.test(value)
+    ) {
+      metadata.prefix = value
+    }
+  }
+  return metadata.bucket || metadata.prefix ? metadata : undefined
 }
 
 function configuredTargetForDeployment(

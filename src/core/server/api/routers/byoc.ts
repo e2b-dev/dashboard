@@ -16,7 +16,22 @@ const createCloudConnectionInput = z.object({
   deployerServiceAccountEmail: z.string().email().max(254),
   deploymentId: z.string().uuid().optional(),
   expectedCloudConnectionId: z.string().uuid().optional(),
+  location: z
+    .object({
+      region: z.string().min(1),
+      zone: z.string().min(1),
+    })
+    .optional(),
 })
+
+const optionalLocationInput = z
+  .object({
+    region: z.string().min(1).optional(),
+    zone: z.string().min(1).optional(),
+  })
+  .refine((value) => Boolean(value.region) === Boolean(value.zone), {
+    message: 'Region and zone must be selected together.',
+  })
 
 const topologyInput = z.object({
   apiNodeCount: z.number().int().min(1).max(20),
@@ -37,9 +52,34 @@ const topologyInput = z.object({
 })
 
 export const byocRouter = createTRPCRouter({
-  target: protectedTeamProcedure.query(({ ctx }) => {
-    return createByocDeploymentsRepository({ teamId: ctx.teamId }).target()
-  }),
+  locations: protectedTeamProcedure.query(({ ctx }) =>
+    createByocDeploymentsRepository({ teamId: ctx.teamId }).locations()
+  ),
+
+  allocatedTarget: protectedTeamProcedure.query(({ ctx }) =>
+    createByocDeploymentsRepository({ teamId: ctx.teamId }).allocatedTarget()
+  ),
+
+  allocateTarget: protectedTeamProcedure
+    .input(
+      z.object({
+        region: z.string().min(1),
+        zone: z.string().min(1),
+      })
+    )
+    .mutation(({ ctx, input }) =>
+      createByocDeploymentsRepository({ teamId: ctx.teamId }).target(input)
+    ),
+
+  target: protectedTeamProcedure
+    .input(optionalLocationInput)
+    .query(({ ctx, input }) =>
+      createByocDeploymentsRepository({ teamId: ctx.teamId }).target(
+        input.region && input.zone
+          ? { region: input.region, zone: input.zone }
+          : undefined
+      )
+    ),
 
   health: protectedTeamProcedure.query(({ ctx }) => {
     return createByocDeploymentsRepository({ teamId: ctx.teamId }).health()
@@ -54,7 +94,8 @@ export const byocRouter = createTRPCRouter({
         input.deployerServiceAccountEmail,
         input.deploymentId,
         input.clientRequestId,
-        input.expectedCloudConnectionId
+        input.expectedCloudConnectionId,
+        input.location
       )
     }),
 

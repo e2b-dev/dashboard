@@ -1,6 +1,7 @@
 'use client'
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { CreateApiKeyDialog } from '@/features/dashboard/settings/keys'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
@@ -68,6 +69,7 @@ import { useByocRequestIntents } from './use-byoc-request-intents'
 type Deployment = TRPCRouterOutputs['byoc']['listDeployments'][number]
 type DeploymentEvent = TRPCRouterOutputs['byoc']['listEvents'][number]
 type ByocOperation = TRPCRouterOutputs['byoc']['listOperations'][number]
+type ByocLocation = TRPCRouterOutputs['byoc']['locations'][number]
 type TopologyDraft = {
   apiNodeCount: number
   apiMachineType: string
@@ -87,6 +89,8 @@ const bootstrapRoles = [
   'roles/redis.admin',
   'roles/memorystore.admin',
   'roles/networkconnectivity.admin',
+  'roles/servicenetworking.networksAdmin',
+  'roles/iap.tunnelResourceAccessor',
   'roles/iam.roleAdmin',
   'roles/iam.serviceAccountAdmin',
   'roles/iam.serviceAccountUser',
@@ -198,6 +202,8 @@ resource "google_service_account" "byoc_deployer" {
   project      = var.project_id
   account_id   = var.deployer_account_id
   display_name = "E2B BYOC deployer"
+
+  depends_on = [google_project_service.bootstrap]
 }
 
 resource "google_project_iam_member" "byoc_deployer_roles" {
@@ -223,7 +229,12 @@ output "byoc_deployer_service_account" {
 }`
 }
 
-export function ByocDeploymentPanel() {
+export function ByocDeploymentPanel({
+  view,
+}: {
+  view: 'configuration' | 'infrastructure'
+}) {
+  const router = useRouter()
   const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/byoc'>()
   const trpc = useTRPC()
   const queryClient = useQueryClient()
@@ -231,6 +242,7 @@ export function ByocDeploymentPanel() {
   const [connectionDialogOpen, setConnectionDialogOpen] = useState(false)
   const [setupStarted, setSetupStarted] = useState(false)
   const [setupProjectId, setSetupProjectId] = useState('')
+  const [selectedLocation, setSelectedLocation] = useState<ByocLocation>()
   const [deployerServiceAccountEmail, setDeployerServiceAccountEmail] =
     useState('')
   const [createdApiKey, setCreatedApiKey] = useState<string>()
@@ -250,7 +262,22 @@ export function ByocDeploymentPanel() {
     value: '',
   })
 
-  const targetQuery = useQuery(trpc.byoc.target.queryOptions({ teamSlug }))
+  const locationsQuery = useQuery(
+    trpc.byoc.locations.queryOptions({ teamSlug })
+  )
+  const allocatedTargetQuery = useQuery(
+    trpc.byoc.allocatedTarget.queryOptions({ teamSlug })
+  )
+  const allocateTarget = useMutation(
+    trpc.byoc.allocateTarget.mutationOptions({
+      onSuccess: (data) => {
+        queryClient.setQueryData(
+          trpc.byoc.allocatedTarget.queryOptions({ teamSlug }).queryKey,
+          data
+        )
+      },
+    })
+  )
   const healthQuery = useQuery(trpc.byoc.health.queryOptions({ teamSlug }))
   const connectionsQuery = useQuery(
     trpc.byoc.listCloudConnections.queryOptions({ teamSlug })
@@ -270,12 +297,6 @@ export function ByocDeploymentPanel() {
   const connection =
     connectionsQuery.data?.find((item) => item.id === selectedConnectionId) ??
     latestByTimestamp(connectionsQuery.data)
-  const connectionUsesExpectedDeployer = Boolean(
-    connection?.subject_email.startsWith(
-      `${targetQuery.data?.deployerAccountId}@`
-    )
-  )
-
   const projectsQuery = useQuery({
     ...trpc.byoc.listProjects.queryOptions({
       teamSlug,
@@ -290,6 +311,25 @@ export function ByocDeploymentPanel() {
   const deployment =
     availableDeployments?.find((item) => item.id === selectedDeploymentId) ??
     latestByTimestamp(availableDeployments)
+  const connectionLocation = connection?.authorized_projects[0]
+    ? {
+        region: connection.authorized_projects[0].default_region,
+        zone: connection.authorized_projects[0].default_zone,
+      }
+    : undefined
+  const allocatedLocation = allocatedTargetQuery.data
+    ? {
+        region: allocatedTargetQuery.data.region,
+        zone: allocatedTargetQuery.data.zone,
+      }
+    : undefined
+  const immutableLocation =
+    deployment?.gcp ?? connectionLocation ?? allocatedLocation
+  const location = immutableLocation ?? selectedLocation
+  const target = allocatedTargetQuery.data ?? allocateTarget.data
+  const connectionUsesExpectedDeployer = Boolean(
+    connection?.subject_email.startsWith(`${target?.deployerAccountId}@`)
+  )
   useEffect(() => {
     requestIntents.connection.acknowledge(connection?.client_request_id)
     requestIntents.createDeployment.acknowledge(deployment?.client_request_id)
@@ -299,6 +339,12 @@ export function ByocDeploymentPanel() {
     requestIntents.connection,
     requestIntents.createDeployment,
   ])
+  const setupDeployerServiceAccountEmail =
+    setupProjectId && target?.deployerAccountId
+      ? `${target.deployerAccountId}@${setupProjectId}.iam.gserviceaccount.com`
+      : ''
+  const resolvedDeployerServiceAccountEmail =
+    deployerServiceAccountEmail || setupDeployerServiceAccountEmail
 
   const savedTopology = topologyFromDeployment(deployment)
   const topology =
@@ -312,6 +358,9 @@ export function ByocDeploymentPanel() {
       deploymentId: deployment?.id ?? '',
       value: { ...topology, ...patch },
     })
+  }
+  const updateSelectedLocation = (nextLocation: ByocLocation) => {
+    setSelectedLocation(nextLocation)
   }
 
   const eventsQuery = useQuery({
@@ -342,6 +391,9 @@ export function ByocDeploymentPanel() {
     isActiveOperation(operation.status)
   )
   const latestOperation = operationsQuery.data?.[0]
+  const terraformOperation = operationsQuery.data?.find(
+    (operation) => operation.kind !== 'validate'
+  )
 
   useEffect(() => {
     if (!deployment?.id || !latestOperation?.updated_at) return
@@ -371,7 +423,12 @@ export function ByocDeploymentPanel() {
       queryClient.invalidateQueries(
         trpc.byoc.listDeployments.queryFilter({ teamSlug })
       ),
-      queryClient.invalidateQueries(trpc.byoc.target.queryFilter({ teamSlug })),
+      queryClient.invalidateQueries(
+        trpc.byoc.locations.queryFilter({ teamSlug })
+      ),
+      queryClient.invalidateQueries(
+        trpc.byoc.allocatedTarget.queryFilter({ teamSlug })
+      ),
       queryClient.invalidateQueries(trpc.byoc.health.queryFilter({ teamSlug })),
       connection?.id
         ? queryClient.invalidateQueries(
@@ -492,6 +549,11 @@ export function ByocDeploymentPanel() {
     projectsQuery.data?.find(
       (project) => project.id === deployment?.gcp.project_id
     ) ?? projectsQuery.data?.[0]
+  const displayedSetupProjectId =
+    setupProjectId ||
+    selectedProject?.id ||
+    connection?.authorized_projects[0]?.project_id ||
+    ''
   const selectedProjectPrincipal =
     selectedProject?.e2b_principal ??
     connection?.authorized_projects[0]?.e2b_principal
@@ -555,7 +617,9 @@ export function ByocDeploymentPanel() {
     deployError ??
     validateError ??
     destroyError ??
-    queryError(targetQuery.error) ??
+    mutationError(allocateTarget.error) ??
+    queryError(allocatedTargetQuery.error) ??
+    queryError(locationsQuery.error) ??
     queryError(healthQuery.error) ??
     queryError(connectionsQuery.error) ??
     queryError(projectsQuery.error) ??
@@ -597,9 +661,18 @@ export function ByocDeploymentPanel() {
     }
     runDeploy()
   }
+  const runDestroy = () => {
+    if (!deployment) return
+    destroy.mutate({
+      teamSlug,
+      deploymentId: deployment.id,
+      clientRequestId: requestIntents.destroy.get(),
+    })
+  }
 
   if (
-    targetQuery.isPending ||
+    locationsQuery.isPending ||
+    allocatedTargetQuery.isPending ||
     connectionsQuery.isPending ||
     deploymentsQuery.isPending
   ) {
@@ -621,35 +694,6 @@ export function ByocDeploymentPanel() {
     )
   }
 
-  if (!targetQuery.data) {
-    return (
-      <main className="flex min-w-0 flex-col gap-4">
-        <section className="border-b border-stroke pb-4">
-          <h1 className="prose-headline-medium">BYOC</h1>
-          <p className="mt-1 text-sm text-fg-secondary">
-            Run E2B sandboxes in infrastructure owned by your team.
-          </p>
-        </section>
-        <div className="grid min-h-80 place-items-center border border-stroke bg-bg-1 p-6 text-center">
-          <div>
-            <p className="text-sm text-accent-error-highlight">
-              {queryError(targetQuery.error) ??
-                'BYOC setup configuration is unavailable.'}
-            </p>
-            <Button
-              className="mt-4"
-              onClick={() => void targetQuery.refetch()}
-              variant="secondary"
-            >
-              <RefreshIcon />
-              Retry
-            </Button>
-          </div>
-        </div>
-      </main>
-    )
-  }
-
   const durableRouteAttached = Boolean(
     deployment?.cluster_id && deployment.cluster_endpoint
   )
@@ -659,69 +703,130 @@ export function ByocDeploymentPanel() {
       !durableRouteAttached &&
       latestOperation?.kind !== 'destroy')
 
-  if (setupInProgress) {
+  if (setupInProgress && view === 'configuration') {
     return (
-      <ByocSetupFlow
-        activeOperation={activeOperation}
-        canCreateDeployment={canCreateDeployment}
-        canDeploy={canDeploy}
-        connection={
-          deployment || connectionUsesExpectedDeployer ? connection : undefined
-        }
-        createConnectionError={mutationError(createConnection.error)}
-        createConnectionPending={createConnection.isPending}
-        createDeploymentPending={createDeployment.isPending}
-        deployerServiceAccountEmail={deployerServiceAccountEmail}
-        deployerAccountId={targetQuery.data?.deployerAccountId ?? ''}
-        deployment={deployment}
-        deploymentEvents={eventsQuery.data ?? []}
-        deploymentOperation={latestOperation}
-        e2bPrincipals={targetQuery.data?.e2bPrincipals ?? []}
-        error={error}
-        onConnect={() => {
-          const intent = requestIntents.connection.get(
-            deployment?.cloud_connection_id
-          )
-          createConnection.mutate({
-            clientRequestId: intent.requestId,
-            expectedCloudConnectionId: intent.expectedCloudConnectionId,
-            teamSlug,
-            deployerServiceAccountEmail,
-            deploymentId: deployment?.id,
-          })
-        }}
-        onCreateDeployment={() => {
-          if (!connection) return
-          const clientRequestId = requestIntents.createDeployment.get()
-          createDeployment.mutate({
-            clientRequestId,
-            teamSlug,
-            connectionId: connection.id,
-            projectId: selectedProject?.id ?? '',
-          })
-        }}
-        onSetupProjectIdChange={(value) => {
-          requestIntents.connection.clear()
-          createConnection.reset()
-          const projectId = value.trim()
-          setSetupProjectId(projectId)
-          setDeployerServiceAccountEmail(
-            projectId
-              ? `${targetQuery.data?.deployerAccountId}@${projectId}.iam.gserviceaccount.com`
-              : ''
-          )
-        }}
-        onDeploy={runDeploy}
-        onValidate={runValidate}
-        onRefresh={() => void refresh()}
-        onSetupStart={() => setSetupStarted(true)}
-        operationPending={operationPending}
-        projectId={setupProjectId}
-        setupStarted={setupStarted || !!connection}
-        target={targetQuery.data}
-        topology={topology}
-        updateTopology={updateTopology}
-      />
+      <>
+        <ByocSetupFlow
+          activeOperation={activeOperation}
+          canCreateDeployment={canCreateDeployment}
+          canDeploy={canDeploy}
+          connection={
+            deployment || connectionUsesExpectedDeployer
+              ? connection
+              : undefined
+          }
+          createConnectionError={mutationError(createConnection.error)}
+          createConnectionPending={createConnection.isPending}
+          createDeploymentPending={createDeployment.isPending}
+          deployerServiceAccountEmail={setupDeployerServiceAccountEmail}
+          deployerAccountId={target?.deployerAccountId ?? ''}
+          deployment={deployment}
+          deploymentEvents={eventsQuery.data ?? []}
+          deploymentOperation={latestOperation}
+          e2bPrincipals={target?.e2bPrincipals ?? []}
+          error={error}
+          locations={locationsQuery.data ?? []}
+          location={location}
+          locationLocked={Boolean(target) || allocateTarget.isPending}
+          onGenerateIdentity={() => {
+            if (!location) return
+            allocateTarget.mutate({ teamSlug, ...location })
+          }}
+          onConnect={() => {
+            const intent = requestIntents.connection.get(
+              deployment?.cloud_connection_id
+            )
+            createConnection.mutate({
+              clientRequestId: intent.requestId,
+              expectedCloudConnectionId: intent.expectedCloudConnectionId,
+              teamSlug,
+              deployerServiceAccountEmail: setupDeployerServiceAccountEmail,
+              deploymentId: deployment?.id,
+              location,
+            })
+          }}
+          onCreateDeployment={() => {
+            if (!connection) return
+            const clientRequestId = requestIntents.createDeployment.get()
+            createDeployment.mutate({
+              clientRequestId,
+              teamSlug,
+              connectionId: connection.id,
+              projectId: selectedProject?.id ?? '',
+            })
+          }}
+          onSetupProjectIdChange={(value) => {
+            requestIntents.connection.clear()
+            createConnection.reset()
+            const projectId = value.trim()
+            setSetupProjectId(projectId)
+            setDeployerServiceAccountEmail(
+              projectId && target?.deployerAccountId
+                ? `${target.deployerAccountId}@${projectId}.iam.gserviceaccount.com`
+                : ''
+            )
+          }}
+          onLocationChange={updateSelectedLocation}
+          onDeploy={runDeploy}
+          onValidate={runValidate}
+          onRefresh={() => void refresh()}
+          onSetupStart={() => setSetupStarted(true)}
+          operationPending={operationPending}
+          targetPending={allocateTarget.isPending}
+          projectId={displayedSetupProjectId}
+          setupStarted={setupStarted || !!connection}
+          target={target}
+          topology={topology}
+          updateTopology={updateTopology}
+        />
+        {deployment ? (
+          <div className="mx-auto mt-5 w-full max-w-5xl">
+            <DestroyByocCard
+              canDestroy={canDestroy}
+              confirmation={destroyConfirmationValue}
+              disabled={deployment.status === 'destroyed'}
+              onConfirmationChange={(value) =>
+                setDestroyConfirmation({ deploymentKey, value })
+              }
+              onDestroy={runDestroy}
+              pending={destroy.isPending}
+            />
+          </div>
+        ) : null}
+      </>
+    )
+  }
+
+  if (setupInProgress && view === 'infrastructure') {
+    return (
+      <main className="flex min-w-0 flex-col gap-4">
+        <section>
+          <h1 className="prose-headline-medium">Infrastructure</h1>
+          <p className="mt-1 text-sm text-fg-secondary">
+            Terraform state, operations, and deployment health appear after the
+            initial configuration is saved.
+          </p>
+        </section>
+        <Card variant="layer" className="rounded-lg">
+          <CardHeader>
+            <CardTitle>Complete configuration first</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-fg-secondary">
+            Choose a location, connect the deployer service account, and save
+            the initial topology before managing infrastructure.
+          </CardContent>
+          <CardFooter className="mt-0 justify-end border-stroke py-4">
+            <Button
+              onClick={() =>
+                router.push(`/dashboard/${teamSlug}/byoc/configuration`)
+              }
+            >
+              Open configuration
+              <ArrowRightIcon />
+            </Button>
+          </CardFooter>
+        </Card>
+      </main>
     )
   }
 
@@ -754,7 +859,7 @@ export function ByocDeploymentPanel() {
             <RefreshIcon />
             Refresh
           </Button>
-          {!connection ? (
+          {view === 'infrastructure' ? null : !connection ? (
             <Button
               disabled={operationPending || anyDeploymentActive}
               onClick={() => setConnectionDialogOpen(true)}
@@ -834,31 +939,16 @@ export function ByocDeploymentPanel() {
         </div>
       ) : null}
 
-      {durableRouteAttached ? (
+      {view === 'configuration' && durableRouteAttached && target ? (
         <UseDeploymentCard
           apiKey={createdApiKey}
-          domain={targetQuery.data.sdkDomain}
+          domain={target.sdkDomain}
           onApiKeyCreated={setCreatedApiKey}
         />
       ) : null}
 
-      <Tabs defaultValue="overview" className="min-w-0 gap-4">
-        <TabsList className="h-10 w-full justify-start gap-5 overflow-x-auto border-b border-stroke bg-transparent p-0 max-md:px-0">
-          <TabsTrigger layoutkey="byoc-main-tabs" value="overview">
-            Overview
-          </TabsTrigger>
-          <TabsTrigger layoutkey="byoc-main-tabs" value="configuration">
-            Configuration
-          </TabsTrigger>
-          <TabsTrigger layoutkey="byoc-main-tabs" value="activity">
-            Activity
-          </TabsTrigger>
-          <TabsTrigger layoutkey="byoc-main-tabs" value="access">
-            Access
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="mt-0 min-w-0">
+      <Tabs value={view} className="min-w-0 gap-4">
+        <TabsContent value="infrastructure" className="mt-0 min-w-0">
           <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.6fr)]">
             <Card
               variant="layer"
@@ -904,6 +994,57 @@ export function ByocDeploymentPanel() {
                 <p className="prose-caption text-fg-secondary">
                   Requests resolve this team's cluster ID and connect to the
                   stored cluster endpoint. Capacity is measured separately.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+          <div className="mt-4 grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <Card
+              variant="layer"
+              className="min-w-0 overflow-hidden rounded-lg"
+            >
+              <CardHeader>
+                <CardTitle>Latest Terraform plan</CardTitle>
+              </CardHeader>
+              <CardContent className="min-w-0">
+                {deployment?.terraform_plan_text ? (
+                  <CodeBlock
+                    className="min-w-0 max-w-full overflow-hidden rounded-md"
+                    icon={<TerminalIcon />}
+                    title="terraform plan"
+                    viewportProps={{ className: 'max-h-[520px] max-w-full' }}
+                  >
+                    {deployment.terraform_plan_text}
+                  </CodeBlock>
+                ) : (
+                  <p className="prose-body text-fg-secondary">
+                    No Terraform plan has been stored for this deployment yet.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+            <Card variant="layer" className="h-fit rounded-lg">
+              <CardHeader>
+                <CardTitle>Terraform state</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-3">
+                <SummaryRow
+                  label="Operation"
+                  value={terraformOperation?.status ?? 'not started'}
+                />
+                <SummaryRow
+                  label="Bucket"
+                  value={deployment?.terraform_backend?.bucket ?? 'unavailable'}
+                  mono
+                />
+                <SummaryRow
+                  label="Prefix"
+                  value={deployment?.terraform_backend?.prefix ?? 'unavailable'}
+                  mono
+                />
+                <p className="prose-caption text-fg-secondary">
+                  Backend metadata is read-only. Terraform state contents are
+                  not loaded by the dashboard.
                 </p>
               </CardContent>
             </Card>
@@ -1014,19 +1155,29 @@ export function ByocDeploymentPanel() {
                 />
                 <TargetCell
                   label="Region / zone"
-                  value={`${deployment.gcp.region} / ${deployment.gcp.zone}`}
+                  value={
+                    deployment
+                      ? `${deployment.gcp.region} / ${deployment.gcp.zone}`
+                      : undefined
+                  }
                 />
+                <p className="prose-caption text-fg-secondary">
+                  Location is read-only after deployment creation.
+                </p>
                 <TargetCell
                   label="Namespace"
-                  value={deployment.prefix.replace(/-+$/, '')}
+                  value={deployment?.prefix.replace(/-+$/, '')}
                 />
-                <TargetCell label="Resource prefix" value={deployment.prefix} />
+                <TargetCell
+                  label="Resource prefix"
+                  value={deployment?.prefix}
+                />
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
-        <TabsContent value="activity" className="mt-0 min-w-0">
+        <TabsContent value="infrastructure" className="mt-0 min-w-0">
           <Card variant="layer" className="rounded-lg">
             <CardHeader>
               <CardTitle>Operation log</CardTitle>
@@ -1037,7 +1188,7 @@ export function ByocDeploymentPanel() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="access" className="mt-0 min-w-0">
+        <TabsContent value="configuration" className="mt-0 min-w-0">
           <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
             <Card
               variant="layer"
@@ -1060,9 +1211,8 @@ export function ByocDeploymentPanel() {
                     disabled={operationPending}
                     onClick={() => {
                       setDeployerServiceAccountEmail(
-                        targetQuery.data?.deployerAccountId &&
-                          deployment?.gcp.project_id
-                          ? `${targetQuery.data.deployerAccountId}@${deployment.gcp.project_id}.iam.gserviceaccount.com`
+                        target?.deployerAccountId && deployment?.gcp.project_id
+                          ? `${target.deployerAccountId}@${deployment.gcp.project_id}.iam.gserviceaccount.com`
                           : ''
                       )
                       setConnectionDialogOpen(true)
@@ -1094,10 +1244,10 @@ export function ByocDeploymentPanel() {
                             '@'
                           )[0] ??
                           connection?.subject_email.split('@')[0] ??
-                          targetQuery.data?.deployerAccountId ??
+                          target?.deployerAccountId ??
                           '',
                         e2bPrincipals:
-                          targetQuery.data?.e2bPrincipals ??
+                          target?.e2bPrincipals ??
                           (selectedProjectPrincipal
                             ? [selectedProjectPrincipal]
                             : []),
@@ -1122,10 +1272,10 @@ export function ByocDeploymentPanel() {
                             '@'
                           )[0] ??
                           connection?.subject_email.split('@')[0] ??
-                          targetQuery.data?.deployerAccountId ??
+                          target?.deployerAccountId ??
                           '',
                         e2bPrincipals:
-                          targetQuery.data?.e2bPrincipals ??
+                          target?.e2bPrincipals ??
                           (selectedProjectPrincipal
                             ? [selectedProjectPrincipal]
                             : []),
@@ -1139,56 +1289,24 @@ export function ByocDeploymentPanel() {
                 </Tabs>
               </CardContent>
             </Card>
-            <Card
-              variant="layer"
-              className="rounded-lg border-accent-error-highlight/30"
-            >
-              <CardHeader>
-                <CardTitle>Danger zone</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-3">
-                <p className="prose-body text-fg-secondary">
-                  Destroy infrastructure and detach this team's cluster.
-                </p>
-                <input
-                  aria-label="Destroy confirmation"
-                  className="h-9 rounded-md border border-stroke bg-bg px-3 font-mono text-sm text-fg outline-none focus:border-stroke-active"
-                  disabled={!deployment || deployment.status === 'destroyed'}
-                  onChange={(event) =>
-                    setDestroyConfirmation({
-                      deploymentKey,
-                      value: event.currentTarget.value,
-                    })
-                  }
-                  placeholder="Type destroy"
-                  value={destroyConfirmationValue}
-                />
-                <Button
-                  variant="error"
-                  disabled={!canDestroy}
-                  onClick={() => {
-                    if (!deployment) return
-                    const clientRequestId = requestIntents.destroy.get()
-                    destroy.mutate({
-                      teamSlug,
-                      deploymentId: deployment.id,
-                      clientRequestId,
-                    })
-                  }}
-                  loading={destroy.isPending ? 'Destroying' : undefined}
-                >
-                  Destroy BYOC
-                </Button>
-              </CardContent>
-            </Card>
+            <DestroyByocCard
+              canDestroy={canDestroy}
+              confirmation={destroyConfirmationValue}
+              disabled={!deployment || deployment.status === 'destroyed'}
+              onConfirmationChange={(value) =>
+                setDestroyConfirmation({ deploymentKey, value })
+              }
+              onDestroy={runDestroy}
+              pending={destroy.isPending}
+            />
           </div>
         </TabsContent>
       </Tabs>
 
       <ConnectGCPDialog
-        deployerAccountId={targetQuery.data?.deployerAccountId ?? ''}
-        deployerServiceAccountEmail={deployerServiceAccountEmail}
-        e2bPrincipals={targetQuery.data?.e2bPrincipals ?? []}
+        deployerAccountId={target?.deployerAccountId ?? ''}
+        deployerServiceAccountEmail={resolvedDeployerServiceAccountEmail}
+        e2bPrincipals={target?.e2bPrincipals ?? []}
         error={mutationError(createConnection.error)}
         isPending={createConnection.isPending || operationPending}
         onConnect={() => {
@@ -1199,8 +1317,9 @@ export function ByocDeploymentPanel() {
             clientRequestId: intent.requestId,
             expectedCloudConnectionId: intent.expectedCloudConnectionId,
             teamSlug,
-            deployerServiceAccountEmail,
+            deployerServiceAccountEmail: resolvedDeployerServiceAccountEmail,
             deploymentId: deployment?.id,
+            location,
           })
         }}
         onOpenChange={setConnectionDialogOpen}
@@ -1300,6 +1419,54 @@ await sandbox.kill()`
 
 type ByocTarget = TRPCRouterOutputs['byoc']['target']
 
+function DestroyByocCard({
+  canDestroy,
+  confirmation,
+  disabled,
+  onConfirmationChange,
+  onDestroy,
+  pending,
+}: {
+  canDestroy: boolean
+  confirmation: string
+  disabled: boolean
+  onConfirmationChange: (value: string) => void
+  onDestroy: () => void
+  pending: boolean
+}) {
+  return (
+    <Card
+      variant="layer"
+      className="rounded-lg border-accent-error-highlight/30"
+    >
+      <CardHeader>
+        <CardTitle>Danger zone</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        <p className="prose-body text-fg-secondary">
+          Destroy infrastructure and detach this team's cluster.
+        </p>
+        <input
+          aria-label="Destroy confirmation"
+          className="h-9 rounded-md border border-stroke bg-bg px-3 font-mono text-sm text-fg outline-none focus:border-stroke-active"
+          disabled={disabled}
+          onChange={(event) => onConfirmationChange(event.currentTarget.value)}
+          placeholder="Type destroy"
+          value={confirmation}
+        />
+        <Button
+          variant="error"
+          disabled={!canDestroy}
+          onClick={onDestroy}
+          loading={pending ? 'Destroying' : undefined}
+        >
+          Destroy BYOC
+        </Button>
+      </CardContent>
+    </Card>
+  )
+}
+
 function ByocSetupFlow({
   activeOperation,
   canCreateDeployment,
@@ -1315,17 +1482,23 @@ function ByocSetupFlow({
   deploymentOperation,
   e2bPrincipals,
   error,
+  locations,
+  location,
+  locationLocked,
   onConnect,
   onCreateDeployment,
   onDeploy,
+  onGenerateIdentity,
   onValidate,
   onRefresh,
+  onLocationChange,
   onSetupStart,
   onSetupProjectIdChange,
   operationPending,
   projectId,
   setupStarted,
   target,
+  targetPending,
   topology,
   updateTopology,
 }: {
@@ -1343,17 +1516,23 @@ function ByocSetupFlow({
   deploymentOperation?: ByocOperation
   e2bPrincipals: string[]
   error?: string
+  locations: ByocLocation[]
+  location?: ByocLocation
+  locationLocked: boolean
   onConnect: () => void
   onCreateDeployment: () => void
   onDeploy: () => void
+  onGenerateIdentity: () => void
   onValidate: () => void
   onRefresh: () => void
+  onLocationChange: (location: ByocLocation) => void
   onSetupStart: () => void
   onSetupProjectIdChange: (value: string) => void
   operationPending: boolean
   projectId: string
   setupStarted: boolean
   target?: ByocTarget
+  targetPending: boolean
   topology: TopologyDraft
   updateTopology: (patch: Partial<TopologyDraft>) => void
 }) {
@@ -1455,9 +1634,16 @@ function ByocSetupFlow({
           e2bPrincipals={e2bPrincipals}
           error={createConnectionError}
           isPending={createConnectionPending || operationPending}
+          locations={locations}
+          location={location}
+          locationLocked={locationLocked}
           onConnect={onConnect}
+          onGenerateIdentity={onGenerateIdentity}
+          onLocationChange={onLocationChange}
           onProjectIdChange={onSetupProjectIdChange}
           projectId={projectId}
+          target={target}
+          targetPending={targetPending}
         />
       ) : configuring ? (
         <SetupConfiguration
@@ -1600,18 +1786,32 @@ function SetupServiceAccount({
   e2bPrincipals,
   error,
   isPending,
+  locations,
+  location,
+  locationLocked,
   onConnect,
+  onGenerateIdentity,
+  onLocationChange,
   onProjectIdChange,
   projectId,
+  target,
+  targetPending,
 }: {
   deployerAccountId: string
   deployerServiceAccountEmail: string
   e2bPrincipals: string[]
   error?: string
   isPending: boolean
+  locations: ByocLocation[]
+  location?: ByocLocation
+  locationLocked: boolean
   onConnect: () => void
+  onGenerateIdentity: () => void
+  onLocationChange: (location: ByocLocation) => void
   onProjectIdChange: (value: string) => void
   projectId: string
+  target?: ByocTarget
+  targetPending: boolean
 }) {
   const validProjectId = /^[a-z][a-z0-9-]{4,28}[a-z0-9]$/.test(projectId)
   const commandProjectId = validProjectId ? projectId : 'YOUR_GCP_PROJECT_ID'
@@ -1624,11 +1824,45 @@ function SetupServiceAccount({
         </CardHeader>
         <CardContent className="grid min-w-0 gap-5">
           <p className="prose-body max-w-2xl text-fg-secondary">
-            Choose the GCP project that will own the BYOC region. The deployer
-            is scoped to that project, not to an individual dashboard user.
+            Choose the GCP location and project that will own the BYOC region.
+            Generating this team's deployer identity permanently reserves the
+            location.
           </p>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-3">
+            <label
+              className="grid min-w-0 gap-2 text-sm font-medium"
+              htmlFor="byoc-setup-location"
+            >
+              Region and zone
+              <Select
+                disabled={isPending || targetPending || locationLocked}
+                onValueChange={(value) => {
+                  const nextLocation = locations.find(
+                    (candidate) => locationKey(candidate) === value
+                  )
+                  if (nextLocation) onLocationChange(nextLocation)
+                }}
+                value={location ? locationKey(location) : undefined}
+              >
+                <SelectTrigger
+                  className="h-10 min-w-0 bg-bg"
+                  id="byoc-setup-location"
+                >
+                  <SelectValue placeholder="Select a location" />
+                </SelectTrigger>
+                <SelectContent>
+                  {locations.map((candidate) => (
+                    <SelectItem
+                      key={locationKey(candidate)}
+                      value={locationKey(candidate)}
+                    >
+                      {candidate.region} / {candidate.zone}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
             <label
               className="grid min-w-0 gap-2 text-sm font-medium"
               htmlFor="byoc-setup-project-id"
@@ -1652,8 +1886,11 @@ function SetupServiceAccount({
               <div className="flex h-10 min-w-0 items-center rounded-md border border-stroke bg-bg-1 px-3 font-mono text-sm font-normal text-fg-secondary">
                 <span className="truncate">
                   {validProjectId
-                    ? deployerServiceAccountEmail
-                    : `${deployerAccountId}@<project>.iam.gserviceaccount.com`}
+                    ? deployerServiceAccountEmail ||
+                      'Generate the deployer identity first'
+                    : target && deployerAccountId
+                      ? `${deployerAccountId}@<project>.iam.gserviceaccount.com`
+                      : 'Generate the deployer identity first'}
                 </span>
               </div>
             </div>
@@ -1661,42 +1898,93 @@ function SetupServiceAccount({
 
           <div className="flex gap-2 border border-stroke bg-bg p-3 text-xs leading-5 text-fg-secondary">
             <InfoIcon className="mt-0.5 size-4 shrink-0" />
-            One deployer identity is created in the selected project. E2B uses
-            short-lived impersonation credentials; no service-account key is
-            created or stored.
+            {locationLocked
+              ? 'This team location is now reserved and cannot be changed in place.'
+              : 'Choose carefully: generating the deployer identity permanently reserves this team location.'}{' '}
+            E2B uses short-lived impersonation credentials; no service-account
+            key is created or stored.
           </div>
 
-          <CodeBlock
-            className="min-w-0 max-w-full overflow-hidden"
-            icon={<TerminalIcon />}
-            title="Run in Cloud Shell"
-            viewportProps={{ className: 'max-h-[420px] max-w-full' }}
-          >
-            {bootstrapCommand({
-              deployerServiceAccount: deployerAccountId,
-              e2bPrincipals,
-              projectId: commandProjectId,
-            })}
-          </CodeBlock>
+          {target ? (
+            <Tabs defaultValue="gcloud" className="min-w-0 gap-3">
+              <TabsList className="h-9 w-fit gap-5 border-b-0 bg-bg p-0 max-md:px-0">
+                <TabsTrigger layoutkey="byoc-setup-access-tabs" value="gcloud">
+                  gcloud
+                </TabsTrigger>
+                <TabsTrigger
+                  layoutkey="byoc-setup-access-tabs"
+                  value="terraform"
+                >
+                  Terraform
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="gcloud" className="mt-0 min-w-0">
+                <CodeBlock
+                  className="min-w-0 max-w-full overflow-hidden"
+                  icon={<TerminalIcon />}
+                  title="Run in Cloud Shell"
+                  viewportProps={{ className: 'max-h-[420px] max-w-full' }}
+                >
+                  {bootstrapCommand({
+                    deployerServiceAccount: deployerAccountId,
+                    e2bPrincipals,
+                    projectId: commandProjectId,
+                  })}
+                </CodeBlock>
+              </TabsContent>
+              <TabsContent value="terraform" className="mt-0 min-w-0">
+                <CodeBlock
+                  className="min-w-0 max-w-full overflow-hidden"
+                  icon={<TerminalIcon />}
+                  lang="hcl"
+                  title="Terraform bootstrap snippet"
+                  viewportProps={{ className: 'max-h-[420px] max-w-full' }}
+                >
+                  {bootstrapTerraform({
+                    deployerServiceAccount: deployerAccountId,
+                    e2bPrincipals,
+                    projectId: commandProjectId,
+                  })}
+                </CodeBlock>
+              </TabsContent>
+            </Tabs>
+          ) : null}
           {error ? (
             <p className="text-sm text-accent-error-highlight">{error}</p>
           ) : null}
         </CardContent>
         <CardFooter className="mt-0 justify-between gap-4 border-stroke py-4 max-sm:flex-col max-sm:items-stretch">
           <p className="text-xs text-fg-secondary">
-            Run the command, then verify that E2B can impersonate the deployer.
+            {target
+              ? 'Run the command, then verify that E2B can impersonate the deployer.'
+              : "Review the location, then generate this team's permanent deployer identity."}
           </p>
-          <Button
-            className="shrink-0"
-            disabled={
-              !validProjectId || e2bPrincipals.length === 0 || isPending
-            }
-            loading={isPending ? 'Verifying' : undefined}
-            onClick={onConnect}
-          >
-            Verify and continue
-            <ArrowRightIcon />
-          </Button>
+          {target ? (
+            <Button
+              className="shrink-0"
+              disabled={
+                !location ||
+                !validProjectId ||
+                e2bPrincipals.length === 0 ||
+                isPending
+              }
+              loading={isPending ? 'Verifying' : undefined}
+              onClick={onConnect}
+            >
+              Verify and continue
+              <ArrowRightIcon />
+            </Button>
+          ) : (
+            <Button
+              className="shrink-0"
+              disabled={!location || targetPending}
+              loading={targetPending ? 'Generating' : undefined}
+              onClick={onGenerateIdentity}
+            >
+              Generate deployer identity
+              <ArrowRightIcon />
+            </Button>
+          )}
         </CardFooter>
       </Card>
     </section>
@@ -2103,6 +2391,10 @@ function ConnectGCPDialog({
 }
 
 const emptyUuid = '00000000-0000-0000-0000-000000000000'
+
+function locationKey(location: ByocLocation) {
+  return `${location.region}/${location.zone}`
+}
 
 function topologyFromDeployment(deployment?: Deployment): TopologyDraft {
   return {

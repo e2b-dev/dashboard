@@ -112,6 +112,10 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
     title: 'BYOC',
     type: 'default',
   }),
+  '/dashboard/*/byoc/**': () => ({
+    title: 'BYOC',
+    type: 'default',
+  }),
 
   // team
   '/dashboard/*/general': () => ({
