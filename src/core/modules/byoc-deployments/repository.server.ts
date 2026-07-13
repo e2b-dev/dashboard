@@ -54,6 +54,8 @@ export interface CloudProjectAuthorization {
   default_region: string
   default_zone: string
   namespace: string
+  domain_name: string
+  prefix: string
   status: string
   required_roles: string[]
   deployer_account_hint: string
@@ -69,6 +71,8 @@ export interface CloudProject {
   default_region: string
   default_zone: string
   namespace: string
+  domain_name: string
+  prefix: string
   authorization_status: string
   required_roles: string[]
   mock: boolean
@@ -337,8 +341,6 @@ export function createByocDeploymentsRepository({
           team_id: teamId,
           cloud_connection_id: connectionId,
           cloud_project_id: projectId,
-          domain_name: target.domainName,
-          prefix: target.prefix,
         }),
       })
 
@@ -449,6 +451,8 @@ function createCloudConnectionWithMode(
           default_region: target.region,
           default_zone: target.zone,
           namespace: target.namespace,
+          domain_name: target.domainName,
+          prefix: target.prefix,
           e2b_principal: target.e2bPrincipal,
         },
       ],
@@ -580,7 +584,9 @@ function isConfiguredProject(project: CloudProject, target: ByocTarget) {
   return (
     project.default_region === target.region &&
     project.default_zone === target.zone &&
-    project.namespace === target.namespace
+    project.namespace === target.namespace &&
+    project.domain_name === target.domainName &&
+    project.prefix === target.prefix
   )
 }
 
@@ -633,7 +639,9 @@ function assertConfiguredConnection(
       return (
         project.default_region === target.region &&
         project.default_zone === target.zone &&
-        project.namespace === target.namespace
+        project.namespace === target.namespace &&
+        project.domain_name === target.domainName &&
+        project.prefix === target.prefix
       )
     }
   )

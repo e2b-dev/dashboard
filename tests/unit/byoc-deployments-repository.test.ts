@@ -138,6 +138,8 @@ describe('BYOC deployments repository', () => {
             default_region: 'test-region',
             default_zone: 'test-zone-a',
             namespace: 'test-namespace',
+            domain_name: 'test.example.com',
+            prefix: 'test-',
           },
         ],
         required_project_roles: [],
@@ -165,6 +167,8 @@ describe('BYOC deployments repository', () => {
           default_region: 'test-region',
           default_zone: 'test-zone-a',
           namespace: 'test-namespace',
+          domain_name: 'test.example.com',
+          prefix: 'test-',
           e2b_principal:
             'serviceAccount:runner@test-control.iam.gserviceaccount.com',
         },
@@ -189,6 +193,8 @@ describe('BYOC deployments repository', () => {
             default_region: 'test-region',
             default_zone: 'test-zone-a',
             namespace: 'test-namespace',
+            domain_name: 'test.example.com',
+            prefix: 'test-',
           },
         ],
         required_project_roles: [],
@@ -273,6 +279,8 @@ describe('BYOC deployments repository', () => {
                 default_region: 'test-region',
                 default_zone: 'test-zone-a',
                 namespace: 'test-namespace',
+                domain_name: 'test.example.com',
+                prefix: 'test-',
               },
             ],
             required_project_roles: [],
@@ -312,6 +320,8 @@ describe('BYOC deployments repository', () => {
           default_region: 'test-region',
           default_zone: 'test-zone-a',
           namespace: 'test-namespace',
+          domain_name: 'test.example.com',
+          prefix: 'test-',
         },
       ],
       required_project_roles: [],
@@ -351,6 +361,8 @@ describe('BYOC deployments repository', () => {
           default_region: 'test-region',
           default_zone: 'test-zone-a',
           namespace: 'test-namespace',
+          domain_name: 'test.example.com',
+          prefix: 'test-',
         },
       ],
       required_project_roles: [],
@@ -394,14 +406,15 @@ describe('BYOC deployments repository', () => {
       '33333333-3333-4333-8333-333333333333'
     )
 
-    expect(
-      JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body))
-    ).toMatchObject({
+    const requestBody = JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body))
+    expect(requestBody).toMatchObject({
       client_request_id: '33333333-3333-4333-8333-333333333333',
       cloud_connection_id: connection.id,
       cloud_project_id: 'test-project',
       team_id: 'team-a',
     })
+    expect(requestBody).not.toHaveProperty('domain_name')
+    expect(requestBody).not.toHaveProperty('prefix')
   })
 
   it('replaces the verified identity on an existing deployment', async () => {
@@ -443,6 +456,8 @@ describe('BYOC deployments repository', () => {
           default_region: 'test-region',
           default_zone: 'test-zone-a',
           namespace: 'test-namespace',
+          domain_name: 'test.example.com',
+          prefix: 'test-',
         },
       ],
       required_project_roles: [],
