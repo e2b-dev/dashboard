@@ -960,6 +960,35 @@ describe('BYOC deployments repository', () => {
     ])
   })
 
+  it('maps coded operation conflicts to actionable guidance', async () => {
+    mockRunner({
+      routes: {
+        'GET /cloud-connections': () =>
+          Response.json({ cloud_connections: [cloudConnection()] }),
+        'POST /deployments': () =>
+          Response.json(
+            {
+              code: 'idempotency_conflict',
+              error: 'upstream details are not exposed',
+            },
+            { status: 409 }
+          ),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).createDeployment(
+        connectionId,
+        projectId,
+        clientRequestId
+      )
+    ).rejects.toMatchObject({
+      code: 'CONFLICT',
+      message:
+        'This request was already used for a different BYOC action. Refresh and try again.',
+    })
+  })
+
   it('maps runner transport failures to a bounded gateway error', async () => {
     vi.mocked(fetch).mockRejectedValue(new Error('connection reset'))
 

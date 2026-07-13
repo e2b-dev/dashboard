@@ -785,6 +785,21 @@ function getPublicRunnerError(
   if (errorCode === 'target_identity_mismatch') {
     return 'The BYOC deployer does not match this team. Refresh the setup and use the generated identity.'
   }
+  if (errorCode === 'target_identity_conflict') {
+    return 'The stored BYOC target conflicts with this dashboard configuration.'
+  }
+  if (errorCode === 'active_operation') {
+    return 'Another BYOC operation is still running. Wait for it to finish, then refresh.'
+  }
+  if (errorCode === 'idempotency_conflict') {
+    return 'This request was already used for a different BYOC action. Refresh and try again.'
+  }
+  if (errorCode === 'deployment_changed') {
+    return 'The BYOC deployment changed since this page loaded. Refresh before retrying.'
+  }
+  if (errorCode === 'invalid_operation_state') {
+    return "This BYOC action is not valid from the deployment's current state. Refresh to see the available action."
+  }
   if (status === 401 || status === 403) {
     return 'BYOC deployments runner authentication failed.'
   }
