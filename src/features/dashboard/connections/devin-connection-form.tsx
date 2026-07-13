@@ -1,15 +1,14 @@
 'use client'
 
-import { useMutation } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
-import { useMemo, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import {
   defaultErrorToast,
   defaultSuccessToast,
   toast,
 } from '@/lib/hooks/use-toast'
-import { useTRPC } from '@/trpc/client'
+import { useTRPCClient } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
 import {
   CheckCircleIcon,
@@ -30,35 +29,35 @@ type Organization = { id: string; name: string }
 type Pool = { id: string; name: string; platform: string }
 
 type DevinConnectionFormProps = {
+  oauthEnabled: boolean
+  oauthMessage?: string
   teamSlug: string
 }
 
-export function DevinConnectionForm({ teamSlug }: DevinConnectionFormProps) {
+export function DevinConnectionForm({
+  oauthEnabled,
+  oauthMessage,
+  teamSlug,
+}: DevinConnectionFormProps) {
   const router = useRouter()
-  const trpc = useTRPC()
-  const [apiUrl, setApiUrl] = useState('https://api.devin.ai')
+  const trpcClient = useTRPCClient()
+  const apiUrlRef = useRef<HTMLInputElement>(null)
   const [apiKey, setApiKey] = useState('')
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [pools, setPools] = useState<Pool[]>([])
   const [poolId, setPoolId] = useState('')
   const [outpostsToken, setOutpostsToken] = useState('')
   const [accountChecked, setAccountChecked] = useState(false)
-  const launchOperationId = useRef(crypto.randomUUID())
+  const [discoverPending, setDiscoverPending] = useState(false)
+  const [launchPending, setLaunchPending] = useState(false)
+  const launchOperationId = useRef<string | null>(null)
 
-  const discoverMutation = useMutation(
-    trpc.connections.discoverDevin.mutationOptions()
-  )
-
-  const launchMutation = useMutation(
-    trpc.connections.launchDevinWorker.mutationOptions()
-  )
-
-  const launchDisabledReason = useMemo(() => {
+  const launchDisabledReason = (() => {
     if (!accountChecked) return 'Check the Devin account first.'
     if (!poolId) return 'Select an Outposts pool.'
     if (!outpostsToken.trim()) return 'Enter a scoped Outposts machine token.'
     return undefined
-  }, [accountChecked, outpostsToken, poolId])
+  })()
 
   function resetDiscovery() {
     setAccountChecked(false)
@@ -68,20 +67,16 @@ export function DevinConnectionForm({ teamSlug }: DevinConnectionFormProps) {
     setOutpostsToken('')
   }
 
-  function handleApiUrlChange(value: string) {
-    setApiUrl(value)
-    resetDiscovery()
-  }
-
   async function checkAccount(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!apiKey.trim() || discoverMutation.isPending) return
+    if (!apiKey.trim() || discoverPending) return
     const submittedApiKey = apiKey
     setApiKey('')
+    setDiscoverPending(true)
     try {
-      const data = await discoverMutation.mutateAsync({
+      const data = await trpcClient.connections.discoverDevin.mutate({
         apiKey: submittedApiKey,
-        apiUrl,
+        apiUrl: apiUrlRef.current?.value || 'https://api.devin.ai',
         teamSlug,
       })
       setOrganizations(data.organizations)
@@ -98,25 +93,28 @@ export function DevinConnectionForm({ teamSlug }: DevinConnectionFormProps) {
             : 'Could not check Devin account.'
         )
       )
-    } finally {
-      discoverMutation.reset()
     }
+    setDiscoverPending(false)
   }
 
   async function startWorker(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (launchDisabledReason || launchMutation.isPending) return
+    if (launchDisabledReason || launchPending) return
     const submittedToken = outpostsToken
     setOutpostsToken('')
+    setLaunchPending(true)
+    if (!launchOperationId.current) {
+      launchOperationId.current = crypto.randomUUID()
+    }
     try {
-      const data = await launchMutation.mutateAsync({
-        apiUrl,
+      const data = await trpcClient.connections.launchDevinWorker.mutate({
+        apiUrl: apiUrlRef.current?.value || 'https://api.devin.ai',
         operationId: launchOperationId.current,
         outpostsToken: submittedToken,
         poolId,
         teamSlug,
       })
-      launchOperationId.current = crypto.randomUUID()
+      launchOperationId.current = null
       toast(
         defaultSuccessToast(
           data.reused
@@ -133,9 +131,8 @@ export function DevinConnectionForm({ teamSlug }: DevinConnectionFormProps) {
             : 'Failed to start the Devin Outposts worker.'
         )
       )
-    } finally {
-      launchMutation.reset()
     }
+    setLaunchPending(false)
   }
 
   return (
@@ -156,16 +153,67 @@ export function DevinConnectionForm({ teamSlug }: DevinConnectionFormProps) {
         </p>
       </header>
 
+      <section className="border-stroke flex max-w-2xl flex-col gap-4 border-t pt-5">
+        <div className="flex items-start gap-3">
+          <KeyIcon className="text-icon-tertiary mt-0.5 size-4 shrink-0" />
+          <div>
+            <h2 className="prose-body-highlight text-fg">Connect with Devin</h2>
+            <p className="prose-body text-fg-tertiary mt-1">
+              Authorize E2B in Devin. Devin creates a dedicated pool and scoped
+              service user, then the dashboard stores the scoped worker
+              credential directly in the prepared sandbox. It never enters
+              browser state.
+            </p>
+          </div>
+        </div>
+
+        {oauthMessage ? (
+          <p
+            className="prose-body border-accent-error-highlight/35 bg-accent-error-highlight/10 text-fg border p-3"
+            role="alert"
+          >
+            {oauthMessage}
+          </p>
+        ) : null}
+
+        <div>
+          {oauthEnabled ? (
+            <form
+              action={`/api/connections/devin/start?teamSlug=${encodeURIComponent(teamSlug)}`}
+              method="post"
+            >
+              <Button type="submit">
+                Authorize in Devin
+                <ExternalLinkIcon />
+              </Button>
+            </form>
+          ) : (
+            <Button
+              disabled
+              title="Partner OAuth is not configured for this dashboard deployment."
+            >
+              Authorize in Devin
+              <ExternalLinkIcon />
+            </Button>
+          )}
+        </div>
+        {!oauthEnabled ? (
+          <p className="prose-body text-fg-tertiary">
+            Partner OAuth is not configured for this deployment. Use the manual
+            setup below.
+          </p>
+        ) : null}
+      </section>
+
       <section className="border-stroke flex flex-col gap-4 border-t pt-5">
         <div className="flex items-start gap-3">
           <KeyIcon className="text-icon-tertiary mt-0.5 size-4 shrink-0" />
           <div>
-            <h2 className="prose-body-highlight text-fg">
-              Check Devin account
-            </h2>
+            <h2 className="prose-body-highlight text-fg">Manual setup</h2>
             <p className="prose-body text-fg-tertiary mt-1 max-w-2xl">
-              The API key is sent to the dashboard server for this lookup. It is
-              cleared when the check starts and is never sent to the sandbox.
+              Use an existing service-user API key and scoped Outposts machine
+              token. The API key is sent to the dashboard server only for the
+              lookup, then cleared and never sent to the sandbox.
             </p>
           </div>
         </div>
@@ -175,7 +223,7 @@ export function DevinConnectionForm({ teamSlug }: DevinConnectionFormProps) {
             <Input
               id="devin-api-key"
               autoComplete="off"
-              disabled={discoverMutation.isPending}
+              disabled={discoverPending}
               type="password"
               value={apiKey}
               onChange={(event) => {
@@ -195,9 +243,10 @@ export function DevinConnectionForm({ teamSlug }: DevinConnectionFormProps) {
                 <Input
                   id="devin-api-url"
                   autoComplete="off"
-                  disabled={discoverMutation.isPending}
-                  value={apiUrl}
-                  onChange={(event) => handleApiUrlChange(event.target.value)}
+                  disabled={discoverPending}
+                  defaultValue="https://api.devin.ai"
+                  onChange={resetDiscovery}
+                  ref={apiUrlRef}
                   placeholder="https://api.devin.ai"
                 />
               </Field>
@@ -206,10 +255,8 @@ export function DevinConnectionForm({ teamSlug }: DevinConnectionFormProps) {
 
           <Button
             className="w-full sm:w-fit"
-            disabled={!apiKey.trim() || discoverMutation.isPending}
-            loading={
-              discoverMutation.isPending ? 'Checking account' : undefined
-            }
+            disabled={!apiKey.trim() || discoverPending}
+            loading={discoverPending ? 'Checking account' : undefined}
             title={!apiKey.trim() ? 'Enter a Devin API key.' : undefined}
             type="submit"
           >
@@ -292,22 +339,21 @@ export function DevinConnectionForm({ teamSlug }: DevinConnectionFormProps) {
           <Button
             aria-describedby="devin-launch-status"
             className="w-full sm:w-fit"
-            disabled={Boolean(launchDisabledReason) || launchMutation.isPending}
-            loading={launchMutation.isPending ? 'Starting worker' : undefined}
+            disabled={Boolean(launchDisabledReason) || launchPending}
+            loading={launchPending ? 'Starting worker' : undefined}
             title={launchDisabledReason}
             type="submit"
           >
             Start worker sandbox
             <ExternalLinkIcon />
           </Button>
-          <p
+          <output
             className="prose-body text-fg-tertiary"
             id="devin-launch-status"
-            role="status"
           >
             {launchDisabledReason ||
               'Ready to create an E2B sandbox and start the Devin worker.'}
-          </p>
+          </output>
         </form>
       </section>
     </div>

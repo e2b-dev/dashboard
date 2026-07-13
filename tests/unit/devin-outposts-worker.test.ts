@@ -1,0 +1,264 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const mocks = vi.hoisted(() => ({
+  infraDelete: vi.fn(),
+  infraGet: vi.fn(),
+  infraPost: vi.fn(),
+  runtime: undefined as ReturnType<typeof sandboxWithResults> | undefined,
+}))
+
+vi.mock('@/core/shared/clients/api', () => ({
+  infra: {
+    DELETE: mocks.infraDelete,
+    GET: mocks.infraGet,
+    POST: mocks.infraPost,
+  },
+}))
+
+vi.mock('e2b', () => ({
+  Sandbox: class {
+    commands: ReturnType<typeof vi.fn>
+
+    constructor() {
+      if (!mocks.runtime) throw new Error('missing mocked sandbox runtime')
+      this.commands = mocks.runtime.commands
+    }
+  },
+}))
+
+import {
+  claimPreparedDevinWorker,
+  DevinWorkerLaunchError,
+  hasPersistedDevinConnection,
+  launchDevinWorker,
+} from '@/core/modules/devin-outposts/worker.server'
+
+const input = {
+  accessToken: 'dashboard-access-token',
+  apiUrl: 'https://api.devin.ai',
+  operationId: '17d18dac-86d9-4a79-91e7-4477bd29327e',
+  outpostsToken: 'scoped-outposts-token',
+  poolId: 'pool-1',
+  teamId: 'team-1',
+  userId: 'user-1',
+}
+
+describe('Devin worker launcher', () => {
+  beforeEach(() => {
+    mocks.infraDelete.mockReset()
+    mocks.infraGet.mockReset()
+    mocks.infraPost.mockReset()
+    mocks.runtime = undefined
+    mocks.infraPost.mockImplementation((path: string) => {
+      if (path === '/sandboxes') {
+        return apiResult(201, sandboxApiResponse('new-sbx'))
+      }
+      if (path === '/sandboxes/{sandboxID}/connect') {
+        return apiResult(200, sandboxApiResponse('new-sbx'))
+      }
+      throw new Error(`unexpected path ${path}`)
+    })
+    mocks.infraDelete.mockResolvedValue(apiResult(204))
+    mocks.infraGet.mockResolvedValue(apiResult(200, []))
+  })
+
+  it('starts the worker through the bearer-authenticated sandbox API', async () => {
+    const sandbox = sandboxWithResults([
+      { exitCode: 0, stdout: '' },
+      { exitCode: 0, stdout: 'stopped' },
+      { exitCode: 0, stdout: '4242' },
+    ])
+    mocks.runtime = sandbox
+
+    await expect(launchDevinWorker(input)).resolves.toMatchObject({
+      reused: false,
+      sandboxId: 'new-sbx',
+      workerPid: '4242',
+    })
+
+    expect(mocks.infraPost).toHaveBeenNthCalledWith(
+      1,
+      '/sandboxes',
+      expect.objectContaining({
+        body: expect.objectContaining({
+          autoPause: false,
+          autoResume: { enabled: false },
+          timeout: 1800,
+        }),
+        headers: {
+          Authorization: 'Bearer dashboard-access-token',
+          'X-Team-ID': 'team-1',
+        },
+      })
+    )
+    expect(mocks.infraPost).toHaveBeenNthCalledWith(
+      4,
+      '/sandboxes/{sandboxID}/connect',
+      expect.objectContaining({
+        body: { timeout: 86_400 },
+        params: { path: { sandboxID: 'new-sbx' } },
+      })
+    )
+  })
+
+  it('reuses a worker that is already marked as running', async () => {
+    mocks.infraGet.mockResolvedValue(
+      apiResult(200, [sandboxApiResponse('existing-sbx')])
+    )
+    mocks.infraPost.mockImplementation((path: string) => {
+      if (path === '/sandboxes/{sandboxID}/connect') {
+        return apiResult(200, sandboxApiResponse('existing-sbx'))
+      }
+      throw new Error(`unexpected path ${path}`)
+    })
+    mocks.runtime = sandboxWithResults([
+      { exitCode: 0, stdout: '' },
+      { exitCode: 0, stdout: 'running' },
+    ])
+
+    await expect(launchDevinWorker(input)).resolves.toMatchObject({
+      reused: true,
+      sandboxId: 'existing-sbx',
+      workerPid: null,
+    })
+    expect(mocks.runtime.commands.run).toHaveBeenCalledTimes(2)
+    expect(mocks.infraPost).not.toHaveBeenCalledWith(
+      '/sandboxes',
+      expect.anything()
+    )
+  })
+
+  it('keeps the scoped credential out of metadata and command text', async () => {
+    const sandbox = sandboxWithResults([
+      { exitCode: 0, stdout: '' },
+      { exitCode: 0, stdout: 'stopped' },
+      { exitCode: 0, stdout: '4242' },
+    ])
+    mocks.runtime = sandbox
+
+    await launchDevinWorker(input)
+
+    const createCall = mocks.infraPost.mock.calls[0]?.[1]
+    expect(createCall.body.metadata).not.toEqual(
+      expect.objectContaining({ token: expect.anything() })
+    )
+    const persistCall = sandbox.commands.run.mock.calls[0]
+    const startCall = sandbox.commands.run.mock.calls[2]
+    expect(startCall?.[0]).not.toContain(input.outpostsToken)
+    expect(persistCall?.[1]).toEqual(
+      expect.objectContaining({
+        envs: expect.objectContaining({
+          DEVIN_OUTPOSTS_TOKEN: input.outpostsToken,
+        }),
+      })
+    )
+  })
+
+  it('kills the prepared sandbox when worker startup fails', async () => {
+    mocks.runtime = sandboxWithResults([
+      { exitCode: 0, stdout: '' },
+      { exitCode: 0, stdout: 'stopped' },
+      { exitCode: 1, stdout: '' },
+    ])
+
+    await expect(launchDevinWorker(input)).rejects.toBeInstanceOf(
+      DevinWorkerLaunchError
+    )
+    expect(mocks.infraDelete).toHaveBeenCalledWith(
+      '/sandboxes/{sandboxID}',
+      expect.objectContaining({
+        params: { path: { sandboxID: 'new-sbx' } },
+      })
+    )
+  })
+
+  it('reports a prepared sandbox that could not be cleaned up', async () => {
+    mocks.runtime = sandboxWithResults([
+      { exitCode: 0, stdout: '' },
+      { exitCode: 0, stdout: 'stopped' },
+      { exitCode: 1, stdout: '' },
+    ])
+    mocks.infraDelete.mockResolvedValue(apiResult(500))
+
+    await expect(launchDevinWorker(input)).rejects.toMatchObject({
+      orphanedSandboxId: 'new-sbx',
+    })
+  })
+
+  it('uses an atomic sandbox lock to serialize OAuth callbacks', async () => {
+    mocks.runtime = sandboxWithResults([{ exitCode: 0, stdout: 'busy\n' }])
+
+    await expect(
+      claimPreparedDevinWorker({ ...input, sandboxId: 'new-sbx' })
+    ).resolves.toBe('busy')
+
+    const command = mocks.runtime.commands.run.mock.calls[0]?.[0]
+    expect(command).toContain('mkdir')
+    expect(command).toContain('callback.lock')
+    expect(command).toContain('claimed-at')
+    expect(command).toContain('-gt 120')
+  })
+
+  it('renews a worker recovered from its PID marker', async () => {
+    mocks.runtime = sandboxWithResults([{ exitCode: 0, stdout: 'started\n' }])
+
+    await expect(
+      claimPreparedDevinWorker({ ...input, sandboxId: 'new-sbx' })
+    ).resolves.toBe('started')
+
+    expect(mocks.infraPost).toHaveBeenNthCalledWith(
+      2,
+      '/sandboxes/{sandboxID}/connect',
+      expect.objectContaining({ body: { timeout: 86_400 } })
+    )
+  })
+
+  it.each([
+    ['present', true],
+    ['missing', false],
+  ] as const)('reads persisted connection state: %s', async (state, expected) => {
+    mocks.runtime = sandboxWithResults([{ exitCode: 0, stdout: state }])
+
+    await expect(
+      hasPersistedDevinConnection({ ...input, sandboxId: 'new-sbx' })
+    ).resolves.toBe(expected)
+
+    const command = mocks.runtime.commands.run.mock.calls[0]?.[0]
+    expect(command).toContain('then printf present')
+    expect(command).toContain('else printf missing')
+  })
+
+  it('rejects an invalid persisted connection probe result', async () => {
+    mocks.runtime = sandboxWithResults([{ exitCode: 0, stdout: 'unknown' }])
+
+    await expect(
+      hasPersistedDevinConnection({ ...input, sandboxId: 'new-sbx' })
+    ).rejects.toBeInstanceOf(DevinWorkerLaunchError)
+  })
+})
+
+function sandboxWithResults(
+  results: Array<{ exitCode: number; stdout: string }>
+) {
+  return {
+    commands: { run: vi.fn().mockImplementation(() => results.shift()) },
+  }
+}
+
+function sandboxApiResponse(sandboxId: string) {
+  return {
+    clientID: 'client-1',
+    domain: 'e2b.app',
+    envdAccessToken: 'envd-token',
+    envdVersion: '0.1.0',
+    sandboxID: sandboxId,
+    templateID: 'devin-outposts',
+  }
+}
+
+function apiResult(status: number, data?: unknown) {
+  return {
+    data,
+    response: { ok: status >= 200 && status < 300, status },
+  }
+}
