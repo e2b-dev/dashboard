@@ -124,6 +124,43 @@ describe('BYOC deployments repository', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
+  it('keeps legacy connections visible for migration and cleanup', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      Response.json({
+        cloud_connections: [
+          {
+            id: '22222222-2222-4222-8222-222222222222',
+            team_id: 'team-a',
+            provider: 'gcp',
+            mode: 'keyless_impersonation',
+            status: 'connected',
+            subject_email:
+              'e2b-byoc-2aj9c825xk@test-project.iam.gserviceaccount.com',
+            authorized_projects: [
+              {
+                project_id: 'test-project',
+                default_region: 'test-region',
+                default_zone: 'test-zone-a',
+                namespace: 'test-namespace',
+                domain_name: 'test.example.com',
+                prefix: 'test-',
+              },
+            ],
+            required_project_roles: [],
+            created_at: '2026-07-11T00:00:00Z',
+            updated_at: '2026-07-11T00:00:00Z',
+          },
+        ],
+      })
+    )
+
+    const connections = await createByocDeploymentsRepository({
+      teamId: 'team-a',
+    }).listCloudConnections()
+
+    expect(connections).toHaveLength(1)
+  })
+
   it('sends the selected deployer identity and target for verification', async () => {
     const fetchMock = vi.mocked(fetch)
     fetchMock.mockResolvedValueOnce(
@@ -134,15 +171,15 @@ describe('BYOC deployments repository', () => {
         mode: 'keyless_impersonation',
         status: 'connected',
         subject_email:
-          'e2b-byoc-96c2886c51d1dfb4@test-project.iam.gserviceaccount.com',
+          'e2b-byoc-2aj9c825xk@test-project.iam.gserviceaccount.com',
         authorized_projects: [
           {
             project_id: 'test-project',
             default_region: 'test-region',
             default_zone: 'test-zone-a',
-            namespace: 'test-namespace',
-            domain_name: 'test.example.com',
-            prefix: 'test-',
+            namespace: 't2aj9c825xk',
+            domain_name: '2aj9c825xk.test.example.com',
+            prefix: 't2aj9c825xk-',
           },
         ],
         required_project_roles: [],
@@ -153,7 +190,7 @@ describe('BYOC deployments repository', () => {
 
     const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
     await repository.createCloudConnection(
-      'e2b-byoc-96c2886c51d1dfb4@test-project.iam.gserviceaccount.com',
+      'e2b-byoc-2aj9c825xk@test-project.iam.gserviceaccount.com',
       undefined,
       '33333333-3333-4333-8333-333333333333'
     )
@@ -162,16 +199,15 @@ describe('BYOC deployments repository', () => {
     expect(JSON.parse(String(request?.[1]?.body))).toMatchObject({
       client_request_id: '33333333-3333-4333-8333-333333333333',
       team_id: 'team-a',
-      subject_email:
-        'e2b-byoc-96c2886c51d1dfb4@test-project.iam.gserviceaccount.com',
+      subject_email: 'e2b-byoc-2aj9c825xk@test-project.iam.gserviceaccount.com',
       authorized_projects: [
         {
           project_id: 'test-project',
           default_region: 'test-region',
           default_zone: 'test-zone-a',
-          namespace: 'test-namespace',
-          domain_name: 'test.example.com',
-          prefix: 'test-',
+          namespace: 't2aj9c825xk',
+          domain_name: '2aj9c825xk.test.example.com',
+          prefix: 't2aj9c825xk-',
           e2b_principal:
             'serviceAccount:runner@test-control.iam.gserviceaccount.com',
         },
@@ -189,15 +225,15 @@ describe('BYOC deployments repository', () => {
         mode: 'keyless_impersonation',
         status: 'connected',
         subject_email:
-          'e2b-byoc-96c2886c51d1dfb4@other-project.iam.gserviceaccount.com',
+          'e2b-byoc-2aj9c825xk@other-project.iam.gserviceaccount.com',
         authorized_projects: [
           {
             project_id: 'other-project',
             default_region: 'test-region',
             default_zone: 'test-zone-a',
-            namespace: 'test-namespace',
-            domain_name: 'test.example.com',
-            prefix: 'test-',
+            namespace: 't2aj9c825xk',
+            domain_name: '2aj9c825xk.test.example.com',
+            prefix: 't2aj9c825xk-',
           },
         ],
         required_project_roles: [],
@@ -208,7 +244,7 @@ describe('BYOC deployments repository', () => {
     const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
 
     await repository.createCloudConnection(
-      'e2b-byoc-96c2886c51d1dfb4@other-project.iam.gserviceaccount.com',
+      'e2b-byoc-2aj9c825xk@other-project.iam.gserviceaccount.com',
       undefined,
       '33333333-3333-4333-8333-333333333333'
     )
@@ -239,13 +275,80 @@ describe('BYOC deployments repository', () => {
     )
   })
 
-  it('derives the deployer account from the immutable team ID', () => {
+  it('derives the deployment target from the immutable team ID', () => {
     const target = createByocDeploymentsRepository({
       teamId: 'team-a',
     }).target()
 
-    expect(target.deployerAccountId).toBe('e2b-byoc-96c2886c51d1dfb4')
+    expect(target.deployerAccountId).toBe('e2b-byoc-2aj9c825xk')
+    expect(target.namespace).toBe('t2aj9c825xk')
+    expect(target.domainName).toBe('2aj9c825xk.test.example.com')
+    expect(target.prefix).toBe('t2aj9c825xk-')
     expect(target.sdkDomain).toBe('test.example.com')
+    expect(
+      createByocDeploymentsRepository({ teamId: 'team-a' }).target()
+    ).toEqual(target)
+
+    const otherTarget = createByocDeploymentsRepository({
+      teamId: 'team-b',
+    }).target()
+    expect(otherTarget.namespace).toBe('t3hyvkqy24s')
+    expect(otherTarget.domainName).toBe('3hyvkqy24s.test.example.com')
+    expect(otherTarget.prefix).toBe('t3hyvkqy24s-')
+    expect(
+      `${target.prefix}${'p'.repeat(30)}-envs-docker-context`
+    ).toHaveLength(62)
+    expect(`${target.prefix}infra-instances`).toHaveLength(27)
+    expect(target.deployerAccountId).toContain('2aj9c825xk')
+  })
+
+  it('uses distinct team prefixes when two teams target the same project', async () => {
+    const fetchMock = vi.mocked(fetch)
+    fetchMock.mockImplementation(async (_input, init) => {
+      const body = JSON.parse(String(init?.body))
+      return Response.json({
+        id: crypto.randomUUID(),
+        team_id: body.team_id,
+        provider: 'gcp',
+        mode: 'keyless_impersonation',
+        status: 'connected',
+        subject_email: body.subject_email,
+        authorized_projects: body.authorized_projects,
+        required_project_roles: [],
+        created_at: '2026-07-11T00:00:00Z',
+        updated_at: '2026-07-11T00:00:00Z',
+      })
+    })
+
+    await createByocDeploymentsRepository({
+      teamId: 'team-a',
+    }).createCloudConnection(
+      'e2b-byoc-2aj9c825xk@shared-project.iam.gserviceaccount.com',
+      undefined,
+      '33333333-3333-4333-8333-333333333333'
+    )
+    await createByocDeploymentsRepository({
+      teamId: 'team-b',
+    }).createCloudConnection(
+      'e2b-byoc-3hyvkqy24s@shared-project.iam.gserviceaccount.com',
+      undefined,
+      '44444444-4444-4444-8444-444444444444'
+    )
+
+    const first = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))
+    const second = JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body))
+    expect(first.authorized_projects[0]).toMatchObject({
+      project_id: 'shared-project',
+      namespace: 't2aj9c825xk',
+      domain_name: '2aj9c825xk.test.example.com',
+      prefix: 't2aj9c825xk-',
+    })
+    expect(second.authorized_projects[0]).toMatchObject({
+      project_id: 'shared-project',
+      namespace: 't3hyvkqy24s',
+      domain_name: '3hyvkqy24s.test.example.com',
+      prefix: 't3hyvkqy24s-',
+    })
   })
 
   it('rejects a deployer account assigned to another team', async () => {
@@ -304,7 +407,8 @@ describe('BYOC deployments repository', () => {
       )
     ).rejects.toMatchObject({
       code: 'PRECONDITION_FAILED',
-      message: 'Use the deployer service account generated for this team.',
+      message:
+        'Reconnect this project before creating an isolated BYOC deployment.',
     })
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
@@ -316,16 +420,15 @@ describe('BYOC deployments repository', () => {
       provider: 'gcp' as const,
       mode: 'keyless_impersonation' as const,
       status: 'connected',
-      subject_email:
-        'e2b-byoc-96c2886c51d1dfb4@test-project.iam.gserviceaccount.com',
+      subject_email: 'e2b-byoc-2aj9c825xk@test-project.iam.gserviceaccount.com',
       authorized_projects: [
         {
           project_id: 'test-project',
           default_region: 'test-region',
           default_zone: 'test-zone-a',
-          namespace: 'test-namespace',
-          domain_name: 'test.example.com',
-          prefix: 'test-',
+          namespace: 't2aj9c825xk',
+          domain_name: '2aj9c825xk.test.example.com',
+          prefix: 't2aj9c825xk-',
         },
       ],
       required_project_roles: [],
@@ -357,16 +460,15 @@ describe('BYOC deployments repository', () => {
       provider: 'gcp' as const,
       mode: 'keyless_impersonation' as const,
       status: 'connected',
-      subject_email:
-        'e2b-byoc-96c2886c51d1dfb4@test-project.iam.gserviceaccount.com',
+      subject_email: 'e2b-byoc-2aj9c825xk@test-project.iam.gserviceaccount.com',
       authorized_projects: [
         {
           project_id: 'test-project',
           default_region: 'test-region',
           default_zone: 'test-zone-a',
-          namespace: 'test-namespace',
-          domain_name: 'test.example.com',
-          prefix: 'test-',
+          namespace: 't2aj9c825xk',
+          domain_name: '2aj9c825xk.test.example.com',
+          prefix: 't2aj9c825xk-',
         },
       ],
       required_project_roles: [],
@@ -386,12 +488,11 @@ describe('BYOC deployments repository', () => {
             region: 'test-region',
             zone: 'test-zone-a',
           },
-          domain_name: 'test.example.com',
-          prefix: 'test-',
+          domain_name: '2aj9c825xk.test.example.com',
+          prefix: 't2aj9c825xk-',
           deployer_service_account: {
-            account_id: 'e2b-byoc-96c2886c51d1dfb4',
-            email:
-              'e2b-byoc-96c2886c51d1dfb4@test-project.iam.gserviceaccount.com',
+            account_id: 'e2b-byoc-2aj9c825xk',
+            email: 'e2b-byoc-2aj9c825xk@test-project.iam.gserviceaccount.com',
             display_name: 'E2B BYOC deployer',
             project_id: 'test-project',
             status: 'planned',
@@ -432,8 +533,8 @@ describe('BYOC deployments repository', () => {
         region: 'test-region',
         zone: 'test-zone-a',
       },
-      domain_name: 'test.example.com',
-      prefix: 'test-',
+      domain_name: '2aj9c825xk.test.example.com',
+      prefix: 't2aj9c825xk-',
       deployer_service_account: {
         account_id: 'e2b-byoc-deployer',
         email: 'e2b-byoc-deployer@test-project.iam.gserviceaccount.com',
@@ -452,16 +553,15 @@ describe('BYOC deployments repository', () => {
       provider: 'gcp' as const,
       mode: 'keyless_impersonation' as const,
       status: 'connected',
-      subject_email:
-        'e2b-byoc-96c2886c51d1dfb4@test-project.iam.gserviceaccount.com',
+      subject_email: 'e2b-byoc-2aj9c825xk@test-project.iam.gserviceaccount.com',
       authorized_projects: [
         {
           project_id: 'test-project',
           default_region: 'test-region',
           default_zone: 'test-zone-a',
-          namespace: 'test-namespace',
-          domain_name: 'test.example.com',
-          prefix: 'test-',
+          namespace: 't2aj9c825xk',
+          domain_name: '2aj9c825xk.test.example.com',
+          prefix: 't2aj9c825xk-',
         },
       ],
       required_project_roles: [],
@@ -504,8 +604,8 @@ describe('BYOC deployments repository', () => {
           region: 'test-region',
           zone: 'test-zone-a',
         },
-        domain_name: 'test.example.com',
-        prefix: 'test-',
+        domain_name: '2aj9c825xk.test.example.com',
+        prefix: 't2aj9c825xk-',
         deployer_service_account: {
           account_id: 'e2b-byoc-deployer',
           email: 'e2b-byoc-deployer@test-project.iam.gserviceaccount.com',
@@ -543,8 +643,8 @@ describe('BYOC deployments repository', () => {
           region: 'test-region',
           zone: 'test-zone-a',
         },
-        domain_name: 'test.example.com',
-        prefix: 'test-',
+        domain_name: '2aj9c825xk.test.example.com',
+        prefix: 't2aj9c825xk-',
         deployer_service_account: {
           account_id: 'e2b-byoc-deployer',
           email: 'e2b-byoc-deployer@test-project.iam.gserviceaccount.com',
@@ -592,8 +692,8 @@ describe('BYOC deployments repository', () => {
         region: 'test-region',
         zone: 'test-zone-a',
       },
-      domain_name: 'test.example.com',
-      prefix: 'test-',
+      domain_name: '2aj9c825xk.test.example.com',
+      prefix: 't2aj9c825xk-',
       deployer_service_account: {
         account_id: 'e2b-byoc-deployer',
         email: 'e2b-byoc-deployer@test-project.iam.gserviceaccount.com',
