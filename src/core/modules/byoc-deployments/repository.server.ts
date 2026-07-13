@@ -279,6 +279,13 @@ export function createByocDeploymentsRepository({
       const connectionTarget = deployment
         ? configuredTargetForDeployment(deployment, configuredTargets)
         : target
+      if (!connectionTarget) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message:
+            'Deployment target does not match the configured BYOC target.',
+        })
+      }
       const expectedConnectionId =
         expectedCloudConnectionId ?? deployment?.cloud_connection_id
       if (deploymentId && !expectedConnectionId) {

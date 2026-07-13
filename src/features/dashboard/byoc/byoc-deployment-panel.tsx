@@ -1364,6 +1364,7 @@ function ByocSetupFlow({
           onCreateDeployment={onCreateDeployment}
           onDeploy={onDeploy}
           operationPending={operationPending}
+          projectId={projectId}
           target={target}
           topology={topology}
           updateTopology={updateTopology}
@@ -1598,6 +1599,7 @@ function SetupConfiguration({
   onCreateDeployment,
   onDeploy,
   operationPending,
+  projectId,
   target,
   topology,
   updateTopology,
@@ -1609,6 +1611,7 @@ function SetupConfiguration({
   onCreateDeployment: () => void
   onDeploy: () => void
   operationPending: boolean
+  projectId: string
   target?: ByocTarget
   topology: TopologyDraft
   updateTopology: (patch: Partial<TopologyDraft>) => void
