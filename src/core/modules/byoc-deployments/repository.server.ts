@@ -213,9 +213,10 @@ export function createByocDeploymentsRepository({
     }
 
     if (!response.ok) {
+      const runnerErrorCode = await readRunnerErrorCode(response)
       throw new TRPCError({
         code: runnerStatusCode(response.status),
-        message: getPublicRunnerError(response.status, path),
+        message: getPublicRunnerError(response.status, path, runnerErrorCode),
       })
     }
 
@@ -625,7 +626,34 @@ function runnerStatusCode(status: number) {
   }
 }
 
-function getPublicRunnerError(status: number, path: string) {
+async function readRunnerErrorCode(response: Response) {
+  try {
+    const body: unknown = await response.json()
+    if (
+      body &&
+      typeof body === 'object' &&
+      'code' in body &&
+      typeof body.code === 'string'
+    ) {
+      return body.code
+    }
+  } catch {
+    // An invalid upstream error body is handled by the status fallback below.
+  }
+  return undefined
+}
+
+function getPublicRunnerError(
+  status: number,
+  path: string,
+  errorCode?: string
+) {
+  if (errorCode === 'deployer_verification_unavailable') {
+    return 'E2B cannot use the deployer service account yet. Retrying verification may succeed.'
+  }
+  if (errorCode === 'target_identity_mismatch') {
+    return 'The BYOC deployer does not match this team. Refresh the setup and use the generated identity.'
+  }
   if (status === 401 || status === 403) {
     return 'BYOC deployments runner authentication failed.'
   }
@@ -639,10 +667,7 @@ function getPublicRunnerError(status: number, path: string) {
     return 'BYOC deployment is already running another operation.'
   }
   if (status === 422) {
-    return 'Could not verify the deployer service account. Check its Token Creator binding and try again.'
-  }
-  if (status === 503 && path === '/cloud-connections') {
-    return 'Deployer service account authorization is still propagating. Retrying may succeed.'
+    return 'BYOC deployment configuration was rejected.'
   }
   if (status === 429 || status >= 500) {
     return 'BYOC deployments runner is temporarily unavailable.'

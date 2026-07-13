@@ -401,7 +401,7 @@ export function ByocDeploymentPanel() {
       retry: (failureCount, error) =>
         failureCount < 3 &&
         mutationError(error)?.includes(
-          'Deployer service account authorization is still propagating'
+          'E2B cannot use the deployer service account yet'
         ) === true,
       retryDelay: 5_000,
       onSuccess: async (data) => {
