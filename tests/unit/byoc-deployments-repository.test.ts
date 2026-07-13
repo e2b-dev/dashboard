@@ -767,6 +767,73 @@ describe('BYOC deployments repository', () => {
     })
   })
 
+  it('reports missing deployer permissions without a retryable message', async () => {
+    mockRunner({
+      routes: {
+        'POST /cloud-connections': () =>
+          Response.json(
+            {
+              code: 'deployer_missing_permissions',
+              error: 'upstream details are not exposed',
+              details: {
+                retryable: false,
+                project_id: projectId,
+                missing_permissions: [
+                  'servicenetworking.services.addPeering',
+                  'iap.tunnelInstances.accessViaIAP',
+                ],
+              },
+            },
+            { status: 403 }
+          ),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).createCloudConnection(
+        deployerEmail,
+        undefined,
+        clientRequestId,
+        undefined,
+        { region: 'test-region', zone: 'test-zone-a' }
+      )
+    ).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+      message:
+        'The BYOC deployer is missing required GCP permissions. Missing: servicenetworking.services.addPeering, iap.tunnelInstances.accessViaIAP.',
+    })
+  })
+
+  it('reports a deployer project mismatch without retrying', async () => {
+    mockRunner({
+      routes: {
+        'POST /cloud-connections': () =>
+          Response.json(
+            {
+              code: 'deployer_project_mismatch',
+              error: 'upstream details are not exposed',
+              details: { retryable: false, project_id: projectId },
+            },
+            { status: 422 }
+          ),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).createCloudConnection(
+        deployerEmail,
+        undefined,
+        clientRequestId,
+        undefined,
+        { region: 'test-region', zone: 'test-zone-a' }
+      )
+    ).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      message:
+        'The BYOC deployer service account must belong to the selected GCP project.',
+    })
+  })
+
   it('maps target mismatches without a retryable verification message', async () => {
     mockRunner({
       routes: {

@@ -246,10 +246,10 @@ export function createByocDeploymentsRepository({
 
     if (response.status === 404 && options?.allowNotFound) return undefined
     if (!response.ok) {
-      const runnerErrorCode = await readRunnerErrorCode(response)
+      const runnerError = await readRunnerError(response)
       throw new TRPCError({
         code: runnerStatusCode(response.status),
-        message: getPublicRunnerError(response.status, path, runnerErrorCode),
+        message: getPublicRunnerError(response.status, path, runnerError),
       })
     }
 
@@ -757,30 +757,61 @@ function runnerStatusCode(status: number) {
   }
 }
 
-async function readRunnerErrorCode(response: Response) {
+type RunnerError = {
+  code?: string
+  missingPermissions?: string[]
+}
+
+async function readRunnerError(response: Response): Promise<RunnerError> {
   try {
     const body: unknown = await response.json()
-    if (
-      body &&
-      typeof body === 'object' &&
-      'code' in body &&
-      typeof body.code === 'string'
-    ) {
-      return body.code
+    if (!body || typeof body !== 'object') return {}
+
+    const code =
+      'code' in body && typeof body.code === 'string' ? body.code : undefined
+    const details =
+      'details' in body && body.details && typeof body.details === 'object'
+        ? body.details
+        : undefined
+    const missingPermissions =
+      details &&
+      'missing_permissions' in details &&
+      Array.isArray(details.missing_permissions)
+        ? details.missing_permissions
+            .filter(
+              (permission): permission is string =>
+                typeof permission === 'string'
+            )
+            .slice(0, 20)
+        : undefined
+
+    return {
+      code,
+      missingPermissions,
     }
   } catch {
     // An invalid upstream error body is handled by the status fallback below.
   }
-  return undefined
+  return {}
 }
 
 function getPublicRunnerError(
   status: number,
   path: string,
-  errorCode?: string
+  runnerError: RunnerError
 ) {
+  const errorCode = runnerError.code
   if (errorCode === 'deployer_verification_unavailable') {
     return 'E2B cannot use the deployer service account yet. Retrying verification may succeed.'
+  }
+  if (errorCode === 'deployer_missing_permissions') {
+    const suffix = runnerError.missingPermissions?.length
+      ? ` Missing: ${runnerError.missingPermissions.join(', ')}.`
+      : ''
+    return `The BYOC deployer is missing required GCP permissions.${suffix}`
+  }
+  if (errorCode === 'deployer_project_mismatch') {
+    return 'The BYOC deployer service account must belong to the selected GCP project.'
   }
   if (errorCode === 'target_identity_mismatch') {
     return 'The BYOC deployer does not match this team. Refresh the setup and use the generated identity.'
