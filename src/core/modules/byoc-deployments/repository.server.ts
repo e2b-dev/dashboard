@@ -3,6 +3,7 @@ import { TRPCError } from '@trpc/server'
 
 interface ByocTarget {
   deployerAccountId: string
+  sdkDomain: string
   projectId: string
   region: string
   zone: string
@@ -169,6 +170,7 @@ export function createByocDeploymentsRepository({
   const target = {
     ...getByocTarget(),
     deployerAccountId: getByocDeployerAccountId(teamId),
+    sdkDomain: requiredEnv('NEXT_PUBLIC_E2B_DOMAIN'),
   }
   const baseUrl = getRunnerBaseUrl()
   const token = getRunnerToken()
@@ -549,7 +551,7 @@ function getPublicRunnerError(status: number) {
   return 'BYOC deployment request was rejected.'
 }
 
-function getByocTarget(): Omit<ByocTarget, 'deployerAccountId'> {
+function getByocTarget(): Omit<ByocTarget, 'deployerAccountId' | 'sdkDomain'> {
   const e2bPrincipal = requiredEnv('BYOC_E2B_PRINCIPAL')
   const additionalPrincipals = process.env.BYOC_E2B_PRINCIPALS?.split(',')
     .map((principal) => principal.trim())

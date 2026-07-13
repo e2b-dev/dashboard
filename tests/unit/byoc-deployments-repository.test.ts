@@ -3,6 +3,7 @@ import { createByocDeploymentsRepository } from '@/core/modules/byoc-deployments
 
 const originalUrl = process.env.BYOC_DEPLOYMENTS_API_URL
 const originalToken = process.env.BYOC_DEPLOYMENTS_API_TOKEN
+const originalSdkDomain = process.env.NEXT_PUBLIC_E2B_DOMAIN
 const originalTarget = {
   domainName: process.env.BYOC_DOMAIN_NAME,
   namespace: process.env.BYOC_NAMESPACE,
@@ -26,6 +27,7 @@ describe('BYOC deployments repository', () => {
     process.env.BYOC_RESOURCE_PREFIX = 'test-'
     process.env.BYOC_E2B_PRINCIPAL =
       'serviceAccount:runner@test-control.iam.gserviceaccount.com'
+    process.env.NEXT_PUBLIC_E2B_DOMAIN = 'test.example.com'
     delete process.env.BYOC_E2B_PRINCIPALS
     vi.stubGlobal('fetch', vi.fn())
   })
@@ -41,6 +43,7 @@ describe('BYOC deployments repository', () => {
     process.env.BYOC_RESOURCE_PREFIX = originalTarget.prefix
     process.env.BYOC_E2B_PRINCIPAL = originalTarget.e2bPrincipal
     process.env.BYOC_E2B_PRINCIPALS = originalTarget.e2bPrincipals
+    process.env.NEXT_PUBLIC_E2B_DOMAIN = originalSdkDomain
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
   })
@@ -242,6 +245,7 @@ describe('BYOC deployments repository', () => {
     }).target()
 
     expect(target.deployerAccountId).toBe('e2b-byoc-96c2886c51d1dfb4')
+    expect(target.sdkDomain).toBe('test.example.com')
   })
 
   it('rejects a deployer account assigned to another team', async () => {

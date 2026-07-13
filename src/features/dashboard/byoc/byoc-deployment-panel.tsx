@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
+import { CreateApiKeyDialog } from '@/features/dashboard/settings/keys'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils'
 import type { TRPCRouterOutputs } from '@/trpc/client'
@@ -24,6 +25,7 @@ import {
   DialogTitle,
 } from '@/ui/primitives/dialog'
 import {
+  AddIcon,
   ArrowRightIcon,
   CheckCircleIcon,
   CloudIcon,
@@ -216,6 +218,7 @@ export function ByocDeploymentPanel() {
   const [setupProjectId, setSetupProjectId] = useState('')
   const [deployerServiceAccountEmail, setDeployerServiceAccountEmail] =
     useState('')
+  const [createdApiKey, setCreatedApiKey] = useState<string>()
   const [selectedDeploymentId, setSelectedDeploymentId] = useState<string>()
   const [runningDeploymentId, setRunningDeploymentId] = useState<string>()
   const [operationBaseline, setOperationBaseline] = useState<{
@@ -729,6 +732,14 @@ export function ByocDeploymentPanel() {
         </div>
       ) : null}
 
+      {durableRouteAttached ? (
+        <UseDeploymentCard
+          apiKey={createdApiKey}
+          domain={targetQuery.data.sdkDomain}
+          onApiKeyCreated={setCreatedApiKey}
+        />
+      ) : null}
+
       <Tabs defaultValue="overview" className="min-w-0 gap-4">
         <TabsList className="h-10 w-full justify-start gap-5 overflow-x-auto border-b border-stroke bg-transparent p-0 max-md:px-0">
           <TabsTrigger layoutkey="byoc-main-tabs" value="overview">
@@ -1106,6 +1117,89 @@ export function ByocDeploymentPanel() {
         }
       />
     </main>
+  )
+}
+
+function UseDeploymentCard({
+  apiKey,
+  domain,
+  onApiKeyCreated,
+}: {
+  apiKey?: string
+  domain: string
+  onApiKeyCreated: (key: string) => void
+}) {
+  const env = `export E2B_API_KEY="${apiKey ?? 'YOUR_API_KEY'}"
+export E2B_DOMAIN="${domain}"`
+  const example = `import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create('base')
+console.log(sandbox.sandboxId)
+await sandbox.kill()`
+
+  return (
+    <Card variant="layer" className="min-w-0 overflow-hidden rounded-lg">
+      <CardHeader className="flex-row items-start justify-between gap-4">
+        <div>
+          <CardTitle>Use your deployment</CardTitle>
+          <p className="mt-1 text-sm text-fg-secondary">
+            Create a team API key, configure the SDK, and start a sandbox on
+            this BYOC region.
+          </p>
+        </div>
+        {!apiKey ? (
+          <CreateApiKeyDialog
+            defaultName="BYOC quickstart"
+            onCreated={onApiKeyCreated}
+          >
+            <Button>
+              <AddIcon />
+              Create API key
+            </Button>
+          </CreateApiKeyDialog>
+        ) : null}
+      </CardHeader>
+      <CardContent className="grid min-w-0 gap-4 lg:grid-cols-2">
+        <div className="grid min-w-0 gap-3">
+          <p className="text-sm font-medium">1. Configure your environment</p>
+          <div className="ph-mask ph-no-capture min-w-0">
+            <CodeBlock
+              className="min-w-0 overflow-hidden rounded-md"
+              icon={<TerminalIcon />}
+              title="Environment"
+            >
+              {env}
+            </CodeBlock>
+          </div>
+          {apiKey ? (
+            <p className="text-xs text-accent-warning-highlight">
+              This key is shown only for this page session. Copy it before
+              leaving or refreshing.
+            </p>
+          ) : (
+            <p className="text-xs text-fg-secondary">
+              API keys belong to this dashboard team and route through its
+              attached BYOC cluster.
+            </p>
+          )}
+        </div>
+        <div className="grid min-w-0 gap-3">
+          <p className="text-sm font-medium">2. Start a sandbox</p>
+          <CodeBlock
+            className="min-w-0 overflow-hidden rounded-md"
+            icon={<TerminalIcon />}
+            lang="ts"
+            title="quickstart.ts"
+          >
+            {example}
+          </CodeBlock>
+          <p className="text-xs text-fg-secondary">
+            Install with <code className="font-mono">npm install e2b</code>,
+            then run this file with your TypeScript runtime.
+          </p>
+        </div>
+      </CardContent>
+    </Card>
   )
 }
 

@@ -42,10 +42,14 @@ type FormValues = z.infer<typeof CreateApiKeySchema>
 
 interface CreateApiKeyDialogProps {
   children?: ReactNode
+  defaultName?: string
+  onCreated?: (key: string) => void
 }
 
 export const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
   children,
+  defaultName = '',
+  onCreated,
 }) => {
   'use no memo'
 
@@ -67,7 +71,7 @@ export const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
   const form = useForm<FormValues>({
     resolver: zodResolver(CreateApiKeySchema),
     defaultValues: {
-      name: '',
+      name: defaultName,
     },
   })
 
@@ -80,6 +84,7 @@ export const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
         if (data.createdApiKey?.key) {
           setCreatedKey(data.createdApiKey.key)
           setCreatedName(data.createdApiKey.name ?? '')
+          onCreated?.(data.createdApiKey.key)
           form.reset()
         }
         void queryClient.invalidateQueries({ queryKey: listQueryKey })
@@ -191,7 +196,7 @@ export const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
                 <Input
                   readOnly
                   value={createdKey}
-                  className="border-stroke h-9 min-h-0 flex-1 rounded-none border font-mono text-sm"
+                  className="ph-mask ph-no-capture border-stroke h-9 min-h-0 flex-1 rounded-none border font-mono text-sm"
                 />
                 <Button
                   type="button"
