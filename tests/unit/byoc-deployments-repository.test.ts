@@ -1,765 +1,474 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createByocDeploymentsRepository } from '@/core/modules/byoc-deployments/repository.server'
+import {
+  type CloudConnection,
+  type CloudProjectAuthorization,
+  createByocDeploymentsRepository,
+  type Deployment,
+} from '@/core/modules/byoc-deployments/repository.server'
 
-const originalUrl = process.env.BYOC_DEPLOYMENTS_API_URL
-const originalToken = process.env.BYOC_DEPLOYMENTS_API_TOKEN
-const originalSdkDomain = process.env.NEXT_PUBLIC_E2B_DOMAIN
-const originalTarget = {
+const originalEnv = {
+  apiUrl: process.env.BYOC_DEPLOYMENTS_API_URL,
+  apiToken: process.env.BYOC_DEPLOYMENTS_API_TOKEN,
   domainName: process.env.BYOC_DOMAIN_NAME,
-  namespace: process.env.BYOC_NAMESPACE,
-  prefix: process.env.BYOC_RESOURCE_PREFIX,
   e2bPrincipal: process.env.BYOC_E2B_PRINCIPAL,
   e2bPrincipals: process.env.BYOC_E2B_PRINCIPALS,
   region: process.env.BYOC_GCP_REGION,
+  sdkDomain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
   zone: process.env.BYOC_GCP_ZONE,
+}
+
+const teamId = 'team-a'
+const targetKey = 'abc123def456'
+const targetStem = `t${targetKey}`
+const connectionId = '22222222-2222-4222-8222-222222222222'
+const deploymentId = '11111111-1111-4111-8111-111111111111'
+const clientRequestId = '33333333-3333-4333-8333-333333333333'
+const projectId = 'test-project'
+const deployerEmail = `${targetStem}@${projectId}.iam.gserviceaccount.com`
+const targetIdentity = {
+  team_id: teamId,
+  target_key: targetKey,
+  provider: 'gcp' as const,
+  region: 'test-region',
+  zone: 'test-zone-a',
+  namespace: targetStem,
+  domain_name: `${targetStem}.test.example.com`,
+  prefix: `${targetStem}-`,
+  deployer_account_id: targetStem,
+  e2b_principal: 'serviceAccount:runner@test-control.iam.gserviceaccount.com',
+  e2b_principals: [
+    'serviceAccount:runner@test-control.iam.gserviceaccount.com',
+  ],
+}
+
+type RouteHandler = (
+  url: URL,
+  init: RequestInit
+) => Response | Promise<Response>
+
+function requestKey(input: RequestInfo | URL, init?: RequestInit) {
+  const url =
+    input instanceof Request
+      ? new URL(input.url)
+      : new URL(input instanceof URL ? input.href : input)
+  return {
+    key: `${(init?.method ?? 'GET').toUpperCase()} ${url.pathname}`,
+    url,
+  }
+}
+
+function fetchCall(index: number) {
+  const call = vi.mocked(fetch).mock.calls[index]
+  if (!call) throw new Error(`Missing fetch call at index ${index}`)
+  return call
+}
+
+function mockRunner({
+  identity = {},
+  routes = {},
+}: {
+  identity?: Partial<typeof targetIdentity>
+  routes?: Record<string, RouteHandler>
+} = {}) {
+  vi.mocked(fetch).mockImplementation(
+    async (input: RequestInfo | URL, init: RequestInit = {}) => {
+      const { key, url } = requestKey(input, init)
+      if (key === 'POST /target-identities') {
+        return Response.json({ ...targetIdentity, ...identity })
+      }
+
+      const handler = routes[key]
+      if (!handler) throw new Error(`Unexpected runner request: ${key}`)
+      return handler(url, init)
+    }
+  )
+}
+
+function authorization(
+  overrides: Partial<CloudProjectAuthorization> = {}
+): CloudProjectAuthorization {
+  return {
+    project_id: projectId,
+    name: projectId,
+    default_region: 'test-region',
+    default_zone: 'test-zone-a',
+    namespace: targetStem,
+    domain_name: `${targetStem}.test.example.com`,
+    prefix: `${targetStem}-`,
+    status: 'authorized',
+    required_roles: [],
+    deployer_account_hint: targetStem,
+    ...overrides,
+  }
+}
+
+function cloudConnection(
+  overrides: Partial<CloudConnection> = {}
+): CloudConnection {
+  return {
+    id: connectionId,
+    team_id: teamId,
+    provider: 'gcp',
+    mode: 'keyless_impersonation',
+    status: 'connected',
+    subject_email: deployerEmail,
+    authorized_projects: [authorization()],
+    required_project_roles: [],
+    created_at: '2026-07-11T00:00:00Z',
+    updated_at: '2026-07-11T00:00:00Z',
+    ...overrides,
+  }
+}
+
+function deployment(overrides: Partial<Deployment> = {}): Deployment {
+  return {
+    id: deploymentId,
+    team_id: teamId,
+    cloud_connection_id: connectionId,
+    cloud_project_id: projectId,
+    provider: 'gcp',
+    gcp: {
+      project_id: projectId,
+      region: 'test-region',
+      zone: 'test-zone-a',
+    },
+    domain_name: `${targetStem}.test.example.com`,
+    prefix: `${targetStem}-`,
+    deployer_service_account: {
+      account_id: targetStem,
+      email: deployerEmail,
+      display_name: 'E2B BYOC deployer',
+      project_id: projectId,
+      status: 'ready',
+      roles: [],
+    },
+    status: 'draft',
+    created_at: '2026-07-11T00:00:00Z',
+    updated_at: '2026-07-11T00:00:00Z',
+    ...overrides,
+  }
 }
 
 describe('BYOC deployments repository', () => {
   beforeEach(() => {
     process.env.BYOC_DEPLOYMENTS_API_URL = 'http://localhost:8098'
     process.env.BYOC_DEPLOYMENTS_API_TOKEN = 'test-token'
-    process.env.BYOC_GCP_REGION = 'test-region'
-    process.env.BYOC_GCP_ZONE = 'test-zone-a'
-    process.env.BYOC_NAMESPACE = 'test-namespace'
     process.env.BYOC_DOMAIN_NAME = 'test.example.com'
-    process.env.BYOC_RESOURCE_PREFIX = 'test-'
     process.env.BYOC_E2B_PRINCIPAL =
       'serviceAccount:runner@test-control.iam.gserviceaccount.com'
+    process.env.BYOC_GCP_REGION = 'test-region'
+    process.env.BYOC_GCP_ZONE = 'test-zone-a'
     process.env.NEXT_PUBLIC_E2B_DOMAIN = 'test.example.com'
     delete process.env.BYOC_E2B_PRINCIPALS
     vi.stubGlobal('fetch', vi.fn())
   })
 
   afterEach(() => {
-    process.env.BYOC_DEPLOYMENTS_API_URL = originalUrl
-    process.env.BYOC_DEPLOYMENTS_API_TOKEN = originalToken
-    process.env.BYOC_GCP_REGION = originalTarget.region
-    process.env.BYOC_GCP_ZONE = originalTarget.zone
-    process.env.BYOC_NAMESPACE = originalTarget.namespace
-    process.env.BYOC_DOMAIN_NAME = originalTarget.domainName
-    process.env.BYOC_RESOURCE_PREFIX = originalTarget.prefix
-    process.env.BYOC_E2B_PRINCIPAL = originalTarget.e2bPrincipal
-    process.env.BYOC_E2B_PRINCIPALS = originalTarget.e2bPrincipals
-    process.env.NEXT_PUBLIC_E2B_DOMAIN = originalSdkDomain
+    process.env.BYOC_DEPLOYMENTS_API_URL = originalEnv.apiUrl
+    process.env.BYOC_DEPLOYMENTS_API_TOKEN = originalEnv.apiToken
+    process.env.BYOC_DOMAIN_NAME = originalEnv.domainName
+    process.env.BYOC_E2B_PRINCIPAL = originalEnv.e2bPrincipal
+    process.env.BYOC_E2B_PRINCIPALS = originalEnv.e2bPrincipals
+    process.env.BYOC_GCP_REGION = originalEnv.region
+    process.env.BYOC_GCP_ZONE = originalEnv.zone
+    process.env.NEXT_PUBLIC_E2B_DOMAIN = originalEnv.sdkDomain
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
   })
 
-  it('rejects plaintext requests to the hosted runner', () => {
+  it('rejects plaintext requests to a hosted runner', () => {
     process.env.BYOC_DEPLOYMENTS_API_URL =
       'http://e2b-byoc-deployments-h6wbjcn56a-uw.a.run.app'
 
-    expect(() => createByocDeploymentsRepository({ teamId: 'team-a' })).toThrow(
+    expect(() => createByocDeploymentsRepository({ teamId })).toThrow(
       'runner URL is invalid'
     )
   })
 
-  it('checks deployment ownership before a destructive request', async () => {
-    const fetchMock = vi.mocked(fetch)
-    fetchMock.mockResolvedValueOnce(
-      Response.json({
-        id: '11111111-1111-4111-8111-111111111111',
-        team_id: 'team-b',
-        provider: 'gcp',
-        gcp: {
-          project_id: 'e2b-dev-matt',
-          region: 'us-central1',
-          zone: 'us-central1-a',
-        },
-        domain_name: 'dashboard-byoc-smoke.e2b-test.dev',
-        prefix: 'byoc-testing-',
-        deployer_service_account: {
-          account_id: 'e2b-byoc-deployer',
-          email: 'e2b-byoc-deployer@e2b-dev-matt.iam.gserviceaccount.com',
-          display_name: 'E2B BYOC deployer',
-          project_id: 'e2b-dev-matt',
-          status: 'planned',
-          roles: [],
-        },
-        status: 'draft',
-        created_at: '2026-07-11T00:00:00Z',
-        updated_at: '2026-07-11T00:00:00Z',
-      })
-    )
+  it('maps the persisted target identity and sends required request metadata', async () => {
+    mockRunner()
 
-    const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
-    await expect(
-      repository.destroy(
-        '11111111-1111-4111-8111-111111111111',
-        'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
-      )
-    ).rejects.toMatchObject({ code: 'NOT_FOUND' })
-    expect(fetchMock).toHaveBeenCalledTimes(1)
-    expect(fetchMock.mock.calls[0]?.[1]?.method).toBeUndefined()
-  })
+    const target = await createByocDeploymentsRepository({ teamId }).target()
 
-  it('checks cloud connection ownership before listing projects', async () => {
-    const fetchMock = vi.mocked(fetch)
-    fetchMock.mockResolvedValueOnce(
-      Response.json({
-        cloud_connections: [
-          {
-            id: '22222222-2222-4222-8222-222222222222',
-            team_id: 'team-b',
-            provider: 'gcp',
-            mode: 'keyless_impersonation',
-            status: 'connected',
-            subject_email: 'customer@example.com',
-            authorized_projects: [],
-            required_project_roles: [],
-            created_at: '2026-07-11T00:00:00Z',
-            updated_at: '2026-07-11T00:00:00Z',
-          },
-        ],
-      })
-    )
-
-    const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
-    await expect(
-      repository.listProjects('22222222-2222-4222-8222-222222222222')
-    ).rejects.toMatchObject({ code: 'NOT_FOUND' })
-    expect(fetchMock).toHaveBeenCalledTimes(1)
-  })
-
-  it('keeps legacy connections visible for migration and cleanup', async () => {
-    vi.mocked(fetch).mockResolvedValueOnce(
-      Response.json({
-        cloud_connections: [
-          {
-            id: '22222222-2222-4222-8222-222222222222',
-            team_id: 'team-a',
-            provider: 'gcp',
-            mode: 'keyless_impersonation',
-            status: 'connected',
-            subject_email:
-              'e2b-byoc-2aj9c825xk@test-project.iam.gserviceaccount.com',
-            authorized_projects: [
-              {
-                project_id: 'test-project',
-                default_region: 'test-region',
-                default_zone: 'test-zone-a',
-                namespace: 'test-namespace',
-                domain_name: 'test.example.com',
-                prefix: 'test-',
-              },
-            ],
-            required_project_roles: [],
-            created_at: '2026-07-11T00:00:00Z',
-            updated_at: '2026-07-11T00:00:00Z',
-          },
-        ],
-      })
-    )
-
-    const connections = await createByocDeploymentsRepository({
-      teamId: 'team-a',
-    }).listCloudConnections()
-
-    expect(connections).toHaveLength(1)
-  })
-
-  it('sends the selected deployer identity and target for verification', async () => {
-    const fetchMock = vi.mocked(fetch)
-    fetchMock.mockResolvedValueOnce(
-      Response.json({
-        id: '22222222-2222-4222-8222-222222222222',
-        team_id: 'team-a',
-        provider: 'gcp',
-        mode: 'keyless_impersonation',
-        status: 'connected',
-        subject_email:
-          'e2b-byoc-2aj9c825xk@test-project.iam.gserviceaccount.com',
-        authorized_projects: [
-          {
-            project_id: 'test-project',
-            default_region: 'test-region',
-            default_zone: 'test-zone-a',
-            namespace: 't2aj9c825xk',
-            domain_name: '2aj9c825xk.test.example.com',
-            prefix: 't2aj9c825xk-',
-          },
-        ],
-        required_project_roles: [],
-        created_at: '2026-07-11T00:00:00Z',
-        updated_at: '2026-07-11T00:00:00Z',
-      })
-    )
-
-    const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
-    await repository.createCloudConnection(
-      'e2b-byoc-2aj9c825xk@test-project.iam.gserviceaccount.com',
-      undefined,
-      '33333333-3333-4333-8333-333333333333'
-    )
-
-    const request = fetchMock.mock.calls[0]
-    expect(JSON.parse(String(request?.[1]?.body))).toMatchObject({
-      client_request_id: '33333333-3333-4333-8333-333333333333',
-      team_id: 'team-a',
-      subject_email: 'e2b-byoc-2aj9c825xk@test-project.iam.gserviceaccount.com',
-      authorized_projects: [
-        {
-          project_id: 'test-project',
-          default_region: 'test-region',
-          default_zone: 'test-zone-a',
-          namespace: 't2aj9c825xk',
-          domain_name: '2aj9c825xk.test.example.com',
-          prefix: 't2aj9c825xk-',
-          e2b_principal:
-            'serviceAccount:runner@test-control.iam.gserviceaccount.com',
-        },
+    expect(target).toEqual({
+      deployerAccountId: targetStem,
+      sdkDomain: 'test.example.com',
+      region: 'test-region',
+      zone: 'test-zone-a',
+      namespace: targetStem,
+      domainName: `${targetStem}.test.example.com`,
+      prefix: `${targetStem}-`,
+      e2bPrincipal:
+        'serviceAccount:runner@test-control.iam.gserviceaccount.com',
+      e2bPrincipals: [
+        'serviceAccount:runner@test-control.iam.gserviceaccount.com',
       ],
     })
+    expect(fetch).toHaveBeenCalledTimes(1)
+    const [url, init] = fetchCall(0)
+    expect(new URL(String(url)).pathname).toBe('/target-identities')
+    expect(init).toMatchObject({
+      method: 'POST',
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Admin-Token': 'test-token',
+      },
+    })
+    expect(JSON.parse(String(init?.body))).toEqual({
+      team_id: teamId,
+      provider: 'gcp',
+      region: 'test-region',
+      zone: 'test-zone-a',
+      domain_base: 'test.example.com',
+      e2b_principal:
+        'serviceAccount:runner@test-control.iam.gserviceaccount.com',
+      e2b_principals: [
+        'serviceAccount:runner@test-control.iam.gserviceaccount.com',
+      ],
+    })
+    expect(init?.signal).toBeInstanceOf(AbortSignal)
   })
 
-  it('uses the deployer identity project as the authorized project', async () => {
-    delete process.env.BYOC_GCP_PROJECT_ID
-    const fetchMock = vi.mocked(fetch)
-    fetchMock.mockResolvedValueOnce(
-      Response.json({
-        id: '22222222-2222-4222-8222-222222222222',
-        team_id: 'team-a',
-        provider: 'gcp',
-        mode: 'keyless_impersonation',
-        status: 'connected',
-        subject_email:
-          'e2b-byoc-2aj9c825xk@other-project.iam.gserviceaccount.com',
-        authorized_projects: [
-          {
-            project_id: 'other-project',
-            default_region: 'test-region',
-            default_zone: 'test-zone-a',
-            namespace: 't2aj9c825xk',
-            domain_name: '2aj9c825xk.test.example.com',
-            prefix: 't2aj9c825xk-',
-          },
-        ],
-        required_project_roles: [],
-        created_at: '2026-07-11T00:00:00Z',
-        updated_at: '2026-07-11T00:00:00Z',
-      })
-    )
-    const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
+  it('keeps one stable target for repeated same-team lookups', async () => {
+    mockRunner()
+    const repository = createByocDeploymentsRepository({ teamId })
 
-    await repository.createCloudConnection(
-      'e2b-byoc-2aj9c825xk@other-project.iam.gserviceaccount.com',
-      undefined,
-      '33333333-3333-4333-8333-333333333333'
-    )
-
-    expect(
-      JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))
-        .authorized_projects[0].project_id
-    ).toBe('other-project')
-  })
-
-  it('adds runtime principals without replacing the API principal', () => {
-    process.env.BYOC_E2B_PRINCIPALS = [
-      'serviceAccount:api@test-control.iam.gserviceaccount.com',
-      'serviceAccount:worker@test-control.iam.gserviceaccount.com',
-    ].join(',')
-
-    const target = createByocDeploymentsRepository({
-      teamId: 'team-a',
-    }).target()
-
-    expect(target.e2bPrincipals).toEqual([
-      'serviceAccount:runner@test-control.iam.gserviceaccount.com',
-      'serviceAccount:api@test-control.iam.gserviceaccount.com',
-      'serviceAccount:worker@test-control.iam.gserviceaccount.com',
+    const [first, second] = await Promise.all([
+      repository.target(),
+      repository.target(),
     ])
-    expect(target.e2bPrincipal).toBe(
-      'serviceAccount:runner@test-control.iam.gserviceaccount.com'
-    )
-  })
 
-  it('derives the deployment target from the immutable team ID', () => {
-    const target = createByocDeploymentsRepository({
-      teamId: 'team-a',
-    }).target()
-
-    expect(target.deployerAccountId).toBe('e2b-byoc-2aj9c825xk')
-    expect(target.namespace).toBe('t2aj9c825xk')
-    expect(target.domainName).toBe('2aj9c825xk.test.example.com')
-    expect(target.prefix).toBe('t2aj9c825xk-')
-    expect(target.sdkDomain).toBe('test.example.com')
-    expect(
-      createByocDeploymentsRepository({ teamId: 'team-a' }).target()
-    ).toEqual(target)
-
-    const otherTarget = createByocDeploymentsRepository({
-      teamId: 'team-b',
-    }).target()
-    expect(otherTarget.namespace).toBe('t3hyvkqy24s')
-    expect(otherTarget.domainName).toBe('3hyvkqy24s.test.example.com')
-    expect(otherTarget.prefix).toBe('t3hyvkqy24s-')
-    expect(
-      `${target.prefix}${'p'.repeat(30)}-envs-docker-context`
-    ).toHaveLength(62)
-    expect(`${target.prefix}infra-instances`).toHaveLength(27)
-    expect(target.deployerAccountId).toContain('2aj9c825xk')
-  })
-
-  it('uses the complete compact UUID team ID as every current target prefix', () => {
-    const target = createByocDeploymentsRepository({
-      teamId: 'f104466c-3b16-40bb-aa0d-e18eba42a523',
-    }).target()
-
-    const teamStem = 'te9obtmr8ymde5xiwkyweogyzn'
-    expect(target.deployerAccountId).toBe(teamStem)
-    expect(target.namespace).toBe(teamStem)
-    expect(target.domainName).toBe(`${teamStem}.test.example.com`)
-    expect(target.prefix).toBe(`${teamStem}-`)
-    expect(target.deployerAccountId).toHaveLength(26)
-    expect(`${target.prefix}memorystore-valkey-connection-policy`).toHaveLength(
-      63
-    )
-  })
-
-  it('uses distinct team prefixes when two teams target the same project', async () => {
-    const fetchMock = vi.mocked(fetch)
-    fetchMock.mockImplementation(async (_input, init) => {
-      const body = JSON.parse(String(init?.body))
-      return Response.json({
-        id: crypto.randomUUID(),
-        team_id: body.team_id,
-        provider: 'gcp',
-        mode: 'keyless_impersonation',
-        status: 'connected',
-        subject_email: body.subject_email,
-        authorized_projects: body.authorized_projects,
-        required_project_roles: [],
-        created_at: '2026-07-11T00:00:00Z',
-        updated_at: '2026-07-11T00:00:00Z',
-      })
-    })
-
-    await createByocDeploymentsRepository({
-      teamId: 'team-a',
-    }).createCloudConnection(
-      'e2b-byoc-2aj9c825xk@shared-project.iam.gserviceaccount.com',
-      undefined,
-      '33333333-3333-4333-8333-333333333333'
-    )
-    await createByocDeploymentsRepository({
-      teamId: 'team-b',
-    }).createCloudConnection(
-      'e2b-byoc-3hyvkqy24s@shared-project.iam.gserviceaccount.com',
-      undefined,
-      '44444444-4444-4444-8444-444444444444'
-    )
-
-    const first = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))
-    const second = JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body))
-    expect(first.authorized_projects[0]).toMatchObject({
-      project_id: 'shared-project',
-      namespace: 't2aj9c825xk',
-      domain_name: '2aj9c825xk.test.example.com',
-      prefix: 't2aj9c825xk-',
-    })
-    expect(second.authorized_projects[0]).toMatchObject({
-      project_id: 'shared-project',
-      namespace: 't3hyvkqy24s',
-      domain_name: '3hyvkqy24s.test.example.com',
-      prefix: 't3hyvkqy24s-',
-    })
-  })
-
-  it('rejects a deployer account assigned to another team', async () => {
-    const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
-
-    await expect(
-      repository.createCloudConnection(
-        'e2b-byoc-deployer@test-project.iam.gserviceaccount.com',
-        undefined,
-        '33333333-3333-4333-8333-333333333333'
-      )
-    ).rejects.toMatchObject({
-      code: 'PRECONDITION_FAILED',
-      message: 'Use the deployer service account generated for this team.',
-    })
-    expect(fetch).not.toHaveBeenCalled()
-  })
-
-  it('does not create a new deployment from a legacy shared connection', async () => {
-    const fetchMock = vi.mocked(fetch)
-    fetchMock.mockResolvedValueOnce(
-      Response.json({
-        cloud_connections: [
-          {
-            id: '22222222-2222-4222-8222-222222222222',
-            team_id: 'team-a',
-            provider: 'gcp',
-            mode: 'keyless_impersonation',
-            status: 'connected',
-            subject_email:
-              'e2b-byoc-deployer@test-project.iam.gserviceaccount.com',
-            authorized_projects: [
-              {
-                project_id: 'test-project',
-                default_region: 'test-region',
-                default_zone: 'test-zone-a',
-                namespace: 'test-namespace',
-                domain_name: 'test.example.com',
-                prefix: 'test-',
-              },
-            ],
-            required_project_roles: [],
-            created_at: '2026-07-11T00:00:00Z',
-            updated_at: '2026-07-11T00:00:00Z',
-          },
-        ],
-      })
-    )
-
-    const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
-    await expect(
-      repository.createDeployment(
-        '22222222-2222-4222-8222-222222222222',
-        'test-project',
-        '33333333-3333-4333-8333-333333333333'
-      )
-    ).rejects.toMatchObject({
-      code: 'PRECONDITION_FAILED',
-      message:
-        'Reconnect this project before creating an isolated BYOC deployment.',
-    })
-    expect(fetchMock).toHaveBeenCalledTimes(1)
-  })
-
-  it('rejects deployment projects not authorized by the cloud connection', async () => {
-    const connection = {
-      id: '22222222-2222-4222-8222-222222222222',
-      team_id: 'team-a',
-      provider: 'gcp' as const,
-      mode: 'keyless_impersonation' as const,
-      status: 'connected',
-      subject_email: 'e2b-byoc-2aj9c825xk@test-project.iam.gserviceaccount.com',
-      authorized_projects: [
-        {
-          project_id: 'test-project',
-          default_region: 'test-region',
-          default_zone: 'test-zone-a',
-          namespace: 't2aj9c825xk',
-          domain_name: '2aj9c825xk.test.example.com',
-          prefix: 't2aj9c825xk-',
-        },
-      ],
-      required_project_roles: [],
-      created_at: '2026-07-11T00:00:00Z',
-      updated_at: '2026-07-11T00:00:00Z',
-    }
-    vi.mocked(fetch).mockResolvedValueOnce(
-      Response.json({ cloud_connections: [connection] })
-    )
-
-    const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
-    await expect(
-      repository.createDeployment(
-        connection.id,
-        'other-project',
-        '33333333-3333-4333-8333-333333333333'
-      )
-    ).rejects.toMatchObject({
-      code: 'PRECONDITION_FAILED',
-      message: 'Select a project authorized by this cloud connection.',
-    })
+    expect(second).toBe(first)
     expect(fetch).toHaveBeenCalledTimes(1)
   })
 
-  it('sends the deployment idempotency key unchanged', async () => {
-    const connection = {
-      id: '22222222-2222-4222-8222-222222222222',
-      team_id: 'team-a',
-      provider: 'gcp' as const,
-      mode: 'keyless_impersonation' as const,
-      status: 'connected',
-      subject_email: 'e2b-byoc-2aj9c825xk@test-project.iam.gserviceaccount.com',
-      authorized_projects: [
-        {
-          project_id: 'test-project',
-          default_region: 'test-region',
-          default_zone: 'test-zone-a',
-          namespace: 't2aj9c825xk',
-          domain_name: '2aj9c825xk.test.example.com',
-          prefix: 't2aj9c825xk-',
-        },
-      ],
-      required_project_roles: [],
-      created_at: '2026-07-11T00:00:00Z',
-      updated_at: '2026-07-11T00:00:00Z',
-    }
-    const fetchMock = vi.mocked(fetch)
-    fetchMock
-      .mockResolvedValueOnce(Response.json({ cloud_connections: [connection] }))
-      .mockResolvedValueOnce(
-        Response.json({
-          id: '11111111-1111-4111-8111-111111111111',
-          team_id: 'team-a',
-          provider: 'gcp',
-          gcp: {
-            project_id: 'test-project',
-            region: 'test-region',
-            zone: 'test-zone-a',
-          },
-          domain_name: '2aj9c825xk.test.example.com',
-          prefix: 't2aj9c825xk-',
-          deployer_service_account: {
-            account_id: 'e2b-byoc-2aj9c825xk',
-            email: 'e2b-byoc-2aj9c825xk@test-project.iam.gserviceaccount.com',
-            display_name: 'E2B BYOC deployer',
-            project_id: 'test-project',
-            status: 'planned',
-            roles: [],
-          },
-          status: 'draft',
-          created_at: '2026-07-11T00:00:00Z',
-          updated_at: '2026-07-11T00:00:00Z',
-        })
-      )
-
-    const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
-    await repository.createDeployment(
-      connection.id,
-      'test-project',
-      '33333333-3333-4333-8333-333333333333'
-    )
-
-    const requestBody = JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body))
-    expect(requestBody).toMatchObject({
-      client_request_id: '33333333-3333-4333-8333-333333333333',
-      cloud_connection_id: connection.id,
-      cloud_project_id: 'test-project',
-      team_id: 'team-a',
+  it('rejects a target identity returned for another team', async () => {
+    mockRunner({
+      identity: { team_id: 'team-b', target_key: targetKey },
     })
-    expect(requestBody).not.toHaveProperty('domain_name')
-    expect(requestBody).not.toHaveProperty('prefix')
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).target()
+    ).rejects.toMatchObject({ code: 'BAD_GATEWAY' })
   })
 
-  it('replaces the verified identity on an existing deployment', async () => {
-    const deployment = {
-      id: '11111111-1111-4111-8111-111111111111',
-      team_id: 'team-a',
-      cloud_connection_id: '22222222-2222-4222-8222-222222222222',
-      provider: 'gcp',
-      gcp: {
-        project_id: 'test-project',
-        region: 'test-region',
-        zone: 'test-zone-a',
-      },
-      domain_name: '2aj9c825xk.test.example.com',
-      prefix: 't2aj9c825xk-',
-      deployer_service_account: {
-        account_id: 'e2b-byoc-deployer',
-        email: 'e2b-byoc-deployer@test-project.iam.gserviceaccount.com',
-        display_name: 'E2B BYOC deployer',
-        project_id: 'test-project',
-        status: 'planned',
-        roles: [],
-      },
-      status: 'attached',
-      created_at: '2026-07-11T00:00:00Z',
-      updated_at: '2026-07-11T00:00:00Z',
-    }
-    const connection = {
-      id: '22222222-2222-4222-8222-222222222222',
-      team_id: 'team-a',
-      provider: 'gcp' as const,
-      mode: 'keyless_impersonation' as const,
-      status: 'connected',
-      subject_email: 'e2b-byoc-2aj9c825xk@test-project.iam.gserviceaccount.com',
-      authorized_projects: [
-        {
-          project_id: 'test-project',
-          default_region: 'test-region',
-          default_zone: 'test-zone-a',
-          namespace: 't2aj9c825xk',
-          domain_name: '2aj9c825xk.test.example.com',
-          prefix: 't2aj9c825xk-',
-        },
-      ],
-      required_project_roles: [],
-      created_at: '2026-07-11T00:00:00Z',
-      updated_at: '2026-07-11T00:00:00Z',
-    }
-    const fetchMock = vi.mocked(fetch)
-    fetchMock
-      .mockResolvedValueOnce(Response.json(deployment))
-      .mockResolvedValueOnce(Response.json({ connection }))
-
-    const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
-    await repository.createCloudConnection(
-      connection.subject_email,
-      '11111111-1111-4111-8111-111111111111',
-      '33333333-3333-4333-8333-333333333333',
-      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
-    )
-
-    expect(fetchMock.mock.calls[1]?.[0].toString()).toBe(
-      'http://localhost:8098/deployments/11111111-1111-4111-8111-111111111111/cloud-connection'
-    )
-    expect(
-      JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body))
-    ).toMatchObject({
-      client_request_id: '33333333-3333-4333-8333-333333333333',
-      expected_cloud_connection_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  it('rejects an invalid persisted target key', async () => {
+    mockRunner({
+      identity: { team_id: teamId, target_key: 'INVALID' },
     })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).target()
+    ).rejects.toMatchObject({ code: 'BAD_GATEWAY' })
   })
 
-  it('checks deployment ownership before replacing its connection', async () => {
-    const fetchMock = vi.mocked(fetch)
-    fetchMock.mockResolvedValueOnce(
-      Response.json({
-        id: '11111111-1111-4111-8111-111111111111',
-        team_id: 'team-b',
-        provider: 'gcp',
-        gcp: {
-          project_id: 'test-project',
-          region: 'test-region',
-          zone: 'test-zone-a',
-        },
-        domain_name: '2aj9c825xk.test.example.com',
-        prefix: 't2aj9c825xk-',
-        deployer_service_account: {
-          account_id: 'e2b-byoc-deployer',
-          email: 'e2b-byoc-deployer@test-project.iam.gserviceaccount.com',
-          display_name: 'E2B BYOC deployer',
-          project_id: 'test-project',
-          status: 'planned',
-          roles: [],
-        },
-        status: 'attached',
-        created_at: '2026-07-11T00:00:00Z',
-        updated_at: '2026-07-11T00:00:00Z',
+  it('rejects valid JSON with an invalid target shape', async () => {
+    vi.mocked(fetch).mockResolvedValue(Response.json(null))
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).target()
+    ).rejects.toMatchObject({ code: 'BAD_GATEWAY' })
+  })
+
+  it('rejects a non-JSON target response before any cloud write', async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response('<html>upstream error</html>', {
+        status: 200,
+        headers: { 'Content-Type': 'text/html' },
       })
     )
 
-    const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
     await expect(
-      repository.createCloudConnection(
-        'replacement@test-project.iam.gserviceaccount.com',
-        '11111111-1111-4111-8111-111111111111',
-        '33333333-3333-4333-8333-333333333333'
+      createByocDeploymentsRepository({ teamId }).createCloudConnection(
+        deployerEmail,
+        undefined,
+        clientRequestId
+      )
+    ).rejects.toMatchObject({ code: 'BAD_GATEWAY' })
+    expect(fetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('reports a stored target configuration conflict', async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      Response.json({ error: 'target identity conflict' }, { status: 409 })
+    )
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).target()
+    ).rejects.toMatchObject({
+      code: 'CONFLICT',
+      message:
+        'The stored BYOC target conflicts with this dashboard configuration.',
+    })
+  })
+
+  it('sends the persisted target when verifying a cloud connection', async () => {
+    mockRunner({
+      routes: {
+        'POST /cloud-connections': (_url, init) => {
+          expect(JSON.parse(String(init.body))).toEqual({
+            client_request_id: clientRequestId,
+            team_id: teamId,
+            provider: 'gcp',
+            mode: 'keyless_impersonation',
+            subject_email: deployerEmail,
+            authorized_projects: [
+              {
+                project_id: projectId,
+                name: projectId,
+                default_region: 'test-region',
+                default_zone: 'test-zone-a',
+                namespace: targetStem,
+                domain_name: `${targetStem}.test.example.com`,
+                prefix: `${targetStem}-`,
+                e2b_principal:
+                  'serviceAccount:runner@test-control.iam.gserviceaccount.com',
+              },
+            ],
+          })
+          return Response.json(cloudConnection())
+        },
+      },
+    })
+
+    await createByocDeploymentsRepository({
+      teamId,
+    }).createCloudConnection(deployerEmail, undefined, clientRequestId)
+
+    expect(
+      vi
+        .mocked(fetch)
+        .mock.calls.map(([input, init]) => requestKey(input, init).key)
+    ).toEqual(['POST /target-identities', 'POST /cloud-connections'])
+  })
+
+  it('checks connection ownership before reading its projects', async () => {
+    mockRunner({
+      routes: {
+        'GET /cloud-connections': () =>
+          Response.json({
+            cloud_connections: [cloudConnection({ team_id: 'team-b' })],
+          }),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).listProjects(connectionId)
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' })
+    expect(fetch).toHaveBeenCalledTimes(1)
+    expect(requestKey(...fetchCall(0)).key).toBe('GET /cloud-connections')
+  })
+
+  it('checks connection ownership before creating a deployment', async () => {
+    mockRunner({
+      routes: {
+        'GET /cloud-connections': () =>
+          Response.json({
+            cloud_connections: [cloudConnection({ team_id: 'team-b' })],
+          }),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).createDeployment(
+        connectionId,
+        projectId,
+        clientRequestId
       )
     ).rejects.toMatchObject({ code: 'NOT_FOUND' })
-    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(
+      vi
+        .mocked(fetch)
+        .mock.calls.map(([input, init]) => requestKey(input, init).key)
+    ).toEqual(['POST /target-identities', 'GET /cloud-connections'])
   })
 
-  it('does not replace a deployment without current connection state', async () => {
-    const fetchMock = vi.mocked(fetch)
-    fetchMock.mockResolvedValueOnce(
-      Response.json({
-        id: '11111111-1111-4111-8111-111111111111',
-        team_id: 'team-a',
-        provider: 'gcp',
-        gcp: {
-          project_id: 'test-project',
-          region: 'test-region',
-          zone: 'test-zone-a',
+  it('checks deployment ownership before a destructive request', async () => {
+    mockRunner({
+      routes: {
+        [`GET /deployments/${deploymentId}`]: () =>
+          Response.json(deployment({ team_id: 'team-b' })),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).destroy(
+        deploymentId,
+        clientRequestId
+      )
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' })
+    expect(
+      vi
+        .mocked(fetch)
+        .mock.calls.map(([input, init]) => requestKey(input, init).key)
+    ).toEqual([`GET /deployments/${deploymentId}`, 'POST /target-identities'])
+  })
+
+  it('blocks destruction when persisted target metadata does not match', async () => {
+    mockRunner({
+      routes: {
+        [`GET /deployments/${deploymentId}`]: () =>
+          Response.json(deployment({ domain_name: 'legacy.test.example.com' })),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).destroy(
+        deploymentId,
+        clientRequestId
+      )
+    ).rejects.toMatchObject({ code: 'PRECONDITION_FAILED' })
+    expect(
+      vi
+        .mocked(fetch)
+        .mock.calls.some(
+          ([input, init]) =>
+            requestKey(input, init).key ===
+            `POST /deployments/${deploymentId}/operations/destroy`
+        )
+    ).toBe(false)
+  })
+
+  it('sends only connection-owned metadata when creating a deployment', async () => {
+    mockRunner({
+      routes: {
+        'GET /cloud-connections': () =>
+          Response.json({ cloud_connections: [cloudConnection()] }),
+        'POST /deployments': (_url, init) => {
+          expect(JSON.parse(String(init.body))).toEqual({
+            client_request_id: clientRequestId,
+            team_id: teamId,
+            cloud_connection_id: connectionId,
+            cloud_project_id: projectId,
+          })
+          return Response.json(deployment())
         },
-        domain_name: '2aj9c825xk.test.example.com',
-        prefix: 't2aj9c825xk-',
-        deployer_service_account: {
-          account_id: 'e2b-byoc-deployer',
-          email: 'e2b-byoc-deployer@test-project.iam.gserviceaccount.com',
-          display_name: 'E2B BYOC deployer',
-          project_id: 'test-project',
-          status: 'planned',
-          roles: [],
-        },
-        status: 'attached',
-        created_at: '2026-07-11T00:00:00Z',
-        updated_at: '2026-07-11T00:00:00Z',
-      })
+      },
+    })
+
+    await createByocDeploymentsRepository({ teamId }).createDeployment(
+      connectionId,
+      projectId,
+      clientRequestId
     )
 
-    const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
-    await expect(
-      repository.createCloudConnection(
-        'replacement@test-project.iam.gserviceaccount.com',
-        '11111111-1111-4111-8111-111111111111',
-        '33333333-3333-4333-8333-333333333333'
-      )
-    ).rejects.toMatchObject({ code: 'CONFLICT' })
-    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(
+      vi
+        .mocked(fetch)
+        .mock.calls.map(([input, init]) => requestKey(input, init).key)
+    ).toEqual([
+      'POST /target-identities',
+      'GET /cloud-connections',
+      'POST /deployments',
+    ])
   })
 
   it('maps runner transport failures to a bounded gateway error', async () => {
-    vi.mocked(fetch).mockRejectedValueOnce(
-      new DOMException('timed out', 'TimeoutError')
-    )
+    vi.mocked(fetch).mockRejectedValue(new Error('connection reset'))
 
-    const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
-    await expect(repository.health()).rejects.toMatchObject({
-      code: 'BAD_GATEWAY',
-      message: 'BYOC deployments runner is unavailable.',
-    })
-  })
-
-  it('queues a topology-only deploy operation', async () => {
-    const deployment = {
-      id: '11111111-1111-4111-8111-111111111111',
-      team_id: 'team-a',
-      provider: 'gcp',
-      gcp: {
-        project_id: 'test-project',
-        region: 'test-region',
-        zone: 'test-zone-a',
-      },
-      domain_name: '2aj9c825xk.test.example.com',
-      prefix: 't2aj9c825xk-',
-      deployer_service_account: {
-        account_id: 'e2b-byoc-deployer',
-        email: 'e2b-byoc-deployer@test-project.iam.gserviceaccount.com',
-        display_name: 'E2B BYOC deployer',
-        project_id: 'test-project',
-        status: 'planned',
-        roles: [],
-      },
-      status: 'draft',
-      created_at: '2026-07-11T00:00:00Z',
-      updated_at: '2026-07-11T00:00:00Z',
-    }
-    const fetchMock = vi.mocked(fetch)
-    fetchMock
-      .mockResolvedValueOnce(Response.json(deployment))
-      .mockResolvedValueOnce(
-        Response.json({
-          id: '22222222-2222-4222-8222-222222222222',
-          deployment_id: deployment.id,
-          kind: 'deploy',
-          status: 'queued',
-          created_at: '2026-07-11T00:00:01Z',
-          updated_at: '2026-07-11T00:00:01Z',
-        })
-      )
-
-    const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
-    await repository.deploy(
-      deployment.id,
-      {
-        api_node_count: 3,
-        api_machine_type: 'e2-standard-8',
-        client_node_count: 5,
-        client_machine_type: 'n2-standard-16',
-        clickhouse_node_count: 2,
-        clickhouse_machine_type: 'n2-standard-8',
-      },
-      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
-    )
-
-    const request = fetchMock.mock.calls[1]
-    expect(request?.[0].toString()).toBe(
-      `http://localhost:8098/deployments/${deployment.id}/operations/deploy`
-    )
-    expect(JSON.parse(String(request?.[1]?.body))).toEqual({
-      client_request_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-      api_node_count: 3,
-      api_machine_type: 'e2-standard-8',
-      client_node_count: 5,
-      client_machine_type: 'n2-standard-16',
-      clickhouse_node_count: 2,
-      clickhouse_machine_type: 'n2-standard-8',
-    })
+    await expect(
+      createByocDeploymentsRepository({ teamId }).target()
+    ).rejects.toMatchObject({ code: 'BAD_GATEWAY' })
   })
 })

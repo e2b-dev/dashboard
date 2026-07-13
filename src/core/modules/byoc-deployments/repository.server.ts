@@ -1,5 +1,5 @@
-import { createHash } from 'node:crypto'
 import { TRPCError } from '@trpc/server'
+import { z } from 'zod'
 
 interface ByocTarget {
   deployerAccountId: string
@@ -13,11 +13,21 @@ interface ByocTarget {
   e2bPrincipals: string[]
 }
 
-interface ByocTeamIdentity {
-  resourceStem: string
-  domainLabel: string
-  deployerAccountId: string
-}
+const byocTargetIdentitySchema = z.object({
+  team_id: z.string().min(1).max(128),
+  target_key: z.string().regex(/^[a-z][a-z0-9]{11}$/),
+  provider: z.literal('gcp'),
+  region: z.string().min(1),
+  zone: z.string().min(1),
+  namespace: z.string().min(1),
+  domain_name: z.string().min(1),
+  prefix: z.string().min(1),
+  deployer_account_id: z.string().min(1),
+  e2b_principal: z.string().min(1),
+  e2b_principals: z.array(z.string().min(1)).min(1),
+})
+
+type ByocTargetIdentity = z.infer<typeof byocTargetIdentitySchema>
 
 export type DeploymentStatus =
   | 'draft'
@@ -172,22 +182,10 @@ export function createByocDeploymentsRepository({
 }: {
   teamId: string
 }) {
-  const teamIdentity = getByocTeamIdentity(teamId)
-  const deployerAccountId = teamIdentity.deployerAccountId
   const sdkDomain = requiredEnv('NEXT_PUBLIC_E2B_DOMAIN')
-  const target = {
-    ...getByocTarget(teamIdentity),
-    deployerAccountId,
-    sdkDomain,
-  }
-  const legacyTarget = {
-    ...getLegacyByocTarget(),
-    deployerAccountId,
-    sdkDomain,
-  }
-  const configuredTargets = [target, legacyTarget]
   const baseUrl = getRunnerBaseUrl()
   const token = getRunnerToken()
+  let targetPromise: Promise<ByocTarget> | undefined
 
   async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     let response: Response
@@ -217,7 +215,7 @@ export function createByocDeploymentsRepository({
     if (!response.ok) {
       throw new TRPCError({
         code: runnerStatusCode(response.status),
-        message: getPublicRunnerError(response.status),
+        message: getPublicRunnerError(response.status, path),
       })
     }
 
@@ -229,6 +227,40 @@ export function createByocDeploymentsRepository({
         message: 'BYOC deployments runner returned an invalid response.',
       })
     }
+  }
+
+  function getTarget() {
+    const desiredTarget = getByocTargetBase()
+    const domainBase = requiredEnv('BYOC_DOMAIN_NAME')
+    targetPromise ??= request<unknown>('/target-identities', {
+      method: 'POST',
+      body: JSON.stringify({
+        team_id: teamId,
+        provider: 'gcp',
+        region: desiredTarget.region,
+        zone: desiredTarget.zone,
+        domain_base: domainBase,
+        e2b_principal: desiredTarget.e2bPrincipal,
+        e2b_principals: desiredTarget.e2bPrincipals,
+      }),
+    }).then((response) => {
+      const parsed = byocTargetIdentitySchema.safeParse(response)
+      if (!parsed.success) {
+        throw new TRPCError({
+          code: 'BAD_GATEWAY',
+          message: 'BYOC deployments runner returned an invalid target.',
+        })
+      }
+      const identity = parsed.data
+      if (identity.team_id !== teamId) {
+        throw new TRPCError({
+          code: 'BAD_GATEWAY',
+          message: 'BYOC deployments runner returned another team target.',
+        })
+      }
+      return getByocTarget(identity, desiredTarget, sdkDomain, domainBase)
+    })
+    return targetPromise
   }
 
   async function getOwnedCloudConnection(connectionId: string) {
@@ -244,28 +276,26 @@ export function createByocDeploymentsRepository({
         message: 'Cloud connection not found.',
       })
     }
-    const connectionTarget = configuredTargets.find((candidate) =>
-      isConfiguredConnection(connection, teamId, candidate)
-    )
-    if (!connectionTarget) {
+    const target = await getTarget()
+    if (!isConfiguredConnection(connection, teamId, target)) {
       throw new TRPCError({
         code: 'PRECONDITION_FAILED',
         message:
           'Cloud connection is missing the approved BYOC target project.',
       })
     }
-    return { connection, target: connectionTarget }
+    return { connection, target }
   }
 
   async function getOwnedDeployment(deploymentId: string) {
     const deployment = await request<Deployment>(`/deployments/${deploymentId}`)
-    assertConfiguredDeployment(deployment, teamId, configuredTargets)
+    assertConfiguredDeployment(deployment, teamId, [await getTarget()])
     return deployment
   }
 
   return {
     target() {
-      return target
+      return getTarget()
     },
 
     health() {
@@ -278,12 +308,13 @@ export function createByocDeploymentsRepository({
       clientRequestId: string,
       expectedCloudConnectionId?: string
     ) {
+      const target = await getTarget()
       const projectId = serviceAccountProjectId(deployerServiceAccountEmail)
       const deployment = deploymentId
         ? await getOwnedDeployment(deploymentId)
         : undefined
       const connectionTarget = deployment
-        ? configuredTargetForDeployment(deployment, configuredTargets)
+        ? configuredTargetForDeployment(deployment, [target])
         : target
       if (!connectionTarget) {
         throw new TRPCError({
@@ -329,13 +360,12 @@ export function createByocDeploymentsRepository({
     },
 
     async listCloudConnections() {
+      const target = await getTarget()
       const response = await request<{ cloud_connections: CloudConnection[] }>(
         '/cloud-connections'
       )
       return response.cloud_connections.filter((connection) =>
-        configuredTargets.some((candidate) =>
-          isConfiguredConnection(connection, teamId, candidate)
-        )
+        isConfiguredConnection(connection, teamId, target)
       )
     },
 
@@ -362,6 +392,7 @@ export function createByocDeploymentsRepository({
       projectId: string,
       clientRequestId: string
     ) {
+      const target = await getTarget()
       const ownedConnection = await getOwnedCloudConnection(connectionId)
       const connection = ownedConnection.connection
       if (!sameTargetIdentity(ownedConnection.target, target)) {
@@ -405,6 +436,7 @@ export function createByocDeploymentsRepository({
     },
 
     async listDeployments() {
+      const target = await getTarget()
       const response = await request<{ deployments: Deployment[] }>(
         '/deployments'
       )
@@ -412,7 +444,7 @@ export function createByocDeploymentsRepository({
         .filter((deployment) => deployment.team_id === teamId)
         .filter((deployment) => {
           try {
-            assertConfiguredDeployment(deployment, teamId, configuredTargets)
+            assertConfiguredDeployment(deployment, teamId, [target])
             return true
           } catch {
             return false
@@ -582,7 +614,7 @@ function runnerStatusCode(status: number) {
   }
 }
 
-function getPublicRunnerError(status: number) {
+function getPublicRunnerError(status: number, path: string) {
   if (status === 401 || status === 403) {
     return 'BYOC deployments runner authentication failed.'
   }
@@ -590,6 +622,9 @@ function getPublicRunnerError(status: number) {
     return 'BYOC deployment resource not found.'
   }
   if (status === 409) {
+    if (path === '/target-identities') {
+      return 'The stored BYOC target conflicts with this dashboard configuration.'
+    }
     return 'BYOC deployment is already running another operation.'
   }
   if (status === 422) {
@@ -602,33 +637,58 @@ function getPublicRunnerError(status: number) {
 }
 
 function getByocTarget(
-  teamIdentity: ByocTeamIdentity
-): Omit<ByocTarget, 'deployerAccountId' | 'sdkDomain'> {
-  const target = getByocTargetBase()
-  const prefix = `${teamIdentity.resourceStem}-`
-  return {
-    ...target,
-    namespace: trimTrailingHyphens(prefix),
-    domainName: `${teamIdentity.domainLabel}.${requiredEnv('BYOC_DOMAIN_NAME')}`,
-    prefix,
+  identity: ByocTargetIdentity,
+  desired: ReturnType<typeof getByocTargetBase>,
+  sdkDomain: string,
+  domainBase: string
+): ByocTarget {
+  if (!/^[a-z][a-z0-9]{11}$/.test(identity.target_key)) {
+    throw new TRPCError({
+      code: 'BAD_GATEWAY',
+      message: 'BYOC deployments runner returned an invalid target key.',
+    })
   }
+  const resourceStem = `t${identity.target_key}`
+  const target: ByocTarget = {
+    region: identity.region,
+    zone: identity.zone,
+    namespace: identity.namespace,
+    domainName: identity.domain_name,
+    prefix: identity.prefix,
+    deployerAccountId: identity.deployer_account_id,
+    e2bPrincipal: identity.e2b_principal,
+    e2bPrincipals: identity.e2b_principals,
+    sdkDomain,
+  }
+  if (
+    identity.provider !== 'gcp' ||
+    target.region !== desired.region ||
+    target.zone !== desired.zone ||
+    target.namespace !== resourceStem ||
+    target.prefix !== `${resourceStem}-` ||
+    target.domainName !== `${resourceStem}.${domainBase}` ||
+    target.deployerAccountId !== resourceStem ||
+    target.e2bPrincipal !== desired.e2bPrincipal ||
+    !sameStringSet(target.e2bPrincipals, desired.e2bPrincipals)
+  ) {
+    throw new TRPCError({
+      code: 'PRECONDITION_FAILED',
+      message:
+        'The stored BYOC target does not match this dashboard configuration.',
+    })
+  }
+  return target
 }
 
-function getLegacyByocTarget(): Omit<
-  ByocTarget,
-  'deployerAccountId' | 'sdkDomain'
-> {
-  const target = getByocTargetBase()
-  return {
-    ...target,
-    domainName: requiredEnv('BYOC_DOMAIN_NAME'),
-    prefix: requiredEnv('BYOC_RESOURCE_PREFIX'),
-  }
+function sameStringSet(left: string[], right: string[]) {
+  return (
+    left.length === right.length && left.every((value) => right.includes(value))
+  )
 }
 
 function getByocTargetBase(): Pick<
   ByocTarget,
-  'region' | 'zone' | 'namespace' | 'e2bPrincipal' | 'e2bPrincipals'
+  'region' | 'zone' | 'e2bPrincipal' | 'e2bPrincipals'
 > {
   const e2bPrincipal = requiredEnv('BYOC_E2B_PRINCIPAL')
   const additionalPrincipals = process.env.BYOC_E2B_PRINCIPALS?.split(',')
@@ -637,7 +697,6 @@ function getByocTargetBase(): Pick<
   return {
     region: requiredEnv('BYOC_GCP_REGION'),
     zone: requiredEnv('BYOC_GCP_ZONE'),
-    namespace: requiredEnv('BYOC_NAMESPACE'),
     e2bPrincipal,
     e2bPrincipals: [
       ...new Set([e2bPrincipal, ...(additionalPrincipals ?? [])]),
@@ -653,10 +712,6 @@ function sameTargetIdentity(left: ByocTarget, right: ByocTarget) {
     left.domainName === right.domainName &&
     left.prefix === right.prefix
   )
-}
-
-function trimTrailingHyphens(value: string) {
-  return value.replace(/-+$/, '')
 }
 
 function requiredEnv(name: string) {
@@ -691,39 +746,6 @@ function serviceAccountProjectId(email: string) {
   }
 
   return email.slice(at + 1, -suffix.length)
-}
-
-function getByocTeamIdentity(teamId: string): ByocTeamIdentity {
-  if (!teamId) {
-    throw new TRPCError({
-      code: 'PRECONDITION_FAILED',
-      message: 'The dashboard team ID cannot identify a BYOC deployer.',
-    })
-  }
-
-  const normalized = teamId.toLowerCase().replaceAll('-', '')
-  if (/^[0-9a-f]{32}$/.test(normalized)) {
-    const teamKey = BigInt(`0x${normalized}`).toString(36).padStart(25, '0')
-    const resourceStem = `t${teamKey}`
-    return {
-      resourceStem,
-      domainLabel: resourceStem,
-      deployerAccountId: resourceStem,
-    }
-  }
-
-  // Preserve deterministic names for any pre-UUID team records while all
-  // current UUID teams use the complete, losslessly encoded team ID.
-  const digest = createHash('sha256').update(teamId).digest('hex')
-  const legacySuffix = BigInt(`0x${digest.slice(0, 16)}`)
-    .toString(36)
-    .padStart(13, '0')
-    .slice(0, 10)
-  return {
-    resourceStem: `t${legacySuffix}`,
-    domainLabel: legacySuffix,
-    deployerAccountId: `e2b-byoc-${legacySuffix}`,
-  }
 }
 
 function assertExpectedDeployerAccount(email: string, accountId: string) {
