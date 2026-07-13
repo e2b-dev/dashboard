@@ -11,6 +11,7 @@ export function useByocRequestIntents() {
   const connection = useRef<ConnectionIntent>(undefined)
   const createDeployment = useRef<string>(undefined)
   const deploy = useRef<string>(undefined)
+  const validate = useRef<string>(undefined)
   const destroy = useRef<string>(undefined)
 
   const getRequestId = useCallback(
@@ -56,6 +57,12 @@ export function useByocRequestIntents() {
       get: useCallback(() => getRequestId(deploy), [getRequestId]),
       clear: useCallback(() => {
         deploy.current = undefined
+      }, []),
+    },
+    validate: {
+      get: useCallback(() => getRequestId(validate), [getRequestId]),
+      clear: useCallback(() => {
+        validate.current = undefined
       }, []),
     },
     destroy: {

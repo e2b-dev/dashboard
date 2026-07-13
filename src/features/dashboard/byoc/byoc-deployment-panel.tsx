@@ -25,10 +25,17 @@ import {
   DialogTitle,
 } from '@/ui/primitives/dialog'
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/ui/primitives/dropdown-menu'
+import {
   AddIcon,
   ArrowRightIcon,
   CheckCircleIcon,
   CloudIcon,
+  IndicatorDotsIcon,
   InfoIcon,
   RefreshIcon,
   SettingsIcon,
@@ -48,6 +55,10 @@ import {
   buildDeploymentChecks,
   type DeploymentCheckStatus,
 } from './deployment-checks'
+import {
+  recommendedByocOperation,
+  recommendedByocOperationLabel,
+} from './operation-action'
 import { useByocRequestIntents } from './use-byoc-request-intents'
 
 type Deployment = TRPCRouterOutputs['byoc']['listDeployments'][number]
@@ -426,6 +437,26 @@ export function ByocDeploymentPanel() {
     })
   )
 
+  const validate = useMutation(
+    trpc.byoc.validate.mutationOptions({
+      onMutate: (variables) => {
+        setRunningDeploymentId(variables.deploymentId)
+        setOperationBaseline({
+          kind: 'validate',
+          clientRequestId: variables.clientRequestId,
+        })
+      },
+      onSuccess: (data) => {
+        requestIntents.validate.clear()
+        setSelectedDeploymentId(data.deployment_id)
+      },
+      onSettled: () =>
+        refresh().finally(() => {
+          setRunningDeploymentId(undefined)
+        }),
+    })
+  )
+
   const destroy = useMutation(
     trpc.byoc.destroy.mutationOptions({
       onMutate: (variables) => {
@@ -462,6 +493,7 @@ export function ByocDeploymentPanel() {
   const operationPending =
     createDeployment.isPending ||
     deploy.isPending ||
+    validate.isPending ||
     destroy.isPending ||
     !!activeOperation ||
     (!!deployment?.id && operationsQuery.isPending) ||
@@ -492,6 +524,7 @@ export function ByocDeploymentPanel() {
   useEffect(() => {
     if (!discoveredSubmittedOperation || !operationBaseline) return
     if (operationBaseline.kind === 'deploy') requestIntents.deploy.clear()
+    if (operationBaseline.kind === 'validate') requestIntents.validate.clear()
     if (operationBaseline.kind === 'destroy') requestIntents.destroy.clear()
   }, [discoveredSubmittedOperation, operationBaseline, requestIntents])
   const deployError =
@@ -502,10 +535,15 @@ export function ByocDeploymentPanel() {
     operationBaseline?.kind === 'destroy' && discoveredSubmittedOperation
       ? undefined
       : mutationError(destroy.error)
+  const validateError =
+    operationBaseline?.kind === 'validate' && discoveredSubmittedOperation
+      ? undefined
+      : mutationError(validate.error)
   const error =
     mutationError(createConnection.error) ??
     mutationError(createDeployment.error) ??
     deployError ??
+    validateError ??
     destroyError ??
     queryError(targetQuery.error) ??
     queryError(healthQuery.error) ??
@@ -516,6 +554,7 @@ export function ByocDeploymentPanel() {
     queryError(eventsQuery.error)
   const runDeploy = () => {
     if (!deployment) return
+    validate.reset()
     const clientRequestId = requestIntents.deploy.get()
     deploy.mutate({
       teamSlug,
@@ -523,6 +562,30 @@ export function ByocDeploymentPanel() {
       clientRequestId,
       topology,
     })
+  }
+  const runValidate = () => {
+    if (!deployment?.cluster_id) return
+    deploy.reset()
+    const clientRequestId = requestIntents.validate.get()
+    validate.mutate({
+      teamSlug,
+      deploymentId: deployment.id,
+      clientRequestId,
+    })
+  }
+  const runRecommendedOperation = () => {
+    if (
+      recommendedByocOperation({
+        clusterId: deployment?.cluster_id,
+        deploymentStatus: deployment?.status ?? 'draft',
+        latestOperation,
+        topologyDirty,
+      }) === 'validate'
+    ) {
+      runValidate()
+      return
+    }
+    runDeploy()
   }
 
   if (
@@ -639,6 +702,7 @@ export function ByocDeploymentPanel() {
           )
         }}
         onDeploy={runDeploy}
+        onValidate={runValidate}
         onRefresh={() => void refresh()}
         onSetupStart={() => setSetupStarted(true)}
         operationPending={operationPending}
@@ -707,20 +771,48 @@ export function ByocDeploymentPanel() {
             </Button>
           ) : latestOperation?.kind === 'destroy' &&
             deployment.status === 'failed' ? null : (
-            <Button
-              disabled={!canDeploy}
-              onClick={runDeploy}
-              loading={deploy.isPending ? 'Deploying' : undefined}
-            >
-              <SettingsIcon />
-              {deployment.status === 'attached'
-                ? topologyDirty
-                  ? 'Apply changes'
-                  : 'Reconcile'
-                : deployment.status === 'failed'
-                  ? 'Retry deployment'
-                  : 'Deploy'}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                disabled={!canDeploy}
+                onClick={runRecommendedOperation}
+                loading={
+                  deploy.isPending
+                    ? 'Deploying'
+                    : validate.isPending
+                      ? 'Validating'
+                      : undefined
+                }
+              >
+                <SettingsIcon />
+                {recommendedByocOperationLabel({
+                  clusterId: deployment.cluster_id,
+                  deploymentStatus: deployment.status,
+                  latestOperation,
+                  topologyDirty,
+                })}
+              </Button>
+              {deployment.cluster_id ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      aria-label="Deployment actions"
+                      className="size-9"
+                      disabled={operationPending}
+                      size="none"
+                      variant="secondary"
+                    >
+                      <IndicatorDotsIcon className="-rotate-90" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onSelect={runDeploy}>
+                      <RefreshIcon />
+                      Reconcile infrastructure
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : null}
+            </div>
           )}
         </div>
       </section>
@@ -1216,6 +1308,7 @@ function ByocSetupFlow({
   onConnect,
   onCreateDeployment,
   onDeploy,
+  onValidate,
   onRefresh,
   onSetupStart,
   onSetupProjectIdChange,
@@ -1243,6 +1336,7 @@ function ByocSetupFlow({
   onConnect: () => void
   onCreateDeployment: () => void
   onDeploy: () => void
+  onValidate: () => void
   onRefresh: () => void
   onSetupStart: () => void
   onSetupProjectIdChange: (value: string) => void
@@ -1375,7 +1469,15 @@ function ByocSetupFlow({
           completedChecks={completedChecks}
           deployment={deployment}
           events={deploymentEvents}
-          onRetry={onDeploy}
+          onRetry={
+            deployment?.cluster_id &&
+            !(
+              deploymentOperation?.kind === 'validate' &&
+              deploymentOperation.status === 'failed_terminal'
+            )
+              ? onValidate
+              : onDeploy
+          }
           operation={deploymentOperation}
           operationPending={operationPending}
         />
@@ -1724,14 +1826,20 @@ function SetupDeploymentProgress({
       <Card variant="layer" className="rounded-lg">
         <CardHeader className="flex-row items-start justify-between gap-4">
           <div>
-            <CardTitle>Deploying your BYOC region</CardTitle>
+            <CardTitle>
+              {operation?.kind === 'validate'
+                ? 'Validating your BYOC region'
+                : 'Deploying your BYOC region'}
+            </CardTitle>
             <p className="mt-1 text-sm text-fg-secondary">
               {completedChecks} of {checks.length} checks complete
             </p>
           </div>
           {canRetryDeploy ? (
             <Button disabled={operationPending} onClick={onRetry}>
-              Retry deployment
+              {deployment?.cluster_id && operation?.status !== 'failed_terminal'
+                ? 'Retry validation'
+                : 'Retry deployment'}
             </Button>
           ) : failed ? (
             <WarningIcon className="size-5 text-accent-error-highlight" />
@@ -1740,21 +1848,31 @@ function SetupDeploymentProgress({
           )}
         </CardHeader>
         <CardContent className="grid gap-5">
-          <SetupPhase
-            title="Infrastructure"
-            description="Network, compute, storage, DNS, and Terraform resources."
-            checks={checks.slice(0, 5)}
-          />
-          <SetupPhase
-            title="Applications"
-            description="E2B control-plane services, routing, and the base template."
-            checks={checks.slice(5, 8)}
-          />
-          <SetupPhase
-            title="Verification"
-            description="A real sandbox is started and checked before traffic is attached."
-            checks={checks.slice(8)}
-          />
+          {operation?.kind === 'validate' ? (
+            <SetupPhase
+              title="Validation"
+              description="Live health, base-template, and sandbox checks without infrastructure changes."
+              checks={checks}
+            />
+          ) : (
+            <>
+              <SetupPhase
+                title="Infrastructure"
+                description="Network, compute, storage, DNS, and Terraform resources."
+                checks={checks.slice(0, 5)}
+              />
+              <SetupPhase
+                title="Applications"
+                description="E2B control-plane services, routing, and the base template."
+                checks={checks.slice(5, 8)}
+              />
+              <SetupPhase
+                title="Verification"
+                description="A real sandbox is started and checked before traffic is attached."
+                checks={checks.slice(8)}
+              />
+            </>
+          )}
         </CardContent>
       </Card>
       <Card variant="layer" className="h-fit rounded-lg">

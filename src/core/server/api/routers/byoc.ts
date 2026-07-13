@@ -144,6 +144,14 @@ export const byocRouter = createTRPCRouter({
       )
     }),
 
+  validate: protectedTeamProcedure
+    .input(deploymentIdInput.extend({ clientRequestId: z.string().uuid() }))
+    .mutation(({ ctx, input }) => {
+      return createByocDeploymentsRepository({
+        teamId: ctx.teamId,
+      }).validate(input.deploymentId, input.clientRequestId)
+    }),
+
   destroy: protectedTeamProcedure
     .input(deploymentIdInput.extend({ clientRequestId: z.string().uuid() }))
     .mutation(({ ctx, input }) => {

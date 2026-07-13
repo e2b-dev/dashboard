@@ -430,6 +430,48 @@ describe('BYOC deployments repository', () => {
     ).toBe(false)
   })
 
+  it('validates an owned deployment without sending topology', async () => {
+    mockRunner({
+      routes: {
+        [`GET /deployments/${deploymentId}`]: () =>
+          Response.json(
+            deployment({
+              cluster_id: '44444444-4444-4444-8444-444444444444',
+              status: 'attached',
+            })
+          ),
+        [`POST /deployments/${deploymentId}/operations/validate`]: (
+          _url,
+          init
+        ) => {
+          expect(JSON.parse(String(init.body))).toEqual({
+            client_request_id: clientRequestId,
+          })
+          return Response.json({
+            id: '55555555-5555-4555-8555-555555555555',
+            deployment_id: deploymentId,
+            kind: 'validate',
+            status: 'queued',
+            client_request_id: clientRequestId,
+            created_at: '2026-07-11T00:00:00Z',
+            updated_at: '2026-07-11T00:00:00Z',
+          })
+        },
+      },
+    })
+
+    const operation = await createByocDeploymentsRepository({
+      teamId,
+    }).validate(deploymentId, clientRequestId)
+
+    expect(operation.kind).toBe('validate')
+    expect(
+      vi
+        .mocked(fetch)
+        .mock.calls.map(([input, init]) => requestKey(input, init).key)
+    ).toContain(`POST /deployments/${deploymentId}/operations/validate`)
+  })
+
   it('sends only connection-owned metadata when creating a deployment', async () => {
     mockRunner({
       routes: {

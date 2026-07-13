@@ -113,6 +113,27 @@ describe('buildDeploymentChecks', () => {
     ])
   })
 
+  it('shows only live attached-cluster checks for validation', () => {
+    const checks = buildDeploymentChecks(
+      [
+        event('operation_started', 'Worker started operation validate-1.'),
+        event('health_check', 'BYOC edge health checks passed.'),
+      ],
+      { id: 'validate-1', kind: 'validate', status: 'validating' }
+    )
+
+    expect(checks.map((check) => check.label)).toEqual([
+      'Edge API healthy',
+      'Base template built',
+      'Sandbox smoke passed',
+    ])
+    expect(checks.map((check) => check.status)).toEqual([
+      'passed',
+      'running',
+      'pending',
+    ])
+  })
+
   it('tracks a failed destroy after routing was detached', () => {
     const checks = buildDeploymentChecks(
       [

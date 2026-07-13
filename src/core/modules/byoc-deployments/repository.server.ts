@@ -164,7 +164,7 @@ export type OperationStatus =
 export interface ByocOperation {
   id: string
   deployment_id: string
-  kind: 'deploy' | 'destroy'
+  kind: 'deploy' | 'validate' | 'destroy'
   status: OperationStatus
   client_request_id: string
   error?: string
@@ -488,6 +488,17 @@ export function createByocDeploymentsRepository({
             clickhouse_node_count: settings.clickhouse_node_count,
             clickhouse_machine_type: settings.clickhouse_machine_type,
           }),
+        }
+      )
+    },
+
+    async validate(deploymentId: string, clientRequestId: string) {
+      await getOwnedDeployment(deploymentId)
+      return request<ByocOperation>(
+        `/deployments/${deploymentId}/operations/validate`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ client_request_id: clientRequestId }),
         }
       )
     },

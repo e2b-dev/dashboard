@@ -93,6 +93,24 @@ const destroyDefinitions = [
   },
 ] as const
 
+const validateDefinitions = [
+  {
+    label: 'Edge API healthy',
+    phase: 'health_check',
+    messageIncludes: 'passed',
+  },
+  {
+    label: 'Base template built',
+    phase: 'building_base_template',
+    messageIncludes: ' is ready',
+  },
+  {
+    label: 'Sandbox smoke passed',
+    phase: 'smoke_testing',
+    messageIncludes: 'Sandbox smoke passed',
+  },
+] as const
+
 const activeStatuses = new Set([
   'queued',
   'starting',
@@ -109,7 +127,11 @@ export function buildDeploymentChecks(
   operation?: DeploymentOperation
 ): DeploymentCheck[] {
   const definitions =
-    operation?.kind === 'destroy' ? destroyDefinitions : deployDefinitions
+    operation?.kind === 'destroy'
+      ? destroyDefinitions
+      : operation?.kind === 'validate'
+        ? validateDefinitions
+        : deployDefinitions
   if (!operation) {
     return definitions.map(({ label }) => ({
       label,
