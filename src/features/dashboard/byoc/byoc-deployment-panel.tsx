@@ -698,7 +698,7 @@ export function ByocDeploymentPanel() {
                   clientRequestId,
                   teamSlug,
                   connectionId: connection.id,
-                  projectId: targetQuery.data?.projectId ?? '',
+                  projectId: selectedProject?.id ?? '',
                 })
               }}
               loading={createDeployment.isPending ? 'Creating' : undefined}
@@ -912,20 +912,13 @@ export function ByocDeploymentPanel() {
                 />
                 <TargetCell
                   label="Region / zone"
-                  value={
-                    targetQuery.data
-                      ? `${targetQuery.data.region} / ${targetQuery.data.zone}`
-                      : undefined
-                  }
+                  value={`${deployment.gcp.region} / ${deployment.gcp.zone}`}
                 />
                 <TargetCell
                   label="Namespace"
-                  value={targetQuery.data?.namespace}
+                  value={deployment.prefix.replace(/-+$/, '')}
                 />
-                <TargetCell
-                  label="Resource prefix"
-                  value={targetQuery.data?.prefix}
-                />
+                <TargetCell label="Resource prefix" value={deployment.prefix} />
               </CardContent>
             </Card>
           </div>
@@ -1008,7 +1001,7 @@ export function ByocDeploymentPanel() {
                             : []),
                         projectId:
                           selectedProject?.id ??
-                          targetQuery.data?.projectId ??
+                          deployment?.gcp.project_id ??
                           '',
                       })}
                     </CodeBlock>
@@ -1036,7 +1029,7 @@ export function ByocDeploymentPanel() {
                             : []),
                         projectId:
                           selectedProject?.id ??
-                          targetQuery.data?.projectId ??
+                          deployment?.gcp.project_id ??
                           '',
                       })}
                     </CodeBlock>
@@ -1691,7 +1684,7 @@ function SetupConfiguration({
           <CardTitle>Deployment target</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3">
-          <TargetCell label="Project" value={target?.projectId} />
+          <TargetCell label="Project" value={projectId} />
           <TargetCell
             label="Region / zone"
             value={target ? `${target.region} / ${target.zone}` : undefined}

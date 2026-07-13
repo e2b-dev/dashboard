@@ -4,7 +4,6 @@ import { TRPCError } from '@trpc/server'
 interface ByocTarget {
   deployerAccountId: string
   sdkDomain: string
-  projectId: string
   region: string
   zone: string
   namespace: string
@@ -352,7 +351,7 @@ export function createByocDeploymentsRepository({
     ) {
       const ownedConnection = await getOwnedCloudConnection(connectionId)
       const connection = ownedConnection.connection
-      if (ownedConnection.target.prefix !== target.prefix) {
+      if (!sameTargetIdentity(ownedConnection.target, target)) {
         throw new TRPCError({
           code: 'PRECONDITION_FAILED',
           message:
@@ -616,19 +615,13 @@ function getLegacyByocTarget(): Omit<
 
 function getByocTargetBase(): Pick<
   ByocTarget,
-  | 'projectId'
-  | 'region'
-  | 'zone'
-  | 'namespace'
-  | 'e2bPrincipal'
-  | 'e2bPrincipals'
+  'region' | 'zone' | 'namespace' | 'e2bPrincipal' | 'e2bPrincipals'
 > {
   const e2bPrincipal = requiredEnv('BYOC_E2B_PRINCIPAL')
   const additionalPrincipals = process.env.BYOC_E2B_PRINCIPALS?.split(',')
     .map((principal) => principal.trim())
     .filter(Boolean)
   return {
-    projectId: requiredEnv('BYOC_GCP_PROJECT_ID'),
     region: requiredEnv('BYOC_GCP_REGION'),
     zone: requiredEnv('BYOC_GCP_ZONE'),
     namespace: requiredEnv('BYOC_NAMESPACE'),
@@ -637,6 +630,16 @@ function getByocTargetBase(): Pick<
       ...new Set([e2bPrincipal, ...(additionalPrincipals ?? [])]),
     ],
   }
+}
+
+function sameTargetIdentity(left: ByocTarget, right: ByocTarget) {
+  return (
+    left.region === right.region &&
+    left.zone === right.zone &&
+    left.namespace === right.namespace &&
+    left.domainName === right.domainName &&
+    left.prefix === right.prefix
+  )
 }
 
 function trimTrailingHyphens(value: string) {

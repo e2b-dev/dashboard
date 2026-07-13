@@ -8,7 +8,6 @@ const originalTarget = {
   domainName: process.env.BYOC_DOMAIN_NAME,
   namespace: process.env.BYOC_NAMESPACE,
   prefix: process.env.BYOC_RESOURCE_PREFIX,
-  projectId: process.env.BYOC_GCP_PROJECT_ID,
   e2bPrincipal: process.env.BYOC_E2B_PRINCIPAL,
   e2bPrincipals: process.env.BYOC_E2B_PRINCIPALS,
   region: process.env.BYOC_GCP_REGION,
@@ -19,7 +18,6 @@ describe('BYOC deployments repository', () => {
   beforeEach(() => {
     process.env.BYOC_DEPLOYMENTS_API_URL = 'http://localhost:8098'
     process.env.BYOC_DEPLOYMENTS_API_TOKEN = 'test-token'
-    process.env.BYOC_GCP_PROJECT_ID = 'test-project'
     process.env.BYOC_GCP_REGION = 'test-region'
     process.env.BYOC_GCP_ZONE = 'test-zone-a'
     process.env.BYOC_NAMESPACE = 'test-namespace'
@@ -35,7 +33,6 @@ describe('BYOC deployments repository', () => {
   afterEach(() => {
     process.env.BYOC_DEPLOYMENTS_API_URL = originalUrl
     process.env.BYOC_DEPLOYMENTS_API_TOKEN = originalToken
-    process.env.BYOC_GCP_PROJECT_ID = originalTarget.projectId
     process.env.BYOC_GCP_REGION = originalTarget.region
     process.env.BYOC_GCP_ZONE = originalTarget.zone
     process.env.BYOC_NAMESPACE = originalTarget.namespace
@@ -216,6 +213,7 @@ describe('BYOC deployments repository', () => {
   })
 
   it('uses the deployer identity project as the authorized project', async () => {
+    delete process.env.BYOC_GCP_PROJECT_ID
     const fetchMock = vi.mocked(fetch)
     fetchMock.mockResolvedValueOnce(
       Response.json({
