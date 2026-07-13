@@ -130,7 +130,8 @@ describe('BYOC deployments repository', () => {
         provider: 'gcp',
         mode: 'keyless_impersonation',
         status: 'connected',
-        subject_email: 'e2b-byoc-deployer@test-project.iam.gserviceaccount.com',
+        subject_email:
+          'e2b-byoc-96c2886c51d1dfb4@test-project.iam.gserviceaccount.com',
         authorized_projects: [
           {
             project_id: 'test-project',
@@ -147,7 +148,7 @@ describe('BYOC deployments repository', () => {
 
     const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
     await repository.createCloudConnection(
-      'e2b-byoc-deployer@test-project.iam.gserviceaccount.com',
+      'e2b-byoc-96c2886c51d1dfb4@test-project.iam.gserviceaccount.com',
       undefined,
       '33333333-3333-4333-8333-333333333333'
     )
@@ -156,7 +157,8 @@ describe('BYOC deployments repository', () => {
     expect(JSON.parse(String(request?.[1]?.body))).toMatchObject({
       client_request_id: '33333333-3333-4333-8333-333333333333',
       team_id: 'team-a',
-      subject_email: 'e2b-byoc-deployer@test-project.iam.gserviceaccount.com',
+      subject_email:
+        'e2b-byoc-96c2886c51d1dfb4@test-project.iam.gserviceaccount.com',
       authorized_projects: [
         {
           project_id: 'test-project',
@@ -180,7 +182,7 @@ describe('BYOC deployments repository', () => {
         mode: 'keyless_impersonation',
         status: 'connected',
         subject_email:
-          'e2b-byoc-deployer@other-project.iam.gserviceaccount.com',
+          'e2b-byoc-96c2886c51d1dfb4@other-project.iam.gserviceaccount.com',
         authorized_projects: [
           {
             project_id: 'other-project',
@@ -197,7 +199,7 @@ describe('BYOC deployments repository', () => {
     const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
 
     await repository.createCloudConnection(
-      'e2b-byoc-deployer@other-project.iam.gserviceaccount.com',
+      'e2b-byoc-96c2886c51d1dfb4@other-project.iam.gserviceaccount.com',
       undefined,
       '33333333-3333-4333-8333-333333333333'
     )
@@ -228,6 +230,73 @@ describe('BYOC deployments repository', () => {
     )
   })
 
+  it('derives the deployer account from the immutable team ID', () => {
+    const target = createByocDeploymentsRepository({
+      teamId: 'team-a',
+    }).target()
+
+    expect(target.deployerAccountId).toBe('e2b-byoc-96c2886c51d1dfb4')
+  })
+
+  it('rejects a deployer account assigned to another team', async () => {
+    const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
+
+    await expect(
+      repository.createCloudConnection(
+        'e2b-byoc-deployer@test-project.iam.gserviceaccount.com',
+        undefined,
+        '33333333-3333-4333-8333-333333333333'
+      )
+    ).rejects.toMatchObject({
+      code: 'PRECONDITION_FAILED',
+      message: 'Use the deployer service account generated for this team.',
+    })
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it('does not create a new deployment from a legacy shared connection', async () => {
+    const fetchMock = vi.mocked(fetch)
+    fetchMock.mockResolvedValueOnce(
+      Response.json({
+        cloud_connections: [
+          {
+            id: '22222222-2222-4222-8222-222222222222',
+            team_id: 'team-a',
+            provider: 'gcp',
+            mode: 'keyless_impersonation',
+            status: 'connected',
+            subject_email:
+              'e2b-byoc-deployer@test-project.iam.gserviceaccount.com',
+            authorized_projects: [
+              {
+                project_id: 'test-project',
+                default_region: 'test-region',
+                default_zone: 'test-zone-a',
+                namespace: 'test-namespace',
+              },
+            ],
+            required_project_roles: [],
+            created_at: '2026-07-11T00:00:00Z',
+            updated_at: '2026-07-11T00:00:00Z',
+          },
+        ],
+      })
+    )
+
+    const repository = createByocDeploymentsRepository({ teamId: 'team-a' })
+    await expect(
+      repository.createDeployment(
+        '22222222-2222-4222-8222-222222222222',
+        'test-project',
+        '33333333-3333-4333-8333-333333333333'
+      )
+    ).rejects.toMatchObject({
+      code: 'PRECONDITION_FAILED',
+      message: 'Use the deployer service account generated for this team.',
+    })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
   it('rejects deployment projects not authorized by the cloud connection', async () => {
     const connection = {
       id: '22222222-2222-4222-8222-222222222222',
@@ -235,7 +304,8 @@ describe('BYOC deployments repository', () => {
       provider: 'gcp' as const,
       mode: 'keyless_impersonation' as const,
       status: 'connected',
-      subject_email: 'e2b-byoc-deployer@test-project.iam.gserviceaccount.com',
+      subject_email:
+        'e2b-byoc-96c2886c51d1dfb4@test-project.iam.gserviceaccount.com',
       authorized_projects: [
         {
           project_id: 'test-project',
@@ -273,7 +343,8 @@ describe('BYOC deployments repository', () => {
       provider: 'gcp' as const,
       mode: 'keyless_impersonation' as const,
       status: 'connected',
-      subject_email: 'e2b-byoc-deployer@test-project.iam.gserviceaccount.com',
+      subject_email:
+        'e2b-byoc-96c2886c51d1dfb4@test-project.iam.gserviceaccount.com',
       authorized_projects: [
         {
           project_id: 'test-project',
@@ -302,8 +373,9 @@ describe('BYOC deployments repository', () => {
           domain_name: 'test.example.com',
           prefix: 'test-',
           deployer_service_account: {
-            account_id: 'e2b-byoc-deployer',
-            email: 'e2b-byoc-deployer@test-project.iam.gserviceaccount.com',
+            account_id: 'e2b-byoc-96c2886c51d1dfb4',
+            email:
+              'e2b-byoc-96c2886c51d1dfb4@test-project.iam.gserviceaccount.com',
             display_name: 'E2B BYOC deployer',
             project_id: 'test-project',
             status: 'planned',
@@ -363,7 +435,8 @@ describe('BYOC deployments repository', () => {
       provider: 'gcp' as const,
       mode: 'keyless_impersonation' as const,
       status: 'connected',
-      subject_email: 'replacement@test-project.iam.gserviceaccount.com',
+      subject_email:
+        'e2b-byoc-96c2886c51d1dfb4@test-project.iam.gserviceaccount.com',
       authorized_projects: [
         {
           project_id: 'test-project',

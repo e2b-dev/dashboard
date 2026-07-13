@@ -1,6 +1,8 @@
+import { createHash } from 'node:crypto'
 import { TRPCError } from '@trpc/server'
 
 interface ByocTarget {
+  deployerAccountId: string
   projectId: string
   region: string
   zone: string
@@ -160,7 +162,10 @@ export function createByocDeploymentsRepository({
 }: {
   teamId: string
 }) {
-  const target = getByocTarget()
+  const target = {
+    ...getByocTarget(),
+    deployerAccountId: getByocDeployerAccountId(teamId),
+  }
   const baseUrl = getRunnerBaseUrl()
   const token = getRunnerToken()
 
@@ -257,6 +262,10 @@ export function createByocDeploymentsRepository({
             'The deployment connection changed or is unavailable. Refresh before replacing it.',
         })
       }
+      assertExpectedDeployerAccount(
+        deployerServiceAccountEmail,
+        target.deployerAccountId
+      )
       const connection = await createCloudConnectionWithMode(
         request,
         teamId,
@@ -306,6 +315,10 @@ export function createByocDeploymentsRepository({
       clientRequestId: string
     ) {
       const connection = await getOwnedCloudConnection(connectionId)
+      assertExpectedDeployerAccount(
+        connection.subject_email,
+        target.deployerAccountId
+      )
       if (
         !connection.authorized_projects.some(
           (project) => project.project_id === projectId
@@ -330,6 +343,10 @@ export function createByocDeploymentsRepository({
       })
 
       assertConfiguredDeployment(deployment, teamId, target)
+      assertExpectedDeployerAccount(
+        deployment.deployer_service_account.email,
+        target.deployerAccountId
+      )
       return deployment
     },
 
@@ -528,7 +545,7 @@ function getPublicRunnerError(status: number) {
   return 'BYOC deployment request was rejected.'
 }
 
-function getByocTarget(): ByocTarget {
+function getByocTarget(): Omit<ByocTarget, 'deployerAccountId'> {
   const e2bPrincipal = requiredEnv('BYOC_E2B_PRINCIPAL')
   const additionalPrincipals = process.env.BYOC_E2B_PRINCIPALS?.split(',')
     .map((principal) => principal.trim())
@@ -578,6 +595,26 @@ function serviceAccountProjectId(email: string) {
   }
 
   return email.slice(at + 1, -suffix.length)
+}
+
+function getByocDeployerAccountId(teamId: string) {
+  if (!teamId) {
+    throw new TRPCError({
+      code: 'PRECONDITION_FAILED',
+      message: 'The dashboard team ID cannot identify a BYOC deployer.',
+    })
+  }
+  const suffix = createHash('sha256').update(teamId).digest('hex').slice(0, 16)
+  return `e2b-byoc-${suffix}`
+}
+
+function assertExpectedDeployerAccount(email: string, accountId: string) {
+  if (email.slice(0, email.lastIndexOf('@')) !== accountId) {
+    throw new TRPCError({
+      code: 'PRECONDITION_FAILED',
+      message: 'Use the deployer service account generated for this team.',
+    })
+  }
 }
 
 function assertConfiguredConnection(

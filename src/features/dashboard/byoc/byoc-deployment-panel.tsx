@@ -60,8 +60,6 @@ type TopologyDraft = {
   clickHouseMachineType: string
 }
 
-const DEFAULT_DEPLOYER_SA = 'e2b-byoc-deployer'
-
 const bootstrapRoles = [
   'roles/serviceusage.serviceUsageAdmin',
   'roles/compute.admin',
@@ -81,11 +79,11 @@ const bootstrapRoles = [
   'roles/logging.admin',
 ]
 function bootstrapCommand({
-  deployerServiceAccount = DEFAULT_DEPLOYER_SA,
+  deployerServiceAccount,
   e2bPrincipals,
   projectId,
 }: {
-  deployerServiceAccount?: string
+  deployerServiceAccount: string
   e2bPrincipals: string[]
   projectId: string
 }) {
@@ -123,11 +121,11 @@ done`
 }
 
 function bootstrapTerraform({
-  deployerServiceAccount = DEFAULT_DEPLOYER_SA,
+  deployerServiceAccount,
   e2bPrincipals,
   projectId,
 }: {
-  deployerServiceAccount?: string
+  deployerServiceAccount: string
   e2bPrincipals: string[]
   projectId: string
 }) {
@@ -254,6 +252,11 @@ export function ByocDeploymentPanel() {
   const connection =
     connectionsQuery.data?.find((item) => item.id === selectedConnectionId) ??
     latestByTimestamp(connectionsQuery.data)
+  const connectionUsesExpectedDeployer = Boolean(
+    connection?.subject_email.startsWith(
+      `${targetQuery.data?.deployerAccountId}@`
+    )
+  )
 
   const projectsQuery = useQuery({
     ...trpc.byoc.listProjects.queryOptions({
@@ -542,6 +545,35 @@ export function ByocDeploymentPanel() {
     )
   }
 
+  if (!targetQuery.data) {
+    return (
+      <main className="flex min-w-0 flex-col gap-4">
+        <section className="border-b border-stroke pb-4">
+          <h1 className="prose-headline-medium">BYOC</h1>
+          <p className="mt-1 text-sm text-fg-secondary">
+            Run E2B sandboxes in infrastructure owned by your team.
+          </p>
+        </section>
+        <div className="grid min-h-80 place-items-center border border-stroke bg-bg-1 p-6 text-center">
+          <div>
+            <p className="text-sm text-accent-error-highlight">
+              {queryError(targetQuery.error) ??
+                'BYOC setup configuration is unavailable.'}
+            </p>
+            <Button
+              className="mt-4"
+              onClick={() => void targetQuery.refetch()}
+              variant="secondary"
+            >
+              <RefreshIcon />
+              Retry
+            </Button>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
   const durableRouteAttached = Boolean(
     deployment?.cluster_id && deployment.cluster_endpoint
   )
@@ -557,11 +589,14 @@ export function ByocDeploymentPanel() {
         activeOperation={activeOperation}
         canCreateDeployment={canCreateDeployment}
         canDeploy={canDeploy}
-        connection={connection}
+        connection={
+          deployment || connectionUsesExpectedDeployer ? connection : undefined
+        }
         createConnectionError={mutationError(createConnection.error)}
         createConnectionPending={createConnection.isPending}
         createDeploymentPending={createDeployment.isPending}
         deployerServiceAccountEmail={deployerServiceAccountEmail}
+        deployerAccountId={targetQuery.data?.deployerAccountId ?? ''}
         deployment={deployment}
         deploymentEvents={eventsQuery.data ?? []}
         deploymentOperation={latestOperation}
@@ -596,7 +631,7 @@ export function ByocDeploymentPanel() {
           setSetupProjectId(projectId)
           setDeployerServiceAccountEmail(
             projectId
-              ? `${DEFAULT_DEPLOYER_SA}@${projectId}.iam.gserviceaccount.com`
+              ? `${targetQuery.data?.deployerAccountId}@${projectId}.iam.gserviceaccount.com`
               : ''
           )
         }}
@@ -919,9 +954,10 @@ export function ByocDeploymentPanel() {
                     disabled={operationPending}
                     onClick={() => {
                       setDeployerServiceAccountEmail(
-                        deployment?.deployer_service_account.email ??
-                          connection?.subject_email ??
-                          ''
+                        targetQuery.data?.deployerAccountId &&
+                          deployment?.gcp.project_id
+                          ? `${targetQuery.data.deployerAccountId}@${deployment.gcp.project_id}.iam.gserviceaccount.com`
+                          : ''
                       )
                       setConnectionDialogOpen(true)
                     }}
@@ -950,7 +986,10 @@ export function ByocDeploymentPanel() {
                         deployerServiceAccount:
                           deployment?.deployer_service_account.email.split(
                             '@'
-                          )[0] ?? connection?.subject_email.split('@')[0],
+                          )[0] ??
+                          connection?.subject_email.split('@')[0] ??
+                          targetQuery.data?.deployerAccountId ??
+                          '',
                         e2bPrincipals:
                           targetQuery.data?.e2bPrincipals ??
                           (selectedProjectPrincipal
@@ -975,7 +1014,10 @@ export function ByocDeploymentPanel() {
                         deployerServiceAccount:
                           deployment?.deployer_service_account.email.split(
                             '@'
-                          )[0] ?? connection?.subject_email.split('@')[0],
+                          )[0] ??
+                          connection?.subject_email.split('@')[0] ??
+                          targetQuery.data?.deployerAccountId ??
+                          '',
                         e2bPrincipals:
                           targetQuery.data?.e2bPrincipals ??
                           (selectedProjectPrincipal
@@ -1038,6 +1080,7 @@ export function ByocDeploymentPanel() {
       </Tabs>
 
       <ConnectGCPDialog
+        deployerAccountId={targetQuery.data?.deployerAccountId ?? ''}
         deployerServiceAccountEmail={deployerServiceAccountEmail}
         e2bPrincipals={targetQuery.data?.e2bPrincipals ?? []}
         error={mutationError(createConnection.error)}
@@ -1053,11 +1096,6 @@ export function ByocDeploymentPanel() {
             deployerServiceAccountEmail,
             deploymentId: deployment?.id,
           })
-        }}
-        onDeployerServiceAccountEmailChange={(value) => {
-          requestIntents.connection.clear()
-          createConnection.reset()
-          setDeployerServiceAccountEmail(value)
         }}
         onOpenChange={setConnectionDialogOpen}
         open={connectionDialogOpen}
@@ -1082,6 +1120,7 @@ function ByocSetupFlow({
   createConnectionPending,
   createDeploymentPending,
   deployerServiceAccountEmail,
+  deployerAccountId,
   deployment,
   deploymentEvents,
   deploymentOperation,
@@ -1108,6 +1147,7 @@ function ByocSetupFlow({
   createConnectionPending: boolean
   createDeploymentPending: boolean
   deployerServiceAccountEmail: string
+  deployerAccountId: string
   deployment?: Deployment
   deploymentEvents: DeploymentEvent[]
   deploymentOperation?: ByocOperation
@@ -1219,6 +1259,7 @@ function ByocSetupFlow({
 
       {!connection ? (
         <SetupServiceAccount
+          deployerAccountId={deployerAccountId}
           deployerServiceAccountEmail={deployerServiceAccountEmail}
           e2bPrincipals={e2bPrincipals}
           error={createConnectionError}
@@ -1354,6 +1395,7 @@ function SetupStepRail({
 }
 
 function SetupServiceAccount({
+  deployerAccountId,
   deployerServiceAccountEmail,
   e2bPrincipals,
   error,
@@ -1362,6 +1404,7 @@ function SetupServiceAccount({
   onProjectIdChange,
   projectId,
 }: {
+  deployerAccountId: string
   deployerServiceAccountEmail: string
   e2bPrincipals: string[]
   error?: string
@@ -1395,6 +1438,7 @@ function SetupServiceAccount({
                 autoComplete="off"
                 className="h-10 min-w-0 rounded-md border border-stroke bg-bg px-3 font-mono text-sm font-normal text-fg outline-none focus:border-stroke-active"
                 id="byoc-setup-project-id"
+                disabled={isPending}
                 onChange={(event) =>
                   onProjectIdChange(event.currentTarget.value)
                 }
@@ -1409,7 +1453,7 @@ function SetupServiceAccount({
                 <span className="truncate">
                   {validProjectId
                     ? deployerServiceAccountEmail
-                    : `${DEFAULT_DEPLOYER_SA}@<project>.iam.gserviceaccount.com`}
+                    : `${deployerAccountId}@<project>.iam.gserviceaccount.com`}
                 </span>
               </div>
             </div>
@@ -1429,7 +1473,7 @@ function SetupServiceAccount({
             viewportProps={{ className: 'max-h-[420px] max-w-full' }}
           >
             {bootstrapCommand({
-              deployerServiceAccount: DEFAULT_DEPLOYER_SA,
+              deployerServiceAccount: deployerAccountId,
               e2bPrincipals,
               projectId: commandProjectId,
             })}
@@ -1739,22 +1783,22 @@ function isCompletedCheck(status?: DeploymentCheckStatus) {
 }
 
 function ConnectGCPDialog({
+  deployerAccountId,
   deployerServiceAccountEmail,
   e2bPrincipals,
   error,
   isPending,
   onConnect,
-  onDeployerServiceAccountEmailChange,
   onOpenChange,
   open,
   projectId,
 }: {
+  deployerAccountId: string
   deployerServiceAccountEmail: string
   e2bPrincipals: string[]
   error?: string
   isPending: boolean
   onConnect: () => void
-  onDeployerServiceAccountEmailChange: (value: string) => void
   onOpenChange: (open: boolean) => void
   open: boolean
   projectId: string
@@ -1762,10 +1806,11 @@ function ConnectGCPDialog({
   const expectedSuffix = projectId
     ? `@${projectId}.iam.gserviceaccount.com`
     : ''
+  const expectedEmail = `${deployerAccountId}${expectedSuffix}`
   const validEmail =
-    !!expectedSuffix && deployerServiceAccountEmail.endsWith(expectedSuffix)
+    !!expectedSuffix && deployerServiceAccountEmail === expectedEmail
   const accountId =
-    deployerServiceAccountEmail.split('@')[0] || DEFAULT_DEPLOYER_SA
+    deployerServiceAccountEmail.split('@')[0] || deployerAccountId
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -1787,10 +1832,8 @@ function ConnectGCPDialog({
               autoComplete="off"
               className="h-10 rounded-md border border-stroke bg-bg px-3 font-mono text-sm text-fg outline-none focus:border-stroke-active"
               id="byoc-deployer-sa"
-              onChange={(event) =>
-                onDeployerServiceAccountEmailChange(event.currentTarget.value)
-              }
-              placeholder={`${DEFAULT_DEPLOYER_SA}${expectedSuffix}`}
+              placeholder={expectedEmail}
+              readOnly
               spellCheck={false}
               value={deployerServiceAccountEmail}
             />
