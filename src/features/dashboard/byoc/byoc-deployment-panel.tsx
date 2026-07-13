@@ -711,8 +711,11 @@ export function ByocDeploymentPanel() {
         </TabsList>
 
         <TabsContent value="overview" className="mt-0 min-w-0">
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.6fr)]">
-            <Card variant="layer" className="rounded-lg">
+          <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.6fr)]">
+            <Card
+              variant="layer"
+              className="min-w-0 overflow-hidden rounded-lg"
+            >
               <CardHeader>
                 <CardTitle>Current operation</CardTitle>
               </CardHeader>
@@ -728,7 +731,10 @@ export function ByocDeploymentPanel() {
                 />
               </CardContent>
             </Card>
-            <Card variant="layer" className="rounded-lg">
+            <Card
+              variant="layer"
+              className="min-w-0 overflow-hidden rounded-lg"
+            >
               <CardHeader>
                 <CardTitle>Attachment</CardTitle>
               </CardHeader>
