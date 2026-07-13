@@ -276,6 +276,11 @@ export function ByocDeploymentPanel({
           data
         )
       },
+      onSettled: async () => {
+        await queryClient.invalidateQueries(
+          trpc.byoc.allocatedTarget.queryFilter({ teamSlug })
+        )
+      },
     })
   )
   const healthQuery = useQuery(trpc.byoc.health.queryOptions({ teamSlug }))
@@ -727,7 +732,12 @@ export function ByocDeploymentPanel({
           error={error}
           locations={locationsQuery.data ?? []}
           location={location}
-          locationLocked={Boolean(target) || allocateTarget.isPending}
+          locationLocked={
+            Boolean(target) ||
+            allocateTarget.isPending ||
+            allocateTarget.isError ||
+            allocatedTargetQuery.isFetching
+          }
           onGenerateIdentity={() => {
             if (!location) return
             allocateTarget.mutate({ teamSlug, ...location })
@@ -797,7 +807,7 @@ export function ByocDeploymentPanel({
     )
   }
 
-  if (setupInProgress && view === 'infrastructure') {
+  if (!deployment && view === 'infrastructure') {
     return (
       <main className="flex min-w-0 flex-col gap-4">
         <section>
