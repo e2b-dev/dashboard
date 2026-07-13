@@ -21,6 +21,7 @@ import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { withRequestObservabilityContext } from '@/core/shared/clients/logger/request-observability'
 import { getMeter } from '@/core/shared/clients/meter'
 import { getTracer } from '@/core/shared/clients/tracer'
+import { sanitizeClientInput } from '@/core/shared/observability/sanitize-input'
 
 /**
  * Telemetry State
@@ -166,6 +167,7 @@ export const endTelemetryMiddleware = t.middleware(
     // call next() first - execution resumes here after everything downstream completes
     const result = await next()
     const rawInput = await getRawInput()
+    const sanitizedInput = sanitizeClientInput(rawInput)
 
     const telemetry =
       'telemetry' in ctx ? (ctx.telemetry as TelemetryState) : undefined
@@ -241,7 +243,7 @@ export const endTelemetryMiddleware = t.middleware(
           'trpc.router.name': routerName,
           'trpc.procedure.type': procedureType,
           'trpc.procedure.name': procedureName,
-          'trpc.procedure.input': rawInput,
+          'trpc.procedure.input': sanitizedInput,
           'trpc.procedure.duration_ms': durationMs,
 
           error: serializeErrorForLog(observedError),
@@ -287,7 +289,7 @@ export const endTelemetryMiddleware = t.middleware(
           'trpc.router.name': routerName,
           'trpc.procedure.type': procedureType,
           'trpc.procedure.name': procedureName,
-          'trpc.procedure.input': rawInput,
+          'trpc.procedure.input': sanitizedInput,
           'trpc.procedure.duration_ms': durationMs,
         },
         `[tRPC] ${routerName}.${procedureName}`

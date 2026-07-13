@@ -1,6 +1,7 @@
 import { createCallerFactory, createTRPCRouter } from '@/core/server/trpc/init'
 import { billingRouter } from './billing'
 import { buildsRouter } from './builds'
+import { connectionsRouter } from './connections'
 import { sandboxRouter } from './sandbox'
 import { sandboxesRouter } from './sandboxes'
 import { supportRouter } from './support'
@@ -15,6 +16,7 @@ export const trpcAppRouter = createTRPCRouter({
   templates: templatesRouter,
   builds: buildsRouter,
   billing: billingRouter,
+  connections: connectionsRouter,
   support: supportRouter,
   teams: teamsRouter,
   user: userRouter,

@@ -29,6 +29,8 @@ export const PROTECTED_URLS = {
   AGENTS: (teamSlug: string) => `/dashboard/${teamSlug}/agents`,
   BYOC: (teamSlug: string) => `/dashboard/${teamSlug}/byoc`,
   CONNECTIONS: (teamSlug: string) => `/dashboard/${teamSlug}/connections`,
+  CONNECTION_DEVIN: (teamSlug: string) =>
+    `/dashboard/${teamSlug}/connections/devin`,
 
   SANDBOXES: (teamSlug: string) =>
     `/dashboard/${teamSlug}/sandboxes/monitoring`,

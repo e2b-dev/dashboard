@@ -19,15 +19,12 @@ import {
 } from '@/core/shared/clients/logger/request-observability'
 import { getTracer } from '@/core/shared/clients/tracer'
 import { UnauthenticatedError, UnknownError } from '@/core/shared/errors'
+import { sanitizeClientInput } from '@/core/shared/observability/sanitize-input'
 import type {
   RequestScope,
   TeamRequestScope,
 } from '@/core/shared/repository-scope'
-import {
-  ActionError,
-  flattenClientInputValue,
-  sanitizeClientInput,
-} from './utils'
+import { ActionError, flattenClientInputValue } from './utils'
 
 type ActionSession = {
   access_token: string

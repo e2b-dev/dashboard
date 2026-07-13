@@ -60,7 +60,7 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
     group: 'integration',
     href: (args) => PROTECTED_URLS.CONNECTIONS(args.teamSlug!),
     icon: IntegrationsIcon,
-    activeMatch: `/dashboard/*/connections`,
+    activeMatch: `/dashboard/*/connections/**`,
     featureFlag: 'connectionsEnabled',
   },
   {

@@ -120,6 +120,19 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
     webhookDetailLayoutConfig(pathname),
   '/dashboard/*/webhooks/*/deliveries': (pathname) =>
     webhookDetailLayoutConfig(pathname),
+  '/dashboard/*/connections/devin': (pathname) => {
+    const teamSlug = pathname.split('/')[2] ?? ''
+    return {
+      title: [
+        {
+          label: 'Connections',
+          href: PROTECTED_URLS.CONNECTIONS(teamSlug),
+        },
+        { label: 'Devin' },
+      ],
+      type: 'default',
+    }
+  },
 
   // team
   '/dashboard/*/general': () => ({
