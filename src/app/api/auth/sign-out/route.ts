@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { type NextRequest, NextResponse } from 'next/server'
+import { getPublicAppOrigin } from '@/configs/urls'
 import { signOut } from '@/core/server/auth'
 
 // Sign-out lives in a plain route handler, deliberately NOT wrapped by the
@@ -12,6 +13,7 @@ import { signOut } from '@/core/server/auth'
 // up until the document unloads (no soft RSC redirect re-rendering the
 // signed-out dashboard underneath it).
 export async function GET(request: NextRequest) {
-  const { redirectTo } = await signOut({ origin: request.nextUrl.origin })
-  return NextResponse.redirect(new URL(redirectTo, request.nextUrl.origin))
+  const publicOrigin = getPublicAppOrigin(request.nextUrl.origin)
+  const { redirectTo } = await signOut({ origin: publicOrigin })
+  return NextResponse.redirect(new URL(redirectTo, publicOrigin))
 }

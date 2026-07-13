@@ -37,6 +37,9 @@ const { GET: authSessionGET } = await import(
 const { GET: bootstrapFailedGET } = await import(
   '@/app/api/auth/oauth/bootstrap-failed/route'
 )
+const { GET: signoutFlowGET } = await import(
+  '@/app/api/auth/oauth/signout-flow/route'
+)
 
 describe('Ory Auth.js session boundary', () => {
   beforeEach(() => {
@@ -54,6 +57,7 @@ describe('Ory Auth.js session boundary', () => {
     )
     vi.stubEnv('ORY_SDK_URL', 'https://project.oryapis.com')
     vi.stubEnv('ORY_HYDRA_PUBLIC_URL', 'https://hydra.example.test')
+    vi.stubEnv('APP_URL', 'https://app.e2b.dev')
   })
 
   it('allows Auth.js sign-in only after dashboard bootstrap succeeds', async () => {
@@ -105,7 +109,7 @@ describe('Ory Auth.js session boundary', () => {
 
   it('only signs out from bootstrap-failed when the handoff cookie is present', async () => {
     const withCookie = await bootstrapFailedGET(
-      new NextRequest('https://app.e2b.dev/api/auth/oauth/bootstrap-failed', {
+      new NextRequest('https://0.0.0.0:3000/api/auth/oauth/bootstrap-failed', {
         headers: { cookie: 'e2b-ory-bootstrap-failed-id-token=id.token.sig' },
       })
     )
@@ -120,9 +124,17 @@ describe('Ory Auth.js session boundary', () => {
     signOutMock.mockClear()
 
     const withoutCookie = await bootstrapFailedGET(
-      new NextRequest('https://app.e2b.dev/api/auth/oauth/bootstrap-failed')
+      new NextRequest('https://0.0.0.0:3000/api/auth/oauth/bootstrap-failed')
     )
     expect(signOutMock).not.toHaveBeenCalled()
     expect(withoutCookie.headers.get('location')).toBe('https://app.e2b.dev/')
+  })
+
+  it('uses the configured public origin after Ory logout', () => {
+    const response = signoutFlowGET(
+      new NextRequest('https://0.0.0.0:3000/api/auth/oauth/signout-flow')
+    )
+
+    expect(response.headers.get('location')).toBe('https://app.e2b.dev/')
   })
 })

@@ -3,6 +3,7 @@ import 'server-only'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { signOut } from '@/auth'
+import { getPublicAppOrigin } from '@/configs/urls'
 import {
   buildOryLogoutUrl,
   ORY_BOOTSTRAP_FAILURE_ID_TOKEN_COOKIE,
@@ -11,7 +12,7 @@ import {
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 
 export async function GET(request: NextRequest) {
-  const origin = request.nextUrl.origin
+  const origin = getPublicAppOrigin(request.nextUrl.origin)
   const idToken = request.cookies.get(
     ORY_BOOTSTRAP_FAILURE_ID_TOKEN_COOKIE
   )?.value

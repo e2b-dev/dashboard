@@ -104,4 +104,8 @@ export const BASE_URL =
       : `https://${process.env.VERCEL_BRANCH_URL}`
     : 'http://localhost:3000')
 
+export function getPublicAppOrigin(requestOrigin: string): string {
+  return process.env.APP_URL ?? requestOrigin
+}
+
 export const GITHUB_URL = 'https://github.com/e2b-dev'
