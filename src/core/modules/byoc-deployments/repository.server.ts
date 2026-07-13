@@ -641,6 +641,9 @@ function getPublicRunnerError(status: number, path: string) {
   if (status === 422) {
     return 'Could not verify the deployer service account. Check its Token Creator binding and try again.'
   }
+  if (status === 503 && path === '/cloud-connections') {
+    return 'Deployer service account authorization is still propagating. Retrying may succeed.'
+  }
   if (status === 429 || status >= 500) {
     return 'BYOC deployments runner is temporarily unavailable.'
   }

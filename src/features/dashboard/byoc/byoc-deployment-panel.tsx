@@ -398,6 +398,12 @@ export function ByocDeploymentPanel() {
 
   const createConnection = useMutation(
     trpc.byoc.createCloudConnection.mutationOptions({
+      retry: (failureCount, error) =>
+        failureCount < 3 &&
+        mutationError(error)?.includes(
+          'Deployer service account authorization is still propagating'
+        ) === true,
+      retryDelay: 5_000,
       onSuccess: async (data) => {
         requestIntents.connection.clear()
         setSelectedConnectionId(data.id)
