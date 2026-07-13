@@ -11,11 +11,13 @@ import {
 
 const ORIGINAL_AUTH_SECRET = process.env.AUTH_SECRET
 const ORIGINAL_CALLBACK_URL = process.env.DEVIN_OUTPOSTS_CALLBACK_URL
+const ORIGINAL_CONNECT_URL = process.env.DEVIN_OUTPOSTS_CONNECT_URL
 
 describe('Devin partner OAuth boundary', () => {
   beforeEach(() => {
     process.env.AUTH_SECRET = 'test-auth-secret-with-enough-entropy'
     process.env.DEVIN_OUTPOSTS_CALLBACK_URL = 'http://localhost:8765/callback'
+    delete process.env.DEVIN_OUTPOSTS_CONNECT_URL
   })
 
   afterEach(() => {
@@ -24,13 +26,13 @@ describe('Devin partner OAuth boundary', () => {
     vi.unstubAllEnvs()
     restoreEnv('AUTH_SECRET', ORIGINAL_AUTH_SECRET)
     restoreEnv('DEVIN_OUTPOSTS_CALLBACK_URL', ORIGINAL_CALLBACK_URL)
+    restoreEnv('DEVIN_OUTPOSTS_CONNECT_URL', ORIGINAL_CONNECT_URL)
   })
 
   it('creates signed state and a matching S256 challenge', async () => {
     const { attemptCookie, connectUrl } = createDevinOAuthAttempt({
       operationId: '17d18dac-86d9-4a79-91e7-4477bd29327e',
       returnOrigin: 'http://localhost:3000',
-      sandboxId: 'sandbox-1',
       teamId: 'team-1',
       teamSlug: 'test-team',
       userId: 'user-1',
@@ -38,7 +40,6 @@ describe('Devin partner OAuth boundary', () => {
     const attempt = readDevinOAuthAttempt(attemptCookie)
     expect(attempt).toMatchObject({
       returnOrigin: 'http://localhost:3000',
-      sandboxId: 'sandbox-1',
       teamId: 'team-1',
       teamSlug: 'test-team',
       userId: 'user-1',
@@ -82,7 +83,6 @@ describe('Devin partner OAuth boundary', () => {
     const { attemptCookie } = createDevinOAuthAttempt({
       operationId: '17d18dac-86d9-4a79-91e7-4477bd29327e',
       returnOrigin: 'http://localhost:3000',
-      sandboxId: 'sandbox-1',
       teamId: 'team-1',
       teamSlug: 'test-team',
       userId: 'user-1',
@@ -93,11 +93,39 @@ describe('Devin partner OAuth boundary', () => {
     expect(readDevinOAuthAttempt(attemptCookie)).toBeNull()
   })
 
+  it('supports a Devin enterprise connect host without changing token exchange', async () => {
+    process.env.DEVIN_OUTPOSTS_CONNECT_URL =
+      'https://e2b.beta.devinenterprise.com/outposts/connect'
+    const { attemptCookie, connectUrl } = createDevinOAuthAttempt({
+      operationId: '17d18dac-86d9-4a79-91e7-4477bd29327e',
+      returnOrigin: 'http://localhost:3000',
+      teamId: 'team-1',
+      teamSlug: 'test-team',
+      userId: 'user-1',
+    })
+    expect(connectUrl.origin).toBe('https://e2b.beta.devinenterprise.com')
+
+    const attempt = readDevinOAuthAttempt(attemptCookie)
+    if (!attempt) throw new Error('expected signed OAuth attempt')
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json({
+        access_token: 'scoped-token',
+        api_base_url: 'https://e2b.beta.devinenterprise.com',
+        outpost_pool_id: 'pool-1',
+      })
+    )
+    vi.stubGlobal('fetch', fetchMock)
+    await exchangeDevinConnectionCode('one-time-code', attempt)
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://api.devin.ai/outposts/connection-token',
+      expect.anything()
+    )
+  })
+
   it('treats invalid_grant as terminal without exposing provider details', async () => {
     const { attemptCookie } = createDevinOAuthAttempt({
       operationId: '17d18dac-86d9-4a79-91e7-4477bd29327e',
       returnOrigin: 'http://localhost:3000',
-      sandboxId: 'sandbox-1',
       teamId: 'team-1',
       teamSlug: 'test-team',
       userId: 'user-1',
@@ -132,7 +160,6 @@ describe('Devin partner OAuth boundary', () => {
     const { attemptCookie } = createDevinOAuthAttempt({
       operationId: '17d18dac-86d9-4a79-91e7-4477bd29327e',
       returnOrigin: 'http://localhost:3000',
-      sandboxId: 'sandbox-1',
       teamId: 'team-1',
       teamSlug: 'test-team',
       userId: 'user-1',
@@ -155,6 +182,16 @@ describe('Devin partner OAuth boundary', () => {
 
     process.env.DEVIN_OUTPOSTS_CALLBACK_URL = 'http://localhost:8765/callback'
     delete process.env.AUTH_SECRET
+    expect(isDevinOAuthConfigured('http://localhost:3000')).toBe(false)
+  })
+
+  it('fails closed for an unsafe connect-page override', () => {
+    process.env.DEVIN_OUTPOSTS_CONNECT_URL =
+      'https://attacker.example/outposts/connect'
+    expect(isDevinOAuthConfigured('http://localhost:3000')).toBe(false)
+
+    process.env.DEVIN_OUTPOSTS_CONNECT_URL =
+      'https://e2b.beta.devinenterprise.com/chat'
     expect(isDevinOAuthConfigured('http://localhost:3000')).toBe(false)
   })
 

@@ -9,11 +9,13 @@ import {
   toast,
 } from '@/lib/hooks/use-toast'
 import { useTRPCClient } from '@/trpc/client'
+import { AlertDialog } from '@/ui/alert-dialog'
 import { Button } from '@/ui/primitives/button'
 import {
   CheckCircleIcon,
   ExternalLinkIcon,
   KeyIcon,
+  LogOutIcon,
   TerminalIcon,
 } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
@@ -39,6 +41,149 @@ export function DevinConnectionForm({
   oauthMessage,
   teamSlug,
 }: DevinConnectionFormProps) {
+  return (
+    <div className="flex flex-col gap-7 pb-12">
+      <header className="flex flex-col gap-2">
+        <div className="flex items-center gap-3">
+          <div className="border-stroke bg-bg-1 flex size-10 items-center justify-center border">
+            <TerminalIcon className="size-5" aria-hidden />
+          </div>
+          <div>
+            <p className="prose-label text-fg-tertiary uppercase">Connection</p>
+            <h1 className="text-fg text-xl font-medium">Devin Outposts</h1>
+          </div>
+        </div>
+        <p className="prose-body text-fg-tertiary max-w-2xl">
+          Discover your Devin organizations and pools from the dashboard, then
+          start a worker using only a scoped machine token inside the sandbox.
+        </p>
+      </header>
+
+      <DevinOAuthConnection
+        oauthEnabled={oauthEnabled}
+        oauthMessage={oauthMessage}
+        teamSlug={teamSlug}
+      />
+      <ManualDevinConnection teamSlug={teamSlug} />
+    </div>
+  )
+}
+
+function DevinOAuthConnection({
+  oauthEnabled,
+  oauthMessage,
+  teamSlug,
+}: DevinConnectionFormProps) {
+  const trpcClient = useTRPCClient()
+  const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false)
+  const [disconnectPending, setDisconnectPending] = useState(false)
+
+  async function disconnectWorkers() {
+    if (disconnectPending) return
+    setDisconnectPending(true)
+    try {
+      const data = await trpcClient.connections.disconnectDevinWorkers.mutate({
+        confirm: true,
+        teamSlug,
+      })
+      toast(
+        defaultSuccessToast(
+          data.count === 0
+            ? 'No E2B Devin workers were running.'
+            : `Disconnected ${data.count} E2B Devin ${data.count === 1 ? 'worker' : 'workers'}.`
+        )
+      )
+      setDisconnectDialogOpen(false)
+    } catch (error) {
+      toast(
+        defaultErrorToast(
+          error instanceof Error && error.message
+            ? error.message
+            : 'Could not disconnect the Devin workers.'
+        )
+      )
+    }
+    setDisconnectPending(false)
+  }
+
+  return (
+    <section className="border-stroke flex max-w-2xl flex-col gap-4 border-t pt-5">
+      <div className="flex items-start gap-3">
+        <KeyIcon className="text-icon-tertiary mt-0.5 size-4 shrink-0" />
+        <div>
+          <h2 className="prose-body-highlight text-fg">Connect with Devin</h2>
+          <p className="prose-body text-fg-tertiary mt-1">
+            Authorize E2B in Devin. Devin creates a dedicated pool and scoped
+            service user. After approval, the dashboard creates the worker
+            sandbox and injects the scoped credential without putting it in
+            browser state.
+          </p>
+        </div>
+      </div>
+
+      {oauthMessage ? (
+        <p
+          className="prose-body border-accent-error-highlight/35 bg-accent-error-highlight/10 text-fg border p-3"
+          role="alert"
+        >
+          {oauthMessage}
+        </p>
+      ) : null}
+
+      <div className="flex flex-wrap gap-2">
+        {oauthEnabled ? (
+          <form
+            action={`/api/connections/devin/start?teamSlug=${encodeURIComponent(teamSlug)}`}
+            method="post"
+          >
+            <Button type="submit">
+              Authorize in Devin
+              <ExternalLinkIcon />
+            </Button>
+          </form>
+        ) : (
+          <Button
+            disabled
+            title="Partner OAuth is not configured for this dashboard deployment."
+          >
+            Authorize in Devin
+            <ExternalLinkIcon />
+          </Button>
+        )}
+        <AlertDialog
+          open={disconnectDialogOpen}
+          onOpenChange={setDisconnectDialogOpen}
+          title="Disconnect Devin workers?"
+          description="This stops every running or paused Devin worker sandbox created for your account in this E2B team. It does not revoke the generated service user in Devin."
+          confirm="Disconnect workers"
+          onConfirm={disconnectWorkers}
+          confirmProps={{
+            disabled: disconnectPending,
+            loading: disconnectPending ? 'Disconnecting workers' : undefined,
+          }}
+          trigger={
+            <Button type="button" variant="secondary">
+              Disconnect workers
+              <LogOutIcon />
+            </Button>
+          }
+        />
+      </div>
+      <p className="prose-body text-fg-tertiary">
+        Disconnecting stops the E2B workers. To revoke Devin access entirely,
+        delete the generated service user in Devin enterprise settings.
+      </p>
+      {!oauthEnabled ? (
+        <p className="prose-body text-fg-tertiary">
+          Partner OAuth is not configured for this deployment. Use the manual
+          setup below.
+        </p>
+      ) : null}
+    </section>
+  )
+}
+
+function ManualDevinConnection({ teamSlug }: { teamSlug: string }) {
   const router = useRouter()
   const trpcClient = useTRPCClient()
   const apiUrlRef = useRef<HTMLInputElement>(null)
@@ -136,75 +281,7 @@ export function DevinConnectionForm({
   }
 
   return (
-    <div className="flex flex-col gap-7 pb-12">
-      <header className="flex flex-col gap-2">
-        <div className="flex items-center gap-3">
-          <div className="border-stroke bg-bg-1 flex size-10 items-center justify-center border">
-            <TerminalIcon className="size-5" aria-hidden />
-          </div>
-          <div>
-            <p className="prose-label text-fg-tertiary uppercase">Connection</p>
-            <h1 className="text-fg text-xl font-medium">Devin Outposts</h1>
-          </div>
-        </div>
-        <p className="prose-body text-fg-tertiary max-w-2xl">
-          Discover your Devin organizations and pools from the dashboard, then
-          start a worker using only a scoped machine token inside the sandbox.
-        </p>
-      </header>
-
-      <section className="border-stroke flex max-w-2xl flex-col gap-4 border-t pt-5">
-        <div className="flex items-start gap-3">
-          <KeyIcon className="text-icon-tertiary mt-0.5 size-4 shrink-0" />
-          <div>
-            <h2 className="prose-body-highlight text-fg">Connect with Devin</h2>
-            <p className="prose-body text-fg-tertiary mt-1">
-              Authorize E2B in Devin. Devin creates a dedicated pool and scoped
-              service user, then the dashboard stores the scoped worker
-              credential directly in the prepared sandbox. It never enters
-              browser state.
-            </p>
-          </div>
-        </div>
-
-        {oauthMessage ? (
-          <p
-            className="prose-body border-accent-error-highlight/35 bg-accent-error-highlight/10 text-fg border p-3"
-            role="alert"
-          >
-            {oauthMessage}
-          </p>
-        ) : null}
-
-        <div>
-          {oauthEnabled ? (
-            <form
-              action={`/api/connections/devin/start?teamSlug=${encodeURIComponent(teamSlug)}`}
-              method="post"
-            >
-              <Button type="submit">
-                Authorize in Devin
-                <ExternalLinkIcon />
-              </Button>
-            </form>
-          ) : (
-            <Button
-              disabled
-              title="Partner OAuth is not configured for this dashboard deployment."
-            >
-              Authorize in Devin
-              <ExternalLinkIcon />
-            </Button>
-          )}
-        </div>
-        {!oauthEnabled ? (
-          <p className="prose-body text-fg-tertiary">
-            Partner OAuth is not configured for this deployment. Use the manual
-            setup below.
-          </p>
-        ) : null}
-      </section>
-
+    <>
       <section className="border-stroke flex flex-col gap-4 border-t pt-5">
         <div className="flex items-start gap-3">
           <KeyIcon className="text-icon-tertiary mt-0.5 size-4 shrink-0" />
@@ -356,7 +433,7 @@ export function DevinConnectionForm({
           </output>
         </form>
       </section>
-    </div>
+    </>
   )
 }
 

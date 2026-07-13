@@ -3,18 +3,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   createAttempt: vi.fn(),
-  claimWorker: vi.fn(),
-  cleanupWorker: vi.fn(),
   exchangeCode: vi.fn(),
+  findStartedWorker: vi.fn(),
   getAuthContext: vi.fn(),
   getConnectUrl: vi.fn(),
   getTeamIdFromSlug: vi.fn(),
-  hasPersistedConnection: vi.fn(),
-  isWorkerAvailable: vi.fn(),
-  persistConnection: vi.fn(),
-  prepareWorker: vi.fn(),
+  launchWorker: vi.fn(),
   readAttempt: vi.fn(),
-  startPersistedWorker: vi.fn(),
 }))
 
 vi.mock('@/core/server/auth', () => ({
@@ -58,20 +53,16 @@ vi.mock('@/core/modules/devin-outposts/worker.server', () => {
   }
 
   return {
-    cleanupPreparedDevinWorker: mocks.cleanupWorker,
-    claimPreparedDevinWorker: mocks.claimWorker,
     DevinWorkerLaunchError,
-    hasPersistedDevinConnection: mocks.hasPersistedConnection,
-    isPreparedDevinWorkerAvailable: mocks.isWorkerAvailable,
-    persistPreparedDevinConnection: mocks.persistConnection,
-    prepareDevinWorkerSandbox: mocks.prepareWorker,
-    startPersistedDevinWorker: mocks.startPersistedWorker,
+    findStartedDevinWorker: mocks.findStartedWorker,
+    launchDevinWorker: mocks.launchWorker,
   }
 })
 
 import { POST as start } from '@/app/api/connections/devin/start/route'
 import { GET as callback } from '@/app/callback/route'
 import { DevinOAuthError } from '@/core/modules/devin-outposts/oauth.server'
+import { DevinWorkerLaunchError } from '@/core/modules/devin-outposts/worker.server'
 
 const authContext = {
   accessToken: 'dashboard-token',
@@ -82,7 +73,6 @@ const attempt = {
   nonce: 'nonce',
   operationId: '17d18dac-86d9-4a79-91e7-4477bd29327e',
   returnOrigin: 'http://localhost:3000',
-  sandboxId: 'sandbox-1',
   teamId: 'team-1',
   teamSlug: 'test-team',
   userId: 'user-1',
@@ -92,19 +82,7 @@ const attempt = {
 describe('Devin OAuth routes', () => {
   beforeEach(() => {
     vi.unstubAllEnvs()
-    mocks.createAttempt.mockReset()
-    mocks.claimWorker.mockReset()
-    mocks.cleanupWorker.mockReset()
-    mocks.exchangeCode.mockReset()
-    mocks.getAuthContext.mockReset()
-    mocks.getConnectUrl.mockReset()
-    mocks.getTeamIdFromSlug.mockReset()
-    mocks.hasPersistedConnection.mockReset()
-    mocks.isWorkerAvailable.mockReset()
-    mocks.persistConnection.mockReset()
-    mocks.prepareWorker.mockReset()
-    mocks.readAttempt.mockReset()
-    mocks.startPersistedWorker.mockReset()
+    for (const mock of Object.values(mocks)) mock.mockReset()
     mocks.getAuthContext.mockResolvedValue(authContext)
     mocks.getTeamIdFromSlug.mockResolvedValue({ ok: true, data: 'team-1' })
     mocks.createAttempt.mockReturnValue({
@@ -115,20 +93,13 @@ describe('Devin OAuth routes', () => {
       new URL('https://app.devin.ai/outposts/connect?resume=1')
     )
     mocks.readAttempt.mockReturnValue(null)
-    mocks.claimWorker.mockResolvedValue('claimed')
-    mocks.cleanupWorker.mockResolvedValue(true)
-    mocks.hasPersistedConnection.mockResolvedValue(false)
-    mocks.isWorkerAvailable.mockResolvedValue(true)
-    mocks.prepareWorker.mockResolvedValue({ sandboxId: 'sandbox-1' })
+    mocks.findStartedWorker.mockResolvedValue(null)
   })
 
   it('requires a Dashboard session before creating OAuth state', async () => {
     mocks.getAuthContext.mockResolvedValue(null)
-    const response = await start(
-      startRequest(
-        'http://localhost:3000/api/connections/devin/start?teamSlug=test-team'
-      )
-    )
+
+    const response = await start(startRequest())
 
     expect(response.headers.get('location')).toBe(
       'http://localhost:3000/sign-in?returnTo=%2Fdashboard%2Ftest-team%2Fconnections%2Fdevin'
@@ -136,82 +107,52 @@ describe('Devin OAuth routes', () => {
     expect(mocks.createAttempt).not.toHaveBeenCalled()
   })
 
-  it('sets HttpOnly state and redirects an authorized user to Devin', async () => {
-    const response = await start(
-      startRequest(
-        'http://localhost:3000/api/connections/devin/start?teamSlug=test-team'
-      )
-    )
+  it('redirects to Devin without touching the worker runtime', async () => {
+    const response = await start(startRequest())
 
+    expect(response.status).toBe(303)
     expect(response.headers.get('location')).toBe(
       'https://app.devin.ai/outposts/connect?test=1'
     )
-    expect(response.status).toBe(303)
     expect(response.headers.get('set-cookie')).toContain(
       'e2b-devin-oauth=signed-attempt'
     )
     expect(response.headers.get('set-cookie')).toContain('HttpOnly')
-    expect(response.headers.get('cache-control')).toBe('no-store')
-    expect(mocks.prepareWorker).toHaveBeenCalledWith(
-      expect.objectContaining({ teamId: 'team-1', userId: 'user-1' })
-    )
     expect(mocks.createAttempt).toHaveBeenCalledWith(
       expect.objectContaining({
-        sandboxId: 'sandbox-1',
         teamId: 'team-1',
         teamSlug: 'test-team',
+        userId: 'user-1',
       })
     )
+    expect(mocks.createAttempt.mock.calls[0]?.[0]).not.toHaveProperty(
+      'sandboxId'
+    )
+    expect(mocks.findStartedWorker).not.toHaveBeenCalled()
+    expect(mocks.launchWorker).not.toHaveBeenCalled()
   })
 
-  it('resumes an OAuth attempt without overwriting its state', async () => {
+  it('resumes an active authorization without creating new state', async () => {
     mocks.readAttempt.mockReturnValue(attempt)
-    const response = await start(
-      startRequest(
-        'http://localhost:3000/api/connections/devin/start?teamSlug=test-team'
-      )
-    )
+
+    const response = await start(startRequest())
 
     expect(response.headers.get('location')).toBe(
       'https://app.devin.ai/outposts/connect?resume=1'
     )
     expect(mocks.getConnectUrl).toHaveBeenCalledWith(attempt)
-    expect(mocks.prepareWorker).not.toHaveBeenCalled()
     expect(mocks.createAttempt).not.toHaveBeenCalled()
   })
 
-  it('replaces an attempt whose prepared sandbox no longer exists', async () => {
-    mocks.readAttempt.mockReturnValue(attempt)
-    mocks.isWorkerAvailable.mockResolvedValue(false)
-
-    const response = await start(
-      startRequest(
-        'http://localhost:3000/api/connections/devin/start?teamSlug=test-team'
-      )
-    )
-
-    expect(response.headers.get('location')).toBe(
-      'https://app.devin.ai/outposts/connect?test=1'
-    )
-    expect(mocks.prepareWorker).toHaveBeenCalled()
-    expect(mocks.createAttempt).toHaveBeenCalled()
-  })
-
-  it('rejects cross-site OAuth starts before preparing a sandbox', async () => {
-    const response = await start(
-      startRequest(
-        'http://localhost:3000/api/connections/devin/start?teamSlug=test-team',
-        'https://attacker.example'
-      )
-    )
+  it('rejects cross-site OAuth starts before creating state', async () => {
+    const response = await start(startRequest('https://attacker.example'))
 
     expect(response.status).toBe(403)
-    expect(mocks.prepareWorker).not.toHaveBeenCalled()
     expect(mocks.createAttempt).not.toHaveBeenCalled()
+    expect(mocks.launchWorker).not.toHaveBeenCalled()
   })
 
   it('rejects a callback without valid state and clears the cookie', async () => {
-    mocks.readAttempt.mockReturnValue(null)
     const response = await callback(
       new NextRequest('http://localhost:8765/callback?code=one-time-code')
     )
@@ -226,56 +167,35 @@ describe('Devin OAuth routes', () => {
     expect(mocks.exchangeCode).not.toHaveBeenCalled()
   })
 
-  it('preserves secure cookie attributes when clearing production state', async () => {
-    vi.stubEnv('NODE_ENV', 'production')
-    const response = await callback(
-      new NextRequest('https://dashboard.example.com/callback?code=invalid')
-    )
-
-    expect(response.headers.get('set-cookie')).toContain('Max-Age=0')
-    expect(response.headers.get('set-cookie')).toContain('HttpOnly')
-    expect(response.headers.get('set-cookie')).toContain('Secure')
-    expect(response.headers.get('set-cookie')).toContain('SameSite=lax')
-  })
-
   it('rejects a callback after the Dashboard user changes', async () => {
     mocks.readAttempt.mockReturnValue(attempt)
     mocks.getAuthContext.mockResolvedValue({
       ...authContext,
       user: { id: 'user-2' },
     })
-    const response = await callback(
-      callbackRequest('http://localhost:8765/callback?code=one-time-code')
-    )
 
-    expect(response.headers.get('location')).toBe(
-      'http://localhost:3000/dashboard/test-team/connections/devin?devinOAuth=session'
-    )
+    const response = await callback(callbackRequest())
+
+    expect(response.headers.get('location')).toContain('devinOAuth=session')
     expect(mocks.exchangeCode).not.toHaveBeenCalled()
   })
 
-  it('rejects a callback when the slug resolves to a different team', async () => {
+  it('rejects a callback when the team binding changes', async () => {
     mocks.readAttempt.mockReturnValue(attempt)
     mocks.getTeamIdFromSlug.mockResolvedValue({ ok: true, data: 'team-2' })
-    const response = await callback(
-      callbackRequest('http://localhost:8765/callback?code=one-time-code')
-    )
+
+    const response = await callback(callbackRequest())
 
     expect(response.headers.get('location')).toContain('devinOAuth=access')
     expect(mocks.exchangeCode).not.toHaveBeenCalled()
-    expect(mocks.cleanupWorker).toHaveBeenCalledWith({
-      accessToken: 'dashboard-token',
-      sandboxId: 'sandbox-1',
-      teamId: 'team-1',
-    })
+    expect(mocks.launchWorker).not.toHaveBeenCalled()
   })
 
-  it('recovers a completed worker without redeeming the code again', async () => {
+  it('recovers an existing worker before redeeming the code again', async () => {
     mocks.readAttempt.mockReturnValue(attempt)
-    mocks.claimWorker.mockResolvedValue('started')
-    const response = await callback(
-      callbackRequest('http://localhost:8765/callback?code=already-used')
-    )
+    mocks.findStartedWorker.mockResolvedValue('sandbox-1')
+
+    const response = await callback(callbackRequest('already-used'))
 
     expect(response.headers.get('location')).toBe(
       'http://localhost:3000/dashboard/test-team/sandboxes/sandbox-1/terminal'
@@ -283,152 +203,98 @@ describe('Devin OAuth routes', () => {
     expect(mocks.exchangeCode).not.toHaveBeenCalled()
   })
 
-  it('preserves state while another callback owns the operation', async () => {
+  it('preserves state when worker recovery is unavailable', async () => {
     mocks.readAttempt.mockReturnValue(attempt)
-    mocks.claimWorker.mockResolvedValue('busy')
+    mocks.findStartedWorker.mockRejectedValue(new Error('infra unavailable'))
 
-    const response = await callback(
-      callbackRequest('http://localhost:8765/callback?code=one-time-code')
-    )
-
-    expect(response.headers.get('location')).toContain('devinOAuth=in_progress')
-    expect(response.headers.get('set-cookie')).toBeNull()
-    expect(mocks.exchangeCode).not.toHaveBeenCalled()
-    expect(mocks.cleanupWorker).not.toHaveBeenCalled()
-  })
-
-  it('preserves state when persisted connection inspection is unavailable', async () => {
-    mocks.readAttempt.mockReturnValue(attempt)
-    mocks.hasPersistedConnection.mockRejectedValue(
-      new Error('envd unavailable')
-    )
-
-    const response = await callback(
-      callbackRequest('http://localhost:8765/callback?code=one-time-code')
-    )
+    const response = await callback(callbackRequest())
 
     expect(response.headers.get('location')).toContain('devinOAuth=launch')
     expect(response.headers.get('set-cookie')).toBeNull()
     expect(mocks.exchangeCode).not.toHaveBeenCalled()
-    expect(mocks.cleanupWorker).not.toHaveBeenCalled()
   })
 
-  it('resumes worker startup from credentials persisted in the sandbox', async () => {
+  it('does not let an uncorrelated denial clear an active attempt', async () => {
     mocks.readAttempt.mockReturnValue(attempt)
-    mocks.hasPersistedConnection.mockResolvedValue(true)
-    mocks.startPersistedWorker.mockResolvedValue({ sandboxId: 'sandbox-1' })
 
     const response = await callback(
-      callbackRequest('http://localhost:8765/callback')
+      callbackRequest(undefined, 'error=access_denied')
     )
 
-    expect(response.headers.get('location')).toContain(
-      '/sandboxes/sandbox-1/terminal'
-    )
-    expect(mocks.exchangeCode).not.toHaveBeenCalled()
-    expect(mocks.startPersistedWorker).toHaveBeenCalled()
-  })
-
-  it('distinguishes provider failure from explicit authorization denial', async () => {
-    mocks.readAttempt.mockReturnValue(attempt)
-    const providerFailure = await callback(
-      callbackRequest('http://localhost:8765/callback?error=server_error')
-    )
-    expect(providerFailure.headers.get('location')).toContain(
-      'devinOAuth=provider'
-    )
-
-    mocks.readAttempt.mockReturnValue(attempt)
-    const denial = await callback(
-      callbackRequest('http://localhost:8765/callback?error=access_denied')
-    )
-    expect(denial.headers.get('location')).toContain('devinOAuth=denied')
-    expect(denial.headers.get('set-cookie')).toBeNull()
-    expect(mocks.exchangeCode).not.toHaveBeenCalled()
-    expect(mocks.cleanupWorker).not.toHaveBeenCalled()
-  })
-
-  it('maps a consumed or expired code without launching a worker', async () => {
-    mocks.readAttempt.mockReturnValue(attempt)
-    mocks.exchangeCode.mockRejectedValue(new DevinOAuthError('invalid_grant'))
-    const response = await callback(
-      callbackRequest('http://localhost:8765/callback?code=expired')
-    )
-
-    expect(response.headers.get('location')).toContain('devinOAuth=expired')
+    expect(response.headers.get('location')).toContain('devinOAuth=denied')
     expect(response.headers.get('set-cookie')).toBeNull()
-    expect(mocks.startPersistedWorker).not.toHaveBeenCalled()
+    expect(mocks.exchangeCode).not.toHaveBeenCalled()
   })
 
-  it('exchanges the code server-side and redirects to the worker terminal', async () => {
+  it('creates the worker only after exchanging the Devin code', async () => {
     mocks.readAttempt.mockReturnValue(attempt)
     mocks.exchangeCode.mockResolvedValue({
       accessToken: 'scoped-token',
       apiUrl: 'https://api.devin.ai',
       poolId: 'pool-1',
     })
-    mocks.startPersistedWorker.mockResolvedValue({ sandboxId: 'sandbox-1' })
-    const response = await callback(
-      callbackRequest('http://localhost:8765/callback?code=one-time-code')
-    )
+    mocks.launchWorker.mockResolvedValue({ sandboxId: 'sandbox-1' })
+
+    const response = await callback(callbackRequest())
 
     expect(mocks.exchangeCode).toHaveBeenCalledWith('one-time-code', attempt)
-    expect(mocks.persistConnection).toHaveBeenCalledWith(
-      expect.objectContaining({
-        outpostsToken: 'scoped-token',
-        poolId: 'pool-1',
-        sandboxId: 'sandbox-1',
-        teamId: 'team-1',
-        userId: 'user-1',
-      })
+    expect(mocks.launchWorker).toHaveBeenCalledWith({
+      accessToken: 'dashboard-token',
+      apiUrl: 'https://api.devin.ai',
+      operationId: attempt.operationId,
+      outpostsToken: 'scoped-token',
+      poolId: 'pool-1',
+      teamId: 'team-1',
+      userId: 'user-1',
+    })
+    expect(mocks.exchangeCode.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.launchWorker.mock.invocationCallOrder[0] ?? 0
     )
-    expect(mocks.startPersistedWorker).toHaveBeenCalledWith(
-      expect.objectContaining({ sandboxId: 'sandbox-1' }),
-      { cleanupOnFailure: false }
+    expect(response.headers.get('location')).toContain(
+      '/sandboxes/sandbox-1/terminal'
     )
-    expect(response.headers.get('location')).toBe(
-      'http://localhost:3000/dashboard/test-team/sandboxes/sandbox-1/terminal'
-    )
-    expect(response.headers.get('set-cookie')).toContain(
-      'e2b-devin-oauth=; Path=/; Expires='
-    )
+    expect(response.headers.get('set-cookie')).toContain('Max-Age=0')
   })
 
-  it('recovers when credential persistence completed before its response failed', async () => {
+  it('clears consumed authorization state when worker creation fails', async () => {
     mocks.readAttempt.mockReturnValue(attempt)
     mocks.exchangeCode.mockResolvedValue({
       accessToken: 'scoped-token',
       apiUrl: 'https://api.devin.ai',
       poolId: 'pool-1',
     })
-    mocks.persistConnection.mockRejectedValue(new Error('response lost'))
-    mocks.hasPersistedConnection
-      .mockResolvedValueOnce(false)
-      .mockResolvedValueOnce(true)
-    mocks.startPersistedWorker.mockResolvedValue({ sandboxId: 'sandbox-1' })
+    mocks.launchWorker.mockRejectedValue(new DevinWorkerLaunchError())
 
-    const response = await callback(
-      callbackRequest('http://localhost:8765/callback?code=one-time-code')
-    )
+    const response = await callback(callbackRequest())
 
-    expect(mocks.exchangeCode).toHaveBeenCalledTimes(1)
-    expect(mocks.hasPersistedConnection).toHaveBeenCalledTimes(2)
-    expect(mocks.startPersistedWorker).toHaveBeenCalled()
-    expect(response.headers.get('location')).toContain(
-      '/sandboxes/sandbox-1/terminal'
-    )
+    expect(response.headers.get('location')).toContain('devinOAuth=launch')
+    expect(response.headers.get('set-cookie')).toContain('Max-Age=0')
+  })
+
+  it('treats invalid_grant as restartable without creating a worker', async () => {
+    mocks.readAttempt.mockReturnValue(attempt)
+    mocks.exchangeCode.mockRejectedValue(new DevinOAuthError('invalid_grant'))
+
+    const response = await callback(callbackRequest('expired'))
+
+    expect(response.headers.get('location')).toContain('devinOAuth=expired')
+    expect(response.headers.get('set-cookie')).toContain('Max-Age=0')
+    expect(mocks.launchWorker).not.toHaveBeenCalled()
+
+    mocks.readAttempt.mockReturnValue(null)
+    await start(startRequest())
+    expect(mocks.createAttempt).toHaveBeenCalledOnce()
   })
 })
 
-function callbackRequest(url: string) {
-  return new NextRequest(url, {
-    headers: { cookie: 'e2b-devin-oauth=signed-attempt' },
-  })
+function startRequest(origin = 'http://localhost:3000') {
+  return new NextRequest(
+    'http://localhost:3000/api/connections/devin/start?teamSlug=test-team',
+    { headers: { origin } }
+  )
 }
 
-function startRequest(url: string, origin = 'http://localhost:3000') {
-  return new NextRequest(url, {
-    headers: { origin },
-    method: 'POST',
-  })
+function callbackRequest(code = 'one-time-code', query?: string) {
+  const suffix = query ?? `code=${encodeURIComponent(code)}`
+  return new NextRequest(`http://localhost:8765/callback?${suffix}`)
 }

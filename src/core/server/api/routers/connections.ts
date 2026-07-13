@@ -7,12 +7,30 @@ import {
 } from '@/core/modules/devin-outposts/client.server'
 import {
   DevinWorkerLaunchError,
+  disconnectDevinWorkers,
   launchDevinWorker,
 } from '@/core/modules/devin-outposts/worker.server'
 import { createTRPCRouter } from '@/core/server/trpc/init'
 import { protectedTeamProcedure } from '@/core/server/trpc/procedures'
 
 export const connectionsRouter = createTRPCRouter({
+  disconnectDevinWorkers: protectedTeamProcedure
+    .input(z.object({ confirm: z.literal(true) }))
+    .mutation(async ({ ctx }) => {
+      try {
+        return await disconnectDevinWorkers({
+          accessToken: ctx.session.access_token,
+          teamId: ctx.teamId,
+          userId: ctx.session.user.id,
+        })
+      } catch {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Could not disconnect the Devin workers',
+        })
+      }
+    }),
+
   discoverDevin: protectedTeamProcedure
     .input(
       z.object({
@@ -46,7 +64,7 @@ export const connectionsRouter = createTRPCRouter({
     .input(
       z.object({
         apiUrl: z.string().trim().min(1).max(512),
-        operationId: z.string().uuid(),
+        operationId: z.uuid(),
         outpostsToken: z.string().trim().min(1).max(4096),
         poolId: z.string().trim().min(1).max(256),
       })

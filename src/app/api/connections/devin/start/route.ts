@@ -12,11 +12,6 @@ import {
   isDevinOAuthConfigured,
   readDevinOAuthAttempt,
 } from '@/core/modules/devin-outposts/oauth.server'
-import {
-  cleanupPreparedDevinWorker,
-  isPreparedDevinWorkerAvailable,
-  prepareDevinWorkerSandbox,
-} from '@/core/modules/devin-outposts/worker.server'
 import { getAuthContext } from '@/core/server/auth'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
 import { TeamSlugSchema } from '@/core/shared/schemas/team'
@@ -67,42 +62,20 @@ export async function POST(request: NextRequest) {
       return redirectToConnection(publicOrigin, activePath, 'in_progress')
     }
 
-    const available = await isPreparedDevinWorkerAvailable({
-      accessToken: authContext.accessToken,
-      operationId: activeAttempt.operationId,
-      sandboxId: activeAttempt.sandboxId,
-      teamId: activeAttempt.teamId,
-      userId: activeAttempt.userId,
-    })
-    if (available) {
-      const response = NextResponse.redirect(
-        getDevinOAuthConnectUrl(activeAttempt),
-        303
-      )
-      response.headers.set('Cache-Control', 'no-store')
-      return response
-    }
+    const response = NextResponse.redirect(
+      getDevinOAuthConnectUrl(activeAttempt),
+      303
+    )
+    response.headers.set('Cache-Control', 'no-store')
+    return response
   }
 
   const operationId = randomUUID()
-  let sandboxId: string
-  try {
-    const prepared = await prepareDevinWorkerSandbox({
-      accessToken: authContext.accessToken,
-      operationId,
-      teamId: teamIdResult.data,
-      userId: authContext.user.id,
-    })
-    sandboxId = prepared.sandboxId
-  } catch {
-    return redirectToConnection(publicOrigin, connectionPath, 'launch')
-  }
 
   try {
     const { attemptCookie, connectUrl } = createDevinOAuthAttempt({
       operationId,
       returnOrigin: publicOrigin,
-      sandboxId,
       teamId: teamIdResult.data,
       teamSlug,
       userId: authContext.user.id,
@@ -116,11 +89,6 @@ export async function POST(request: NextRequest) {
     response.headers.set('Cache-Control', 'no-store')
     return response
   } catch {
-    await cleanupPreparedDevinWorker({
-      accessToken: authContext.accessToken,
-      sandboxId,
-      teamId: teamIdResult.data,
-    }).catch(() => undefined)
     return redirectToConnection(publicOrigin, connectionPath, 'config')
   }
 }

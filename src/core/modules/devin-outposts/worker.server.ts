@@ -9,7 +9,6 @@ import { normalizeDevinApiUrl } from './client.server'
 
 const ACTIVE_WORKER_TIMEOUT_MS = 24 * 60 * 60 * 1000
 const API_REQUEST_TIMEOUT_MS = 10_000
-const CALLBACK_LEASE_SECONDS = 2 * 60
 const DEFAULT_DEVIN_TEMPLATE = 'devin-outposts'
 const PREPARED_SANDBOX_TIMEOUT_MS = 30 * 60 * 1000
 const WORKER_START_TIMEOUT_MS = 15_000
@@ -27,13 +26,13 @@ export type LaunchDevinWorkerInput = WorkerIdentity & {
   poolId: string
 }
 
-export type StartPreparedDevinWorkerInput = LaunchDevinWorkerInput & {
+type StartPreparedDevinWorkerInput = LaunchDevinWorkerInput & {
   sandboxId: string
 }
 
 type PreparedWorkerIdentity = WorkerIdentity & { sandboxId: string }
 
-export type PreparedDevinWorker = {
+type PreparedDevinWorker = {
   acceptorId: string
   sandboxId: string
   started: boolean
@@ -55,14 +54,45 @@ export class DevinWorkerLaunchError extends Error {
 export async function launchDevinWorker(
   input: LaunchDevinWorkerInput
 ): Promise<LaunchDevinWorkerResult> {
-  const existingSandboxId = await findRunningWorkerSandbox(input)
+  const existingSandboxId = await findWorkerSandbox(input)
   const prepared = existingSandboxId
     ? { sandboxId: existingSandboxId }
     : await prepareDevinWorkerSandbox(input)
   return startPreparedDevinWorker({ ...input, sandboxId: prepared.sandboxId })
 }
 
-export async function prepareDevinWorkerSandbox(
+export async function findStartedDevinWorker(input: WorkerIdentity) {
+  const sandboxId = await findWorkerSandbox(input)
+  if (!sandboxId) return null
+
+  const sandbox = await connectWorkerSandbox(
+    { ...input, sandboxId },
+    PREPARED_SANDBOX_TIMEOUT_MS
+  )
+  if (!(await sandboxHasStartedWorker(sandbox, input.operationId))) return null
+  await extendWorkerSandbox({ ...input, sandboxId }, ACTIVE_WORKER_TIMEOUT_MS)
+  return sandboxId
+}
+
+export async function disconnectDevinWorkers(
+  input: Pick<WorkerIdentity, 'accessToken' | 'teamId' | 'userId'>
+) {
+  const result = await listDisconnectableWorkerSandboxes(input)
+  const sandboxIds = result.map((sandbox) => sandbox.sandboxID)
+  const deleted = await Promise.all(
+    sandboxIds.map((sandboxId) =>
+      cleanupPreparedDevinWorker({
+        accessToken: input.accessToken,
+        sandboxId,
+        teamId: input.teamId,
+      })
+    )
+  )
+  if (deleted.some((success) => !success)) throw new DevinWorkerLaunchError()
+  return { count: sandboxIds.length }
+}
+
+async function prepareDevinWorkerSandbox(
   input: WorkerIdentity
 ): Promise<PreparedDevinWorker> {
   const acceptorId = acceptorIdFor(input.operationId)
@@ -87,88 +117,7 @@ export async function prepareDevinWorkerSandbox(
   }
 }
 
-export async function isPreparedDevinWorkerStarted(
-  input: PreparedWorkerIdentity
-) {
-  const sandbox = await connectWorkerSandbox(input, PREPARED_SANDBOX_TIMEOUT_MS)
-  return sandboxHasStartedWorker(sandbox, input.operationId)
-}
-
-export async function isPreparedDevinWorkerAvailable(
-  input: PreparedWorkerIdentity
-) {
-  try {
-    await connectWorkerSandbox(input, PREPARED_SANDBOX_TIMEOUT_MS)
-    return true
-  } catch {
-    return false
-  }
-}
-
-export async function claimPreparedDevinWorker(
-  input: PreparedWorkerIdentity
-): Promise<'busy' | 'claimed' | 'started'> {
-  const sandbox = await connectWorkerSandbox(input, PREPARED_SANDBOX_TIMEOUT_MS)
-  const stateDir = stateDirFor(input.operationId)
-  const lockDir = `${stateDir}/callback.lock`
-  const result = await sandbox.commands.run(
-    [
-      `mkdir -p ${shellQuote(stateDir)}`,
-      `if worker_pid=$(cat ${shellQuote(workerMarkerPath(input.operationId))} 2>/dev/null) && kill -0 "$worker_pid" 2>/dev/null; then echo started; exit 0; fi`,
-      `if mkdir ${shellQuote(lockDir)} 2>/dev/null; then date +%s > ${shellQuote(`${lockDir}/claimed-at`)}; echo claimed; exit 0; fi`,
-      `claimed_at=$(cat ${shellQuote(`${lockDir}/claimed-at`)} 2>/dev/null || echo 0)`,
-      'now=$(date +%s)',
-      `if [ $((now - claimed_at)) -gt ${CALLBACK_LEASE_SECONDS} ]; then rm -rf ${shellQuote(lockDir)} && mkdir ${shellQuote(lockDir)} && date +%s > ${shellQuote(`${lockDir}/claimed-at`)} && echo claimed; else echo busy; fi`,
-    ].join('\n'),
-    { requestTimeoutMs: API_REQUEST_TIMEOUT_MS }
-  )
-  const state = result.stdout.trim()
-  if (
-    result.exitCode !== 0 ||
-    !['busy', 'claimed', 'started'].includes(state)
-  ) {
-    l.warn(
-      {
-        key: 'devin:worker_claim_invalid_result',
-        context: {
-          exit_code: result.exitCode,
-          state: ['busy', 'claimed', 'started'].includes(state)
-            ? state
-            : 'invalid',
-        },
-        sandbox_id: input.sandboxId,
-        team_id: input.teamId,
-        user_id: input.userId,
-      },
-      '[Devin] Worker callback claim returned an invalid result'
-    )
-    throw new DevinWorkerLaunchError(input.sandboxId)
-  }
-  if (state === 'started') {
-    await extendWorkerSandbox(input, ACTIVE_WORKER_TIMEOUT_MS)
-  }
-  return state as 'busy' | 'claimed' | 'started'
-}
-
-export async function hasPersistedDevinConnection(
-  input: PreparedWorkerIdentity
-) {
-  const sandbox = await connectWorkerSandbox(input, PREPARED_SANDBOX_TIMEOUT_MS)
-  const check = connectionFilePaths(input.operationId)
-    .map((path) => `test -s ${shellQuote(path)}`)
-    .join(' && ')
-  const result = await sandbox.commands.run(
-    `if ${check}; then printf present; else printf missing; fi`,
-    { requestTimeoutMs: API_REQUEST_TIMEOUT_MS }
-  )
-  const state = result.stdout.trim()
-  if (result.exitCode !== 0 || !['missing', 'present'].includes(state)) {
-    throw new DevinWorkerLaunchError(input.sandboxId)
-  }
-  return state === 'present'
-}
-
-export async function persistPreparedDevinConnection(
+async function persistPreparedDevinConnection(
   input: StartPreparedDevinWorkerInput
 ) {
   const sandbox = await connectWorkerSandbox(input, PREPARED_SANDBOX_TIMEOUT_MS)
@@ -195,17 +144,19 @@ export async function persistPreparedDevinConnection(
   if (result.exitCode !== 0) throw new DevinWorkerLaunchError(input.sandboxId)
 }
 
-export async function startPreparedDevinWorker(
-  input: StartPreparedDevinWorkerInput,
-  options: { cleanupOnFailure?: boolean } = {}
+async function startPreparedDevinWorker(
+  input: StartPreparedDevinWorkerInput
 ): Promise<LaunchDevinWorkerResult> {
-  await persistPreparedDevinConnection(input)
-  return startPersistedDevinWorker(input, options)
+  try {
+    await persistPreparedDevinConnection(input)
+  } catch {
+    return cleanupFailedWorkerLaunch(input)
+  }
+  return startPersistedDevinWorker(input)
 }
 
-export async function startPersistedDevinWorker(
-  input: PreparedWorkerIdentity,
-  options: { cleanupOnFailure?: boolean } = {}
+async function startPersistedDevinWorker(
+  input: PreparedWorkerIdentity
 ): Promise<LaunchDevinWorkerResult> {
   const acceptorId = acceptorIdFor(input.operationId)
   const stateDir = stateDirFor(input.operationId)
@@ -258,23 +209,26 @@ export async function startPersistedDevinWorker(
       workerPid: result.stdout.trim(),
     }
   } catch {
-    const cleaned =
-      options.cleanupOnFailure === false
-        ? true
-        : await cleanupPreparedDevinWorker(input).catch(() => false)
-    if (!cleaned) {
-      l.error(
-        {
-          key: 'devin:worker_sandbox_cleanup_failed',
-          sandbox_id: input.sandboxId,
-          team_id: input.teamId,
-          user_id: input.userId,
-        },
-        '[Devin] Failed to clean up worker sandbox after launch failure'
-      )
-    }
-    throw new DevinWorkerLaunchError(cleaned ? undefined : input.sandboxId)
+    return cleanupFailedWorkerLaunch(input)
   }
+}
+
+async function cleanupFailedWorkerLaunch(
+  input: PreparedWorkerIdentity
+): Promise<never> {
+  const cleaned = await cleanupPreparedDevinWorker(input).catch(() => false)
+  if (!cleaned) {
+    l.error(
+      {
+        key: 'devin:worker_sandbox_cleanup_failed',
+        sandbox_id: input.sandboxId,
+        team_id: input.teamId,
+        user_id: input.userId,
+      },
+      '[Devin] Failed to clean up worker sandbox after launch failure'
+    )
+  }
+  throw new DevinWorkerLaunchError(cleaned ? undefined : input.sandboxId)
 }
 
 async function extendWorkerSandbox(
@@ -309,7 +263,7 @@ async function sandboxHasStartedWorker(sandbox: Sandbox, operationId: string) {
   return state === 'running'
 }
 
-export function cleanupPreparedDevinWorker(
+function cleanupPreparedDevinWorker(
   input: Pick<WorkerIdentity, 'accessToken' | 'teamId'> & { sandboxId: string }
 ) {
   return infra
@@ -330,9 +284,18 @@ function connectionOptions(accessToken: string, teamId: string) {
   }
 }
 
-async function findRunningWorkerSandbox(input: WorkerIdentity) {
+async function findWorkerSandbox(input: WorkerIdentity) {
+  const sandboxes = await listWorkerSandboxes(input)
+  return sandboxes.find(
+    (sandbox) => sandbox.metadata?.devinLaunchOperationId === input.operationId
+  )?.sandboxID
+}
+
+async function listWorkerSandboxes(
+  input: Pick<WorkerIdentity, 'accessToken' | 'teamId' | 'userId'>
+) {
   const metadata = new URLSearchParams({
-    devinLaunchOperationId: input.operationId,
+    source: 'dashboard-devin-outposts',
     userId: input.userId,
   }).toString()
   const result = await infra.GET('/sandboxes', {
@@ -343,7 +306,40 @@ async function findRunningWorkerSandbox(input: WorkerIdentity) {
   if (!result.response.ok || !result.data) {
     throw new DevinWorkerLaunchError()
   }
-  return result.data[0]?.sandboxID
+  return result.data
+}
+
+async function listDisconnectableWorkerSandboxes(
+  input: Pick<WorkerIdentity, 'accessToken' | 'teamId' | 'userId'>
+) {
+  const metadata = new URLSearchParams({
+    source: 'dashboard-devin-outposts',
+    userId: input.userId,
+  }).toString()
+  const sandboxes: InfraComponents['schemas']['ListedSandbox'][] = []
+  let nextToken: string | undefined
+
+  do {
+    const result = await infra.GET('/v2/sandboxes', {
+      headers: authHeaders(input.accessToken, input.teamId),
+      params: {
+        query: {
+          limit: 100,
+          metadata,
+          nextToken,
+          state: ['running', 'paused'],
+        },
+      },
+      signal: AbortSignal.timeout(API_REQUEST_TIMEOUT_MS),
+    })
+    if (!result.response.ok || !result.data) {
+      throw new DevinWorkerLaunchError()
+    }
+    sandboxes.push(...result.data)
+    nextToken = result.response.headers.get('X-Next-Token') || undefined
+  } while (nextToken)
+
+  return sandboxes
 }
 
 async function createWorkerSandbox(input: WorkerIdentity) {

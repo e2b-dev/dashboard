@@ -11,12 +11,9 @@ import {
   readDevinOAuthAttempt,
 } from '@/core/modules/devin-outposts/oauth.server'
 import {
-  claimPreparedDevinWorker,
-  cleanupPreparedDevinWorker,
   DevinWorkerLaunchError,
-  hasPersistedDevinConnection,
-  persistPreparedDevinConnection,
-  startPersistedDevinWorker,
+  findStartedDevinWorker,
+  launchDevinWorker,
 } from '@/core/modules/devin-outposts/worker.server'
 import { getAuthContext } from '@/core/server/auth'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
@@ -52,19 +49,16 @@ export async function GET(request: NextRequest) {
     authContext.accessToken
   )
   if (!teamIdResult.ok) {
-    await cleanupAttemptSandbox(authContext.accessToken, attempt)
     return finish(
       connectionRedirect(attempt.returnOrigin, connectionPath, 'dashboard')
     )
   }
   if (!teamIdResult.data) {
-    await cleanupAttemptSandbox(authContext.accessToken, attempt)
     return finish(
       connectionRedirect(attempt.returnOrigin, connectionPath, 'access')
     )
   }
   if (teamIdResult.data !== attempt.teamId) {
-    await cleanupAttemptSandbox(authContext.accessToken, attempt)
     return finish(
       connectionRedirect(attempt.returnOrigin, connectionPath, 'access')
     )
@@ -73,65 +67,32 @@ export async function GET(request: NextRequest) {
   const workerInput = {
     accessToken: authContext.accessToken,
     operationId: attempt.operationId,
-    sandboxId: attempt.sandboxId,
     teamId: attempt.teamId,
     userId: authContext.user.id,
   }
-  let claim: 'busy' | 'claimed' | 'started'
-  try {
-    claim = await claimPreparedDevinWorker(workerInput)
-  } catch (error) {
-    l.warn(
-      {
-        key: 'devin:oauth_callback_claim_failed',
-        context: {
-          error_name: error instanceof Error ? error.name : 'unknown',
-          reason:
-            error instanceof Error &&
-            /^sandbox_[a-z_]+(?:_\d{3})?$/.test(error.message)
-              ? error.message
-              : 'unknown',
-        },
-        sandbox_id: attempt.sandboxId,
-        team_id: attempt.teamId,
-        user_id: authContext.user.id,
-      },
-      '[Devin] Could not claim the prepared worker callback'
-    )
-    return preserve(
-      connectionRedirect(attempt.returnOrigin, connectionPath, 'launch')
-    )
-  }
-  if (claim === 'started') {
-    return finish(
-      terminalRedirect(
-        attempt.returnOrigin,
-        attempt.teamSlug,
-        attempt.sandboxId
-      )
-    )
-  }
-  if (claim === 'busy') {
-    return preserve(
-      connectionRedirect(attempt.returnOrigin, connectionPath, 'in_progress')
-    )
-  }
 
-  let credentialsPersisted = false
   try {
-    credentialsPersisted = await hasPersistedDevinConnection(workerInput)
+    const existingSandboxId = await findStartedDevinWorker(workerInput)
+    if (existingSandboxId) {
+      return finish(
+        terminalRedirect(
+          attempt.returnOrigin,
+          attempt.teamSlug,
+          existingSandboxId
+        )
+      )
+    }
   } catch (error) {
     l.warn(
       {
-        key: 'devin:oauth_persisted_state_check_failed',
+        key: 'devin:oauth_worker_recovery_failed',
         context: {
           error_name: error instanceof Error ? error.name : 'unknown',
         },
-        sandbox_id: attempt.sandboxId,
         team_id: attempt.teamId,
         user_id: authContext.user.id,
       },
-      '[Devin] Could not inspect persisted worker state'
+      '[Devin] Could not inspect an existing OAuth worker'
     )
     return preserve(
       connectionRedirect(attempt.returnOrigin, connectionPath, 'launch')
@@ -141,7 +102,7 @@ export async function GET(request: NextRequest) {
   const codes = request.nextUrl.searchParams.getAll('code')
   const providerErrors = request.nextUrl.searchParams.getAll('error')
   const code = codes.length === 1 ? codes[0] : undefined
-  if (!credentialsPersisted && (!code || code.length > 4096)) {
+  if (!code || code.length > 4096) {
     const explicitlyDenied =
       providerErrors.length === 1 && providerErrors[0] === 'access_denied'
     return preserve(
@@ -153,26 +114,15 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  let exchangeCompleted = false
+  let codeExchanged = false
   try {
-    if (!credentialsPersisted) {
-      const token = await exchangeDevinConnectionCode(code as string, attempt)
-      exchangeCompleted = true
-      try {
-        await persistPreparedDevinConnection({
-          ...workerInput,
-          apiUrl: token.apiUrl,
-          outpostsToken: token.accessToken,
-          poolId: token.poolId,
-        })
-        credentialsPersisted = true
-      } catch {
-        credentialsPersisted = await hasPersistedDevinConnection(workerInput)
-        if (!credentialsPersisted) throw new DevinWorkerLaunchError()
-      }
-    }
-    const worker = await startPersistedDevinWorker(workerInput, {
-      cleanupOnFailure: false,
+    const token = await exchangeDevinConnectionCode(code, attempt)
+    codeExchanged = true
+    const worker = await launchDevinWorker({
+      ...workerInput,
+      apiUrl: token.apiUrl,
+      outpostsToken: token.accessToken,
+      poolId: token.poolId,
     })
     return finish(
       terminalRedirect(attempt.returnOrigin, attempt.teamSlug, worker.sandboxId)
@@ -193,11 +143,14 @@ export async function GET(request: NextRequest) {
       },
       '[Devin] OAuth connection did not complete'
     )
-    return credentialsPersisted || exchangeCompleted || status === 'expired'
-      ? preserve(
-          connectionRedirect(attempt.returnOrigin, connectionPath, status)
-        )
-      : finish(connectionRedirect(attempt.returnOrigin, connectionPath, status))
+    const redirect = connectionRedirect(
+      attempt.returnOrigin,
+      connectionPath,
+      status
+    )
+    return codeExchanged || status === 'expired'
+      ? finish(redirect)
+      : preserve(redirect)
   }
 }
 
@@ -205,17 +158,6 @@ function terminalRedirect(origin: string, teamSlug: string, sandboxId: string) {
   return NextResponse.redirect(
     new URL(PROTECTED_URLS.SANDBOX_TERMINAL(teamSlug, sandboxId), origin)
   )
-}
-
-async function cleanupAttemptSandbox(
-  accessToken: string,
-  attempt: { sandboxId: string; teamId: string }
-) {
-  await cleanupPreparedDevinWorker({
-    accessToken,
-    sandboxId: attempt.sandboxId,
-    teamId: attempt.teamId,
-  }).catch(() => undefined)
 }
 
 function connectionRedirect(origin: string, path: string, status: string) {

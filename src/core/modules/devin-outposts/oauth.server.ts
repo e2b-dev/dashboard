@@ -9,32 +9,27 @@ import {
 import { z } from 'zod'
 import { normalizeDevinApiUrl } from './client.server'
 
-const DEVIN_CONNECT_URL = 'https://app.devin.ai/outposts/connect'
+const DEFAULT_DEVIN_CONNECT_URL = 'https://app.devin.ai/outposts/connect'
 const DEVIN_TOKEN_URL = 'https://api.devin.ai/outposts/connection-token'
 const OAUTH_ATTEMPT_TTL_SECONDS = 30 * 60
 const REQUEST_TIMEOUT_MS = 15_000
 
-const oauthAttemptSchema = z
-  .object({
-    expiresAt: z.number().int().positive(),
-    nonce: z.string().min(32).max(128),
-    operationId: z.string().uuid(),
-    returnOrigin: z.string().url(),
-    sandboxId: z.string().min(1).max(256),
-    teamId: z.string().min(1).max(256),
-    teamSlug: z.string().min(1).max(256),
-    userId: z.string().min(1).max(256),
-    version: z.literal(1),
-  })
-  .strict()
+const oauthAttemptSchema = z.strictObject({
+  expiresAt: z.number().int().positive(),
+  nonce: z.string().min(32).max(128),
+  operationId: z.uuid(),
+  returnOrigin: z.url(),
+  teamId: z.string().min(1).max(256),
+  teamSlug: z.string().min(1).max(256),
+  userId: z.string().min(1).max(256),
+  version: z.literal(1),
+})
 
-const tokenResponseSchema = z
-  .object({
-    access_token: z.string().min(1).max(8192),
-    api_base_url: z.string().min(1).max(512),
-    outpost_pool_id: z.string().min(1).max(256),
-  })
-  .passthrough()
+const tokenResponseSchema = z.looseObject({
+  access_token: z.string().min(1).max(8192),
+  api_base_url: z.string().min(1).max(512),
+  outpost_pool_id: z.string().min(1).max(256),
+})
 
 export type DevinOAuthAttempt = z.infer<typeof oauthAttemptSchema>
 
@@ -55,6 +50,7 @@ export class DevinOAuthError extends Error {
 export function isDevinOAuthConfigured(returnOrigin: string) {
   try {
     validateCallbackHost(getCallbackUrl(), normalizeReturnOrigin(returnOrigin))
+    getConnectUrl()
     getSecret()
     return true
   } catch {
@@ -65,7 +61,6 @@ export function isDevinOAuthConfigured(returnOrigin: string) {
 export function createDevinOAuthAttempt(input: {
   operationId: string
   returnOrigin: string
-  sandboxId: string
   teamId: string
   teamSlug: string
   userId: string
@@ -75,7 +70,6 @@ export function createDevinOAuthAttempt(input: {
     nonce: randomBytes(32).toString('base64url'),
     operationId: input.operationId,
     returnOrigin: normalizeReturnOrigin(input.returnOrigin),
-    sandboxId: input.sandboxId,
     teamId: input.teamId,
     teamSlug: input.teamSlug,
     userId: input.userId,
@@ -91,7 +85,7 @@ export function getDevinOAuthConnectUrl(attempt: DevinOAuthAttempt) {
   const verifier = deriveVerifier(attempt)
   const callbackUrl = getCallbackUrl()
   validateCallbackHost(callbackUrl, attempt.returnOrigin)
-  const connectUrl = new URL(DEVIN_CONNECT_URL)
+  const connectUrl = getConnectUrl()
   connectUrl.searchParams.set('callback_url', callbackUrl)
   connectUrl.searchParams.set('code_challenge', pkceChallenge(verifier))
   connectUrl.searchParams.set('platform', 'linux')
@@ -233,6 +227,36 @@ function getCallbackUrl() {
     throw new DevinOAuthError('config')
   }
   return url.toString()
+}
+
+function getConnectUrl() {
+  const value =
+    process.env.DEVIN_OUTPOSTS_CONNECT_URL || DEFAULT_DEVIN_CONNECT_URL
+  let url: URL
+  try {
+    url = new URL(value)
+  } catch {
+    throw new DevinOAuthError('config')
+  }
+  const hostname = url.hostname.toLowerCase()
+  const devinOwnedHost =
+    hostname === 'devin.ai' ||
+    hostname.endsWith('.devin.ai') ||
+    hostname === 'devinenterprise.com' ||
+    hostname.endsWith('.devinenterprise.com')
+  if (
+    url.protocol !== 'https:' ||
+    url.username ||
+    url.password ||
+    url.port ||
+    url.pathname !== '/outposts/connect' ||
+    url.search ||
+    url.hash ||
+    !devinOwnedHost
+  ) {
+    throw new DevinOAuthError('config')
+  }
+  return url
 }
 
 function normalizeReturnOrigin(value: string) {
