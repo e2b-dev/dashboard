@@ -52,6 +52,10 @@ import {
 } from '@/ui/primitives/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/primitives/tabs'
 import {
+  cloudConnectionRetryDelayMs,
+  shouldRetryCloudConnectionVerification,
+} from './cloud-connection-retry'
+import {
   buildDeploymentChecks,
   type DeploymentCheckStatus,
 } from './deployment-checks'
@@ -399,11 +403,11 @@ export function ByocDeploymentPanel() {
   const createConnection = useMutation(
     trpc.byoc.createCloudConnection.mutationOptions({
       retry: (failureCount, error) =>
-        failureCount < 3 &&
-        mutationError(error)?.includes(
-          'E2B cannot use the deployer service account yet'
-        ) === true,
-      retryDelay: 5_000,
+        shouldRetryCloudConnectionVerification(
+          failureCount,
+          mutationError(error)
+        ),
+      retryDelay: cloudConnectionRetryDelayMs,
       onSuccess: async (data) => {
         requestIntents.connection.clear()
         setSelectedConnectionId(data.id)

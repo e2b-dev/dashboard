@@ -343,6 +343,96 @@ describe('BYOC deployments repository', () => {
     ).toEqual(['POST /target-identities', 'POST /cloud-connections'])
   })
 
+  it('maps coded deployer verification failures for initial connections', async () => {
+    mockRunner({
+      routes: {
+        'POST /cloud-connections': () =>
+          Response.json(
+            {
+              code: 'deployer_verification_unavailable',
+              error: 'upstream details are not exposed',
+            },
+            { status: 503 }
+          ),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).createCloudConnection(
+        deployerEmail,
+        undefined,
+        clientRequestId
+      )
+    ).rejects.toMatchObject({
+      code: 'BAD_GATEWAY',
+      message:
+        'E2B cannot use the deployer service account yet. Retrying verification may succeed.',
+    })
+  })
+
+  it('maps coded deployer verification failures for replacement connections', async () => {
+    mockRunner({
+      routes: {
+        [`GET /deployments/${deploymentId}`]: () => Response.json(deployment()),
+        [`POST /deployments/${deploymentId}/cloud-connection`]: (
+          _url,
+          init
+        ) => {
+          expect(JSON.parse(String(init.body))).toMatchObject({
+            client_request_id: clientRequestId,
+            expected_cloud_connection_id: connectionId,
+          })
+          return Response.json(
+            {
+              code: 'deployer_verification_unavailable',
+              error: 'upstream details are not exposed',
+            },
+            { status: 503 }
+          )
+        },
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).createCloudConnection(
+        deployerEmail,
+        deploymentId,
+        clientRequestId
+      )
+    ).rejects.toMatchObject({
+      code: 'BAD_GATEWAY',
+      message:
+        'E2B cannot use the deployer service account yet. Retrying verification may succeed.',
+    })
+  })
+
+  it('maps target mismatches without a retryable verification message', async () => {
+    mockRunner({
+      routes: {
+        'POST /cloud-connections': () =>
+          Response.json(
+            {
+              code: 'target_identity_mismatch',
+              error: 'upstream details are not exposed',
+            },
+            { status: 422 }
+          ),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).createCloudConnection(
+        deployerEmail,
+        undefined,
+        clientRequestId
+      )
+    ).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      message:
+        'The BYOC deployer does not match this team. Refresh the setup and use the generated identity.',
+    })
+  })
+
   it('checks connection ownership before reading its projects', async () => {
     mockRunner({
       routes: {
