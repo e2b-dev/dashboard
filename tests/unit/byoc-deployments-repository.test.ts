@@ -300,6 +300,22 @@ describe('BYOC deployments repository', () => {
     expect(target.deployerAccountId).toContain('2aj9c825xk')
   })
 
+  it('uses the complete compact UUID team ID as every current target prefix', () => {
+    const target = createByocDeploymentsRepository({
+      teamId: 'f104466c-3b16-40bb-aa0d-e18eba42a523',
+    }).target()
+
+    const teamStem = 'te9obtmr8ymde5xiwkyweogyzn'
+    expect(target.deployerAccountId).toBe(teamStem)
+    expect(target.namespace).toBe(teamStem)
+    expect(target.domainName).toBe(`${teamStem}.test.example.com`)
+    expect(target.prefix).toBe(`${teamStem}-`)
+    expect(target.deployerAccountId).toHaveLength(26)
+    expect(`${target.prefix}memorystore-valkey-connection-policy`).toHaveLength(
+      63
+    )
+  })
+
   it('uses distinct team prefixes when two teams target the same project', async () => {
     const fetchMock = vi.mocked(fetch)
     fetchMock.mockImplementation(async (_input, init) => {

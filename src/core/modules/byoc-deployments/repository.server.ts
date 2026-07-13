@@ -13,6 +13,12 @@ interface ByocTarget {
   e2bPrincipals: string[]
 }
 
+interface ByocTeamIdentity {
+  resourceStem: string
+  domainLabel: string
+  deployerAccountId: string
+}
+
 export type DeploymentStatus =
   | 'draft'
   | 'plan_ready'
@@ -166,11 +172,11 @@ export function createByocDeploymentsRepository({
 }: {
   teamId: string
 }) {
-  const teamSuffix = getByocTeamSuffix(teamId)
-  const deployerAccountId = getByocDeployerAccountId(teamId)
+  const teamIdentity = getByocTeamIdentity(teamId)
+  const deployerAccountId = teamIdentity.deployerAccountId
   const sdkDomain = requiredEnv('NEXT_PUBLIC_E2B_DOMAIN')
   const target = {
-    ...getByocTarget(teamSuffix),
+    ...getByocTarget(teamIdentity),
     deployerAccountId,
     sdkDomain,
   }
@@ -596,14 +602,14 @@ function getPublicRunnerError(status: number) {
 }
 
 function getByocTarget(
-  teamSuffix: string
+  teamIdentity: ByocTeamIdentity
 ): Omit<ByocTarget, 'deployerAccountId' | 'sdkDomain'> {
   const target = getByocTargetBase()
-  const prefix = `t${teamSuffix}-`
+  const prefix = `${teamIdentity.resourceStem}-`
   return {
     ...target,
     namespace: trimTrailingHyphens(prefix),
-    domainName: `${teamSuffix}.${requiredEnv('BYOC_DOMAIN_NAME')}`,
+    domainName: `${teamIdentity.domainLabel}.${requiredEnv('BYOC_DOMAIN_NAME')}`,
     prefix,
   }
 }
@@ -687,29 +693,37 @@ function serviceAccountProjectId(email: string) {
   return email.slice(at + 1, -suffix.length)
 }
 
-function getByocDeployerAccountId(teamId: string) {
+function getByocTeamIdentity(teamId: string): ByocTeamIdentity {
   if (!teamId) {
     throw new TRPCError({
       code: 'PRECONDITION_FAILED',
       message: 'The dashboard team ID cannot identify a BYOC deployer.',
     })
   }
-  const suffix = getByocTeamSuffix(teamId)
-  return `e2b-byoc-${suffix}`
-}
 
-function getByocTeamSuffix(teamId: string) {
-  if (!teamId) {
-    throw new TRPCError({
-      code: 'PRECONDITION_FAILED',
-      message: 'The dashboard team ID cannot identify a BYOC target.',
-    })
+  const normalized = teamId.toLowerCase().replaceAll('-', '')
+  if (/^[0-9a-f]{32}$/.test(normalized)) {
+    const teamKey = BigInt(`0x${normalized}`).toString(36).padStart(25, '0')
+    const resourceStem = `t${teamKey}`
+    return {
+      resourceStem,
+      domainLabel: resourceStem,
+      deployerAccountId: resourceStem,
+    }
   }
+
+  // Preserve deterministic names for any pre-UUID team records while all
+  // current UUID teams use the complete, losslessly encoded team ID.
   const digest = createHash('sha256').update(teamId).digest('hex')
-  return BigInt(`0x${digest.slice(0, 16)}`)
+  const legacySuffix = BigInt(`0x${digest.slice(0, 16)}`)
     .toString(36)
     .padStart(13, '0')
     .slice(0, 10)
+  return {
+    resourceStem: `t${legacySuffix}`,
+    domainLabel: legacySuffix,
+    deployerAccountId: `e2b-byoc-${legacySuffix}`,
+  }
 }
 
 function assertExpectedDeployerAccount(email: string, accountId: string) {
