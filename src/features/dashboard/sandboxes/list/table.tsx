@@ -254,6 +254,7 @@ function SandboxesTableView({
                     header={header}
                     sorting={tableSorting.find((s) => s.id === header.id)?.desc}
                     align={
+                      header.id === 'running' ||
                       header.id === 'cpuUsage' ||
                       header.id === 'ramUsage' ||
                       header.id === 'diskUsage'

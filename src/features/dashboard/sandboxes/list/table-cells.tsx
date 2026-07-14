@@ -10,7 +10,8 @@ import {
   ResourceSpec,
 } from '@/features/dashboard/common/resource-usage'
 import { useTimezone } from '@/features/dashboard/timezone'
-import { formatDateParts } from '@/lib/utils/formatting'
+import { useNow } from '@/lib/hooks/use-now'
+import { formatDateParts, formatDurationPadded } from '@/lib/utils/formatting'
 import { JsonPopover } from '@/ui/json-popover'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
@@ -133,6 +134,36 @@ export const DiskUsageCell = ({
         unit="GB"
         className={USAGE_TEXT_CLASSNAME}
       />
+    )}
+  </div>
+)
+
+const HOUR_MS = 60 * 60 * 1000
+
+// Seconds are only rendered under an hour; older sandboxes tick per minute.
+const RunningDurationView = ({ startedAt }: { startedAt: string }) => {
+  const startedAtMs = useMemo(() => new Date(startedAt).getTime(), [startedAt])
+  const minuteNow = useNow(60_000)
+  const showsSeconds = minuteNow - startedAtMs < HOUR_MS
+  const secondNow = useNow(1_000, showsSeconds)
+  const elapsedMs = Math.max(
+    (showsSeconds ? secondNow : minuteNow) - startedAtMs,
+    0
+  )
+
+  return (
+    <span className="whitespace-nowrap font-mono prose-table-numeric">
+      {formatDurationPadded(elapsedMs)}
+    </span>
+  )
+}
+
+export const RunningCell = ({ row }: CellContext<SandboxListRow, unknown>) => (
+  <div className="flex w-full justify-end">
+    {row.original.state === 'running' ? (
+      <RunningDurationView startedAt={row.original.startedAt} />
+    ) : (
+      <span className="text-fg-tertiary prose-table-numeric">--</span>
     )}
   </div>
 )

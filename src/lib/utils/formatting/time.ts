@@ -513,6 +513,24 @@ function formatDurationCompact(ms: number, showDecimalSeconds = false): string {
     : `${seconds}s`
 }
 
+// Zero-pads the trailing unit ("10m 06s") to keep ticking durations
+// from shifting layout in tabular contexts.
+function formatDurationPadded(ms: number): string {
+  const seconds = Math.floor(ms / 1000)
+  const minutes = Math.floor(seconds / 60)
+  const hours = Math.floor(minutes / 60)
+
+  if (hours > 0) {
+    const remainingMinutes = String(minutes % 60).padStart(2, '0')
+    return `${hours}h ${remainingMinutes}m`
+  }
+  if (minutes > 0) {
+    const remainingSeconds = String(seconds % 60).padStart(2, '0')
+    return `${minutes}m ${remainingSeconds}s`
+  }
+  return `${seconds}s`
+}
+
 function formatTimeAgoCompact(ms: number): string {
   const minutes = Math.floor(ms / 1000 / 60)
   const hours = Math.floor(minutes / 60)
@@ -614,6 +632,7 @@ export {
   formatDateWithSpaces,
   formatDuration,
   formatDurationCompact,
+  formatDurationPadded,
   formatRelativeAgo,
   formatTimeAgoCompact,
   formatTimeAxisLabel,
