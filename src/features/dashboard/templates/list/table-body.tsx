@@ -175,6 +175,7 @@ export function TemplatesTableBody({
               />
               <RowHoverFrame
                 className={cn(
+                  '-top-px bottom-0',
                   'group-has-[button[aria-haspopup=menu][data-state=open]]/row:border-stroke',
                   'group-has-[button[aria-haspopup=menu][data-state=open]]/row:[--corner-mark-color:var(--color-fg-tertiary)]'
                 )}

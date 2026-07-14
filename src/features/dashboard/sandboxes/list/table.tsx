@@ -233,21 +233,24 @@ function SandboxesTableView({
 
       <div
         className={cn(
-          'bg-bg mt-4 flex-1 w-full overflow-x-auto md:max-w-[calc(calc(100svw-48px)-var(--sidebar-width-active))]',
+          'bg-bg mt-4 flex-1 -mx-3 md:-mx-6 overflow-x-auto md:max-w-[calc(100svw-var(--sidebar-width-active))]',
           SIDEBAR_TRANSITION_CLASSNAMES
         )}
       >
         <DataTable
           className={cn(
-            'h-full overflow-y-auto md:min-w-[calc(100svw-48px-var(--sidebar-width-active))]',
+            'h-full overflow-y-auto px-3 md:px-6 md:min-w-[calc(100svw-var(--sidebar-width-active))]',
             SIDEBAR_TRANSITION_CLASSNAMES
           )}
           style={{ ...columnSizeVars }}
           ref={scrollRef}
         >
-          <DataTableHeader className="bg-bg sticky top-0 z-10 shadow-xs">
+          <DataTableHeader className="bg-bg sticky top-0 z-30 shadow-xs">
             {table.getHeaderGroups().map((headerGroup) => (
-              <DataTableRow key={headerGroup.id} className="border-b-0">
+              <DataTableRow
+                key={headerGroup.id}
+                className="border-b-0 -mx-2 px-2 w-[calc(100%+16px)]"
+              >
                 {headerGroup.headers.map((header) => (
                   <DataTableHead
                     key={header.id}
