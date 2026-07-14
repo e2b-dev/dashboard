@@ -154,10 +154,21 @@ export const sandboxesRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { sandboxIds } = input
 
-      if (sandboxIds.length === 0 || USE_MOCK_DATA) {
+      if (sandboxIds.length === 0) {
         return {
           metrics: {},
         }
+      }
+
+      if (USE_MOCK_DATA) {
+        await new Promise((resolve) => setTimeout(resolve, 200))
+
+        const requestedIds = new Set(sandboxIds)
+        return MOCK_METRICS_DATA(
+          MOCK_SANDBOXES_DATA().filter((sandbox) =>
+            requestedIds.has(sandbox.sandboxID)
+          )
+        )
       }
 
       const metricsDataResult =
