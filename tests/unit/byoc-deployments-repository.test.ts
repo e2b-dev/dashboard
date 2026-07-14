@@ -344,6 +344,112 @@ describe('BYOC deployments repository', () => {
     ).resolves.toBeUndefined()
   })
 
+  it('updates an allocated location with compare-and-swap metadata', async () => {
+    process.env.BYOC_GCP_LOCATIONS = JSON.stringify([
+      { region: 'test-region', zone: 'test-zone-a' },
+      { region: 'europe-west1', zone: 'europe-west1-b' },
+    ])
+    mockRunner({
+      routes: {
+        [`GET /target-identities/${teamId}`]: () =>
+          Response.json(targetIdentity),
+        [`PATCH /target-identities/${teamId}/location`]: () =>
+          Response.json({
+            ...targetIdentity,
+            region: 'europe-west1',
+            zone: 'europe-west1-b',
+          }),
+      },
+    })
+
+    const updated = await createByocDeploymentsRepository({
+      teamId,
+    }).updateTargetLocation(
+      { region: 'test-region', zone: 'test-zone-a' },
+      { region: 'europe-west1', zone: 'europe-west1-b' }
+    )
+
+    expect(updated).toMatchObject({
+      deployerAccountId: targetStem,
+      namespace: targetStem,
+      domainName: `${targetStem}.test.example.com`,
+      region: 'europe-west1',
+      zone: 'europe-west1-b',
+    })
+    const [url, init] = fetchCall(1)
+    expect(requestKey(url, init).key).toBe(
+      `PATCH /target-identities/${teamId}/location`
+    )
+    expect(JSON.parse(String(init?.body))).toEqual({
+      expected_region: 'test-region',
+      expected_zone: 'test-zone-a',
+      region: 'europe-west1',
+      zone: 'europe-west1-b',
+    })
+  })
+
+  it('rejects a location response that changes the stable target identity', async () => {
+    process.env.BYOC_GCP_LOCATIONS = JSON.stringify([
+      { region: 'test-region', zone: 'test-zone-a' },
+      { region: 'europe-west1', zone: 'europe-west1-b' },
+    ])
+    mockRunner({
+      routes: {
+        [`GET /target-identities/${teamId}`]: () =>
+          Response.json(targetIdentity),
+        [`PATCH /target-identities/${teamId}/location`]: () =>
+          Response.json({
+            ...targetIdentity,
+            region: 'europe-west1',
+            zone: 'europe-west1-b',
+            e2b_principal:
+              'serviceAccount:other@test-control.iam.gserviceaccount.com',
+            e2b_principals: [
+              'serviceAccount:other@test-control.iam.gserviceaccount.com',
+            ],
+          }),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).updateTargetLocation(
+        { region: 'test-region', zone: 'test-zone-a' },
+        { region: 'europe-west1', zone: 'europe-west1-b' }
+      )
+    ).rejects.toThrow('changed the stable target identity')
+  })
+
+  it.each([
+    [
+      'target_identity_changed',
+      'The BYOC location changed since this page loaded. Refresh before retrying.',
+    ],
+    [
+      'target_identity_locked',
+      'The BYOC location cannot change after a cloud connection or deployment exists.',
+    ],
+  ])('maps %s location conflicts', async (code, message) => {
+    process.env.BYOC_GCP_LOCATIONS = JSON.stringify([
+      { region: 'test-region', zone: 'test-zone-a' },
+      { region: 'europe-west1', zone: 'europe-west1-b' },
+    ])
+    mockRunner({
+      routes: {
+        [`GET /target-identities/${teamId}`]: () =>
+          Response.json(targetIdentity),
+        [`PATCH /target-identities/${teamId}/location`]: () =>
+          Response.json({ code, error: 'internal details' }, { status: 409 }),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).updateTargetLocation(
+        { region: 'test-region', zone: 'test-zone-a' },
+        { region: 'europe-west1', zone: 'europe-west1-b' }
+      )
+    ).rejects.toMatchObject({ code: 'CONFLICT', message })
+  })
+
   it('rejects a new location outside the configured allowlist', async () => {
     process.env.BYOC_GCP_LOCATIONS = JSON.stringify([
       { region: 'us-central1', zone: 'us-central1-a' },

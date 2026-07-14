@@ -404,6 +404,70 @@ export function createByocDeploymentsRepository({
       return getAllocatedTarget()
     },
 
+    async updateTargetLocation(
+      expectedLocation: ByocLocation,
+      location: ByocLocation
+    ) {
+      assertAllowedLocation(location)
+      const current = await getAllocatedTarget()
+      if (!current) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'BYOC target identity is not allocated.',
+        })
+      }
+      if (
+        current.region !== expectedLocation.region ||
+        current.zone !== expectedLocation.zone
+      ) {
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message:
+            'The BYOC location changed since this page loaded. Refresh before retrying.',
+        })
+      }
+
+      const response = await request<unknown>(
+        `/target-identities/${encodeURIComponent(teamId)}/location`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify({
+            expected_region: expectedLocation.region,
+            expected_zone: expectedLocation.zone,
+            region: location.region,
+            zone: location.zone,
+          }),
+        }
+      )
+      const parsed = byocTargetIdentitySchema.safeParse(response)
+      if (!parsed.success || parsed.data.team_id !== teamId) {
+        throw new TRPCError({
+          code: 'BAD_GATEWAY',
+          message: 'BYOC deployments runner returned an invalid target.',
+        })
+      }
+      const updated = storedByocTarget(parsed.data, sdkDomain)
+      if (
+        updated.region !== location.region ||
+        updated.zone !== location.zone ||
+        updated.deployerAccountId !== current.deployerAccountId ||
+        updated.namespace !== current.namespace ||
+        updated.domainName !== current.domainName ||
+        updated.prefix !== current.prefix ||
+        updated.e2bPrincipal !== current.e2bPrincipal ||
+        !sameStringSet(updated.e2bPrincipals, current.e2bPrincipals)
+      ) {
+        throw new TRPCError({
+          code: 'BAD_GATEWAY',
+          message:
+            'BYOC deployments runner changed the stable target identity.',
+        })
+      }
+      allocatedTargetPromise = Promise.resolve(updated)
+      targetPromises.clear()
+      return updated
+    },
+
     target(location?: ByocLocation) {
       return resolveTarget(location)
     },
@@ -818,6 +882,12 @@ function getPublicRunnerError(
   }
   if (errorCode === 'target_identity_conflict') {
     return 'The stored BYOC target conflicts with this dashboard configuration.'
+  }
+  if (errorCode === 'target_identity_changed') {
+    return 'The BYOC location changed since this page loaded. Refresh before retrying.'
+  }
+  if (errorCode === 'target_identity_locked') {
+    return 'The BYOC location cannot change after a cloud connection or deployment exists.'
   }
   if (errorCode === 'active_operation') {
     return 'Another BYOC operation is still running. Wait for it to finish, then refresh.'

@@ -8,6 +8,7 @@ import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils'
 import type { TRPCRouterOutputs } from '@/trpc/client'
 import { useTRPC } from '@/trpc/client'
+import { AlertDialog } from '@/ui/alert-dialog'
 import { CodeBlock } from '@/ui/code-block'
 import { Button } from '@/ui/primitives/button'
 import {
@@ -64,6 +65,7 @@ import {
   recommendedByocOperation,
   recommendedByocOperationLabel,
 } from './operation-action'
+import { targetLocationChangeLocked } from './target-location'
 import { useByocRequestIntents } from './use-byoc-request-intents'
 
 type Deployment = TRPCRouterOutputs['byoc']['listDeployments'][number]
@@ -242,6 +244,7 @@ export function ByocDeploymentPanel({
   const [setupStarted, setSetupStarted] = useState(false)
   const [setupProjectId, setSetupProjectId] = useState('')
   const [selectedLocation, setSelectedLocation] = useState<ByocLocation>()
+  const [pendingLocation, setPendingLocation] = useState<ByocLocation>()
   const [deployerServiceAccountEmail, setDeployerServiceAccountEmail] =
     useState('')
   const [createdApiKey, setCreatedApiKey] = useState<string>()
@@ -274,6 +277,23 @@ export function ByocDeploymentPanel({
           trpc.byoc.allocatedTarget.queryOptions({ teamSlug }).queryKey,
           data
         )
+      },
+      onSettled: async () => {
+        await queryClient.invalidateQueries(
+          trpc.byoc.allocatedTarget.queryFilter({ teamSlug })
+        )
+      },
+    })
+  )
+  const updateTargetLocation = useMutation(
+    trpc.byoc.updateTargetLocation.mutationOptions({
+      onSuccess: (data) => {
+        queryClient.setQueryData(
+          trpc.byoc.allocatedTarget.queryOptions({ teamSlug }).queryKey,
+          data
+        )
+        setSelectedLocation({ region: data.region, zone: data.zone })
+        setPendingLocation(undefined)
       },
       onSettled: async () => {
         await queryClient.invalidateQueries(
@@ -327,10 +347,13 @@ export function ByocDeploymentPanel({
         zone: allocatedTargetQuery.data.zone,
       }
     : undefined
-  const immutableLocation =
-    deployment?.gcp ?? connectionLocation ?? allocatedLocation
-  const location = immutableLocation ?? selectedLocation
+  const immutableLocation = deployment?.gcp ?? connectionLocation
+  const location = immutableLocation ?? selectedLocation ?? allocatedLocation
   const target = allocatedTargetQuery.data ?? allocateTarget.data
+  const locationChangeLocked = targetLocationChangeLocked(
+    connectionsQuery.data,
+    deploymentsQuery.data
+  )
   const connectionUsesExpectedDeployer = Boolean(
     connection?.subject_email.startsWith(`${target?.deployerAccountId}@`)
   )
@@ -363,8 +386,15 @@ export function ByocDeploymentPanel({
       value: { ...topology, ...patch },
     })
   }
-  const updateSelectedLocation = (nextLocation: ByocLocation) => {
-    setSelectedLocation(nextLocation)
+  const handleReservedLocationChange = (nextLocation: ByocLocation) => {
+    if (
+      !locationChangeLocked &&
+      target &&
+      (target.region !== nextLocation.region ||
+        target.zone !== nextLocation.zone)
+    ) {
+      setPendingLocation(nextLocation)
+    }
   }
 
   const eventsQuery = useQuery({
@@ -626,6 +656,7 @@ export function ByocDeploymentPanel({
     validateError ??
     destroyError ??
     mutationError(allocateTarget.error) ??
+    mutationError(updateTargetLocation.error) ??
     queryError(allocatedTargetQuery.error) ??
     queryError(locationsQuery.error) ??
     queryError(healthQuery.error) ??
@@ -724,6 +755,7 @@ export function ByocDeploymentPanel({
               : undefined
           }
           createConnectionError={mutationError(createConnection.error)}
+          createConnectionFailureCount={createConnection.failureCount}
           createConnectionPending={createConnection.isPending}
           createDeploymentPending={createDeployment.isPending}
           deployerServiceAccountEmail={setupDeployerServiceAccountEmail}
@@ -736,8 +768,9 @@ export function ByocDeploymentPanel({
           locations={locationsQuery.data ?? []}
           location={location}
           locationLocked={
-            Boolean(target) ||
+            locationChangeLocked ||
             allocateTarget.isPending ||
+            updateTargetLocation.isPending ||
             allocateTarget.isError ||
             allocatedTargetQuery.isFetching
           }
@@ -779,18 +812,49 @@ export function ByocDeploymentPanel({
                 : ''
             )
           }}
-          onLocationChange={updateSelectedLocation}
+          onLocationChange={
+            target ? handleReservedLocationChange : setSelectedLocation
+          }
           onDeploy={runDeploy}
           onValidate={runValidate}
           onRefresh={() => void refresh()}
           onSetupStart={() => setSetupStarted(true)}
           operationPending={operationPending}
-          targetPending={allocateTarget.isPending}
+          targetPending={
+            allocateTarget.isPending || updateTargetLocation.isPending
+          }
           projectId={displayedSetupProjectId}
           setupStarted={setupStarted || !!connection}
           target={target}
           topology={topology}
           updateTopology={updateTopology}
+        />
+        <AlertDialog
+          confirm="Change location"
+          confirmProps={{
+            loading: updateTargetLocation.isPending ? 'Changing' : undefined,
+            variant: 'primary',
+          }}
+          description={
+            pendingLocation && allocatedLocation
+              ? `Change this team's reserved location from ${allocatedLocation.region} / ${allocatedLocation.zone} to ${pendingLocation.region} / ${pendingLocation.zone}? The target key, namespace, and domain will stay the same.`
+              : 'Confirm the new BYOC location.'
+          }
+          onConfirm={() => {
+            if (!pendingLocation || !allocatedLocation) return
+            updateTargetLocation.mutate({
+              teamSlug,
+              expectedLocation: allocatedLocation,
+              location: pendingLocation,
+            })
+          }}
+          onOpenChange={(open) => {
+            if (!open && !updateTargetLocation.isPending) {
+              setPendingLocation(undefined)
+            }
+          }}
+          open={!!pendingLocation}
+          title="Change BYOC location?"
         />
         {deployment ? (
           <div className="mx-auto mt-5 w-full max-w-5xl">
@@ -1486,6 +1550,7 @@ function ByocSetupFlow({
   canDeploy,
   connection,
   createConnectionError,
+  createConnectionFailureCount,
   createConnectionPending,
   createDeploymentPending,
   deployerServiceAccountEmail,
@@ -1520,6 +1585,7 @@ function ByocSetupFlow({
   canDeploy: boolean
   connection?: TRPCRouterOutputs['byoc']['listCloudConnections'][number]
   createConnectionError?: string
+  createConnectionFailureCount: number
   createConnectionPending: boolean
   createDeploymentPending: boolean
   deployerServiceAccountEmail: string
@@ -1646,6 +1712,7 @@ function ByocSetupFlow({
           deployerServiceAccountEmail={deployerServiceAccountEmail}
           e2bPrincipals={e2bPrincipals}
           error={createConnectionError}
+          failureCount={createConnectionFailureCount}
           isPending={createConnectionPending || operationPending}
           locations={locations}
           location={location}
@@ -1798,6 +1865,7 @@ function SetupServiceAccount({
   deployerServiceAccountEmail,
   e2bPrincipals,
   error,
+  failureCount,
   isPending,
   locations,
   location,
@@ -1814,6 +1882,7 @@ function SetupServiceAccount({
   deployerServiceAccountEmail: string
   e2bPrincipals: string[]
   error?: string
+  failureCount: number
   isPending: boolean
   locations: ByocLocation[]
   location?: ByocLocation
@@ -1838,8 +1907,8 @@ function SetupServiceAccount({
         <CardContent className="grid min-w-0 gap-5">
           <p className="prose-body max-w-2xl text-fg-secondary">
             Choose the GCP location and project that will own the BYOC region.
-            Generating this team's deployer identity permanently reserves the
-            location.
+            Generating this team's deployer identity reserves its stable name.
+            The location can change until you connect a cloud project.
           </p>
 
           <div className="grid gap-4 md:grid-cols-3">
@@ -1912,8 +1981,10 @@ function SetupServiceAccount({
           <div className="flex gap-2 border border-stroke bg-bg p-3 text-xs leading-5 text-fg-secondary">
             <InfoIcon className="mt-0.5 size-4 shrink-0" />
             {locationLocked
-              ? 'This team location is now reserved and cannot be changed in place.'
-              : 'Choose carefully: generating the deployer identity permanently reserves this team location.'}{' '}
+              ? 'This team location cannot change after a cloud connection or deployment exists.'
+              : target
+                ? "Changing the location keeps this team's target key, namespace, and domain."
+                : 'You can change the location until a cloud connection or deployment exists.'}{' '}
             E2B uses short-lived impersonation credentials and never receives a
             deployer service-account key. Runtime credentials created by the
             current modules remain in customer-owned Terraform state.
@@ -1969,9 +2040,11 @@ function SetupServiceAccount({
         </CardContent>
         <CardFooter className="mt-0 justify-between gap-4 border-stroke py-4 max-sm:flex-col max-sm:items-stretch">
           <p className="text-xs text-fg-secondary">
-            {target
-              ? 'Run the command, then verify that E2B can impersonate the deployer.'
-              : "Review the location, then generate this team's permanent deployer identity."}
+            {target && isPending
+              ? `Checking access (attempt ${failureCount + 1}). IAM changes are retried every 5 seconds while this page is open.`
+              : target
+                ? 'Run the command, then verify that E2B can impersonate the deployer.'
+                : "Review the location, then generate this team's permanent deployer identity."}
           </p>
           {target ? (
             <Button

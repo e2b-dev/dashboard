@@ -33,6 +33,11 @@ const optionalLocationInput = z
     message: 'Region and zone must be selected together.',
   })
 
+const locationInput = z.object({
+  region: z.string().min(1),
+  zone: z.string().min(1),
+})
+
 const topologyInput = z.object({
   apiNodeCount: z.number().int().min(1).max(20),
   apiMachineType: z
@@ -59,6 +64,19 @@ export const byocRouter = createTRPCRouter({
   allocatedTarget: protectedTeamProcedure.query(({ ctx }) =>
     createByocDeploymentsRepository({ teamId: ctx.teamId }).allocatedTarget()
   ),
+
+  updateTargetLocation: protectedTeamProcedure
+    .input(
+      z.object({
+        expectedLocation: locationInput,
+        location: locationInput,
+      })
+    )
+    .mutation(({ ctx, input }) =>
+      createByocDeploymentsRepository({
+        teamId: ctx.teamId,
+      }).updateTargetLocation(input.expectedLocation, input.location)
+    ),
 
   allocateTarget: protectedTeamProcedure
     .input(
