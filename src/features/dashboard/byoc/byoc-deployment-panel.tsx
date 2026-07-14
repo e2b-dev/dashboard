@@ -91,7 +91,6 @@ const bootstrapRoles = [
   'roles/secretmanager.admin',
   'roles/artifactregistry.admin',
   'roles/certificatemanager.owner',
-  'roles/redis.admin',
   'roles/memorystore.admin',
   'roles/networkconnectivity.admin',
   'roles/servicenetworking.networksAdmin',
@@ -100,8 +99,6 @@ const bootstrapRoles = [
   'roles/iam.serviceAccountUser',
   'roles/iam.serviceAccountKeyAdmin',
   'roles/resourcemanager.projectIamAdmin',
-  'roles/monitoring.admin',
-  'roles/logging.admin',
 ]
 function bootstrapCommand({
   deployerServiceAccount,
