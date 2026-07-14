@@ -211,7 +211,7 @@ export function createByocDeploymentsRepository({
   const baseUrl = getRunnerBaseUrl()
   const token = getRunnerToken()
   const targetPromises = new Map<string, Promise<ByocTarget>>()
-  let allocatedTargetPromise: Promise<ByocTarget | undefined> | undefined
+  let allocatedTargetPromise: Promise<ByocTarget | null> | undefined
 
   async function request<T>(path: string, init?: RequestInit): Promise<T>
   async function request<T>(
@@ -312,7 +312,7 @@ export function createByocDeploymentsRepository({
       {},
       { allowNotFound: true }
     ).then((response) => {
-      if (response === undefined) return undefined
+      if (response === undefined) return null
       const parsed = byocTargetIdentitySchema.safeParse(response)
       if (!parsed.success || parsed.data.team_id !== teamId) {
         throw new TRPCError({

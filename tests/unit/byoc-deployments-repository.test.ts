@@ -341,7 +341,7 @@ describe('BYOC deployments repository', () => {
 
     await expect(
       createByocDeploymentsRepository({ teamId }).allocatedTarget()
-    ).resolves.toBeUndefined()
+    ).resolves.toBeNull()
   })
 
   it('updates an allocated location with compare-and-swap metadata', async () => {
