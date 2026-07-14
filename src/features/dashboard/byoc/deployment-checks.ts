@@ -30,6 +30,19 @@ export type DeploymentCheckGroup =
   | 'applications'
   | 'verification'
 
+export function eventsForOperation(
+  events: DeploymentEvent[],
+  operation?: DeploymentOperation
+) {
+  if (!operation) return []
+  const startIndex = events.findLastIndex(
+    (event) =>
+      event.phase === 'operation_started' &&
+      event.message.includes(operation.id)
+  )
+  return startIndex >= 0 ? events.slice(startIndex) : []
+}
+
 type DeploymentCheckDefinition = {
   alternatePhases?: readonly string[]
   group: DeploymentCheckGroup
@@ -226,12 +239,8 @@ export function buildDeploymentChecks(
     }))
   }
 
-  const startIndex = events.findLastIndex(
-    (event) =>
-      event.phase === 'operation_started' &&
-      event.message.includes(operation.id)
-  )
-  const operationEvents = startIndex >= 0 ? events.slice(startIndex) : []
+  const operationEvents = eventsForOperation(events, operation)
+  const operationStarted = operationEvents.length > 0
   const matches = definitions.map((definition) =>
     operationEvents.find(
       (event) =>
@@ -282,13 +291,13 @@ export function buildDeploymentChecks(
       message:
         isCurrent && failed
           ? 'The operation stopped before this check completed.'
-          : isCurrent && active && startIndex >= 0
+          : isCurrent && active && operationStarted
             ? (progressEvent?.message ?? 'In progress.')
             : 'Waiting for the previous check.',
       status:
         isCurrent && failed
           ? 'failed'
-          : isCurrent && active && startIndex >= 0
+          : isCurrent && active && operationStarted
             ? 'running'
             : 'pending',
     }

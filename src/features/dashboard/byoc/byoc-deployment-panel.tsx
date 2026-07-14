@@ -60,11 +60,19 @@ import {
 import {
   buildDeploymentChecks,
   type DeploymentCheckStatus,
+  eventsForOperation,
 } from './deployment-checks'
 import {
   recommendedByocOperation,
   recommendedByocOperationLabel,
 } from './operation-action'
+import {
+  createOptimisticOperation,
+  type OperationMutationInput,
+  preserveOptimisticOperations,
+  removeOptimisticOperation,
+  upsertOperation,
+} from './operation-cache'
 import {
   resolvedTargetLocation,
   targetLocationChangeLocked,
@@ -420,7 +428,13 @@ export function ByocDeploymentPanel({
       deploymentId: deployment?.id ?? emptyUuid,
     }),
     enabled: !!deployment?.id,
+    structuralSharing: (current, incoming) =>
+      preserveOptimisticOperations(
+        current as ByocOperation[] | undefined,
+        incoming as ByocOperation[]
+      ),
     refetchInterval: (query) =>
+      runningDeploymentId === deployment?.id ||
       query.state.data?.some((operation) => isActiveOperation(operation.status))
         ? 1500
         : false,
@@ -429,6 +443,43 @@ export function ByocDeploymentPanel({
     isActiveOperation(operation.status)
   )
   const latestOperation = operationsQuery.data?.[0]
+
+  const queueOptimisticOperation = async (
+    kind: ByocOperation['kind'],
+    input: OperationMutationInput
+  ) => {
+    const query = trpc.byoc.listOperations.queryOptions({
+      teamSlug,
+      deploymentId: input.deploymentId,
+    })
+    await queryClient.cancelQueries({ queryKey: query.queryKey, exact: true })
+    const operation = createOptimisticOperation(kind, input)
+    queryClient.setQueryData<ByocOperation[]>(query.queryKey, (current) =>
+      upsertOperation(current, operation)
+    )
+  }
+
+  const replaceOptimisticOperation = (operation: ByocOperation) => {
+    queryClient.setQueryData<ByocOperation[]>(
+      trpc.byoc.listOperations.queryOptions({
+        teamSlug,
+        deploymentId: operation.deployment_id,
+      }).queryKey,
+      (current) => upsertOperation(current, operation)
+    )
+  }
+
+  const removeOptimisticOperationFromCache = (
+    input: OperationMutationInput
+  ) => {
+    queryClient.setQueryData<ByocOperation[]>(
+      trpc.byoc.listOperations.queryOptions({
+        teamSlug,
+        deploymentId: input.deploymentId,
+      }).queryKey,
+      (current) => removeOptimisticOperation(current, input.clientRequestId)
+    )
+  }
   const terraformOperation = operationsQuery.data?.find(
     (operation) => operation.kind !== 'validate'
   )
@@ -528,17 +579,21 @@ export function ByocDeploymentPanel({
 
   const deploy = useMutation(
     trpc.byoc.deploy.mutationOptions({
-      onMutate: (variables) => {
+      onMutate: async (variables) => {
         setRunningDeploymentId(variables.deploymentId)
         setOperationBaseline({
           kind: 'deploy',
           clientRequestId: variables.clientRequestId,
         })
+        await queueOptimisticOperation('deploy', variables)
       },
       onSuccess: (data) => {
+        replaceOptimisticOperation(data)
         requestIntents.deploy.clear()
         setSelectedDeploymentId(data.deployment_id)
       },
+      onError: (_error, variables) =>
+        removeOptimisticOperationFromCache(variables),
       onSettled: () =>
         refresh().finally(() => {
           setRunningDeploymentId(undefined)
@@ -548,17 +603,21 @@ export function ByocDeploymentPanel({
 
   const validate = useMutation(
     trpc.byoc.validate.mutationOptions({
-      onMutate: (variables) => {
+      onMutate: async (variables) => {
         setRunningDeploymentId(variables.deploymentId)
         setOperationBaseline({
           kind: 'validate',
           clientRequestId: variables.clientRequestId,
         })
+        await queueOptimisticOperation('validate', variables)
       },
       onSuccess: (data) => {
+        replaceOptimisticOperation(data)
         requestIntents.validate.clear()
         setSelectedDeploymentId(data.deployment_id)
       },
+      onError: (_error, variables) =>
+        removeOptimisticOperationFromCache(variables),
       onSettled: () =>
         refresh().finally(() => {
           setRunningDeploymentId(undefined)
@@ -568,18 +627,22 @@ export function ByocDeploymentPanel({
 
   const destroy = useMutation(
     trpc.byoc.destroy.mutationOptions({
-      onMutate: (variables) => {
+      onMutate: async (variables) => {
         setRunningDeploymentId(variables.deploymentId)
         setOperationBaseline({
           kind: 'destroy',
           clientRequestId: variables.clientRequestId,
         })
+        await queueOptimisticOperation('destroy', variables)
       },
       onSuccess: (data) => {
+        replaceOptimisticOperation(data)
         requestIntents.destroy.clear()
         setSelectedDeploymentId(data.deployment_id)
         setDestroyConfirmation({ deploymentKey: '', value: '' })
       },
+      onError: (_error, variables) =>
+        removeOptimisticOperationFromCache(variables),
       onSettled: () =>
         refresh().finally(() => {
           setRunningDeploymentId(undefined)
@@ -633,6 +696,7 @@ export function ByocDeploymentPanel({
     destroyConfirmationValue === 'destroy'
   const discoveredSubmittedOperation =
     !!operationBaseline &&
+    !latestOperation?.id.startsWith('optimistic:') &&
     latestOperation?.kind === operationBaseline.kind &&
     latestOperation.client_request_id === operationBaseline.clientRequestId
   useEffect(() => {
@@ -2554,7 +2618,7 @@ function OperationSummary({
   events: DeploymentEvent[]
   operation?: ByocOperation
 }) {
-  const latest = events.at(-1)
+  const latest = eventsForOperation(events, operation).at(-1)
   return (
     <div className="flex min-w-0 flex-col gap-2 rounded-md border border-stroke bg-bg p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">

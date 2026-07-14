@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { buildDeploymentChecks } from '@/features/dashboard/byoc/deployment-checks'
+import {
+  buildDeploymentChecks,
+  eventsForOperation,
+} from '@/features/dashboard/byoc/deployment-checks'
 
 const event = (
   phase: string,
@@ -12,6 +15,21 @@ const event = (
 })
 
 describe('buildDeploymentChecks', () => {
+  it('does not attach prior events to a newly queued operation', () => {
+    const events = [
+      event('operation_started', 'Worker started operation old-operation.'),
+      event('operation_succeeded', 'Old operation completed.'),
+    ]
+
+    expect(
+      eventsForOperation(events, {
+        id: 'optimistic:new-operation',
+        kind: 'deploy',
+        status: 'queued',
+      })
+    ).toEqual([])
+  })
+
   it('scopes progress to the current operation', () => {
     const checks = buildDeploymentChecks(
       [
