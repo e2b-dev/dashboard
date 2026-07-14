@@ -2359,7 +2359,8 @@ function ConnectGCPDialog({
             />
             <p className="prose-caption text-fg-secondary">
               Terraform runs as this identity using short-lived credentials. No
-              service-account key is stored.
+              deployer key is stored by E2B; runtime credentials created for the
+              cluster remain in customer-owned Terraform state.
             </p>
           </div>
 
