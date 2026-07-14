@@ -4,7 +4,6 @@ import { AUTH_URLS } from '@/configs/urls'
 import { featureFlags } from '@/core/modules/feature-flags/feature-flags.server'
 import { getAuthContext } from '@/core/server/auth'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
-import { UnderConstructionPage } from '@/features/dashboard/layouts/under-construction-page'
 
 export const metadata: Metadata = {
   title: 'Agents - E2B',
@@ -47,5 +46,5 @@ export default async function AgentsPage({ params }: AgentsPageProps) {
     notFound()
   }
 
-  return <UnderConstructionPage title="Agents" />
+  return null
 }
