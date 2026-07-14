@@ -2713,9 +2713,9 @@ function EventLog({
 
 function deploymentEventLabel(phase: string) {
   const stageLabels: Record<string, string> = {
-    base_infra: 'Network and compute',
+    base_infra: 'Core infrastructure',
     final_converge: 'Final infrastructure checks',
-    foundation: 'Project setup and Redis',
+    foundation: 'Project prerequisites',
     nomad_services: 'E2B services',
   }
   for (const [stage, label] of Object.entries(stageLabels)) {

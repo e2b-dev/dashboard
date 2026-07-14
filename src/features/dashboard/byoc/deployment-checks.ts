@@ -51,7 +51,7 @@ const deployDefinitions: readonly DeploymentCheckDefinition[] = [
   workerAccessDefinition,
   {
     group: 'infrastructure',
-    label: 'Project setup and Redis',
+    label: 'Project prerequisites',
     phase: 'foundation_complete',
     messageIncludes: 'completed',
     progressPhases: [
@@ -65,7 +65,7 @@ const deployDefinitions: readonly DeploymentCheckDefinition[] = [
   },
   {
     group: 'infrastructure',
-    label: 'Network and compute',
+    label: 'Core infrastructure',
     phase: 'base_infra_apply_complete',
     alternatePhases: ['base_infra_complete'],
     messageIncludes: '',

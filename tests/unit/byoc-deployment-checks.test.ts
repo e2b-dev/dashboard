@@ -125,8 +125,8 @@ describe('buildDeploymentChecks', () => {
       checks
         .filter((check) =>
           [
-            'Project setup and Redis',
-            'Network and compute',
+            'Project prerequisites',
+            'Core infrastructure',
             'E2B services',
             'Final infrastructure checks',
           ].includes(check.label)
@@ -160,17 +160,18 @@ describe('buildDeploymentChecks', () => {
           'worker_access',
           'Worker can impersonate the GCP deployer identity.'
         ),
+        event('foundation_complete', 'Project setup completed.'),
         event(
-          'foundation_resource',
+          'base_infra_resource',
           'Redis cluster "cache" is still being created (4m0s elapsed).'
         ),
       ],
       { id: 'operation-1', kind: 'deploy', status: 'applying' }
     )
 
-    expect(checks[1]).toMatchObject({
+    expect(checks[2]).toMatchObject({
       group: 'infrastructure',
-      label: 'Project setup and Redis',
+      label: 'Core infrastructure',
       message: 'Redis cluster "cache" is still being created (4m0s elapsed).',
       status: 'running',
     })
