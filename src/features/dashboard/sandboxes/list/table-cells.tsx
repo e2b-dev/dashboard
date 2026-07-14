@@ -142,7 +142,7 @@ export function StateCell({ row }: CellContext<SandboxListRow, unknown>) {
 
   if (state === 'paused') {
     return (
-      <Badge variant="warning" className="uppercase">
+      <Badge variant="warning" className="uppercase pointer-events-none">
         <PausedIcon className="size-2 fill-current" />
         Paused
       </Badge>
@@ -150,7 +150,7 @@ export function StateCell({ row }: CellContext<SandboxListRow, unknown>) {
   }
 
   return (
-    <Badge variant="positive" className="uppercase">
+    <Badge variant="positive" className="uppercase pointer-events-none">
       <DotIcon className="size-3 animate-pulse fill-current" />
       Running
     </Badge>
