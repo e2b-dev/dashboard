@@ -44,7 +44,10 @@ export function SandboxesHeader({
         </div>
 
         <Suspense fallback={null}>
-          <SandboxesTableFilters className="w-full min-w-0 sm:w-auto" />
+          <SandboxesTableFilters
+            className="w-full min-w-0 sm:w-auto"
+            showStatusFilter={Boolean(table.getColumn('status'))}
+          />
         </Suspense>
 
         <div className="hidden w-2 shrink-0 sm:block" aria-hidden="true" />

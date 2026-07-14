@@ -1,14 +1,20 @@
 import * as React from 'react'
 import { memo, useCallback } from 'react'
 import { useDebounceValue } from 'usehooks-ts'
+import type { SandboxState } from '@/core/modules/sandboxes/models'
 import type { SandboxStartedAtFilter } from '@/features/dashboard/sandboxes/list/stores/table-store'
-import { useSandboxListTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
+import {
+  isStatusFilterActive,
+  useSandboxListTableStore,
+} from '@/features/dashboard/sandboxes/list/stores/table-store'
 import { cn } from '@/lib/utils'
 import { formatCPUCores, formatMemory } from '@/lib/utils/formatting'
 import { NumberInput } from '@/ui/number-input'
+import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
@@ -19,7 +25,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/ui/primitives/dropdown-menu'
-import { AddIcon, FilterIcon } from '@/ui/primitives/icons'
+import { AddIcon, DotIcon, FilterIcon, PausedIcon } from '@/ui/primitives/icons'
 import { Input } from '@/ui/primitives/input'
 import { Label } from '@/ui/primitives/label'
 import { Separator } from '@/ui/primitives/separator'
@@ -134,6 +140,54 @@ const TemplateFilter = memo(function TemplateFilter() {
           <AddIcon className="size-3.5 min-w-3.5" />
         </Button>
       </div>
+    </div>
+  )
+})
+
+const STATUS_FILTER_OPTIONS: {
+  state: SandboxState
+  badge: React.ReactNode
+}[] = [
+  {
+    state: 'running',
+    badge: (
+      <Badge variant="positive" className="uppercase">
+        <DotIcon className="size-3 fill-current" />
+        Running
+      </Badge>
+    ),
+  },
+  {
+    state: 'paused',
+    badge: (
+      <Badge variant="warning" className="uppercase">
+        <PausedIcon className="size-2 fill-current" />
+        Paused
+      </Badge>
+    ),
+  },
+]
+
+const StatusFilter = memo(function StatusFilter() {
+  const statusFilters = useSandboxListTableStore((state) => state.statusFilters)
+  const toggleStatusFilter = useSandboxListTableStore(
+    (state) => state.toggleStatusFilter
+  )
+
+  return (
+    <div>
+      {STATUS_FILTER_OPTIONS.map(({ state, badge }) => (
+        <DropdownMenuCheckboxItem
+          key={state}
+          checked={statusFilters.includes(state)}
+          onSelect={(e) => {
+            e.preventDefault()
+            toggleStatusFilter(state)
+          }}
+        >
+          {badge}
+        </DropdownMenuCheckboxItem>
+      ))}
     </div>
   )
 })
@@ -265,10 +319,13 @@ const ResourcesFilter = memo(function ResourcesFilter() {
 
 // Main component
 export interface SandboxesTableFiltersProps
-  extends React.HTMLAttributes<HTMLDivElement> {}
+  extends React.HTMLAttributes<HTMLDivElement> {
+  showStatusFilter?: boolean
+}
 
 const SandboxesTableFilters = memo(function SandboxesTableFilters({
   className,
+  showStatusFilter = false,
   ...props
 }: SandboxesTableFiltersProps) {
   const startedAtFilter = useSandboxListTableStore(
@@ -279,6 +336,7 @@ const SandboxesTableFilters = memo(function SandboxesTableFilters({
   )
   const cpuCount = useSandboxListTableStore((state) => state.cpuCount)
   const memoryMB = useSandboxListTableStore((state) => state.memoryMB)
+  const statusFilters = useSandboxListTableStore((state) => state.statusFilters)
   const setStartedAtFilter = useSandboxListTableStore(
     (state) => state.setStartedAtFilter
   )
@@ -287,6 +345,9 @@ const SandboxesTableFilters = memo(function SandboxesTableFilters({
   )
   const setCpuCount = useSandboxListTableStore((state) => state.setCpuCount)
   const setMemoryMB = useSandboxListTableStore((state) => state.setMemoryMB)
+  const toggleStatusFilter = useSandboxListTableStore(
+    (state) => state.toggleStatusFilter
+  )
 
   const handleTemplateFilterClick = useCallback(
     (filter: string) => {
@@ -333,6 +394,16 @@ const SandboxesTableFilters = memo(function SandboxesTableFilters({
                 </DropdownMenuSubContent>
               </DropdownMenuPortal>
             </DropdownMenuSub>
+            {showStatusFilter && (
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>Status</DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent>
+                    <StatusFilter />
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+            )}
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -367,6 +438,18 @@ const SandboxesTableFilters = memo(function SandboxesTableFilters({
           onClick={() => setMemoryMB(undefined)}
         />
       )}
+      {showStatusFilter &&
+        isStatusFilterActive(statusFilters) &&
+        statusFilters.map((status) => (
+          <TableFilterButton
+            key={status}
+            label="Status"
+            value={status}
+            onClick={() => {
+              toggleStatusFilter(status === 'running' ? 'paused' : 'running')
+            }}
+          />
+        ))}
     </div>
   )
 })

@@ -17,7 +17,7 @@ import {
   MetadataCell,
   RamUsageCell,
   StartedAtCell,
-  StateCell,
+  StatusCell,
   TemplateCell,
 } from './table-cells'
 
@@ -133,10 +133,11 @@ export const sandboxListColumns: ColumnDef<SandboxListRow>[] = [
     enableGlobalFilter: true,
   },
   {
+    // The column is presented as "Status", but the API field is `state`.
     accessorKey: 'state',
-    id: 'state',
-    header: 'State',
-    cell: StateCell,
+    id: 'status',
+    header: 'Status',
+    cell: StatusCell,
     size: 90,
     minSize: 80,
     enableResizing: false,

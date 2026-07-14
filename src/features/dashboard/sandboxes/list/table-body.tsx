@@ -6,7 +6,10 @@ import { Button } from '@/ui/primitives/button'
 import { AddIcon, CloseIcon } from '@/ui/primitives/icons'
 import SandboxesListEmpty from './empty'
 import { useSandboxesMetrics } from './hooks/use-sandboxes-metrics'
-import { useSandboxListTableStore } from './stores/table-store'
+import {
+  isStatusFilterActive,
+  useSandboxListTableStore,
+} from './stores/table-store'
 import type { SandboxListRow, SandboxListTable } from './table-config'
 import { SandboxesTableRow } from './table-row'
 
@@ -41,6 +44,7 @@ export const SandboxesTableBody = ({
       state.templateFilters.length > 0 ||
       state.cpuCount !== undefined ||
       state.memoryMB !== undefined ||
+      isStatusFilterActive(state.statusFilters) ||
       Boolean(state.globalFilter)
     )
   })

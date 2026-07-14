@@ -3,6 +3,7 @@
 import type { OnChangeFn, SortingState } from '@tanstack/react-table'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
+import type { SandboxState } from '@/core/modules/sandboxes/models'
 import { areStringArraysEqual } from '@/lib/utils/array'
 import { createHashStorage } from '@/lib/utils/store'
 import { trackSandboxListInteraction } from '../tracking'
@@ -19,6 +20,14 @@ type SandboxListPollingInterval =
   (typeof sandboxListPollingIntervals)[number]['value']
 
 export type SandboxStartedAtFilter = '1h ago' | '6h ago' | '12h ago' | undefined
+
+export const sandboxListDefaultStatusFilters: SandboxState[] = [
+  'running',
+  'paused',
+]
+
+export const isStatusFilterActive = (statusFilters: SandboxState[]) =>
+  statusFilters.length === 1
 
 export const sandboxListDefaultSorting: SortingState = [
   { id: 'startedAt', desc: true },
@@ -48,6 +57,7 @@ interface SandboxListTableState {
   templateFilters: string[]
   cpuCount: number | undefined
   memoryMB: number | undefined
+  statusFilters: SandboxState[]
 }
 
 interface SandboxListTableActions {
@@ -60,6 +70,7 @@ interface SandboxListTableActions {
   setTemplateFilters: (filters: string[]) => void
   setCpuCount: (count: number | undefined) => void
   setMemoryMB: (mb: number | undefined) => void
+  toggleStatusFilter: (state: SandboxState) => void
   resetFilters: () => void
 
   // Page actions
@@ -81,6 +92,7 @@ const initialState: SandboxListTableState = {
   templateFilters: [],
   cpuCount: undefined,
   memoryMB: undefined,
+  statusFilters: sandboxListDefaultStatusFilters,
 }
 
 export const useSandboxListTableStore = create<SandboxListTableStore>()(
@@ -239,6 +251,41 @@ export const useSandboxListTableStore = create<SandboxListTableStore>()(
         })
       },
 
+      toggleStatusFilter: (statusToToggle) => {
+        let nextStatusFilters: SandboxState[] | null = null
+
+        set((state) => {
+          const isSelected = state.statusFilters.includes(statusToToggle)
+
+          // Keep at least one state selected — deselecting the last one
+          // would make the list always empty.
+          if (isSelected && state.statusFilters.length === 1) {
+            return state
+          }
+
+          // Rebuild from the defaults to keep a canonical order, so the
+          // resulting query key is stable regardless of toggle order.
+          const statusFilters = isSelected
+            ? state.statusFilters.filter((s) => s !== statusToToggle)
+            : sandboxListDefaultStatusFilters.filter(
+                (s) => state.statusFilters.includes(s) || s === statusToToggle
+              )
+
+          nextStatusFilters = statusFilters
+
+          return { statusFilters }
+        })
+
+        if (!nextStatusFilters) {
+          return
+        }
+
+        trackSandboxListInteraction('filtered', {
+          type: 'status',
+          value: (nextStatusFilters as SandboxState[]).join(','),
+        })
+      },
+
       resetFilters: () => {
         let didResetFilters = false
 
@@ -248,7 +295,8 @@ export const useSandboxListTableStore = create<SandboxListTableStore>()(
             state.templateFilters.length > 0 ||
             state.cpuCount !== initialState.cpuCount ||
             state.memoryMB !== initialState.memoryMB ||
-            state.globalFilter !== initialState.globalFilter
+            state.globalFilter !== initialState.globalFilter ||
+            isStatusFilterActive(state.statusFilters)
 
           if (!hasFilterChanges) {
             return state
@@ -262,6 +310,7 @@ export const useSandboxListTableStore = create<SandboxListTableStore>()(
             cpuCount: initialState.cpuCount,
             memoryMB: initialState.memoryMB,
             globalFilter: initialState.globalFilter,
+            statusFilters: initialState.statusFilters,
           }
         })
 

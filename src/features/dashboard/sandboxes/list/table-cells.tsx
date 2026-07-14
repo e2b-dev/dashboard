@@ -137,7 +137,7 @@ export const DiskUsageCell = ({
   </div>
 )
 
-export function StateCell({ row }: CellContext<SandboxListRow, unknown>) {
+export function StatusCell({ row }: CellContext<SandboxListRow, unknown>) {
   const state = row.original.state
 
   if (state === 'paused') {

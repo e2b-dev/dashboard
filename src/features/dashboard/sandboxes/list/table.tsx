@@ -2,6 +2,7 @@
 
 import {
   keepPreviousData,
+  useQuery,
   useSuspenseInfiniteQuery,
   useSuspenseQuery,
 } from '@tanstack/react-query'
@@ -18,8 +19,12 @@ import {
 import { subHours } from 'date-fns'
 import { useEffect, useMemo, useRef } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
-import type { Sandboxes } from '@/core/modules/sandboxes/models'
-import { useSandboxListTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
+import type { Sandboxes, SandboxState } from '@/core/modules/sandboxes/models'
+import { SandboxIdSchema } from '@/core/shared/schemas/api'
+import {
+  isStatusFilterActive,
+  useSandboxListTableStore,
+} from '@/features/dashboard/sandboxes/list/stores/table-store'
 import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils'
@@ -57,11 +62,13 @@ function buildColumnFilters({
   templateFilters,
   cpuCount,
   memoryMB,
+  statusFilters,
 }: {
   startedAtFilter: SandboxStartedAtFilter
   templateFilters: string[]
   cpuCount?: number
   memoryMB?: number
+  statusFilters?: SandboxState[]
 }): ColumnFiltersState {
   const filters: ColumnFiltersState = []
 
@@ -84,10 +91,29 @@ function buildColumnFilters({
     filters.push({ id: 'ramUsage', value: memoryMB })
   }
 
+  if (statusFilters && isStatusFilterActive(statusFilters)) {
+    filters.push({ id: 'status', value: statusFilters[0] })
+  }
+
   return filters
 }
 
 const SANDBOXES_PAGE_SIZE = 50
+
+const SANDBOX_ID_EXACT_SEARCH_MIN_LENGTH = 16
+
+function getSearchedSandboxId(globalFilter: string): string | null {
+  const query = globalFilter.trim()
+
+  if (
+    query.length < SANDBOX_ID_EXACT_SEARCH_MIN_LENGTH ||
+    !SandboxIdSchema.safeParse(query).success
+  ) {
+    return null
+  }
+
+  return query
+}
 
 interface SandboxesTableViewProps {
   sandboxes: Sandboxes
@@ -126,11 +152,14 @@ function SandboxesTableView({
     templateFilters,
     cpuCount,
     memoryMB,
+    statusFilters,
     sorting,
     globalFilter,
     setSorting,
     setGlobalFilter,
   } = useSandboxListTableStore()
+
+  const hasStatusColumn = columns.some((column) => column.id === 'status')
 
   const columnFilters = useMemo(
     () =>
@@ -139,8 +168,16 @@ function SandboxesTableView({
         templateFilters,
         cpuCount,
         memoryMB,
+        statusFilters: hasStatusColumn ? statusFilters : undefined,
       }),
-    [startedAtFilter, templateFilters, cpuCount, memoryMB]
+    [
+      startedAtFilter,
+      templateFilters,
+      cpuCount,
+      memoryMB,
+      statusFilters,
+      hasStatusColumn,
+    ]
   )
 
   const activeSorting = getSandboxListEffectiveSorting(sorting)
@@ -256,6 +293,8 @@ export function NewSandboxesTable() {
   const pollingInterval = useSandboxListTableStore(
     (state) => state.pollingInterval
   )
+  const statusFilters = useSandboxListTableStore((state) => state.statusFilters)
+  const globalFilter = useSandboxListTableStore((state) => state.globalFilter)
 
   const {
     data,
@@ -266,7 +305,11 @@ export function NewSandboxesTable() {
     isFetchingNextPage,
   } = useSuspenseInfiniteQuery(
     trpc.sandboxes.listSandboxesPaginated.infiniteQueryOptions(
-      { teamSlug, limit: SANDBOXES_PAGE_SIZE },
+      {
+        teamSlug,
+        limit: SANDBOXES_PAGE_SIZE,
+        states: isStatusFilterActive(statusFilters) ? statusFilters : undefined,
+      },
       {
         getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
         initialCursor: undefined,
@@ -278,10 +321,34 @@ export function NewSandboxesTable() {
     )
   )
 
-  const sandboxes = useMemo(
-    () => data.pages.flatMap((page) => page.sandboxes),
-    [data]
+  // The search input is debounced into globalFilter, so this fires at most
+  // once per pause in typing.
+  const searchedSandboxId = getSearchedSandboxId(globalFilter)
+  const { data: exactMatch } = useQuery(
+    trpc.sandboxes.findSandboxById.queryOptions(
+      { teamSlug, sandboxId: searchedSandboxId ?? '' },
+      {
+        enabled: searchedSandboxId !== null,
+        staleTime: 30_000,
+      }
+    )
   )
+
+  const sandboxes = useMemo(() => {
+    const loaded = data.pages.flatMap((page) => page.sandboxes)
+
+    // Guard against results retained from a previous query after the search
+    // was cleared or edited.
+    if (
+      !exactMatch ||
+      exactMatch.sandboxID !== searchedSandboxId ||
+      loaded.some((sandbox) => sandbox.sandboxID === exactMatch.sandboxID)
+    ) {
+      return loaded
+    }
+
+    return [...loaded, exactMatch]
+  }, [data, exactMatch, searchedSandboxId])
 
   return (
     <SandboxesTableView
