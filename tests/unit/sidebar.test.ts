@@ -5,11 +5,15 @@ describe('filterSidebarLinks', () => {
   it('shows each feature-flagged page independently', () => {
     const agentsOnly = filterSidebarLinks(
       SIDEBAR_MAIN_LINKS,
-      (flagId) => flagId === 'agentsEnabled'
+      'agents-team',
+      (flagId) => flagId === 'agentsEnabled',
+      () => []
     )
     const integrationsOnly = filterSidebarLinks(
       SIDEBAR_MAIN_LINKS,
-      (flagId) => flagId === 'integrationsEnabled'
+      'integrations-team',
+      () => false,
+      (flagId) => (flagId === 'integrationsTeams' ? ['integrations-team'] : [])
     )
 
     expect(agentsOnly.map((link) => link.label)).toContain('Agents')
@@ -20,11 +24,18 @@ describe('filterSidebarLinks', () => {
 
   it('does not evaluate flags for unflagged links', () => {
     const isEnabled = vi.fn(() => false)
+    const getTeamIds = vi.fn(() => [])
 
-    const visibleLinks = filterSidebarLinks(SIDEBAR_MAIN_LINKS, isEnabled)
+    const visibleLinks = filterSidebarLinks(
+      SIDEBAR_MAIN_LINKS,
+      'disabled-team',
+      isEnabled,
+      getTeamIds
+    )
 
     expect(visibleLinks.map((link) => link.label)).not.toContain('Agents')
     expect(visibleLinks.map((link) => link.label)).not.toContain('Integrations')
-    expect(isEnabled).toHaveBeenCalledTimes(2)
+    expect(isEnabled).toHaveBeenCalledTimes(1)
+    expect(getTeamIds).toHaveBeenCalledTimes(1)
   })
 })

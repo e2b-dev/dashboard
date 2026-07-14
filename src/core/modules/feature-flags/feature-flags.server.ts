@@ -5,6 +5,7 @@ import {
   type BooleanFeatureFlagId,
   FEATURE_FLAGS,
   type FeatureFlagId,
+  type PayloadFeatureFlagId,
 } from '@/core/modules/feature-flags/definitions'
 import type {
   EvaluatedFeatureFlag,
@@ -23,6 +24,10 @@ export type FeatureFlagService = {
     flagId: BooleanFeatureFlagId,
     context: FeatureFlagContext
   ): Promise<boolean>
+  getPayload<Id extends PayloadFeatureFlagId>(
+    flagId: Id,
+    context: FeatureFlagContext
+  ): Promise<(typeof FEATURE_FLAGS)[Id]['defaultValue']>
   evaluateAll(context: FeatureFlagContext): Promise<EvaluatedFeatureFlag[]>
 }
 
@@ -103,6 +108,16 @@ export function createFeatureFlagService(
 
       logUnexpectedFlagValue(flag, value)
       return flag.defaultValue
+    },
+
+    async getPayload(flagId, context) {
+      const flag = FEATURE_FLAGS[flagId]
+      const snapshot = await provider.evaluate(context, [flag])
+
+      return parsePayload(
+        flag,
+        snapshot.getPayload(flag.key)
+      ) as (typeof FEATURE_FLAGS)[typeof flagId]['defaultValue']
     },
 
     async evaluateAll(context) {

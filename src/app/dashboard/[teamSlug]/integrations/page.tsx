@@ -33,21 +33,18 @@ export default async function IntegrationsPage({
     notFound()
   }
 
-  const integrationsEnabled = await featureFlags.isEnabled(
-    'integrationsEnabled',
-    {
-      user: {
-        id: authContext.user.id,
-        email: authContext.user.email ?? undefined,
-      },
-      team: {
-        id: teamId.data,
-        slug: teamSlug,
-      },
-    }
-  )
+  const enabledTeams = await featureFlags.getPayload('integrationsTeams', {
+    user: {
+      id: authContext.user.id,
+      email: authContext.user.email ?? undefined,
+    },
+    team: {
+      id: teamId.data,
+      slug: teamSlug,
+    },
+  })
 
-  if (!integrationsEnabled) {
+  if (!enabledTeams.includes(teamId.data)) {
     notFound()
   }
 

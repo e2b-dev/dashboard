@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import type { FeatureFlagDefinition } from '@/core/modules/feature-flags/types'
 
 export const FEATURE_FLAGS = {
@@ -5,14 +6,15 @@ export const FEATURE_FLAGS = {
     kind: 'boolean',
     key: 'agents_enabled',
     defaultValue: false,
-    description: 'Enables the dashboard agents page.',
-    exposure: 'both',
+    description: 'Enables the dashboard agents launcher.',
+    exposure: 'server',
   },
-  integrationsEnabled: {
-    kind: 'boolean',
-    key: 'integrations_enabled',
-    defaultValue: false,
-    description: 'Enables the dashboard integrations page.',
+  integrationsTeams: {
+    kind: 'payload',
+    key: 'integrations_teams',
+    defaultValue: [] as string[],
+    schema: z.array(z.string()),
+    description: 'Team IDs with access to the dashboard integrations page.',
     exposure: 'both',
   },
   isAdmin: {
