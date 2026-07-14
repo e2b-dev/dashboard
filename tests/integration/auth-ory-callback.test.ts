@@ -13,6 +13,8 @@ import {
 const exchangeMock = vi.hoisted(() => vi.fn())
 const bootstrapMock = vi.hoisted(() => vi.fn())
 const readExternalIdMock = vi.hoisted(() => vi.fn())
+const readAuthMethodMock = vi.hoisted(() => vi.fn())
+const trackSignUpMock = vi.hoisted(() => vi.fn())
 
 vi.mock('@/core/server/auth/ory/oauth-client', () => ({
   exchangeOryCallback: exchangeMock,
@@ -24,6 +26,11 @@ vi.mock('@/core/server/auth/ory/dashboard-bootstrap', () => ({
 
 vi.mock('@/core/server/auth/ory/session', () => ({
   readKratosExternalId: readExternalIdMock,
+  readKratosAuthMethod: readAuthMethodMock,
+}))
+
+vi.mock('@/core/server/auth/ory/signup-tracking', () => ({
+  trackOrySignUpEvent: trackSignUpMock,
 }))
 
 vi.mock('@/core/shared/clients/logger/logger', () => ({
@@ -71,6 +78,8 @@ describe('Ory OAuth callback', () => {
     bootstrapMock.mockReset().mockResolvedValue(true)
     // Default to an unprovisioned identity so bootstrap runs as before.
     readExternalIdMock.mockReset().mockResolvedValue(null)
+    readAuthMethodMock.mockReset().mockResolvedValue('github')
+    trackSignUpMock.mockReset()
   })
 
   afterEach(() => {
@@ -123,13 +132,17 @@ describe('Ory OAuth callback', () => {
     expect(response.cookies.get(E2B_SESSION_COOKIE)?.value).toBeUndefined()
   })
 
-  it('bootstraps when the identity has no external_id yet', async () => {
+  it('bootstraps and tracks sign_up when the identity has no external_id yet', async () => {
     await GET(await callbackRequest())
 
     expect(bootstrapMock).toHaveBeenCalledOnce()
+    expect(trackSignUpMock).toHaveBeenCalledOnce()
+    expect(trackSignUpMock).toHaveBeenCalledWith(
+      expect.objectContaining({ method: 'github' })
+    )
   })
 
-  it('skips bootstrap when the identity already has an external_id', async () => {
+  it('skips bootstrap and sign_up tracking when the identity already has an external_id', async () => {
     readExternalIdMock.mockResolvedValueOnce('user-ext-123')
 
     const response = await GET(
@@ -137,6 +150,7 @@ describe('Ory OAuth callback', () => {
     )
 
     expect(bootstrapMock).not.toHaveBeenCalled()
+    expect(trackSignUpMock).not.toHaveBeenCalled()
     // The session is still sealed and the user lands on their destination.
     const sealed = response.cookies.get(E2B_SESSION_COOKIE)?.value
     expect(await openSessionCookie(sealed)).toEqual(tokens)
