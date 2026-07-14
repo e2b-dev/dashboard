@@ -5,7 +5,6 @@ steps:
     env:
       - NEXT_PUBLIC_E2B_DOMAIN=${_E2B_DOMAIN}
       - NEXT_PUBLIC_DASHBOARD_API_URL=${_DASHBOARD_API_URL}
-      - NEXT_PUBLIC_E2B_SANDBOX_URL=${_SANDBOX_URL}
       - NEXT_PUBLIC_INFRA_API_URL=${_INFRA_API_URL}
       - NEXT_PUBLIC_ORY_SDK_URL=${_KRATOS_PUBLIC_URL}
       - NEXT_PUBLIC_INCLUDE_BILLING=0
@@ -48,7 +47,6 @@ substitutions:
   _IMAGE: required
   _E2B_DOMAIN: required
   _DASHBOARD_API_URL: required
-  _SANDBOX_URL: required
   _INFRA_API_URL: required
   _KRATOS_PUBLIC_URL: required
   _HYDRA_PUBLIC_URL: required
