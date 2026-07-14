@@ -444,7 +444,10 @@ const SandboxesTableFilters = memo(function SandboxesTableFilters({
           <TableFilterButton
             key={status}
             label="Status"
-            value={status}
+            value={
+              STATUS_FILTER_OPTIONS.find((o) => o.state === status)?.badge ??
+              status
+            }
             onClick={() => {
               toggleStatusFilter(status === 'running' ? 'paused' : 'running')
             }}

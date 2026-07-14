@@ -3,9 +3,9 @@ import { Button } from './primitives/button'
 import { CloseIcon } from './primitives/icons'
 
 interface TableFilterButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'value'> {
   label: string
-  value: string
+  value: React.ReactNode
 }
 
 export const TableFilterButton = React.forwardRef<
@@ -24,7 +24,11 @@ export const TableFilterButton = React.forwardRef<
       {value && (
         <>
           <span className="text-fg-tertiary">·</span>
-          <span className="truncate text-fg">{value}</span>
+          {typeof value === 'string' ? (
+            <span className="truncate text-fg">{value}</span>
+          ) : (
+            value
+          )}
         </>
       )}
       <CloseIcon />
