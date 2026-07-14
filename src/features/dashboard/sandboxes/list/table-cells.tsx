@@ -159,7 +159,7 @@ export function StatusCell({ row }: CellContext<SandboxListRow, unknown>) {
 
 export function IdCell({ getValue }: CellContext<SandboxListRow, unknown>) {
   return (
-    <div className="overflow-x-hidden whitespace-nowrap font-mono prose-table-numeric text-fg-tertiary select-all">
+    <div className="overflow-x-hidden whitespace-nowrap font-mono prose-table-numeric text-fg-secondary">
       {getValue() as string}
     </div>
   )
