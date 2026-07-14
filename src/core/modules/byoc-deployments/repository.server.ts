@@ -18,10 +18,14 @@ export interface ByocLocation {
   zone: string
 }
 
-const byocLocationSchema = z.object({
-  region: z.string().regex(/^[a-z][a-z0-9-]+$/),
-  zone: z.string().regex(/^[a-z][a-z0-9-]+$/),
-})
+const byocLocationSchema = z
+  .object({
+    region: z.string().regex(/^[a-z][a-z0-9-]+$/),
+    zone: z.string().regex(/^[a-z][a-z0-9-]+$/),
+  })
+  .refine(isValidGcpLocation, {
+    message: 'Zone must belong to the selected GCP region.',
+  })
 
 const byocLocationsSchema = z.array(byocLocationSchema).min(1)
 
@@ -337,10 +341,10 @@ export function createByocDeploymentsRepository({
       return allocatedTarget
     }
 
-    const [defaultLocation] = getAllowedLocations()
+    const [defaultLocation] = getSuggestedLocations()
     const selectedLocation = requestedLocation ?? defaultLocation
     if (!selectedLocation) throw invalidLocationsConfiguration()
-    assertAllowedLocation(selectedLocation)
+    assertValidGcpLocation(selectedLocation)
     return getTarget(selectedLocation)
   }
 
@@ -362,7 +366,7 @@ export function createByocDeploymentsRepository({
       allocatedTarget
         ? project.default_region === allocatedTarget.region &&
           project.default_zone === allocatedTarget.zone
-        : isAllowedLocation({
+        : isValidGcpLocation({
             region: project.default_region,
             zone: project.default_zone,
           })
@@ -397,7 +401,7 @@ export function createByocDeploymentsRepository({
 
   return {
     locations() {
-      return getAllowedLocations()
+      return getSuggestedLocations()
     },
 
     allocatedTarget() {
@@ -408,7 +412,7 @@ export function createByocDeploymentsRepository({
       expectedLocation: ByocLocation,
       location: ByocLocation
     ) {
-      assertAllowedLocation(location)
+      assertValidGcpLocation(location)
       const current = await getAllocatedTarget()
       if (!current) {
         throw new TRPCError({
@@ -550,7 +554,7 @@ export function createByocDeploymentsRepository({
               allocatedTarget
                 ? project.default_region === allocatedTarget.region &&
                   project.default_zone === allocatedTarget.zone
-                : isAllowedLocation({
+                : isValidGcpLocation({
                     region: project.default_region,
                     zone: project.default_zone,
                   })
@@ -877,6 +881,9 @@ function getPublicRunnerError(
   if (errorCode === 'deployer_project_mismatch') {
     return 'The BYOC deployer service account must belong to the selected GCP project.'
   }
+  if (errorCode === 'invalid_gcp_location') {
+    return 'The selected GCP zone is not available in this project. Choose another region and zone.'
+  }
   if (errorCode === 'target_identity_mismatch') {
     return 'The BYOC deployer does not match this team. Refresh the setup and use the generated identity.'
   }
@@ -1013,7 +1020,7 @@ function getByocTargetBase(
   }
 }
 
-function getAllowedLocations(): ByocLocation[] {
+function getSuggestedLocations(): ByocLocation[] {
   const configured = process.env.BYOC_GCP_LOCATIONS?.trim()
   if (configured) {
     let value: unknown
@@ -1049,18 +1056,25 @@ function invalidLocationsConfiguration() {
   })
 }
 
-function isAllowedLocation(location: ByocLocation) {
-  return getAllowedLocations().some(
-    (allowed) =>
-      allowed.region === location.region && allowed.zone === location.zone
+function isValidGcpLocation(location: ByocLocation) {
+  const { region, zone } = location
+  return (
+    region.length <= 63 &&
+    zone.length <= 63 &&
+    /^[a-z][a-z0-9-]*[0-9]$/.test(region) &&
+    region.includes('-') &&
+    !region.includes('--') &&
+    zone.length === region.length + 2 &&
+    zone.startsWith(`${region}-`) &&
+    /^[a-z]$/.test(zone.at(-1) ?? '')
   )
 }
 
-function assertAllowedLocation(location: ByocLocation) {
-  if (!isAllowedLocation(location)) {
+function assertValidGcpLocation(location: ByocLocation) {
+  if (!isValidGcpLocation(location)) {
     throw new TRPCError({
       code: 'BAD_REQUEST',
-      message: 'Select an allowed BYOC region and zone.',
+      message: 'Select a valid GCP region and matching zone.',
     })
   }
 }

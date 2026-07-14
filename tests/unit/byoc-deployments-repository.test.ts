@@ -30,8 +30,8 @@ const targetIdentity = {
   team_id: teamId,
   target_key: targetKey,
   provider: 'gcp' as const,
-  region: 'test-region',
-  zone: 'test-zone-a',
+  region: 'us-test1',
+  zone: 'us-test1-a',
   namespace: targetStem,
   domain_name: `${targetStem}.test.example.com`,
   prefix: `${targetStem}-`,
@@ -98,8 +98,8 @@ function authorization(
   return {
     project_id: projectId,
     name: projectId,
-    default_region: 'test-region',
-    default_zone: 'test-zone-a',
+    default_region: 'us-test1',
+    default_zone: 'us-test1-a',
     namespace: targetStem,
     domain_name: `${targetStem}.test.example.com`,
     prefix: `${targetStem}-`,
@@ -137,8 +137,8 @@ function deployment(overrides: Partial<Deployment> = {}): Deployment {
     provider: 'gcp',
     gcp: {
       project_id: projectId,
-      region: 'test-region',
-      zone: 'test-zone-a',
+      region: 'us-test1',
+      zone: 'us-test1-a',
     },
     domain_name: `${targetStem}.test.example.com`,
     prefix: `${targetStem}-`,
@@ -164,8 +164,8 @@ describe('BYOC deployments repository', () => {
     process.env.BYOC_DOMAIN_NAME = 'test.example.com'
     process.env.BYOC_E2B_PRINCIPAL =
       'serviceAccount:runner@test-control.iam.gserviceaccount.com'
-    process.env.BYOC_GCP_REGION = 'test-region'
-    process.env.BYOC_GCP_ZONE = 'test-zone-a'
+    process.env.BYOC_GCP_REGION = 'us-test1'
+    process.env.BYOC_GCP_ZONE = 'us-test1-a'
     delete process.env.BYOC_GCP_LOCATIONS
     process.env.NEXT_PUBLIC_E2B_DOMAIN = 'test.example.com'
     delete process.env.BYOC_E2B_PRINCIPALS
@@ -199,15 +199,15 @@ describe('BYOC deployments repository', () => {
     mockRunner()
 
     const target = await createByocDeploymentsRepository({ teamId }).target({
-      region: 'test-region',
-      zone: 'test-zone-a',
+      region: 'us-test1',
+      zone: 'us-test1-a',
     })
 
     expect(target).toEqual({
       deployerAccountId: targetStem,
       sdkDomain: 'test.example.com',
-      region: 'test-region',
-      zone: 'test-zone-a',
+      region: 'us-test1',
+      zone: 'us-test1-a',
       namespace: targetStem,
       domainName: `${targetStem}.test.example.com`,
       prefix: `${targetStem}-`,
@@ -231,8 +231,8 @@ describe('BYOC deployments repository', () => {
     expect(JSON.parse(String(init?.body))).toEqual({
       team_id: teamId,
       provider: 'gcp',
-      region: 'test-region',
-      zone: 'test-zone-a',
+      region: 'us-test1',
+      zone: 'us-test1-a',
       domain_base: 'test.example.com',
       e2b_principal:
         'serviceAccount:runner@test-control.iam.gserviceaccount.com',
@@ -249,19 +249,19 @@ describe('BYOC deployments repository', () => {
     const target = await createByocDeploymentsRepository({ teamId }).target()
 
     expect(target).toMatchObject({
-      region: 'test-region',
-      zone: 'test-zone-a',
+      region: 'us-test1',
+      zone: 'us-test1-a',
     })
     expect(JSON.parse(String(fetchCall(1)[1]?.body))).toMatchObject({
-      region: 'test-region',
-      zone: 'test-zone-a',
+      region: 'us-test1',
+      zone: 'us-test1-a',
     })
   })
 
   it('keeps legacy target callers on an existing non-default allocation', async () => {
     process.env.BYOC_GCP_LOCATIONS = JSON.stringify([
-      { region: 'default-region', zone: 'default-region-a' },
-      { region: 'test-region', zone: 'test-zone-a' },
+      { region: 'us-default1', zone: 'us-default1-a' },
+      { region: 'us-test1', zone: 'us-test1-a' },
     ])
     mockRunner({
       routes: {
@@ -273,8 +273,8 @@ describe('BYOC deployments repository', () => {
     await expect(
       createByocDeploymentsRepository({ teamId }).target()
     ).resolves.toMatchObject({
-      region: 'test-region',
-      zone: 'test-zone-a',
+      region: 'us-test1',
+      zone: 'us-test1-a',
     })
     expect(fetch).toHaveBeenCalledTimes(1)
   })
@@ -284,15 +284,15 @@ describe('BYOC deployments repository', () => {
     const repository = createByocDeploymentsRepository({ teamId })
 
     const [first, second] = await Promise.all([
-      repository.target({ region: 'test-region', zone: 'test-zone-a' }),
-      repository.target({ region: 'test-region', zone: 'test-zone-a' }),
+      repository.target({ region: 'us-test1', zone: 'us-test1-a' }),
+      repository.target({ region: 'us-test1', zone: 'us-test1-a' }),
     ])
 
     expect(second).toBe(first)
     expect(fetch).toHaveBeenCalledTimes(2)
   })
 
-  it('returns configured allowed locations without allocating a target', () => {
+  it('returns configured suggested locations without allocating a target', () => {
     process.env.BYOC_GCP_LOCATIONS = JSON.stringify([
       { region: 'us-central1', zone: 'us-central1-a' },
       { region: 'us-east4', zone: 'us-east4-a' },
@@ -320,8 +320,8 @@ describe('BYOC deployments repository', () => {
       createByocDeploymentsRepository({ teamId }).allocatedTarget()
     ).resolves.toMatchObject({
       deployerAccountId: targetStem,
-      region: 'test-region',
-      zone: 'test-zone-a',
+      region: 'us-test1',
+      zone: 'us-test1-a',
     })
     expect(requestKey(...fetchCall(0)).key).toBe(
       `GET /target-identities/${teamId}`
@@ -346,7 +346,7 @@ describe('BYOC deployments repository', () => {
 
   it('updates an allocated location with compare-and-swap metadata', async () => {
     process.env.BYOC_GCP_LOCATIONS = JSON.stringify([
-      { region: 'test-region', zone: 'test-zone-a' },
+      { region: 'us-test1', zone: 'us-test1-a' },
       { region: 'europe-west1', zone: 'europe-west1-b' },
     ])
     mockRunner({
@@ -365,7 +365,7 @@ describe('BYOC deployments repository', () => {
     const updated = await createByocDeploymentsRepository({
       teamId,
     }).updateTargetLocation(
-      { region: 'test-region', zone: 'test-zone-a' },
+      { region: 'us-test1', zone: 'us-test1-a' },
       { region: 'europe-west1', zone: 'europe-west1-b' }
     )
 
@@ -381,8 +381,8 @@ describe('BYOC deployments repository', () => {
       `PATCH /target-identities/${teamId}/location`
     )
     expect(JSON.parse(String(init?.body))).toEqual({
-      expected_region: 'test-region',
-      expected_zone: 'test-zone-a',
+      expected_region: 'us-test1',
+      expected_zone: 'us-test1-a',
       region: 'europe-west1',
       zone: 'europe-west1-b',
     })
@@ -390,7 +390,7 @@ describe('BYOC deployments repository', () => {
 
   it('rejects a location response that changes the stable target identity', async () => {
     process.env.BYOC_GCP_LOCATIONS = JSON.stringify([
-      { region: 'test-region', zone: 'test-zone-a' },
+      { region: 'us-test1', zone: 'us-test1-a' },
       { region: 'europe-west1', zone: 'europe-west1-b' },
     ])
     mockRunner({
@@ -413,7 +413,7 @@ describe('BYOC deployments repository', () => {
 
     await expect(
       createByocDeploymentsRepository({ teamId }).updateTargetLocation(
-        { region: 'test-region', zone: 'test-zone-a' },
+        { region: 'us-test1', zone: 'us-test1-a' },
         { region: 'europe-west1', zone: 'europe-west1-b' }
       )
     ).rejects.toThrow('changed the stable target identity')
@@ -430,7 +430,7 @@ describe('BYOC deployments repository', () => {
     ],
   ])('maps %s location conflicts', async (code, message) => {
     process.env.BYOC_GCP_LOCATIONS = JSON.stringify([
-      { region: 'test-region', zone: 'test-zone-a' },
+      { region: 'us-test1', zone: 'us-test1-a' },
       { region: 'europe-west1', zone: 'europe-west1-b' },
     ])
     mockRunner({
@@ -444,24 +444,41 @@ describe('BYOC deployments repository', () => {
 
     await expect(
       createByocDeploymentsRepository({ teamId }).updateTargetLocation(
-        { region: 'test-region', zone: 'test-zone-a' },
+        { region: 'us-test1', zone: 'us-test1-a' },
         { region: 'europe-west1', zone: 'europe-west1-b' }
       )
     ).rejects.toMatchObject({ code: 'CONFLICT', message })
   })
 
-  it('rejects a new location outside the configured allowlist', async () => {
+  it('accepts a valid location outside the configured suggestions', async () => {
     process.env.BYOC_GCP_LOCATIONS = JSON.stringify([
       { region: 'us-central1', zone: 'us-central1-a' },
     ])
-    mockRunner()
+    mockRunner({
+      identity: {
+        region: 'us-east4',
+        zone: 'us-east4-a',
+      },
+    })
 
     await expect(
       createByocDeploymentsRepository({ teamId }).target({
         region: 'us-east4',
         zone: 'us-east4-a',
       })
-    ).rejects.toThrow('Select an allowed BYOC region and zone.')
+    ).resolves.toMatchObject({ region: 'us-east4', zone: 'us-east4-a' })
+    expect(fetch).toHaveBeenCalledTimes(2)
+  })
+
+  it('rejects a zone from another region', async () => {
+    mockRunner()
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).target({
+        region: 'us-east4',
+        zone: 'europe-west1-b',
+      })
+    ).rejects.toThrow('Select a valid GCP region and matching zone.')
     expect(fetch).toHaveBeenCalledTimes(1)
   })
 
@@ -483,7 +500,7 @@ describe('BYOC deployments repository', () => {
 
   it('keeps retired locations visible and destroyable', async () => {
     process.env.BYOC_GCP_LOCATIONS = JSON.stringify([
-      { region: 'new-region', zone: 'new-region-a' },
+      { region: 'europe-test1', zone: 'europe-test1-a' },
     ])
     const retiredDeployment = deployment()
     mockRunner({
@@ -582,8 +599,8 @@ describe('BYOC deployments repository', () => {
 
     await expect(
       createByocDeploymentsRepository({ teamId }).target({
-        region: 'test-region',
-        zone: 'test-zone-a',
+        region: 'us-test1',
+        zone: 'us-test1-a',
       })
     ).rejects.toMatchObject({ code: 'BAD_GATEWAY' })
   })
@@ -595,8 +612,8 @@ describe('BYOC deployments repository', () => {
 
     await expect(
       createByocDeploymentsRepository({ teamId }).target({
-        region: 'test-region',
-        zone: 'test-zone-a',
+        region: 'us-test1',
+        zone: 'us-test1-a',
       })
     ).rejects.toMatchObject({ code: 'BAD_GATEWAY' })
   })
@@ -606,8 +623,8 @@ describe('BYOC deployments repository', () => {
 
     await expect(
       createByocDeploymentsRepository({ teamId }).target({
-        region: 'test-region',
-        zone: 'test-zone-a',
+        region: 'us-test1',
+        zone: 'us-test1-a',
       })
     ).rejects.toMatchObject({ code: 'BAD_GATEWAY' })
   })
@@ -626,7 +643,7 @@ describe('BYOC deployments repository', () => {
         undefined,
         clientRequestId,
         undefined,
-        { region: 'test-region', zone: 'test-zone-a' }
+        { region: 'us-test1', zone: 'us-test1-a' }
       )
     ).rejects.toMatchObject({ code: 'BAD_GATEWAY' })
     expect(fetch).toHaveBeenCalledTimes(1)
@@ -639,8 +656,8 @@ describe('BYOC deployments repository', () => {
           expect(JSON.parse(String(init.body))).toMatchObject({
             authorized_projects: [
               {
-                default_region: 'test-region',
-                default_zone: 'test-zone-a',
+                default_region: 'us-test1',
+                default_zone: 'us-test1-a',
               },
             ],
           })
@@ -660,7 +677,7 @@ describe('BYOC deployments repository', () => {
 
   it('grandfathers a retired allocated location through connection setup', async () => {
     process.env.BYOC_GCP_LOCATIONS = JSON.stringify([
-      { region: 'new-region', zone: 'new-region-a' },
+      { region: 'europe-test1', zone: 'europe-test1-a' },
     ])
     mockRunner({
       routes: {
@@ -670,8 +687,8 @@ describe('BYOC deployments repository', () => {
           expect(JSON.parse(String(init.body))).toMatchObject({
             authorized_projects: [
               {
-                default_region: 'test-region',
-                default_zone: 'test-zone-a',
+                default_region: 'us-test1',
+                default_zone: 'us-test1-a',
               },
             ],
           })
@@ -691,7 +708,7 @@ describe('BYOC deployments repository', () => {
 
   it('keeps a connection visible after its allocated location is retired', async () => {
     process.env.BYOC_GCP_LOCATIONS = JSON.stringify([
-      { region: 'new-region', zone: 'new-region-a' },
+      { region: 'europe-test1', zone: 'europe-test1-a' },
     ])
     mockRunner({
       routes: {
@@ -709,7 +726,7 @@ describe('BYOC deployments repository', () => {
 
   it('uses a connection after its allocated location is retired', async () => {
     process.env.BYOC_GCP_LOCATIONS = JSON.stringify([
-      { region: 'new-region', zone: 'new-region-a' },
+      { region: 'europe-test1', zone: 'europe-test1-a' },
     ])
     mockRunner({
       routes: {
@@ -745,8 +762,8 @@ describe('BYOC deployments repository', () => {
 
     await expect(
       createByocDeploymentsRepository({ teamId }).target({
-        region: 'test-region',
-        zone: 'test-zone-a',
+        region: 'us-test1',
+        zone: 'us-test1-a',
       })
     ).rejects.toMatchObject({
       code: 'CONFLICT',
@@ -769,8 +786,8 @@ describe('BYOC deployments repository', () => {
               {
                 project_id: projectId,
                 name: projectId,
-                default_region: 'test-region',
-                default_zone: 'test-zone-a',
+                default_region: 'us-test1',
+                default_zone: 'us-test1-a',
                 namespace: targetStem,
                 domain_name: `${targetStem}.test.example.com`,
                 prefix: `${targetStem}-`,
@@ -792,8 +809,8 @@ describe('BYOC deployments repository', () => {
       clientRequestId,
       undefined,
       {
-        region: 'test-region',
-        zone: 'test-zone-a',
+        region: 'us-test1',
+        zone: 'us-test1-a',
       }
     )
 
@@ -828,7 +845,7 @@ describe('BYOC deployments repository', () => {
         undefined,
         clientRequestId,
         undefined,
-        { region: 'test-region', zone: 'test-zone-a' }
+        { region: 'us-test1', zone: 'us-test1-a' }
       )
     ).rejects.toMatchObject({
       code: 'BAD_GATEWAY',
@@ -901,7 +918,7 @@ describe('BYOC deployments repository', () => {
         undefined,
         clientRequestId,
         undefined,
-        { region: 'test-region', zone: 'test-zone-a' }
+        { region: 'us-test1', zone: 'us-test1-a' }
       )
     ).rejects.toMatchObject({
       code: 'FORBIDDEN',
@@ -931,7 +948,7 @@ describe('BYOC deployments repository', () => {
         undefined,
         clientRequestId,
         undefined,
-        { region: 'test-region', zone: 'test-zone-a' }
+        { region: 'us-test1', zone: 'us-test1-a' }
       )
     ).rejects.toMatchObject({
       code: 'BAD_REQUEST',
@@ -960,12 +977,41 @@ describe('BYOC deployments repository', () => {
         undefined,
         clientRequestId,
         undefined,
-        { region: 'test-region', zone: 'test-zone-a' }
+        { region: 'us-test1', zone: 'us-test1-a' }
       )
     ).rejects.toMatchObject({
       code: 'BAD_REQUEST',
       message:
         'The BYOC deployer does not match this team. Refresh the setup and use the generated identity.',
+    })
+  })
+
+  it('maps unavailable GCP locations before creating a connection', async () => {
+    mockRunner({
+      routes: {
+        'POST /cloud-connections': () =>
+          Response.json(
+            {
+              code: 'invalid_gcp_location',
+              error: 'upstream details are not exposed',
+            },
+            { status: 422 }
+          ),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).createCloudConnection(
+        deployerEmail,
+        undefined,
+        clientRequestId,
+        undefined,
+        { region: 'us-test1', zone: 'us-test1-a' }
+      )
+    ).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+      message:
+        'The selected GCP zone is not available in this project. Choose another region and zone.',
     })
   })
 
@@ -1167,8 +1213,8 @@ describe('BYOC deployments repository', () => {
 
     await expect(
       createByocDeploymentsRepository({ teamId }).target({
-        region: 'test-region',
-        zone: 'test-zone-a',
+        region: 'us-test1',
+        zone: 'us-test1-a',
       })
     ).rejects.toMatchObject({ code: 'BAD_GATEWAY' })
   })
