@@ -65,7 +65,10 @@ import {
   recommendedByocOperation,
   recommendedByocOperationLabel,
 } from './operation-action'
-import { targetLocationChangeLocked } from './target-location'
+import {
+  resolvedTargetLocation,
+  targetLocationChangeLocked,
+} from './target-location'
 import { useByocRequestIntents } from './use-byoc-request-intents'
 
 type Deployment = TRPCRouterOutputs['byoc']['listDeployments'][number]
@@ -292,7 +295,6 @@ export function ByocDeploymentPanel({
           trpc.byoc.allocatedTarget.queryOptions({ teamSlug }).queryKey,
           data
         )
-        setSelectedLocation({ region: data.region, zone: data.zone })
         setPendingLocation(undefined)
       },
       onSettled: async () => {
@@ -348,8 +350,13 @@ export function ByocDeploymentPanel({
       }
     : undefined
   const immutableLocation = deployment?.gcp ?? connectionLocation
-  const location = immutableLocation ?? selectedLocation ?? allocatedLocation
   const target = allocatedTargetQuery.data ?? allocateTarget.data
+  const location = resolvedTargetLocation(
+    immutableLocation,
+    selectedLocation,
+    allocatedLocation,
+    !!target
+  )
   const locationChangeLocked = targetLocationChangeLocked(
     connectionsQuery.data,
     deploymentsQuery.data

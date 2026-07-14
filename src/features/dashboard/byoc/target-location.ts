@@ -8,3 +8,17 @@ export function targetLocationChangeLocked(
     deployments.some((deployment) => deployment.status !== 'destroyed')
   )
 }
+
+export function resolvedTargetLocation<T>(
+  immutableLocation: T | undefined,
+  selectedLocation: T | undefined,
+  allocatedLocation: T | undefined,
+  hasAllocatedTarget: boolean
+) {
+  return (
+    immutableLocation ??
+    (hasAllocatedTarget
+      ? allocatedLocation
+      : (selectedLocation ?? allocatedLocation))
+  )
+}
