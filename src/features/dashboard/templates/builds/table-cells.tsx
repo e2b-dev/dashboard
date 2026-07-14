@@ -23,7 +23,7 @@ import {
   TooltipTrigger,
 } from '@/ui/primitives/tooltip'
 import { EnvdVersion } from '../../common/envd-version'
-import ResourceUsage from '../../common/resource-usage'
+import { ResourceSpec } from '../../common/resource-usage'
 
 export function BuildId({ id }: { id: string }) {
   return (
@@ -168,7 +168,7 @@ export function Status({ status, statusMessage }: StatusProps) {
 export function Cpu({ cpuCount }: { cpuCount: number }) {
   return (
     <div className="w-full flex justify-end">
-      <ResourceUsage type="cpu" total={cpuCount} mode="simple" />
+      <ResourceSpec value={cpuCount} unit="Core" />
     </div>
   )
 }
@@ -176,7 +176,7 @@ export function Cpu({ cpuCount }: { cpuCount: number }) {
 export function Memory({ memoryMB }: { memoryMB: number }) {
   return (
     <div className="w-full flex justify-end">
-      <ResourceUsage type="mem" total={memoryMB} mode="simple" />
+      <ResourceSpec value={memoryMB} unit="MB" />
     </div>
   )
 }
@@ -185,7 +185,7 @@ export function Storage({ diskSizeMB }: { diskSizeMB: number | null }) {
   const diskSizeGB = diskSizeMB != null ? diskSizeMB / 1024 : null
   return (
     <div className="w-full flex justify-end">
-      <ResourceUsage type="disk" total={diskSizeGB} mode="simple" />
+      <ResourceSpec value={diskSizeGB} unit="GB" />
     </div>
   )
 }

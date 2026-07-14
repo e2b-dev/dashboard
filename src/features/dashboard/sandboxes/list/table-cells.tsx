@@ -4,13 +4,17 @@ import type { CellContext } from '@tanstack/react-table'
 import Link from 'next/link'
 import { useMemo } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
-import ResourceUsage from '@/features/dashboard/common/resource-usage'
+import {
+  CapacityUsage,
+  CpuUsage,
+  ResourceSpec,
+} from '@/features/dashboard/common/resource-usage'
 import { useTimezone } from '@/features/dashboard/timezone'
 import { formatDateParts } from '@/lib/utils/formatting'
 import { JsonPopover } from '@/ui/json-popover'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
-import { DotIcon, ExternalLinkIcon, PausedIcon } from '@/ui/primitives/icons'
+import { DotIcon, PausedIcon } from '@/ui/primitives/icons'
 import { useDashboard } from '../../context'
 import { useSandboxMetricsStore } from './stores/metrics-store'
 import type { SandboxListRow } from './table-config'
@@ -32,11 +36,10 @@ const CpuUsageCellView = ({
   )
 
   return (
-    <ResourceUsage
-      type="cpu"
-      metrics={cpuUsedPct}
-      total={totalCpu}
-      classNames={{ wrapper: USAGE_TEXT_CLASSNAME }}
+    <CpuUsage
+      usedPct={cpuUsedPct}
+      cores={totalCpu}
+      className={USAGE_TEXT_CLASSNAME}
     />
   )
 }
@@ -53,11 +56,10 @@ const RamUsageCellView = ({
   )
 
   return (
-    <ResourceUsage
-      type="mem"
-      metrics={memUsedMb}
-      total={totalMem}
-      classNames={{ wrapper: USAGE_TEXT_CLASSNAME }}
+    <CapacityUsage
+      usedGb={memUsedMb != null ? memUsedMb / 1024 : memUsedMb}
+      totalGb={totalMem != null ? totalMem / 1024 : totalMem}
+      className={USAGE_TEXT_CLASSNAME}
     />
   )
 }
@@ -74,11 +76,10 @@ const DiskUsageCellView = ({
   )
 
   return (
-    <ResourceUsage
-      type="disk"
-      metrics={diskUsedGb}
-      total={totalDiskGb}
-      classNames={{ wrapper: USAGE_TEXT_CLASSNAME }}
+    <CapacityUsage
+      usedGb={diskUsedGb}
+      totalGb={totalDiskGb}
+      className={USAGE_TEXT_CLASSNAME}
     />
   )
 }
@@ -91,11 +92,10 @@ export const CpuUsageCell = ({ row }: CellContext<SandboxListRow, unknown>) => (
         totalCpu={row.original.cpuCount}
       />
     ) : (
-      <ResourceUsage
-        type="cpu"
-        mode="simple"
-        total={row.original.cpuCount}
-        classNames={{ wrapper: USAGE_TEXT_CLASSNAME }}
+      <ResourceSpec
+        value={row.original.cpuCount}
+        unit="Core"
+        className={USAGE_TEXT_CLASSNAME}
       />
     )}
   </div>
@@ -109,11 +109,10 @@ export const RamUsageCell = ({ row }: CellContext<SandboxListRow, unknown>) => (
         totalMem={row.original.memoryMB}
       />
     ) : (
-      <ResourceUsage
-        type="mem"
-        mode="simple"
-        total={row.original.memoryMB}
-        classNames={{ wrapper: USAGE_TEXT_CLASSNAME }}
+      <ResourceSpec
+        value={row.original.memoryMB / 1024}
+        unit="GB"
+        className={USAGE_TEXT_CLASSNAME}
       />
     )}
   </div>
@@ -129,11 +128,10 @@ export const DiskUsageCell = ({
         totalDiskGb={row.original.diskSizeMB / 1024}
       />
     ) : (
-      <ResourceUsage
-        type="disk"
-        mode="simple"
-        total={row.original.diskSizeMB / 1024}
-        classNames={{ wrapper: USAGE_TEXT_CLASSNAME }}
+      <ResourceSpec
+        value={row.original.diskSizeMB / 1024}
+        unit="GB"
+        className={USAGE_TEXT_CLASSNAME}
       />
     )}
   </div>
