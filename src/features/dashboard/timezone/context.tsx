@@ -6,12 +6,11 @@ import {
   type ReactNode,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
 } from 'react'
 import { type Timezone, TimezoneSchema } from './schema'
-import { getBrowserTimezone, parseTimezone } from './utils'
+import { parseTimezone } from './utils'
 
 const DEFAULT_TIMEZONE = TimezoneSchema.parse('UTC')
 
@@ -55,14 +54,6 @@ export const TimezoneProvider = ({
   const [timezone, setTimezoneState] = useState(
     parsedInitialTimezone ?? DEFAULT_TIMEZONE
   )
-
-  useEffect(() => {
-    if (parsedInitialTimezone) return
-
-    const browserTimezone = getBrowserTimezone()
-    setTimezoneState(browserTimezone)
-    void persistTimezone(browserTimezone)
-  }, [parsedInitialTimezone])
 
   const setTimezone = useCallback(
     async (nextTimezone: Timezone) => {
