@@ -123,6 +123,9 @@ interface SandboxesTableViewProps {
   hasNextPage?: boolean
   isFetchingNextPage?: boolean
   fetchNextPage?: () => void
+  // When true the rows arrive already sorted from the server, so the table only
+  // reflects the sort indicator instead of re-sorting client-side.
+  manualSorting?: boolean
 }
 
 function SandboxesTableView({
@@ -133,6 +136,7 @@ function SandboxesTableView({
   hasNextPage,
   isFetchingNextPage,
   fetchNextPage,
+  manualSorting = false,
 }: SandboxesTableViewProps) {
   'use no memo'
 
@@ -195,6 +199,7 @@ function SandboxesTableView({
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     enableSorting: true,
+    manualSorting,
     enableMultiSort: false,
     enableSortingRemoval: false,
     columnResizeMode: 'onChange',
@@ -299,6 +304,12 @@ export function NewSandboxesTable() {
   )
   const statusFilters = useSandboxListTableStore((state) => state.statusFilters)
   const globalFilter = useSandboxListTableStore((state) => state.globalFilter)
+  const sorting = useSandboxListTableStore((state) => state.sorting)
+
+  // The only sortable column is startedAt; map its direction to the server order
+  // so sorting happens across the whole dataset, not just the loaded pages.
+  const order: 'asc' | 'desc' =
+    getSandboxListEffectiveSorting(sorting)[0]?.desc === false ? 'asc' : 'desc'
 
   const {
     data,
@@ -313,6 +324,7 @@ export function NewSandboxesTable() {
         teamSlug,
         limit: SANDBOXES_PAGE_SIZE,
         states: isStatusFilterActive(statusFilters) ? statusFilters : undefined,
+        order,
       },
       {
         getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
@@ -363,6 +375,7 @@ export function NewSandboxesTable() {
       hasNextPage={hasNextPage}
       isFetchingNextPage={isFetchingNextPage}
       fetchNextPage={fetchNextPage}
+      manualSorting
     />
   )
 }

@@ -59,6 +59,7 @@ export const sandboxesRouter = createTRPCRouter({
         cursor: z.string().optional(),
         limit: z.number().int().min(1).max(100).default(50),
         states: z.array(z.enum(['running', 'paused'])).optional(),
+        order: z.enum(['asc', 'desc']).optional(),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -80,6 +81,7 @@ export const sandboxesRouter = createTRPCRouter({
           cursor: input.cursor,
           limit: input.limit,
           states: input.states,
+          order: input.order,
         })
       if (!sandboxesResult.ok) {
         throwTRPCErrorFromRepoError(sandboxesResult.error)

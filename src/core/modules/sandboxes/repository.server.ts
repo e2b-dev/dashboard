@@ -41,6 +41,7 @@ export interface ListSandboxesOptions {
   cursor?: string
   limit: number
   states?: SandboxState[]
+  order?: 'asc' | 'desc'
 }
 
 export interface ListSandboxesResult {
@@ -407,6 +408,7 @@ export function createSandboxesRepository(
         params: {
           query: {
             state: options.states ?? DEFAULT_SANDBOX_STATES,
+            order: options.order,
             nextToken: options.cursor,
             limit: options.limit,
           },
