@@ -483,7 +483,11 @@ export function ByocDeploymentPanel({
       onSuccess: async (data) => {
         requestIntents.createDeployment.clear()
         setSelectedDeploymentId(data.id)
+        setTopologyDraft((current) =>
+          current ? { ...current, deploymentId: data.id } : current
+        )
         await refresh()
+        await router.push(`/dashboard/${teamSlug}/byoc/infrastructure`)
       },
     })
   )
