@@ -38,17 +38,12 @@ const ResourceUsage: React.FC<ResourceUsageProps> = ({
         <span
           className={cn(
             'prose-table-numeric',
-            hasValue ? 'text-fg-secondary' : 'text-fg-tertiary'
+            hasValue && !isCpu ? 'text-fg-secondary' : 'text-fg-tertiary'
           )}
         >
           {displayTotal}
         </span>
-        {hasValue && (
-          <span className="text-fg-tertiary">
-            {unit}
-            {isCpu && total && total > 1 ? 's' : ''}
-          </span>
-        )}
+        {hasValue && <span className="text-fg-tertiary">{unit}</span>}
       </p>
     )
   }
@@ -94,8 +89,13 @@ const ResourceUsage: React.FC<ResourceUsageProps> = ({
           <span className="text-fg-tertiary mx-1">·</span>
         </>
       )}
-      <span className="text-accent-info-highlight"> {totalValue} </span> {unit}
-      {isCpu && total && total > 1 ? 's' : ''}
+      <span
+        className={isCpu ? 'text-fg-tertiary' : 'text-accent-info-highlight'}
+      >
+        {' '}
+        {totalValue}{' '}
+      </span>{' '}
+      {unit}
     </span>
   )
 }
