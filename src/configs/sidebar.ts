@@ -1,13 +1,16 @@
+import type { BooleanFeatureFlagId } from '@/core/modules/feature-flags/definitions'
 import {
   AccountSettingsIcon,
   CardIcon,
   GaugeIcon,
   type Icon,
+  IntegrationsIcon,
   KeyIcon,
   PersonsIcon,
   SandboxIcon,
   SettingsIcon,
   TemplateIcon,
+  TerminalIcon,
   UsageIcon,
   WebhookIcon,
 } from '@/ui/primitives/icons'
@@ -24,6 +27,7 @@ export type SidebarNavItem = {
   icon: Icon
   group?: string
   activeMatch?: string
+  featureFlag?: BooleanFeatureFlagId
 }
 
 export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
@@ -42,6 +46,22 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
   },
 
   // Integrations
+  {
+    label: 'Agents',
+    group: 'integration',
+    href: (args) => PROTECTED_URLS.AGENTS(args.teamSlug!),
+    icon: TerminalIcon,
+    activeMatch: `/dashboard/*/agents`,
+    featureFlag: 'agentsEnabled',
+  },
+  {
+    label: 'Integrations',
+    group: 'integration',
+    href: (args) => PROTECTED_URLS.INTEGRATIONS(args.teamSlug!),
+    icon: IntegrationsIcon,
+    activeMatch: `/dashboard/*/integrations`,
+    featureFlag: 'integrationsEnabled',
+  },
   ...(INCLUDE_ARGUS
     ? [
         {
@@ -116,3 +136,12 @@ export const SIDEBAR_EXTRA_LINKS: SidebarNavItem[] = [
 ]
 
 export const SIDEBAR_ALL_LINKS = [...SIDEBAR_MAIN_LINKS, ...SIDEBAR_EXTRA_LINKS]
+
+export function filterSidebarLinks(
+  links: SidebarNavItem[],
+  isEnabled: (flagId: BooleanFeatureFlagId) => boolean
+) {
+  return links.filter(
+    (link) => !link.featureFlag || isEnabled(link.featureFlag)
+  )
+}

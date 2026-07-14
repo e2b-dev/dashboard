@@ -5,8 +5,15 @@ export const FEATURE_FLAGS = {
     kind: 'boolean',
     key: 'agents_enabled',
     defaultValue: false,
-    description: 'Enables the dashboard agents launcher.',
-    exposure: 'server',
+    description: 'Enables the dashboard agents page.',
+    exposure: 'both',
+  },
+  integrationsEnabled: {
+    kind: 'boolean',
+    key: 'integrations_enabled',
+    defaultValue: false,
+    description: 'Enables the dashboard integrations page.',
+    exposure: 'both',
   },
   isAdmin: {
     kind: 'boolean',

@@ -108,6 +108,10 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
     title: 'Webhooks',
     type: 'default',
   }),
+  '/dashboard/*/integrations': () => ({
+    title: 'Integrations',
+    type: 'default',
+  }),
   '/dashboard/*/webhooks/*/overview': (pathname) =>
     webhookDetailLayoutConfig(pathname),
   '/dashboard/*/webhooks/*/deliveries': (pathname) =>

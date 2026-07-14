@@ -7,16 +7,18 @@ import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from
 import { UnderConstructionPage } from '@/features/dashboard/layouts/under-construction-page'
 
 export const metadata: Metadata = {
-  title: 'Agents - E2B',
+  title: 'Integrations - E2B',
 }
 
-type AgentsPageProps = {
+type IntegrationsPageProps = {
   params: Promise<{
     teamSlug: string
   }>
 }
 
-export default async function AgentsPage({ params }: AgentsPageProps) {
+export default async function IntegrationsPage({
+  params,
+}: IntegrationsPageProps) {
   const [{ teamSlug }, authContext] = await Promise.all([
     params,
     getAuthContext(),
@@ -32,20 +34,23 @@ export default async function AgentsPage({ params }: AgentsPageProps) {
     notFound()
   }
 
-  const agentsEnabled = await featureFlags.isEnabled('agentsEnabled', {
-    user: {
-      id: authContext.user.id,
-      email: authContext.user.email ?? undefined,
-    },
-    team: {
-      id: teamId.data,
-      slug: teamSlug,
-    },
-  })
+  const integrationsEnabled = await featureFlags.isEnabled(
+    'integrationsEnabled',
+    {
+      user: {
+        id: authContext.user.id,
+        email: authContext.user.email ?? undefined,
+      },
+      team: {
+        id: teamId.data,
+        slug: teamSlug,
+      },
+    }
+  )
 
-  if (!agentsEnabled) {
+  if (!integrationsEnabled) {
     notFound()
   }
 
-  return <UnderConstructionPage title="Agents" />
+  return <UnderConstructionPage title="Integrations" />
 }

@@ -20,6 +20,7 @@ import {
   useSidebar,
 } from '@/ui/primitives/sidebar'
 import { useDashboard } from '../context'
+import { useVisibleSidebarLinks } from './use-visible-links'
 
 interface DashboardSidebarCommandProps {
   className?: string
@@ -31,6 +32,7 @@ export default function DashboardSidebarCommand({
   const [open, setOpen] = useState(false)
   const { team } = useDashboard()
   const router = useRouter()
+  const visibleLinks = useVisibleSidebarLinks(SIDEBAR_ALL_LINKS)
 
   const { open: sidebarOpen, openMobile: sidebarOpenMobile } = useSidebar()
   const isSidebarOpen = sidebarOpen || sidebarOpenMobile
@@ -74,7 +76,7 @@ export default function DashboardSidebarCommand({
         <CommandList className="scroll-py-3 px-1 py-3">
           <CommandEmpty>No results found.</CommandEmpty>
           <CommandGroup heading="Pages">
-            {SIDEBAR_ALL_LINKS.map((link) => (
+            {visibleLinks.map((link) => (
               <CommandItem
                 key={link.label}
                 onSelect={() => {

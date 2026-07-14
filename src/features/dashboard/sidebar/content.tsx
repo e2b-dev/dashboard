@@ -19,6 +19,7 @@ import {
   useSidebar,
 } from '@/ui/primitives/sidebar'
 import { useDashboard } from '../context'
+import { useVisibleSidebarLinks } from './use-visible-links'
 
 type GroupedLinks = {
   [key: string]: SidebarNavItem[]
@@ -42,10 +43,11 @@ export default function DashboardSidebarContent() {
   const pathname = usePathname()
   const isMobile = useIsMobile()
   const { setOpenMobile } = useSidebar()
+  const visibleLinks = useVisibleSidebarLinks(SIDEBAR_MAIN_LINKS)
 
   const groupedNavLinks = useMemo(
-    () => createGroupedLinks(SIDEBAR_MAIN_LINKS),
-    []
+    () => createGroupedLinks(visibleLinks),
+    [visibleLinks]
   )
 
   const isActive = (link: SidebarNavItem) => {
@@ -56,7 +58,7 @@ export default function DashboardSidebarContent() {
 
   return (
     <SidebarContent className="overflow-x-hidden gap-0">
-      {Object.entries(groupedNavLinks).map(([group, links], ix) => (
+      {Object.entries(groupedNavLinks).map(([group, links]) => (
         <SidebarGroup key={group}>
           {group !== 'ungrouped' && (
             <SidebarGroupLabel>{group}</SidebarGroupLabel>

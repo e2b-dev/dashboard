@@ -65,6 +65,7 @@ describe('createFeatureFlagService', () => {
     expect(provider.evaluate).toHaveBeenCalledTimes(1)
     expect(provider.evaluate).toHaveBeenCalledWith(context, [
       FEATURE_FLAGS.agentsEnabled,
+      FEATURE_FLAGS.integrationsEnabled,
       FEATURE_FLAGS.isAdmin,
       FEATURE_FLAGS.newSandboxList,
       FEATURE_FLAGS.newUsagePage,
@@ -75,7 +76,15 @@ describe('createFeatureFlagService', () => {
         id: 'agentsEnabled',
         key: 'agents_enabled',
         kind: 'boolean',
-        description: 'Enables the dashboard agents launcher.',
+        description: 'Enables the dashboard agents page.',
+        defaultValue: false,
+        value: true,
+      },
+      {
+        id: 'integrationsEnabled',
+        key: 'integrations_enabled',
+        kind: 'boolean',
+        description: 'Enables the dashboard integrations page.',
         defaultValue: false,
         value: true,
       },
