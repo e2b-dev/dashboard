@@ -81,10 +81,10 @@ describe('buildDeploymentChecks', () => {
     expect(checks.map((check) => check.status)).toEqual([
       'passed',
       'passed',
-      'passed',
-      'passed',
-      'passed',
       'running',
+      'passed',
+      'passed',
+      'passed',
       'pending',
       'pending',
       'pending',
@@ -123,7 +123,14 @@ describe('buildDeploymentChecks', () => {
 
     expect(
       checks
-        .filter((check) => check.label.endsWith('complete'))
+        .filter((check) =>
+          [
+            'Project setup and Redis',
+            'Network and compute',
+            'E2B services',
+            'Final infrastructure checks',
+          ].includes(check.label)
+        )
         .map((check) => check.status)
     ).toEqual(['passed', 'passed', 'passed', 'passed'])
   })
@@ -143,6 +150,30 @@ describe('buildDeploymentChecks', () => {
     expect(checks[0]?.status).toBe('passed')
     expect(checks[1]?.status).toBe('failed')
     expect(checks[2]?.status).toBe('pending')
+  })
+
+  it('shows the latest Terraform resource while a stage is running', () => {
+    const checks = buildDeploymentChecks(
+      [
+        event('operation_started', 'Worker started operation operation-1.'),
+        event(
+          'worker_access',
+          'Worker can impersonate the GCP deployer identity.'
+        ),
+        event(
+          'foundation_resource',
+          'Redis cluster "cache" is still being created (4m0s elapsed).'
+        ),
+      ],
+      { id: 'operation-1', kind: 'deploy', status: 'applying' }
+    )
+
+    expect(checks[1]).toMatchObject({
+      group: 'infrastructure',
+      label: 'Project setup and Redis',
+      message: 'Redis cluster "cache" is still being created (4m0s elapsed).',
+      status: 'running',
+    })
   })
 
   it('shows the destroy lifecycle instead of deploy checks', () => {

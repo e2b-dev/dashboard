@@ -1785,10 +1785,10 @@ function SetupStepRail({
   deployment?: Deployment
 }) {
   const infrastructureReady = checks
-    .slice(0, 5)
+    .filter((check) => check.group === 'infrastructure')
     .every((check) => isCompletedCheck(check.status))
   const applicationsReady = checks
-    .slice(5, 8)
+    .filter((check) => check.group === 'applications')
     .every((check) => isCompletedCheck(check.status))
   const verificationReady = isCompletedCheck(checks.at(-1)?.status)
   const steps = [
@@ -2211,7 +2211,7 @@ function SetupDeploymentProgress({
     deployment?.status === 'failed' || operation?.status.startsWith('failed')
   const canRetryDeploy = failed && operation?.kind !== 'destroy'
   return (
-    <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+    <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
       <Card variant="layer" className="rounded-lg">
         <CardHeader className="flex-row items-start justify-between gap-4">
           <div>
@@ -2246,19 +2246,25 @@ function SetupDeploymentProgress({
           ) : (
             <>
               <SetupPhase
-                title="Infrastructure"
-                description="Network, compute, storage, DNS, and Terraform resources."
-                checks={checks.slice(0, 5)}
+                title="Cloud infrastructure"
+                description="Project access, Redis, network, compute, storage, and DNS."
+                checks={checks.filter(
+                  (check) => check.group === 'infrastructure'
+                )}
               />
               <SetupPhase
                 title="Applications"
-                description="E2B control-plane services, routing, and the base template."
-                checks={checks.slice(5, 8)}
+                description="E2B services and final infrastructure convergence."
+                checks={checks.filter(
+                  (check) => check.group === 'applications'
+                )}
               />
               <SetupPhase
                 title="Verification"
                 description="A real sandbox is started and checked before traffic is attached."
-                checks={checks.slice(8)}
+                checks={checks.filter(
+                  (check) => check.group === 'verification'
+                )}
               />
             </>
           )}
@@ -2269,7 +2275,7 @@ function SetupDeploymentProgress({
           <CardTitle>Latest activity</CardTitle>
         </CardHeader>
         <CardContent>
-          <EventLog events={events.slice(-6)} />
+          <EventLog compact events={events.slice(-12)} />
         </CardContent>
       </Card>
     </section>
@@ -2657,7 +2663,13 @@ function TopologyControl({
   )
 }
 
-function EventLog({ events }: { events: DeploymentEvent[] }) {
+function EventLog({
+  compact = false,
+  events,
+}: {
+  compact?: boolean
+  events: DeploymentEvent[]
+}) {
   if (!events.length) {
     return (
       <p className="prose-body text-fg-secondary">
@@ -2670,7 +2682,10 @@ function EventLog({ events }: { events: DeploymentEvent[] }) {
     <div className="flex flex-col divide-y divide-stroke">
       {events.toReversed().map((event) => (
         <div
-          className="grid gap-1 py-3 text-sm md:grid-cols-[150px_180px_1fr]"
+          className={cn(
+            'grid gap-1 py-3 text-sm',
+            !compact && 'md:grid-cols-[150px_180px_1fr]'
+          )}
           key={`${event.deployment_id}-${event.sequence}`}
         >
           <time className="text-fg-tertiary" dateTime={event.created_at}>
@@ -2679,7 +2694,7 @@ function EventLog({ events }: { events: DeploymentEvent[] }) {
             })}
           </time>
           <span className="font-medium text-fg">
-            {event.phase.replaceAll('_', ' ')}
+            {deploymentEventLabel(event.phase)}
           </span>
           <span
             className={cn(
@@ -2694,6 +2709,19 @@ function EventLog({ events }: { events: DeploymentEvent[] }) {
       ))}
     </div>
   )
+}
+
+function deploymentEventLabel(phase: string) {
+  const stageLabels: Record<string, string> = {
+    base_infra: 'Network and compute',
+    final_converge: 'Final infrastructure checks',
+    foundation: 'Project setup and Redis',
+    nomad_services: 'E2B services',
+  }
+  for (const [stage, label] of Object.entries(stageLabels)) {
+    if (phase === stage || phase.startsWith(`${stage}_`)) return label
+  }
+  return phase.replaceAll('_', ' ')
 }
 
 function TargetCell({ label, value }: { label: string; value?: string }) {
