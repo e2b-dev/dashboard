@@ -33,6 +33,11 @@ const workerAccessDefinition = {
 const deployDefinitions = [
   workerAccessDefinition,
   {
+    label: 'Foundation complete',
+    phase: 'foundation_complete',
+    messageIncludes: 'stage completed',
+  },
+  {
     label: 'Runtime artifacts ready',
     phase: 'prepare_artifacts',
     messageIncludes: 'Runtime artifacts are ready',
@@ -48,9 +53,19 @@ const deployDefinitions = [
     messageIncludes: 'Nomad is reachable',
   },
   {
-    label: 'Terraform stages applied',
-    phase: 'health_check',
-    messageIncludes: 'Terraform stages finished',
+    label: 'Base infrastructure complete',
+    phase: 'base_infra_complete',
+    messageIncludes: 'stage completed',
+  },
+  {
+    label: 'Nomad applications complete',
+    phase: 'nomad_services_complete',
+    messageIncludes: 'stage completed',
+  },
+  {
+    label: 'Final convergence complete',
+    phase: 'final_converge_complete',
+    messageIncludes: 'stage completed',
   },
   {
     label: 'Edge API healthy',

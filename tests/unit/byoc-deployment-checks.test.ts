@@ -34,6 +34,10 @@ describe('buildDeploymentChecks', () => {
           'worker_access',
           'Worker can impersonate the GCP deployer identity.'
         ),
+        event(
+          'foundation_complete',
+          'Terraform foundation stage completed after applying changes.'
+        ),
         event('prepare_artifacts', 'Runtime artifacts are ready.'),
         event('operation_started', 'Worker restarted operation operation-1.'),
       ],
@@ -42,6 +46,7 @@ describe('buildDeploymentChecks', () => {
 
     expect(checks[0]?.status).toBe('running')
     expect(checks[1]?.status).toBe('pending')
+    expect(checks.some((check) => check.status === 'passed')).toBe(false)
   })
 
   it('keeps checks pending until a queued operation starts', () => {
@@ -62,6 +67,10 @@ describe('buildDeploymentChecks', () => {
           'worker_access',
           'Worker can impersonate the GCP deployer identity.'
         ),
+        event(
+          'foundation_complete',
+          'Terraform foundation stage completed after applying changes.'
+        ),
         event('prepare_artifacts', 'Runtime artifacts are ready.'),
         event('dns_ready', 'Deployment DNS resolved.'),
         event('wait_for_nomad', 'Nomad is reachable.'),
@@ -74,12 +83,49 @@ describe('buildDeploymentChecks', () => {
       'passed',
       'passed',
       'passed',
+      'passed',
       'running',
       'pending',
       'pending',
       'pending',
       'pending',
+      'pending',
+      'pending',
     ])
+  })
+
+  it.each([
+    'after applying changes',
+    'with no changes',
+  ])('maps every Terraform stage completion %s', (outcome) => {
+    const checks = buildDeploymentChecks(
+      [
+        event('operation_started', 'Worker started operation operation-1.'),
+        event(
+          'foundation_complete',
+          `Terraform foundation stage completed ${outcome}.`
+        ),
+        event(
+          'base_infra_complete',
+          `Terraform base_infra stage completed ${outcome}.`
+        ),
+        event(
+          'nomad_services_complete',
+          `Terraform nomad_services stage completed ${outcome}.`
+        ),
+        event(
+          'final_converge_complete',
+          `Terraform final_converge stage completed ${outcome}.`
+        ),
+      ],
+      { id: 'operation-1', kind: 'deploy', status: 'succeeded' }
+    )
+
+    expect(
+      checks
+        .filter((check) => check.label.endsWith('complete'))
+        .map((check) => check.status)
+    ).toEqual(['passed', 'passed', 'passed', 'passed'])
   })
 
   it('marks the first incomplete check when an operation fails', () => {
@@ -197,10 +243,25 @@ describe('buildDeploymentChecks', () => {
           'worker_access',
           'Worker can impersonate the GCP deployer identity.'
         ),
+        event(
+          'foundation_complete',
+          'Terraform foundation stage completed after applying changes.'
+        ),
         event('prepare_artifacts', 'Runtime artifacts are ready.'),
         event('dns_ready', 'Deployment DNS resolved.'),
         event('wait_for_nomad', 'Nomad is reachable.'),
-        event('health_check', 'Terraform stages finished successfully.'),
+        event(
+          'base_infra_complete',
+          'Terraform base_infra stage completed after applying changes.'
+        ),
+        event(
+          'nomad_services_complete',
+          'Terraform nomad_services stage completed after applying changes.'
+        ),
+        event(
+          'final_converge_complete',
+          'Terraform final_converge stage completed with no changes.'
+        ),
         event('health_check', 'Edge API health check passed.'),
         event('registering_cluster', 'Team attached to cluster cluster-1.'),
         event('building_base_template', 'Base template is ready.'),
@@ -209,7 +270,7 @@ describe('buildDeploymentChecks', () => {
       { id: 'operation-1', kind: 'deploy', status: 'succeeded' }
     )
 
-    expect(checks).toHaveLength(9)
+    expect(checks).toHaveLength(12)
     expect(checks.every((check) => check.status === 'passed')).toBe(true)
   })
 })
