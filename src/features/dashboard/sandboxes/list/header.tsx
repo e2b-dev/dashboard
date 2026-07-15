@@ -33,15 +33,15 @@ export function SandboxesHeader({
   const tableState = table.getState()
   const { columnFilters, globalFilter } = tableState
 
-  const showFilteredRowCount = columnFilters.length > 0 || Boolean(globalFilter)
+  const isFiltered = columnFilters.length > 0 || Boolean(globalFilter)
 
-  const filteredCount = table.getFilteredRowModel().rows.length
-
-  // With server-side pagination the core row model only holds the loaded
-  // pages, so "N+" marks the count as a lower bound until all pages are in.
-  const loadedCount = table.getCoreRowModel().rows.length
-  const countLabel = `${loadedCount.toLocaleString('en-US')}${hasNextPage ? '+' : ''}`
-  const countNoun = loadedCount === 1 && !hasNextPage ? 'sandbox' : 'sandboxes'
+  // With server-side pagination the row models only hold the loaded pages,
+  // so "N+" marks the count as a lower bound until all pages are in.
+  const visibleCount = isFiltered
+    ? table.getFilteredRowModel().rows.length
+    : table.getCoreRowModel().rows.length
+  const countLabel = `${visibleCount.toLocaleString('en-US')}${hasNextPage ? '+' : ''}`
+  const countNoun = visibleCount === 1 && !hasNextPage ? 'sandbox' : 'sandboxes'
 
   return (
     <header className="flex w-full flex-col gap-2 md:flex-row md:flex-wrap md:items-start md:justify-between">
@@ -60,21 +60,12 @@ export function SandboxesHeader({
         <div className="hidden w-2 shrink-0 sm:block" aria-hidden="true" />
 
         <span className="prose-label-highlight h-9 flex w-full min-w-0 items-center gap-1 uppercase sm:w-auto">
-          {showFilteredRowCount ? (
-            <>
-              <span className="text-fg">
-                {filteredCount} {filteredCount === 1 ? 'result' : 'results'}
-              </span>
-              <span className="text-fg-tertiary"> · </span>
-              <span className="text-fg-tertiary">
-                {countLabel} {countNoun}
-              </span>
-            </>
-          ) : (
-            <span className="text-fg-tertiary">
-              {countLabel} {countNoun}
-            </span>
-          )}
+          <span className={isFiltered ? 'text-fg' : 'text-fg-tertiary'}>
+            {countLabel} {countNoun}
+          </span>
+          {isFiltered ? (
+            <span className="text-fg-tertiary"> · filtered</span>
+          ) : null}
         </span>
       </div>
 
