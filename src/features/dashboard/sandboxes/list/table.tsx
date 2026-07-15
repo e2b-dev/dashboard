@@ -234,6 +234,7 @@ function SandboxesTableView({
         table={table}
         onRefresh={refetch}
         isRefreshing={isFetching}
+        hasNextPage={hasNextPage}
       />
 
       <div
