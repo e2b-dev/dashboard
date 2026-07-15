@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   infraDelete: vi.fn(),
   infraGet: vi.fn(),
   infraPost: vi.fn(),
+  listUserTeams: vi.fn(),
   runtime: undefined as ReturnType<typeof sandboxWithResults> | undefined,
 }))
 
@@ -13,6 +14,12 @@ vi.mock('@/core/shared/clients/api', () => ({
     GET: mocks.infraGet,
     POST: mocks.infraPost,
   },
+}))
+
+vi.mock('@/core/modules/teams/user-teams-repository.server', () => ({
+  createUserTeamsRepository: () => ({
+    listUserTeams: mocks.listUserTeams,
+  }),
 }))
 
 vi.mock('e2b', () => ({
@@ -48,6 +55,7 @@ describe('Devin worker launcher', () => {
     mocks.infraDelete.mockReset()
     mocks.infraGet.mockReset()
     mocks.infraPost.mockReset()
+    mocks.listUserTeams.mockReset()
     mocks.runtime = undefined
     mocks.infraPost.mockImplementation((path: string) => {
       if (path === '/sandboxes') {
@@ -60,6 +68,10 @@ describe('Devin worker launcher', () => {
     })
     mocks.infraDelete.mockResolvedValue(apiResult(204))
     mocks.infraGet.mockResolvedValue(apiResult(200, []))
+    mocks.listUserTeams.mockResolvedValue({
+      ok: true,
+      data: [{ id: input.teamId, limits: { maxLengthHours: 24 } }],
+    })
   })
 
   it('starts the worker through the bearer-authenticated sandbox API', async () => {
@@ -82,6 +94,7 @@ describe('Devin worker launcher', () => {
       expect.objectContaining({
         body: expect.objectContaining({
           autoPause: false,
+          autoPauseMemory: true,
           autoResume: { enabled: false },
           timeout: 1800,
         }),
@@ -98,6 +111,26 @@ describe('Devin worker launcher', () => {
         body: { timeout: 86_400 },
         params: { path: { sandboxID: 'new-sbx' } },
       })
+    )
+  })
+
+  it('caps the worker lifetime at the team sandbox limit', async () => {
+    mocks.listUserTeams.mockResolvedValue({
+      ok: true,
+      data: [{ id: input.teamId, limits: { maxLengthHours: 1 } }],
+    })
+    mocks.runtime = sandboxWithResults([
+      { exitCode: 0, stdout: '' },
+      { exitCode: 0, stdout: 'stopped' },
+      { exitCode: 0, stdout: '4242' },
+    ])
+
+    await launchDevinWorker(input)
+
+    expect(mocks.infraPost).toHaveBeenNthCalledWith(
+      4,
+      '/sandboxes/{sandboxID}/connect',
+      expect.objectContaining({ body: { timeout: 3600 } })
     )
   })
 
@@ -126,6 +159,34 @@ describe('Devin worker launcher', () => {
       '/sandboxes',
       expect.anything()
     )
+  })
+
+  it('recovers a sandbox created before the create response was lost', async () => {
+    mocks.infraGet
+      .mockResolvedValueOnce(apiResult(200, []))
+      .mockResolvedValueOnce(
+        apiResult(200, [sandboxApiResponse('recovered-sbx')])
+      )
+    mocks.infraPost.mockImplementation((path: string) => {
+      if (path === '/sandboxes') {
+        return Promise.reject(new Error('create response timed out'))
+      }
+      if (path === '/sandboxes/{sandboxID}/connect') {
+        return apiResult(200, sandboxApiResponse('recovered-sbx'))
+      }
+      throw new Error(`unexpected path ${path}`)
+    })
+    mocks.runtime = sandboxWithResults([
+      { exitCode: 0, stdout: '' },
+      { exitCode: 0, stdout: 'stopped' },
+      { exitCode: 0, stdout: '4242' },
+    ])
+
+    await expect(launchDevinWorker(input)).resolves.toMatchObject({
+      reused: false,
+      sandboxId: 'recovered-sbx',
+    })
+    expect(mocks.infraGet).toHaveBeenCalledTimes(2)
   })
 
   it('keeps the scoped credential out of metadata and command text', async () => {
@@ -299,7 +360,7 @@ function sandboxApiResponse(sandboxId: string) {
       userId: input.userId,
     },
     sandboxID: sandboxId,
-    templateID: 'devin-outposts',
+    templateID: 'devin-outposts-worker',
   }
 }
 

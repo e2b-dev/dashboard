@@ -3,7 +3,7 @@ import 'server-only'
 import { randomUUID } from 'node:crypto'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
-import { AUTH_URLS, getPublicAppOrigin, PROTECTED_URLS } from '@/configs/urls'
+import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
 import {
   createDevinOAuthAttempt,
   getDevinOAuthConnectUrl,
@@ -12,13 +12,14 @@ import {
   isDevinOAuthConfigured,
   readDevinOAuthAttempt,
 } from '@/core/modules/devin-outposts/oauth.server'
+import { featureFlags } from '@/core/modules/feature-flags/feature-flags.server'
 import { getAuthContext } from '@/core/server/auth'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
 import { TeamSlugSchema } from '@/core/shared/schemas/team'
 
 export async function POST(request: NextRequest) {
   const teamSlug = request.nextUrl.searchParams.get('teamSlug') ?? ''
-  const publicOrigin = getPublicAppOrigin(request.nextUrl.origin)
+  const publicOrigin = request.nextUrl.origin
   const connectionPath = TeamSlugSchema.safeParse(teamSlug).success
     ? PROTECTED_URLS.CONNECTION_DEVIN(teamSlug)
     : PROTECTED_URLS.DASHBOARD
@@ -43,6 +44,19 @@ export async function POST(request: NextRequest) {
   }
   if (!teamIdResult.data) {
     return redirectToConnection(publicOrigin, connectionPath, 'access')
+  }
+  const connectionsEnabled = await featureFlags.isEnabled(
+    'connectionsEnabled',
+    {
+      user: {
+        id: authContext.user.id,
+        email: authContext.user.email ?? undefined,
+      },
+      team: { id: teamIdResult.data },
+    }
+  )
+  if (!connectionsEnabled) {
+    return new NextResponse(null, { status: 404 })
   }
   if (!isDevinOAuthConfigured(publicOrigin)) {
     return redirectToConnection(publicOrigin, connectionPath, 'config')

@@ -2,7 +2,7 @@ import 'server-only'
 
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
-import { BASE_URL, getPublicAppOrigin, PROTECTED_URLS } from '@/configs/urls'
+import { BASE_URL, PROTECTED_URLS } from '@/configs/urls'
 import {
   DevinOAuthError,
   exchangeDevinConnectionCode,
@@ -15,6 +15,7 @@ import {
   findStartedDevinWorker,
   launchDevinWorker,
 } from '@/core/modules/devin-outposts/worker.server'
+import { featureFlags } from '@/core/modules/feature-flags/feature-flags.server'
 import { getAuthContext } from '@/core/server/auth'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
 import { l } from '@/core/shared/clients/logger/logger'
@@ -62,6 +63,20 @@ export async function GET(request: NextRequest) {
     return finish(
       connectionRedirect(attempt.returnOrigin, connectionPath, 'access')
     )
+  }
+
+  const connectionsEnabled = await featureFlags.isEnabled(
+    'connectionsEnabled',
+    {
+      user: {
+        id: authContext.user.id,
+        email: authContext.user.email ?? undefined,
+      },
+      team: { id: teamIdResult.data },
+    }
+  )
+  if (!connectionsEnabled) {
+    return finish(new NextResponse(null, { status: 404 }))
   }
 
   const workerInput = {
@@ -190,5 +205,5 @@ function fallbackCallbackOrigin(request: NextRequest) {
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
     return new URL(BASE_URL).origin
   }
-  return getPublicAppOrigin(request.nextUrl.origin)
+  return request.nextUrl.origin
 }

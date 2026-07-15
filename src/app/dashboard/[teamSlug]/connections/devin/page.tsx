@@ -18,8 +18,10 @@ export default async function DevinConnectionPage({
   params,
   searchParams,
 }: DevinConnectionPageProps) {
-  const { teamSlug } = await params
-  const { devinOAuth } = await searchParams
+  const [{ teamSlug }, { devinOAuth }] = await Promise.all([
+    params,
+    searchParams,
+  ])
   const status = Array.isArray(devinOAuth) ? devinOAuth[0] : devinOAuth
 
   return (

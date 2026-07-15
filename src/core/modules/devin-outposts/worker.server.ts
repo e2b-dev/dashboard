@@ -3,13 +3,15 @@ import 'server-only'
 import { Sandbox } from 'e2b'
 import { authHeaders } from '@/configs/api'
 import type { components as InfraComponents } from '@/contracts/infra-api'
+import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
 import { infra } from '@/core/shared/clients/api'
 import { l } from '@/core/shared/clients/logger/logger'
 import { normalizeDevinApiUrl } from './client.server'
 
 const ACTIVE_WORKER_TIMEOUT_MS = 24 * 60 * 60 * 1000
 const API_REQUEST_TIMEOUT_MS = 10_000
-const DEFAULT_DEVIN_TEMPLATE = 'devin-outposts'
+const DISCONNECT_CONCURRENCY = 10
+const DEFAULT_DEVIN_TEMPLATE = 'devin-outposts-worker'
 const PREPARED_SANDBOX_TIMEOUT_MS = 30 * 60 * 1000
 const WORKER_START_TIMEOUT_MS = 15_000
 
@@ -27,10 +29,14 @@ export type LaunchDevinWorkerInput = WorkerIdentity & {
 }
 
 type StartPreparedDevinWorkerInput = LaunchDevinWorkerInput & {
+  activeTimeoutMs: number
   sandboxId: string
 }
 
-type PreparedWorkerIdentity = WorkerIdentity & { sandboxId: string }
+type PreparedWorkerIdentity = WorkerIdentity & {
+  activeTimeoutMs: number
+  sandboxId: string
+}
 
 type PreparedDevinWorker = {
   acceptorId: string
@@ -54,23 +60,32 @@ export class DevinWorkerLaunchError extends Error {
 export async function launchDevinWorker(
   input: LaunchDevinWorkerInput
 ): Promise<LaunchDevinWorkerResult> {
+  const activeTimeoutMs = await getActiveWorkerTimeoutMs(input)
   const existingSandboxId = await findWorkerSandbox(input)
   const prepared = existingSandboxId
     ? { sandboxId: existingSandboxId }
     : await prepareDevinWorkerSandbox(input)
-  return startPreparedDevinWorker({ ...input, sandboxId: prepared.sandboxId })
+  return startPreparedDevinWorker({
+    ...input,
+    activeTimeoutMs,
+    sandboxId: prepared.sandboxId,
+  })
 }
 
 export async function findStartedDevinWorker(input: WorkerIdentity) {
   const sandboxId = await findWorkerSandbox(input)
   if (!sandboxId) return null
 
+  const activeTimeoutMs = await getActiveWorkerTimeoutMs(input)
   const sandbox = await connectWorkerSandbox(
     { ...input, sandboxId },
     PREPARED_SANDBOX_TIMEOUT_MS
   )
   if (!(await sandboxHasStartedWorker(sandbox, input.operationId))) return null
-  await extendWorkerSandbox({ ...input, sandboxId }, ACTIVE_WORKER_TIMEOUT_MS)
+  await extendWorkerSandbox(
+    { ...input, activeTimeoutMs, sandboxId },
+    activeTimeoutMs
+  )
   return sandboxId
 }
 
@@ -79,16 +94,26 @@ export async function disconnectDevinWorkers(
 ) {
   const result = await listDisconnectableWorkerSandboxes(input)
   const sandboxIds = result.map((sandbox) => sandbox.sandboxID)
-  const deleted = await Promise.all(
-    sandboxIds.map((sandboxId) =>
-      cleanupPreparedDevinWorker({
-        accessToken: input.accessToken,
-        sandboxId,
-        teamId: input.teamId,
-      })
+  let failed = false
+
+  for (
+    let index = 0;
+    index < sandboxIds.length;
+    index += DISCONNECT_CONCURRENCY
+  ) {
+    const deleted = await Promise.all(
+      sandboxIds.slice(index, index + DISCONNECT_CONCURRENCY).map((sandboxId) =>
+        cleanupPreparedDevinWorker({
+          accessToken: input.accessToken,
+          sandboxId,
+          teamId: input.teamId,
+        })
+      )
     )
-  )
-  if (deleted.some((success) => !success)) throw new DevinWorkerLaunchError()
+    failed ||= deleted.some((success) => !success)
+  }
+
+  if (failed) throw new DevinWorkerLaunchError()
   return { count: sandboxIds.length }
 }
 
@@ -101,6 +126,15 @@ async function prepareDevinWorkerSandbox(
     const sandbox = await createWorkerSandbox(input)
     return { acceptorId, sandboxId: sandbox.sandboxID, started: false }
   } catch (error) {
+    try {
+      const recoveredSandboxId = await findWorkerSandbox(input)
+      if (recoveredSandboxId) {
+        return { acceptorId, sandboxId: recoveredSandboxId, started: false }
+      }
+    } catch {
+      // Preserve the original create failure below.
+    }
+
     l.warn(
       {
         key: 'devin:worker_sandbox_prepare_failed',
@@ -200,7 +234,7 @@ async function startPersistedDevinWorker(
       throw new Error('worker_start_failed')
     }
 
-    await extendWorkerSandbox(input, ACTIVE_WORKER_TIMEOUT_MS)
+    await extendWorkerSandbox(input, input.activeTimeoutMs)
 
     return {
       acceptorId,
@@ -346,6 +380,7 @@ async function createWorkerSandbox(input: WorkerIdentity) {
   const result = await infra.POST('/sandboxes', {
     body: {
       autoPause: false,
+      autoPauseMemory: true,
       autoResume: { enabled: false },
       metadata: launchMetadata(input.operationId, input.userId),
       secure: true,
@@ -359,6 +394,24 @@ async function createWorkerSandbox(input: WorkerIdentity) {
     throw new Error(`sandbox_create_${result.response.status}`)
   }
   return result.data
+}
+
+async function getActiveWorkerTimeoutMs(
+  input: Pick<WorkerIdentity, 'accessToken' | 'teamId'>
+) {
+  const teamsResult = await createUserTeamsRepository({
+    accessToken: input.accessToken,
+  }).listUserTeams()
+  if (!teamsResult.ok) throw new DevinWorkerLaunchError()
+
+  const maxLengthHours = teamsResult.data.find(
+    (team) => team.id === input.teamId
+  )?.limits.maxLengthHours
+  if (!maxLengthHours || maxLengthHours <= 0) {
+    throw new DevinWorkerLaunchError()
+  }
+
+  return Math.min(ACTIVE_WORKER_TIMEOUT_MS, maxLengthHours * 60 * 60 * 1000)
 }
 
 async function connectWorkerSandbox(

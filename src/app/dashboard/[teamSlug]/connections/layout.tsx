@@ -37,7 +37,6 @@ export default async function ConnectionsLayout({
       },
       team: {
         id: teamId.data,
-        slug: teamSlug,
       },
     }
   )

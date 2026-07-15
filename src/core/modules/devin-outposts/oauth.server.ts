@@ -10,7 +10,7 @@ import { z } from 'zod'
 import { normalizeDevinApiUrl } from './client.server'
 
 const DEFAULT_DEVIN_CONNECT_URL = 'https://app.devin.ai/outposts/connect'
-const DEVIN_TOKEN_URL = 'https://api.devin.ai/outposts/connection-token'
+const DEFAULT_DEVIN_TOKEN_URL = 'https://api.devin.ai/outposts/connection-token'
 const OAUTH_ATTEMPT_TTL_SECONDS = 30 * 60
 const REQUEST_TIMEOUT_MS = 15_000
 
@@ -51,6 +51,7 @@ export function isDevinOAuthConfigured(returnOrigin: string) {
   try {
     validateCallbackHost(getCallbackUrl(), normalizeReturnOrigin(returnOrigin))
     getConnectUrl()
+    getTokenUrl()
     getSecret()
     return true
   } catch {
@@ -140,7 +141,7 @@ export async function exchangeDevinConnectionCode(
 ): Promise<DevinConnectionToken> {
   let response: Response
   try {
-    response = await fetch(DEVIN_TOKEN_URL, {
+    response = await fetch(getTokenUrl(), {
       body: new URLSearchParams({
         code,
         code_verifier: deriveVerifier(attempt),
@@ -198,7 +199,7 @@ function pkceChallenge(verifier: string) {
 }
 
 function getSecret() {
-  const secret = process.env.AUTH_SECRET
+  const secret = process.env.E2B_SESSION_SECRET
   if (!secret) throw new DevinOAuthError('config')
   return secret
 }
@@ -257,6 +258,35 @@ function getConnectUrl() {
     throw new DevinOAuthError('config')
   }
   return url
+}
+
+function getTokenUrl() {
+  const value = process.env.DEVIN_OUTPOSTS_TOKEN_URL || DEFAULT_DEVIN_TOKEN_URL
+  let url: URL
+  try {
+    url = new URL(value)
+  } catch {
+    throw new DevinOAuthError('config')
+  }
+  const hostname = url.hostname.toLowerCase()
+  const devinOwnedHost =
+    hostname === 'devin.ai' ||
+    hostname.endsWith('.devin.ai') ||
+    hostname === 'devinenterprise.com' ||
+    hostname.endsWith('.devinenterprise.com')
+  if (
+    url.protocol !== 'https:' ||
+    url.username ||
+    url.password ||
+    url.port ||
+    url.pathname !== '/outposts/connection-token' ||
+    url.search ||
+    url.hash ||
+    !devinOwnedHost
+  ) {
+    throw new DevinOAuthError('config')
+  }
+  return url.toString()
 }
 
 function normalizeReturnOrigin(value: string) {

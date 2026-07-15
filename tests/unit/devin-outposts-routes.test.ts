@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   getAuthContext: vi.fn(),
   getConnectUrl: vi.fn(),
   getTeamIdFromSlug: vi.fn(),
+  isFeatureEnabled: vi.fn(),
   launchWorker: vi.fn(),
   readAttempt: vi.fn(),
 }))
@@ -18,6 +19,10 @@ vi.mock('@/core/server/auth', () => ({
 
 vi.mock('@/core/server/functions/team/get-team-id-from-slug', () => ({
   getTeamIdFromSlug: mocks.getTeamIdFromSlug,
+}))
+
+vi.mock('@/core/modules/feature-flags/feature-flags.server', () => ({
+  featureFlags: { isEnabled: mocks.isFeatureEnabled },
 }))
 
 vi.mock('@/core/modules/devin-outposts/oauth.server', () => {
@@ -85,6 +90,7 @@ describe('Devin OAuth routes', () => {
     for (const mock of Object.values(mocks)) mock.mockReset()
     mocks.getAuthContext.mockResolvedValue(authContext)
     mocks.getTeamIdFromSlug.mockResolvedValue({ ok: true, data: 'team-1' })
+    mocks.isFeatureEnabled.mockResolvedValue(true)
     mocks.createAttempt.mockReturnValue({
       attemptCookie: 'signed-attempt',
       connectUrl: new URL('https://app.devin.ai/outposts/connect?test=1'),
@@ -152,6 +158,15 @@ describe('Devin OAuth routes', () => {
     expect(mocks.launchWorker).not.toHaveBeenCalled()
   })
 
+  it('does not start OAuth when Connections is disabled for the team', async () => {
+    mocks.isFeatureEnabled.mockResolvedValue(false)
+
+    const response = await start(startRequest())
+
+    expect(response.status).toBe(404)
+    expect(mocks.createAttempt).not.toHaveBeenCalled()
+  })
+
   it('rejects a callback without valid state and clears the cookie', async () => {
     const response = await callback(
       new NextRequest('http://localhost:8765/callback?code=one-time-code')
@@ -187,6 +202,18 @@ describe('Devin OAuth routes', () => {
     const response = await callback(callbackRequest())
 
     expect(response.headers.get('location')).toContain('devinOAuth=access')
+    expect(mocks.exchangeCode).not.toHaveBeenCalled()
+    expect(mocks.launchWorker).not.toHaveBeenCalled()
+  })
+
+  it('does not finish OAuth when Connections is disabled for the team', async () => {
+    mocks.readAttempt.mockReturnValue(attempt)
+    mocks.isFeatureEnabled.mockResolvedValue(false)
+
+    const response = await callback(callbackRequest())
+
+    expect(response.status).toBe(404)
+    expect(response.headers.get('set-cookie')).toContain('Max-Age=0')
     expect(mocks.exchangeCode).not.toHaveBeenCalled()
     expect(mocks.launchWorker).not.toHaveBeenCalled()
   })

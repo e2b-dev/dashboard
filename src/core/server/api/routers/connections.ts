@@ -10,11 +10,30 @@ import {
   disconnectDevinWorkers,
   launchDevinWorker,
 } from '@/core/modules/devin-outposts/worker.server'
+import { featureFlags } from '@/core/modules/feature-flags/feature-flags.server'
 import { createTRPCRouter } from '@/core/server/trpc/init'
 import { protectedTeamProcedure } from '@/core/server/trpc/procedures'
 
+const connectionsProcedure = protectedTeamProcedure.use(
+  async ({ ctx, next }) => {
+    const enabled = await featureFlags.isEnabled('connectionsEnabled', {
+      user: {
+        id: ctx.session.user.id,
+        email: ctx.session.user.email ?? undefined,
+      },
+      team: { id: ctx.teamId },
+    })
+
+    if (!enabled) {
+      throw new TRPCError({ code: 'NOT_FOUND' })
+    }
+
+    return next()
+  }
+)
+
 export const connectionsRouter = createTRPCRouter({
-  disconnectDevinWorkers: protectedTeamProcedure
+  disconnectDevinWorkers: connectionsProcedure
     .input(z.object({ confirm: z.literal(true) }))
     .mutation(async ({ ctx }) => {
       try {
@@ -31,7 +50,7 @@ export const connectionsRouter = createTRPCRouter({
       }
     }),
 
-  discoverDevin: protectedTeamProcedure
+  discoverDevin: connectionsProcedure
     .input(
       z.object({
         apiKey: z.string().trim().min(1).max(4096),
@@ -60,7 +79,7 @@ export const connectionsRouter = createTRPCRouter({
       }
     }),
 
-  launchDevinWorker: protectedTeamProcedure
+  launchDevinWorker: connectionsProcedure
     .input(
       z.object({
         apiUrl: z.string().trim().min(1).max(512),

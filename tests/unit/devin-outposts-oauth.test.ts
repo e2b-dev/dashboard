@@ -9,24 +9,27 @@ import {
   readDevinOAuthAttempt,
 } from '@/core/modules/devin-outposts/oauth.server'
 
-const ORIGINAL_AUTH_SECRET = process.env.AUTH_SECRET
+const ORIGINAL_SESSION_SECRET = process.env.E2B_SESSION_SECRET
 const ORIGINAL_CALLBACK_URL = process.env.DEVIN_OUTPOSTS_CALLBACK_URL
 const ORIGINAL_CONNECT_URL = process.env.DEVIN_OUTPOSTS_CONNECT_URL
+const ORIGINAL_TOKEN_URL = process.env.DEVIN_OUTPOSTS_TOKEN_URL
 
 describe('Devin partner OAuth boundary', () => {
   beforeEach(() => {
-    process.env.AUTH_SECRET = 'test-auth-secret-with-enough-entropy'
+    process.env.E2B_SESSION_SECRET = 'test-auth-secret-with-enough-entropy'
     process.env.DEVIN_OUTPOSTS_CALLBACK_URL = 'http://localhost:8765/callback'
     delete process.env.DEVIN_OUTPOSTS_CONNECT_URL
+    delete process.env.DEVIN_OUTPOSTS_TOKEN_URL
   })
 
   afterEach(() => {
     vi.useRealTimers()
     vi.unstubAllGlobals()
     vi.unstubAllEnvs()
-    restoreEnv('AUTH_SECRET', ORIGINAL_AUTH_SECRET)
+    restoreEnv('E2B_SESSION_SECRET', ORIGINAL_SESSION_SECRET)
     restoreEnv('DEVIN_OUTPOSTS_CALLBACK_URL', ORIGINAL_CALLBACK_URL)
     restoreEnv('DEVIN_OUTPOSTS_CONNECT_URL', ORIGINAL_CONNECT_URL)
+    restoreEnv('DEVIN_OUTPOSTS_TOKEN_URL', ORIGINAL_TOKEN_URL)
   })
 
   it('creates signed state and a matching S256 challenge', async () => {
@@ -93,9 +96,11 @@ describe('Devin partner OAuth boundary', () => {
     expect(readDevinOAuthAttempt(attemptCookie)).toBeNull()
   })
 
-  it('supports a Devin enterprise connect host without changing token exchange', async () => {
+  it('supports Devin enterprise connect and token hosts', async () => {
     process.env.DEVIN_OUTPOSTS_CONNECT_URL =
       'https://e2b.beta.devinenterprise.com/outposts/connect'
+    process.env.DEVIN_OUTPOSTS_TOKEN_URL =
+      'https://api.beta.devinenterprise.com/outposts/connection-token'
     const { attemptCookie, connectUrl } = createDevinOAuthAttempt({
       operationId: '17d18dac-86d9-4a79-91e7-4477bd29327e',
       returnOrigin: 'http://localhost:3000',
@@ -117,7 +122,7 @@ describe('Devin partner OAuth boundary', () => {
     vi.stubGlobal('fetch', fetchMock)
     await exchangeDevinConnectionCode('one-time-code', attempt)
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://api.devin.ai/outposts/connection-token',
+      'https://api.beta.devinenterprise.com/outposts/connection-token',
       expect.anything()
     )
   })
@@ -181,7 +186,7 @@ describe('Devin partner OAuth boundary', () => {
     expect(isDevinOAuthConfigured('https://dashboard.example.com')).toBe(false)
 
     process.env.DEVIN_OUTPOSTS_CALLBACK_URL = 'http://localhost:8765/callback'
-    delete process.env.AUTH_SECRET
+    delete process.env.E2B_SESSION_SECRET
     expect(isDevinOAuthConfigured('http://localhost:3000')).toBe(false)
   })
 
@@ -192,6 +197,16 @@ describe('Devin partner OAuth boundary', () => {
 
     process.env.DEVIN_OUTPOSTS_CONNECT_URL =
       'https://e2b.beta.devinenterprise.com/chat'
+    expect(isDevinOAuthConfigured('http://localhost:3000')).toBe(false)
+  })
+
+  it('fails closed for an unsafe token endpoint override', () => {
+    process.env.DEVIN_OUTPOSTS_TOKEN_URL =
+      'https://attacker.example/outposts/connection-token'
+    expect(isDevinOAuthConfigured('http://localhost:3000')).toBe(false)
+
+    process.env.DEVIN_OUTPOSTS_TOKEN_URL =
+      'https://api.beta.devinenterprise.com/admin/token'
     expect(isDevinOAuthConfigured('http://localhost:3000')).toBe(false)
   })
 
