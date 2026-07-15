@@ -10,7 +10,10 @@ import {
   openOryFlowState,
 } from '@/core/server/auth/ory/oauth-flow'
 import { resolveOryRedirectUri } from '@/core/server/auth/ory/oauth-relay'
-import { readKratosExternalId } from '@/core/server/auth/ory/session'
+import {
+  readKratosAuthMethod,
+  readKratosExternalId,
+} from '@/core/server/auth/ory/session'
 import {
   ORY_SIGNUP_METADATA_COOKIE,
   reconcileSessionCookies,
@@ -22,6 +25,7 @@ import {
   buildOryLogoutUrl,
   ORY_POST_LOGOUT_PATH,
 } from '@/core/server/auth/ory/signout'
+import { trackOrySignUpEvent } from '@/core/server/auth/ory/signup-tracking'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { relativeUrlSchema } from '@/core/shared/schemas/url'
 
@@ -95,6 +99,11 @@ export async function GET(request: NextRequest) {
         )
       )
     }
+
+    trackOrySignUpEvent({
+      cookies: request.cookies,
+      method: await readKratosAuthMethod(),
+    })
   }
 
   const sealed = await sealSessionCookie({

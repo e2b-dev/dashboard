@@ -9,6 +9,9 @@ export const serverSchema = z.object({
   POSTHOG_API_KEY: z.string().min(1).optional(),
   POSTHOG_PROJECT_ID: z.string().min(1).optional(),
 
+  GA4_MEASUREMENT_ID: z.string().min(1).optional(),
+  GA4_API_SECRET: z.string().min(1).optional(),
+
   LAUNCHDARKLY_SDK_KEY: z.string().min(1).optional(),
 
   // JWE key for the e2b_session cookie. Generate with `openssl rand -hex 32`.
