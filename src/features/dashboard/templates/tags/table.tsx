@@ -387,7 +387,7 @@ function GroupSection({ row, teamSlug, templateId }: GroupSectionProps) {
     : undefined
 
   return (
-    <div className="group/section flex flex-col divide-y divide-stroke/80">
+    <div className="flex flex-col divide-y divide-stroke/80">
       <DataTableRow
         data-state={dataState}
         role={canExpand ? 'button' : undefined}
@@ -396,7 +396,7 @@ function GroupSection({ row, teamSlug, templateId }: GroupSectionProps) {
         onClick={handleClick}
         onKeyDown={handleKeyDown}
         className={cn(
-          'group/row relative flex items-center gap-6 border-b-0 -mx-3 px-3 w-[calc(100%+24px)] hover:bg-bg-1 transition-none',
+          'group/row relative flex items-center gap-6 border-b-0 -mx-3 px-3 w-[calc(100%+24px)] data-[state=closed]:hover:bg-bg-1 transition-none',
           canExpand && 'cursor-pointer'
         )}
       >

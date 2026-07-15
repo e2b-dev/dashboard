@@ -9,4 +9,7 @@ export type AuthUser = {
   providers: string[]
   canChangeEmail: boolean
   canChangePassword: boolean
+  // Ory organization id when the identity signed in via org SSO, else null.
+  organizationId: string | null
+  isSso: boolean
 }

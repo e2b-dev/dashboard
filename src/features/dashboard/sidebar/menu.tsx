@@ -31,7 +31,7 @@ import DashboardSidebarMenuTeams from './menu-teams'
 import { TeamAvatar } from './team-avatar'
 
 export default function DashboardSidebarMenu() {
-  const { team } = useDashboard()
+  const { team, user } = useDashboard()
   const { enabled: postHogEnabled } = useAppPostHogProvider()
   const posthog = usePostHog()
   const [createTeamOpen, setCreateTeamOpen] = useState(false)
@@ -83,12 +83,14 @@ export default function DashboardSidebarMenu() {
           >
             <DashboardSidebarMenuTeams />
 
-            <DropdownMenuItem
-              className="h-9 gap-2.5 [&_svg]:size-5 font-sans prose-body-highlight"
-              onSelect={() => setCreateTeamOpen(true)}
-            >
-              <AddIcon className="ml-0.5" /> Create new team
-            </DropdownMenuItem>
+            {!user.isSso && (
+              <DropdownMenuItem
+                className="h-9 gap-2.5 [&_svg]:size-5 font-sans prose-body-highlight"
+                onSelect={() => setCreateTeamOpen(true)}
+              >
+                <AddIcon className="ml-0.5" /> Create new team
+              </DropdownMenuItem>
+            )}
 
             <DropdownMenuSeparator className="-mx-2" />
 
