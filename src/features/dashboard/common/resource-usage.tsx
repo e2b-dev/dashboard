@@ -126,7 +126,7 @@ export function ResourceSpec({ value, unit, className }: ResourceSpecProps) {
     <p className={cn('flex justify-end gap-1 prose-table', className)}>
       <span
         className={cn(
-          'prose-table-numeric',
+          'prose-table-numeric font-mono',
           hasValue ? 'text-fg-secondary' : 'text-fg-tertiary'
         )}
       >

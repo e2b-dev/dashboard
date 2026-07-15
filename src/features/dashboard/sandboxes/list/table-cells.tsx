@@ -89,35 +89,19 @@ const DiskUsageCellView = ({
 
 export const CpuUsageCell = ({ row }: CellContext<SandboxListRow, unknown>) => (
   <div className="flex w-full justify-end">
-    {row.original.state === 'running' ? (
-      <CpuUsageCellView
-        sandboxId={row.original.sandboxID}
-        totalCpu={row.original.cpuCount}
-      />
-    ) : (
-      <ResourceSpec
-        value={row.original.cpuCount}
-        unit="Core"
-        className={USAGE_TEXT_CLASSNAME}
-      />
-    )}
+    <CpuUsageCellView
+      sandboxId={row.original.sandboxID}
+      totalCpu={row.original.cpuCount}
+    />
   </div>
 )
 
 export const RamUsageCell = ({ row }: CellContext<SandboxListRow, unknown>) => (
   <div className="flex w-full justify-end">
-    {row.original.state === 'running' ? (
-      <RamUsageCellView
-        sandboxId={row.original.sandboxID}
-        totalMem={row.original.memoryMB}
-      />
-    ) : (
-      <ResourceSpec
-        value={row.original.memoryMB / 1024}
-        unit="GB"
-        className={USAGE_TEXT_CLASSNAME}
-      />
-    )}
+    <RamUsageCellView
+      sandboxId={row.original.sandboxID}
+      totalMem={row.original.memoryMB}
+    />
   </div>
 )
 
@@ -125,18 +109,10 @@ export const DiskUsageCell = ({
   row,
 }: CellContext<SandboxListRow, unknown>) => (
   <div className="flex w-full justify-end">
-    {row.original.state === 'running' ? (
-      <DiskUsageCellView
-        sandboxId={row.original.sandboxID}
-        totalDiskGb={row.original.diskSizeMB / 1024}
-      />
-    ) : (
-      <ResourceSpec
-        value={row.original.diskSizeMB / 1024}
-        unit="GB"
-        className={USAGE_TEXT_CLASSNAME}
-      />
-    )}
+    <DiskUsageCellView
+      sandboxId={row.original.sandboxID}
+      totalDiskGb={row.original.diskSizeMB / 1024}
+    />
   </div>
 )
 
