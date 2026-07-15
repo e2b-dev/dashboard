@@ -822,7 +822,9 @@ function generateMockSandboxes(count: number): Sandboxes {
       sandboxID: `i${sandboxIdSuffix()}`,
       startedAt: startDate.toISOString(),
       templateID: template.templateID,
-      state: 'running',
+      // every fifth sandbox is paused so state filters and paused-only UI
+      // states are exercisable in mock mode
+      state: i % 5 === 0 ? 'paused' : 'running',
       volumeMounts: [],
     })
   }

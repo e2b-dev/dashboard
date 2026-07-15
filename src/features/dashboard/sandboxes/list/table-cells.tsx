@@ -21,18 +21,21 @@ import type { SandboxListRow } from './table-config'
 
 const USAGE_TEXT_CLASSNAME = 'prose-table-numeric text-right'
 
-// Live usage is only available for running sandboxes; paused sandboxes fall
-// back to their allocated specs.
+// Live usage only applies to running sandboxes; the store may still hold a
+// stale sample for a sandbox that paused while visible, so non-live reads
+// are skipped and the cells render `-- · <allocation>`.
 
 const CpuUsageCellView = ({
   sandboxId,
   totalCpu,
+  live,
 }: {
   sandboxId: string
   totalCpu?: number
+  live: boolean
 }) => {
-  const cpuUsedPct = useSandboxMetricsStore(
-    (state) => state.metrics?.[sandboxId]?.cpuUsedPct
+  const cpuUsedPct = useSandboxMetricsStore((state) =>
+    live ? state.metrics?.[sandboxId]?.cpuUsedPct : undefined
   )
 
   return (
@@ -48,12 +51,14 @@ const CpuUsageCellView = ({
 const RamUsageCellView = ({
   sandboxId,
   totalMem,
+  live,
 }: {
   sandboxId: string
   totalMem?: number
+  live: boolean
 }) => {
-  const memUsedMb = useSandboxMetricsStore(
-    (state) => state.metrics?.[sandboxId]?.memUsedMb
+  const memUsedMb = useSandboxMetricsStore((state) =>
+    live ? state.metrics?.[sandboxId]?.memUsedMb : undefined
   )
 
   return (
@@ -69,12 +74,14 @@ const RamUsageCellView = ({
 const DiskUsageCellView = ({
   sandboxId,
   totalDiskGb,
+  live,
 }: {
   sandboxId: string
   totalDiskGb: number
+  live: boolean
 }) => {
-  const diskUsedGb = useSandboxMetricsStore(
-    (state) => state.metrics?.[sandboxId]?.diskUsedGb
+  const diskUsedGb = useSandboxMetricsStore((state) =>
+    live ? state.metrics?.[sandboxId]?.diskUsedGb : undefined
   )
 
   return (
@@ -91,6 +98,7 @@ export const CpuUsageCell = ({ row }: CellContext<SandboxListRow, unknown>) => (
     <CpuUsageCellView
       sandboxId={row.original.sandboxID}
       totalCpu={row.original.cpuCount}
+      live={row.original.state === 'running'}
     />
   </div>
 )
@@ -100,6 +108,7 @@ export const RamUsageCell = ({ row }: CellContext<SandboxListRow, unknown>) => (
     <RamUsageCellView
       sandboxId={row.original.sandboxID}
       totalMem={row.original.memoryMB}
+      live={row.original.state === 'running'}
     />
   </div>
 )
@@ -111,6 +120,7 @@ export const DiskUsageCell = ({
     <DiskUsageCellView
       sandboxId={row.original.sandboxID}
       totalDiskGb={row.original.diskSizeMB / 1024}
+      live={row.original.state === 'running'}
     />
   </div>
 )
