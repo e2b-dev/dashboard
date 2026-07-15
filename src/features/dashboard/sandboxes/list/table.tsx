@@ -2,8 +2,8 @@
 
 import {
   keepPreviousData,
+  useQuery,
   useSuspenseInfiniteQuery,
-  useSuspenseQuery,
 } from '@tanstack/react-query'
 import {
   type ColumnDef,
@@ -18,8 +18,12 @@ import {
 import { subHours } from 'date-fns'
 import { useEffect, useMemo, useRef } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
-import type { Sandboxes } from '@/core/modules/sandboxes/models'
-import { useSandboxListTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
+import type { Sandboxes, SandboxState } from '@/core/modules/sandboxes/models'
+import { SandboxIdSchema } from '@/core/shared/schemas/api'
+import {
+  isStatusFilterActive,
+  useSandboxListTableStore,
+} from '@/features/dashboard/sandboxes/list/stores/table-store'
 import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils'
@@ -37,11 +41,7 @@ import type { SandboxStartedAtFilter } from './stores/table-store'
 import { getSandboxListEffectiveSorting } from './stores/table-store'
 import { SandboxesTableBody } from './table-body'
 import type { SandboxListRow } from './table-config'
-import {
-  sandboxIdFuzzyFilter,
-  sandboxListColumns,
-  useLegacySandboxListColumns,
-} from './table-config'
+import { sandboxIdFuzzyFilter, sandboxListColumns } from './table-config'
 
 const STARTED_AT_FILTER_HOURS: Record<
   Exclude<SandboxStartedAtFilter, undefined>,
@@ -57,11 +57,13 @@ function buildColumnFilters({
   templateFilters,
   cpuCount,
   memoryMB,
+  statusFilters,
 }: {
   startedAtFilter: SandboxStartedAtFilter
   templateFilters: string[]
   cpuCount?: number
   memoryMB?: number
+  statusFilters: SandboxState[]
 }): ColumnFiltersState {
   const filters: ColumnFiltersState = []
 
@@ -84,19 +86,38 @@ function buildColumnFilters({
     filters.push({ id: 'ramUsage', value: memoryMB })
   }
 
+  if (isStatusFilterActive(statusFilters)) {
+    filters.push({ id: 'status', value: statusFilters[0] })
+  }
+
   return filters
 }
 
 const SANDBOXES_PAGE_SIZE = 50
+
+const SANDBOX_ID_EXACT_SEARCH_MIN_LENGTH = 16
+
+function getSearchedSandboxId(globalFilter: string): string | null {
+  const query = globalFilter.trim()
+
+  if (
+    query.length < SANDBOX_ID_EXACT_SEARCH_MIN_LENGTH ||
+    !SandboxIdSchema.safeParse(query).success
+  ) {
+    return null
+  }
+
+  return query
+}
 
 interface SandboxesTableViewProps {
   sandboxes: Sandboxes
   columns: ColumnDef<SandboxListRow>[]
   refetch: () => void
   isFetching: boolean
-  hasNextPage?: boolean
-  isFetchingNextPage?: boolean
-  fetchNextPage?: () => void
+  hasNextPage: boolean
+  isFetchingNextPage: boolean
+  fetchNextPage: () => void
 }
 
 function SandboxesTableView({
@@ -126,6 +147,7 @@ function SandboxesTableView({
     templateFilters,
     cpuCount,
     memoryMB,
+    statusFilters,
     sorting,
     globalFilter,
     setSorting,
@@ -139,8 +161,9 @@ function SandboxesTableView({
         templateFilters,
         cpuCount,
         memoryMB,
+        statusFilters,
       }),
-    [startedAtFilter, templateFilters, cpuCount, memoryMB]
+    [startedAtFilter, templateFilters, cpuCount, memoryMB, statusFilters]
   )
 
   const activeSorting = getSandboxListEffectiveSorting(sorting)
@@ -158,6 +181,9 @@ function SandboxesTableView({
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     enableSorting: true,
+    // Rows arrive already sorted from the server, so the table only reflects
+    // the sort indicator instead of re-sorting client-side.
+    manualSorting: true,
     enableMultiSort: false,
     enableSortingRemoval: false,
     columnResizeMode: 'onChange',
@@ -192,31 +218,36 @@ function SandboxesTableView({
         table={table}
         onRefresh={refetch}
         isRefreshing={isFetching}
+        hasNextPage={hasNextPage}
       />
 
       <div
         className={cn(
-          'bg-bg mt-4 flex-1 w-full overflow-x-auto md:max-w-[calc(calc(100svw-48px)-var(--sidebar-width-active))]',
+          'bg-bg mt-4 flex-1 -mx-3 md:-mx-6 overflow-x-auto md:max-w-[calc(100svw-var(--sidebar-width-active))]',
           SIDEBAR_TRANSITION_CLASSNAMES
         )}
       >
         <DataTable
           className={cn(
-            'h-full overflow-y-auto md:min-w-[calc(100svw-48px-var(--sidebar-width-active))]',
+            'h-full overflow-y-auto px-3 md:px-6 md:min-w-[calc(100svw-var(--sidebar-width-active))]',
             SIDEBAR_TRANSITION_CLASSNAMES
           )}
           style={{ ...columnSizeVars }}
           ref={scrollRef}
         >
-          <DataTableHeader className="bg-bg sticky top-0 z-10 shadow-xs">
+          <DataTableHeader className="bg-bg sticky top-0 z-30 shadow-xs">
             {table.getHeaderGroups().map((headerGroup) => (
-              <DataTableRow key={headerGroup.id} className="border-b-0">
+              <DataTableRow
+                key={headerGroup.id}
+                className="border-b-0 -mx-2 px-2 w-[calc(100%+16px)]"
+              >
                 {headerGroup.headers.map((header) => (
                   <DataTableHead
                     key={header.id}
                     header={header}
                     sorting={tableSorting.find((s) => s.id === header.id)?.desc}
                     align={
+                      header.id === 'running' ||
                       header.id === 'cpuUsage' ||
                       header.id === 'ramUsage' ||
                       header.id === 'diskUsage'
@@ -250,12 +281,20 @@ function SandboxesTableView({
   )
 }
 
-export function NewSandboxesTable() {
+export function SandboxesTable() {
   const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/sandboxes'>()
   const trpc = useTRPC()
   const pollingInterval = useSandboxListTableStore(
     (state) => state.pollingInterval
   )
+  const statusFilters = useSandboxListTableStore((state) => state.statusFilters)
+  const globalFilter = useSandboxListTableStore((state) => state.globalFilter)
+  const sorting = useSandboxListTableStore((state) => state.sorting)
+
+  // The only sortable column is startedAt; map its direction to the server order
+  // so sorting happens across the whole dataset, not just the loaded pages.
+  const order: 'asc' | 'desc' =
+    getSandboxListEffectiveSorting(sorting)[0]?.desc === false ? 'asc' : 'desc'
 
   const {
     data,
@@ -266,7 +305,12 @@ export function NewSandboxesTable() {
     isFetchingNextPage,
   } = useSuspenseInfiniteQuery(
     trpc.sandboxes.listSandboxesPaginated.infiniteQueryOptions(
-      { teamSlug, limit: SANDBOXES_PAGE_SIZE },
+      {
+        teamSlug,
+        limit: SANDBOXES_PAGE_SIZE,
+        states: isStatusFilterActive(statusFilters) ? statusFilters : undefined,
+        order,
+      },
       {
         getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
         initialCursor: undefined,
@@ -278,10 +322,34 @@ export function NewSandboxesTable() {
     )
   )
 
-  const sandboxes = useMemo(
-    () => data.pages.flatMap((page) => page.sandboxes),
-    [data]
+  // The search input is debounced into globalFilter, so this fires at most
+  // once per pause in typing.
+  const searchedSandboxId = getSearchedSandboxId(globalFilter)
+  const { data: exactMatch } = useQuery(
+    trpc.sandboxes.findSandboxById.queryOptions(
+      { teamSlug, sandboxId: searchedSandboxId ?? '' },
+      {
+        enabled: searchedSandboxId !== null,
+        staleTime: 30_000,
+      }
+    )
   )
+
+  const sandboxes = useMemo(() => {
+    const loaded = data.pages.flatMap((page) => page.sandboxes)
+
+    // Guard against results retained from a previous query after the search
+    // was cleared or edited.
+    if (
+      !exactMatch ||
+      exactMatch.sandboxID !== searchedSandboxId ||
+      loaded.some((sandbox) => sandbox.sandboxID === exactMatch.sandboxID)
+    ) {
+      return loaded
+    }
+
+    return [...loaded, exactMatch]
+  }, [data, exactMatch, searchedSandboxId])
 
   return (
     <SandboxesTableView
@@ -295,31 +363,3 @@ export function NewSandboxesTable() {
     />
   )
 }
-
-export function LegacySandboxesTable() {
-  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/sandboxes'>()
-  const trpc = useTRPC()
-  const legacySandboxListColumns = useLegacySandboxListColumns()
-
-  const { data, refetch, isFetching } = useSuspenseQuery(
-    trpc.sandboxes.getSandboxes.queryOptions(
-      { teamSlug },
-      {
-        refetchOnMount: 'always',
-        refetchOnWindowFocus: true,
-        placeholderData: keepPreviousData,
-      }
-    )
-  )
-
-  return (
-    <SandboxesTableView
-      sandboxes={data.sandboxes}
-      columns={legacySandboxListColumns}
-      refetch={refetch}
-      isFetching={isFetching}
-    />
-  )
-}
-
-export default LegacySandboxesTable

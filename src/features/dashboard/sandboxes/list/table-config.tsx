@@ -3,21 +3,18 @@
 import { rankItem } from '@tanstack/match-sorter-utils'
 import type { ColumnDef, FilterFn, Table } from '@tanstack/react-table'
 import { isWithinInterval } from 'date-fns'
-import { useMemo } from 'react'
 import type { DateRange } from 'react-day-picker'
 import type { Sandbox } from '@/core/modules/sandboxes/models'
-import { getTimestampColumnSize } from '@/features/dashboard/common/timestamp-column'
-import { useTimezone } from '@/features/dashboard/timezone'
 
 import {
   CpuUsageCell,
   DiskUsageCell,
   IdCell,
-  LegacyStartedAtCell,
   MetadataCell,
   RamUsageCell,
+  RunningCell,
   StartedAtCell,
-  StateCell,
+  StatusCell,
   TemplateCell,
 } from './table-cells'
 
@@ -112,7 +109,7 @@ export const sandboxListColumns: ColumnDef<SandboxListRow>[] = [
     accessorKey: 'startedAt',
     header: 'Started At',
     cell: StartedAtCell,
-    size: 150,
+    size: 152,
     enableResizing: false,
     filterFn: startedAtDateRangeFilter,
     enableColumnFilter: true,
@@ -133,10 +130,11 @@ export const sandboxListColumns: ColumnDef<SandboxListRow>[] = [
     enableGlobalFilter: true,
   },
   {
+    // The column is presented as "Status", but the API field is `state`.
     accessorKey: 'state',
-    id: 'state',
-    header: 'State',
-    cell: StateCell,
+    id: 'status',
+    header: 'Status',
+    cell: StatusCell,
     size: 90,
     minSize: 80,
     enableResizing: false,
@@ -158,10 +156,20 @@ export const sandboxListColumns: ColumnDef<SandboxListRow>[] = [
     enableGlobalFilter: false,
   },
   {
+    id: 'running',
+    header: 'Running',
+    cell: RunningCell,
+    size: 80,
+    enableResizing: false,
+    enableSorting: false,
+    enableColumnFilter: false,
+    enableGlobalFilter: false,
+  },
+  {
     id: 'cpuUsage',
     header: 'CPU',
     cell: (props) => <CpuUsageCell {...props} />,
-    size: 100,
+    size: 104,
     enableResizing: false,
     enableSorting: false,
     enableColumnFilter: true,
@@ -171,7 +179,7 @@ export const sandboxListColumns: ColumnDef<SandboxListRow>[] = [
     id: 'ramUsage',
     header: 'Memory',
     cell: (props) => <RamUsageCell {...props} />,
-    size: 140,
+    size: 150,
     enableResizing: false,
     enableSorting: false,
     enableColumnFilter: true,
@@ -181,7 +189,7 @@ export const sandboxListColumns: ColumnDef<SandboxListRow>[] = [
     id: 'diskUsage',
     header: 'Disk',
     cell: (props) => <DiskUsageCell {...props} />,
-    size: 100,
+    size: 138,
     enableResizing: false,
     enableSorting: false,
     enableColumnFilter: false,
@@ -199,98 +207,3 @@ export const sandboxListColumns: ColumnDef<SandboxListRow>[] = [
     enableSorting: false,
   },
 ]
-
-// Templates' base (172) minus the ", 2026" year segment the legacy format drops.
-const LEGACY_TIMESTAMP_COLUMN_BASE_SIZE = 124
-
-export const useLegacySandboxListColumns = (): ColumnDef<SandboxListRow>[] => {
-  const { timezone } = useTimezone()
-  const timestampColumnSize = getTimestampColumnSize(
-    timezone,
-    LEGACY_TIMESTAMP_COLUMN_BASE_SIZE
-  )
-
-  return useMemo(
-    () => [
-      {
-        accessorKey: 'sandboxID',
-        header: 'ID',
-        cell: IdCell,
-        size: 165,
-        minSize: 100,
-        enableResizing: false,
-        enableColumnFilter: false,
-        enableSorting: false,
-        enableGlobalFilter: true,
-      },
-      {
-        accessorFn: (row) => row.alias || row.templateID,
-        id: 'template',
-        header: 'TEMPLATE',
-        cell: TemplateCell,
-        size: 250,
-        minSize: 100,
-        maxSize: 350,
-        enableResizing: true,
-        filterFn: templateIdentifierFilter,
-        enableGlobalFilter: false,
-      },
-      {
-        id: 'cpuUsage',
-        header: 'CPU',
-        cell: (props) => <CpuUsageCell {...props} />,
-        size: 100,
-        enableResizing: false,
-        enableSorting: false,
-        enableColumnFilter: true,
-        filterFn: resourceEqualsFilter,
-      },
-      {
-        id: 'ramUsage',
-        header: 'Memory',
-        cell: (props) => <RamUsageCell {...props} />,
-        size: 140,
-        enableResizing: false,
-        enableSorting: false,
-        enableColumnFilter: true,
-        filterFn: resourceEqualsFilter,
-      },
-      {
-        id: 'diskUsage',
-        header: 'Disk',
-        cell: (props) => <DiskUsageCell {...props} />,
-        size: 100,
-        enableResizing: false,
-        enableSorting: false,
-        enableColumnFilter: false,
-      },
-      {
-        id: 'metadata',
-        accessorFn: (row) => JSON.stringify(row.metadata ?? {}),
-        header: 'Metadata',
-        cell: MetadataCell,
-        filterFn: 'includesStringSensitive',
-        enableGlobalFilter: false,
-        size: 200,
-        minSize: 160,
-        enableResizing: true,
-        enableSorting: false,
-      },
-      {
-        id: 'startedAt',
-        accessorKey: 'startedAt',
-        header: 'Started At',
-        cell: LegacyStartedAtCell,
-        size: timestampColumnSize,
-        enableResizing: false,
-        filterFn: startedAtDateRangeFilter,
-        enableColumnFilter: true,
-        enableGlobalFilter: false,
-        sortingFn: (rowA, rowB) => {
-          return rowA.original.startedAt.localeCompare(rowB.original.startedAt)
-        },
-      },
-    ],
-    [timestampColumnSize]
-  )
-}

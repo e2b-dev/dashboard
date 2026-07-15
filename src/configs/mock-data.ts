@@ -1,5 +1,6 @@
 import { addHours, subHours } from 'date-fns'
-import { nanoid } from 'nanoid'
+import { customAlphabet, nanoid } from 'nanoid'
+import type { UsageResponse } from '@/core/modules/billing/models'
 import type { Sandbox, Sandboxes } from '@/core/modules/sandboxes/models'
 import type {
   ClientSandboxesMetrics,
@@ -720,6 +721,11 @@ const COMPONENTS = [
   'monitoring',
 ] as const
 
+const sandboxIdSuffix = customAlphabet(
+  'abcdefghijklmnopqrstuvwxyz0123456789',
+  20
+)
+
 function generateMockSandboxes(count: number): Sandboxes {
   const sandboxes: Sandboxes = []
   const baseDate = new Date()
@@ -813,15 +819,27 @@ function generateMockSandboxes(count: number): Sandboxes {
           ),
         }),
       },
-      sandboxID: nanoid(8),
+      sandboxID: `i${sandboxIdSuffix()}`,
       startedAt: startDate.toISOString(),
       templateID: template.templateID,
-      state: 'running',
+      // every fifth sandbox is paused so state filters and paused-only UI
+      // states are exercisable in mock mode
+      state: i % 5 === 0 ? 'paused' : 'running',
       volumeMounts: [],
     })
   }
 
   return sandboxes
+}
+
+// Deterministic per-ID so a sandbox consistently reports (or lacks) metrics
+// across polls; ~20% report none.
+function reportsMetrics(sandboxID: string): boolean {
+  let hash = 0
+  for (let i = 0; i < sandboxID.length; i++) {
+    hash = (hash * 31 + sandboxID.charCodeAt(i)) % 997
+  }
+  return hash % 5 !== 0
 }
 
 function generateMockMetrics(sandboxes: Sandbox[]): {
@@ -894,6 +912,10 @@ function generateMockMetrics(sandboxes: Sandbox[]): {
   }
 
   for (const sandbox of sandboxes) {
+    if (sandbox.state !== 'running' || !reportsMetrics(sandbox.sandboxID)) {
+      continue
+    }
+
     const pattern = templatePatterns[sandbox.templateID] || {
       memoryProfile: 'web',
       cpuIntensity: 0.5,
@@ -1167,9 +1189,62 @@ export function generateMockTeamMetrics(
   return { metrics, step }
 }
 
+/**
+ * Generate mock team usage with hourly granularity for the past 90 days.
+ * Activity peaks on weekdays between 8:00 and 18:00 UTC, so the day-boundary
+ * shift is clearly visible when toggling the usage page between timezones.
+ */
+function generateMockUsage(): UsageResponse {
+  const hourMs = 60 * 60 * 1000
+  const currentHour = Math.floor(Date.now() / hourMs) * hourMs
+  const start = currentHour - 90 * 24 * hourMs
+
+  const hourUsages: UsageResponse['hour_usages'] = []
+
+  for (let timestamp = start; timestamp <= currentHour; timestamp += hourMs) {
+    const date = new Date(timestamp)
+    const utcHour = date.getUTCHours()
+    const dayOfWeek = date.getUTCDay()
+    const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5
+
+    let loadFactor = 0.05 + Math.random() * 0.05
+    if (utcHour >= 8 && utcHour <= 18) {
+      const peakShape = Math.sin(((utcHour - 8) * Math.PI) / 10)
+      loadFactor = isWeekday ? 0.5 + peakShape * 0.5 : 0.2 + peakShape * 0.1
+    }
+    loadFactor *= 0.85 + Math.random() * 0.3
+
+    const sandboxCount = Math.round(120 * loadFactor)
+    const cpuHours = Number((sandboxCount * 0.7).toFixed(3))
+    const ramGibHours = Number((sandboxCount * 1.4).toFixed(3))
+
+    hourUsages.push({
+      timestamp,
+      sandbox_count: sandboxCount,
+      cpu_hours: cpuHours,
+      ram_gib_hours: ramGibHours,
+      price_for_cpu: Number((cpuHours * 0.000231).toFixed(6)),
+      price_for_ram: Number((ramGibHours * 0.000231).toFixed(6)),
+    })
+  }
+
+  return {
+    credits: 87.5,
+    day_usages: [],
+    hour_usages: hourUsages,
+  }
+}
+
 export const MOCK_METRICS_DATA = (sandboxes: Sandbox[]) =>
   generateMockMetrics(sandboxes)
-export const MOCK_SANDBOXES_DATA = () => generateMockSandboxes(120)
+export const MOCK_USAGE_DATA = generateMockUsage
+// Memoized so sandbox IDs stay stable across requests, allowing metrics
+// lookups to join by ID.
+let mockSandboxesCache: Sandboxes | null = null
+export const MOCK_SANDBOXES_DATA = () => {
+  mockSandboxesCache ??= generateMockSandboxes(120)
+  return mockSandboxesCache
+}
 export const MOCK_TEMPLATES_DATA = TEMPLATES
 export const MOCK_DEFAULT_TEMPLATES_DATA = DEFAULT_TEMPLATES
 export const MOCK_TEAM_METRICS_DATA = generateMockTeamMetrics

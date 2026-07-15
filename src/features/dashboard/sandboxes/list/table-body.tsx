@@ -6,7 +6,10 @@ import { Button } from '@/ui/primitives/button'
 import { AddIcon, CloseIcon } from '@/ui/primitives/icons'
 import SandboxesListEmpty from './empty'
 import { useSandboxesMetrics } from './hooks/use-sandboxes-metrics'
-import { useSandboxListTableStore } from './stores/table-store'
+import {
+  isStatusFilterActive,
+  useSandboxListTableStore,
+} from './stores/table-store'
 import type { SandboxListRow, SandboxListTable } from './table-config'
 import { SandboxesTableRow } from './table-row'
 
@@ -41,6 +44,7 @@ export const SandboxesTableBody = ({
       state.templateFilters.length > 0 ||
       state.cpuCount !== undefined ||
       state.memoryMB !== undefined ||
+      isStatusFilterActive(state.statusFilters) ||
       Boolean(state.globalFilter)
     )
   })
@@ -77,8 +81,12 @@ export const SandboxesTableBody = ({
 
   const lastVisibleIndex = virtualizer.getVirtualItems().at(-1)?.index ?? -1
 
+  // Client-side filters shrink centerRows, which would keep this condition
+  // true and drain every page; filtered views only cover loaded pages, with
+  // the load-more button as the manual escape hatch.
   useEffect(() => {
     if (
+      !hasFilter &&
       hasNextPage &&
       !isFetchingNextPage &&
       fetchNextPage &&
@@ -87,6 +95,7 @@ export const SandboxesTableBody = ({
       fetchNextPage()
     }
   }, [
+    hasFilter,
     hasNextPage,
     isFetchingNextPage,
     lastVisibleIndex,

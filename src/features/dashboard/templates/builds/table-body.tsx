@@ -77,7 +77,7 @@ export function BuildsTableBody({
                 'group-hover/row:hidden group-focus-visible/row:hidden'
               )}
             />
-            <RowHoverFrame />
+            <RowHoverFrame className="-top-px bottom-0" />
           </DataTableRow>
         )
       })}

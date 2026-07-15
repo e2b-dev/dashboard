@@ -2,6 +2,8 @@ import 'server-only'
 
 import { z } from 'zod'
 import { authHeaders } from '@/configs/api'
+import { USE_MOCK_DATA } from '@/configs/env-flags'
+import { MOCK_USAGE_DATA } from '@/configs/mock-data'
 import type {
   AddOnOrderConfirmResponse,
   AddOnOrderCreateResponse,
@@ -122,6 +124,11 @@ export function createBillingRepository(
       return ok((await res.json()) as TeamItems)
     },
     async getUsage() {
+      if (USE_MOCK_DATA) {
+        // Mock timestamps are already in milliseconds — skip the API mapping.
+        return ok(MOCK_USAGE_DATA())
+      }
+
       const res = await fetch(
         `${deps.billingApiUrl}/v2/teams/${scope.teamId}/usage`,
         {

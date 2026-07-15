@@ -2192,6 +2192,14 @@ paths:
               $ref: "#/components/schemas/SandboxState"
           style: form
           explode: false
+        - name: order
+          in: query
+          description: Sort direction by sandbox start time. Defaults to desc (newest first).
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
         - $ref: "#/components/parameters/paginationNextToken"
         - $ref: "#/components/parameters/paginationLimit"
       responses:

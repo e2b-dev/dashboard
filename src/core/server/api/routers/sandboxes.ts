@@ -2,10 +2,12 @@ import { z } from 'zod'
 import { USE_MOCK_DATA } from '@/configs/env-flags'
 import {
   calculateTeamMetricsStep,
+  MOCK_METRICS_DATA,
   MOCK_SANDBOXES_DATA,
   MOCK_TEAM_METRICS_DATA,
   MOCK_TEAM_METRICS_MAX_DATA,
 } from '@/configs/mock-data'
+import type { Sandbox } from '@/core/modules/sandboxes/models'
 import { createSandboxesRepository } from '@/core/modules/sandboxes/repository.server'
 import {
   GetTeamMetricsMaxSchema,
@@ -19,6 +21,7 @@ import {
 } from '@/core/server/functions/sandboxes/utils'
 import { createTRPCRouter } from '@/core/server/trpc/init'
 import { protectedTeamProcedure } from '@/core/server/trpc/procedures'
+import { SandboxIdSchema } from '@/core/shared/schemas/api'
 
 const sandboxesRepositoryProcedure = protectedTeamProcedure.use(
   withTeamAuthedRequestRepository(
@@ -31,31 +34,13 @@ const sandboxesRepositoryProcedure = protectedTeamProcedure.use(
 
 export const sandboxesRouter = createTRPCRouter({
   // QUERIES
-  getSandboxes: sandboxesRepositoryProcedure.query(async ({ ctx }) => {
-    if (USE_MOCK_DATA) {
-      await new Promise((resolve) => setTimeout(resolve, 200))
-
-      return {
-        sandboxes: MOCK_SANDBOXES_DATA(),
-      }
-    }
-
-    const sandboxesResult = await ctx.sandboxesRepository.listSandboxes()
-    if (!sandboxesResult.ok) {
-      throwTRPCErrorFromRepoError(sandboxesResult.error)
-    }
-
-    return {
-      sandboxes: sandboxesResult.data,
-    }
-  }),
-
   listSandboxesPaginated: sandboxesRepositoryProcedure
     .input(
       z.object({
         cursor: z.string().optional(),
         limit: z.number().int().min(1).max(100).default(50),
         states: z.array(z.enum(['running', 'paused'])).optional(),
+        order: z.enum(['asc', 'desc']).optional(),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -77,6 +62,7 @@ export const sandboxesRouter = createTRPCRouter({
           cursor: input.cursor,
           limit: input.limit,
           states: input.states,
+          order: input.order,
         })
       if (!sandboxesResult.ok) {
         throwTRPCErrorFromRepoError(sandboxesResult.error)
@@ -85,6 +71,60 @@ export const sandboxesRouter = createTRPCRouter({
       return {
         sandboxes: sandboxesResult.data.sandboxes,
         nextCursor: sandboxesResult.data.nextCursor,
+      }
+    }),
+
+  // Exact-ID lookup backing the list search: finds a sandbox regardless of
+  // which pages the infinite list has loaded. Returns null instead of
+  // throwing on 404 so search-as-you-type misses stay silent.
+  findSandboxById: sandboxesRepositoryProcedure
+    .input(
+      z.object({
+        sandboxId: SandboxIdSchema,
+      })
+    )
+    .query(async ({ ctx, input }): Promise<Sandbox | null> => {
+      if (USE_MOCK_DATA) {
+        await new Promise((resolve) => setTimeout(resolve, 200))
+
+        return (
+          MOCK_SANDBOXES_DATA().find(
+            (sandbox) => sandbox.sandboxID === input.sandboxId
+          ) ?? null
+        )
+      }
+
+      const detailsResult = await ctx.sandboxesRepository.getSandboxDetails(
+        input.sandboxId
+      )
+      if (!detailsResult.ok) {
+        if (detailsResult.error.status === 404) {
+          return null
+        }
+        throwTRPCErrorFromRepoError(detailsResult.error)
+      }
+
+      // The database-record fallback only resolves killed sandboxes, which
+      // don't belong in the running/paused list.
+      if (detailsResult.data.source !== 'infra') {
+        return null
+      }
+
+      const details = detailsResult.data.details
+
+      return {
+        sandboxID: details.sandboxID,
+        clientID: details.clientID,
+        templateID: details.templateID,
+        alias: details.alias,
+        startedAt: details.startedAt,
+        endAt: details.endAt,
+        cpuCount: details.cpuCount,
+        memoryMB: details.memoryMB,
+        diskSizeMB: details.diskSizeMB,
+        metadata: details.metadata,
+        state: details.state,
+        envdVersion: details.envdVersion,
       }
     }),
 
@@ -97,10 +137,21 @@ export const sandboxesRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { sandboxIds } = input
 
-      if (sandboxIds.length === 0 || USE_MOCK_DATA) {
+      if (sandboxIds.length === 0) {
         return {
           metrics: {},
         }
+      }
+
+      if (USE_MOCK_DATA) {
+        await new Promise((resolve) => setTimeout(resolve, 200))
+
+        const requestedIds = new Set(sandboxIds)
+        return MOCK_METRICS_DATA(
+          MOCK_SANDBOXES_DATA().filter((sandbox) =>
+            requestedIds.has(sandbox.sandboxID)
+          )
+        )
       }
 
       const metricsDataResult =

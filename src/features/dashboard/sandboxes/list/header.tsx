@@ -13,12 +13,14 @@ interface SandboxesHeaderProps {
   table: SandboxListTable
   onRefresh: () => void
   isRefreshing: boolean
+  hasNextPage?: boolean
 }
 
 export function SandboxesHeader({
   table,
   onRefresh,
   isRefreshing,
+  hasNextPage = false,
 }: SandboxesHeaderProps) {
   'use no memo'
 
@@ -31,10 +33,15 @@ export function SandboxesHeader({
   const tableState = table.getState()
   const { columnFilters, globalFilter } = tableState
 
-  const showFilteredRowCount = columnFilters.length > 0 || Boolean(globalFilter)
+  const isFiltered = columnFilters.length > 0 || Boolean(globalFilter)
 
-  const filteredCount = table.getFilteredRowModel().rows.length
-  const totalCount = table.getCoreRowModel().rows.length
+  // With server-side pagination the row models only hold the loaded pages,
+  // so "N+" marks the count as a lower bound until all pages are in.
+  const visibleCount = isFiltered
+    ? table.getFilteredRowModel().rows.length
+    : table.getCoreRowModel().rows.length
+  const countLabel = `${visibleCount.toLocaleString('en-US')}${hasNextPage ? '+' : ''}`
+  const countNoun = visibleCount === 1 && !hasNextPage ? 'sandbox' : 'sandboxes'
 
   return (
     <header className="flex w-full flex-col gap-2 md:flex-row md:flex-wrap md:items-start md:justify-between">
@@ -44,23 +51,21 @@ export function SandboxesHeader({
         </div>
 
         <Suspense fallback={null}>
-          <SandboxesTableFilters className="w-full min-w-0 sm:w-auto" />
+          <SandboxesTableFilters
+            className="w-full min-w-0 sm:w-auto"
+            showStatusFilter={Boolean(table.getColumn('status'))}
+          />
         </Suspense>
 
         <div className="hidden w-2 shrink-0 sm:block" aria-hidden="true" />
 
         <span className="prose-label-highlight h-9 flex w-full min-w-0 items-center gap-1 uppercase sm:w-auto">
-          {showFilteredRowCount ? (
-            <>
-              <span className="text-fg">
-                {filteredCount} {filteredCount === 1 ? 'result' : 'results'}
-              </span>
-              <span className="text-fg-tertiary"> · </span>
-              <span className="text-fg-tertiary">{totalCount} total</span>
-            </>
-          ) : (
-            <span className="text-fg-tertiary">{totalCount} total</span>
-          )}
+          <span className={isFiltered ? 'text-fg' : 'text-fg-tertiary'}>
+            {countLabel} {countNoun}
+          </span>
+          {isFiltered ? (
+            <span className="text-fg-tertiary"> · filtered</span>
+          ) : null}
         </span>
       </div>
 

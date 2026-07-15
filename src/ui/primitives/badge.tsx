@@ -9,8 +9,8 @@ const badgeVariants = cva(
     'inline-flex items-center justify-center w-fit',
     // Text and cursor
     'prose-label uppercase cursor-default whitespace-nowrap shrink-0 overflow-hidden',
-    // Icon styles
-    ' [&>svg]:pointer-events-none ![&>svg]:pl-0.75 [&>svg]:size-3',
+    // Icon styles — important, so ancestor [&_svg] rules (e.g. Button's) can't restyle badge-owned icons
+    ' [&>svg]:pointer-events-none ![&>svg]:pl-0.75 [&>svg]:size-3! [&>svg]:text-current!',
     // Interactive states
     'focus-visible:ring-1',
     // Error state
