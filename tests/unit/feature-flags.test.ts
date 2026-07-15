@@ -52,25 +52,6 @@ describe('createFeatureFlagService', () => {
     expect(result).toBe(false)
   })
 
-  it('evaluates and validates payload flags through the provider', async () => {
-    const provider = {
-      evaluate: vi.fn().mockResolvedValue({
-        getFlagValue: vi.fn(),
-        getPayload: vi.fn().mockReturnValue(['team-id']),
-      }),
-    }
-
-    const result = await createFeatureFlagService(provider).getPayload(
-      'connectionsTeams',
-      context
-    )
-
-    expect(result).toEqual(['team-id'])
-    expect(provider.evaluate).toHaveBeenCalledWith(context, [
-      FEATURE_FLAGS.connectionsTeams,
-    ])
-  })
-
   it('evaluates the registry in a single provider call', async () => {
     const provider = {
       evaluate: vi.fn().mockResolvedValue({
@@ -84,7 +65,7 @@ describe('createFeatureFlagService', () => {
     expect(provider.evaluate).toHaveBeenCalledTimes(1)
     expect(provider.evaluate).toHaveBeenCalledWith(context, [
       FEATURE_FLAGS.agentsEnabled,
-      FEATURE_FLAGS.connectionsTeams,
+      FEATURE_FLAGS.connectionsEnabled,
       FEATURE_FLAGS.isAdmin,
       FEATURE_FLAGS.newSandboxList,
       FEATURE_FLAGS.newUsagePage,
@@ -100,12 +81,12 @@ describe('createFeatureFlagService', () => {
         value: true,
       },
       {
-        id: 'connectionsTeams',
-        key: 'connections_teams',
-        kind: 'payload',
-        description: 'Team IDs with access to the dashboard connections page.',
-        defaultValue: [],
-        value: [],
+        id: 'connectionsEnabled',
+        key: 'connections_enabled',
+        kind: 'boolean',
+        description: 'Enables the dashboard connections page.',
+        defaultValue: false,
+        value: true,
       },
       {
         id: 'isAdmin',

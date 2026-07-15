@@ -10,15 +10,11 @@ import {
 import {
   type BooleanFeatureFlagId,
   FEATURE_FLAGS,
-  type PayloadFeatureFlagId,
 } from '@/core/modules/feature-flags/definitions'
 import type { EvaluatedFeatureFlag } from '@/core/modules/feature-flags/types'
 
 type FeatureFlagsContextValue = {
   flags: EvaluatedFeatureFlag[]
-  getPayload<Id extends PayloadFeatureFlagId>(
-    flagId: Id
-  ): (typeof FEATURE_FLAGS)[Id]['defaultValue']
   isEnabled(flagId: BooleanFeatureFlagId): boolean
 }
 
@@ -52,18 +48,8 @@ export function FeatureFlagsProvider({
   )
 
   const value = useMemo(
-    () => ({
-      flags: initialFlags,
-      getPayload<Id extends PayloadFeatureFlagId>(flagId: Id) {
-        const evaluatedFlag = flagsById.get(flagId)
-
-        return (evaluatedFlag?.value ??
-          FEATURE_FLAGS[flagId]
-            .defaultValue) as (typeof FEATURE_FLAGS)[Id]['defaultValue']
-      },
-      isEnabled,
-    }),
-    [flagsById, initialFlags, isEnabled]
+    () => ({ flags: initialFlags, isEnabled }),
+    [initialFlags, isEnabled]
   )
 
   return (
@@ -85,10 +71,4 @@ export function useFeatureFlags() {
 
 export function useFeatureFlag(flagId: BooleanFeatureFlagId) {
   return useFeatureFlags().isEnabled(flagId)
-}
-
-export function useFeatureFlagPayload<Id extends PayloadFeatureFlagId>(
-  flagId: Id
-) {
-  return useFeatureFlags().getPayload(flagId)
 }

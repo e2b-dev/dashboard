@@ -33,18 +33,21 @@ export default async function ConnectionsPage({
     notFound()
   }
 
-  const enabledTeams = await featureFlags.getPayload('connectionsTeams', {
-    user: {
-      id: authContext.user.id,
-      email: authContext.user.email ?? undefined,
-    },
-    team: {
-      id: teamId.data,
-      slug: teamSlug,
-    },
-  })
+  const connectionsEnabled = await featureFlags.isEnabled(
+    'connectionsEnabled',
+    {
+      user: {
+        id: authContext.user.id,
+        email: authContext.user.email ?? undefined,
+      },
+      team: {
+        id: teamId.data,
+        slug: teamSlug,
+      },
+    }
+  )
 
-  if (!enabledTeams.includes(teamId.data)) {
+  if (!connectionsEnabled) {
     notFound()
   }
 

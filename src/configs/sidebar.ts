@@ -1,7 +1,4 @@
-import type {
-  BooleanFeatureFlagId,
-  PayloadFeatureFlagId,
-} from '@/core/modules/feature-flags/definitions'
+import type { BooleanFeatureFlagId } from '@/core/modules/feature-flags/definitions'
 import {
   AccountSettingsIcon,
   CardIcon,
@@ -31,7 +28,6 @@ export type SidebarNavItem = {
   group?: string
   activeMatch?: string
   featureFlag?: BooleanFeatureFlagId
-  teamFeatureFlag?: PayloadFeatureFlagId
 }
 
 export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
@@ -64,7 +60,7 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
     href: (args) => PROTECTED_URLS.CONNECTIONS(args.teamSlug!),
     icon: IntegrationsIcon,
     activeMatch: `/dashboard/*/connections`,
-    teamFeatureFlag: 'connectionsTeams',
+    featureFlag: 'connectionsEnabled',
   },
   ...(INCLUDE_ARGUS
     ? [
@@ -143,14 +139,9 @@ export const SIDEBAR_ALL_LINKS = [...SIDEBAR_MAIN_LINKS, ...SIDEBAR_EXTRA_LINKS]
 
 export function filterSidebarLinks(
   links: SidebarNavItem[],
-  teamId: string,
-  isEnabled: (flagId: BooleanFeatureFlagId) => boolean,
-  getTeamIds: (flagId: PayloadFeatureFlagId) => string[]
+  isEnabled: (flagId: BooleanFeatureFlagId) => boolean
 ) {
   return links.filter(
-    (link) =>
-      (!link.featureFlag || isEnabled(link.featureFlag)) &&
-      (!link.teamFeatureFlag ||
-        getTeamIds(link.teamFeatureFlag).includes(teamId))
+    (link) => !link.featureFlag || isEnabled(link.featureFlag)
   )
 }

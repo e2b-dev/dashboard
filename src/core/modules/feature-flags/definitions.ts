@@ -1,4 +1,3 @@
-import { z } from 'zod'
 import type { FeatureFlagDefinition } from '@/core/modules/feature-flags/types'
 
 export const FEATURE_FLAGS = {
@@ -9,12 +8,11 @@ export const FEATURE_FLAGS = {
     description: 'Enables the dashboard agents launcher.',
     exposure: 'server',
   },
-  connectionsTeams: {
-    kind: 'payload',
-    key: 'connections_teams',
-    defaultValue: [] as string[],
-    schema: z.array(z.string()),
-    description: 'Team IDs with access to the dashboard connections page.',
+  connectionsEnabled: {
+    kind: 'boolean',
+    key: 'connections_enabled',
+    defaultValue: false,
+    description: 'Enables the dashboard connections page.',
     exposure: 'both',
   },
   isAdmin: {
