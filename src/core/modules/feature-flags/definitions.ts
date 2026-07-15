@@ -6,7 +6,7 @@ export const FEATURE_FLAGS = {
     key: 'agents_enabled',
     defaultValue: false,
     description: 'Enables the dashboard agents launcher.',
-    exposure: 'server',
+    exposure: 'both',
   },
   connectionsEnabled: {
     kind: 'boolean',
