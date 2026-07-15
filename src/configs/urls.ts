@@ -32,8 +32,6 @@ export const PROTECTED_URLS = {
   SANDBOXES_MONITORING: (teamSlug: string) =>
     `/dashboard/${teamSlug}/sandboxes/monitoring`,
   SANDBOXES_LIST: (teamSlug: string) => `/dashboard/${teamSlug}/sandboxes/list`,
-  SANDBOXES_LIST2: (teamSlug: string) =>
-    `/dashboard/${teamSlug}/sandboxes/list2`,
 
   SANDBOX: (teamSlug: string, sandboxId: string) =>
     `/dashboard/${teamSlug}/sandboxes/${sandboxId}/monitoring`,

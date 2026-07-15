@@ -34,25 +34,6 @@ const sandboxesRepositoryProcedure = protectedTeamProcedure.use(
 
 export const sandboxesRouter = createTRPCRouter({
   // QUERIES
-  getSandboxes: sandboxesRepositoryProcedure.query(async ({ ctx }) => {
-    if (USE_MOCK_DATA) {
-      await new Promise((resolve) => setTimeout(resolve, 200))
-
-      return {
-        sandboxes: MOCK_SANDBOXES_DATA(),
-      }
-    }
-
-    const sandboxesResult = await ctx.sandboxesRepository.listSandboxes()
-    if (!sandboxesResult.ok) {
-      throwTRPCErrorFromRepoError(sandboxesResult.error)
-    }
-
-    return {
-      sandboxes: sandboxesResult.data,
-    }
-  }),
-
   listSandboxesPaginated: sandboxesRepositoryProcedure
     .input(
       z.object({

@@ -75,7 +75,6 @@ export interface SandboxesRepository {
     sandboxId: string,
     options: GetSandboxMetricsOptions
   ): Promise<RepoResult<InfraComponents['schemas']['SandboxMetric'][]>>
-  listSandboxes(): Promise<RepoResult<Sandboxes>>
   listSandboxesPaginated(
     options: ListSandboxesOptions
   ): Promise<RepoResult<ListSandboxesResult>>
@@ -373,35 +372,6 @@ export function createSandboxesRepository(
       }
 
       return ok(result.data)
-    },
-    async listSandboxes() {
-      const result = await deps.infraClient.GET('/sandboxes', {
-        headers: {
-          ...deps.authHeaders(scope.accessToken, scope.teamId),
-        },
-        cache: 'no-store',
-      })
-
-      if (!result.response.ok || result.error) {
-        l.error({
-          key: 'repositories:sandboxes:list_sandboxes:infra_error',
-          error: result.error,
-          team_id: scope.teamId,
-          context: {
-            status: result.response.status,
-            path: '/sandboxes',
-          },
-        })
-        return err(
-          repoErrorFromHttp(
-            result.response.status,
-            result.error?.message ?? 'Failed to list sandboxes',
-            result.error
-          )
-        )
-      }
-
-      return ok(result.data ?? [])
     },
     async listSandboxesPaginated(options) {
       const result = await deps.infraClient.GET('/v2/sandboxes', {

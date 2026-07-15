@@ -4,7 +4,6 @@ import {
   keepPreviousData,
   useQuery,
   useSuspenseInfiniteQuery,
-  useSuspenseQuery,
 } from '@tanstack/react-query'
 import {
   type ColumnDef,
@@ -42,11 +41,7 @@ import type { SandboxStartedAtFilter } from './stores/table-store'
 import { getSandboxListEffectiveSorting } from './stores/table-store'
 import { SandboxesTableBody } from './table-body'
 import type { SandboxListRow } from './table-config'
-import {
-  sandboxIdFuzzyFilter,
-  sandboxListColumns,
-  useLegacySandboxListColumns,
-} from './table-config'
+import { sandboxIdFuzzyFilter, sandboxListColumns } from './table-config'
 
 const STARTED_AT_FILTER_HOURS: Record<
   Exclude<SandboxStartedAtFilter, undefined>,
@@ -68,7 +63,7 @@ function buildColumnFilters({
   templateFilters: string[]
   cpuCount?: number
   memoryMB?: number
-  statusFilters?: SandboxState[]
+  statusFilters: SandboxState[]
 }): ColumnFiltersState {
   const filters: ColumnFiltersState = []
 
@@ -91,7 +86,7 @@ function buildColumnFilters({
     filters.push({ id: 'ramUsage', value: memoryMB })
   }
 
-  if (statusFilters && isStatusFilterActive(statusFilters)) {
+  if (isStatusFilterActive(statusFilters)) {
     filters.push({ id: 'status', value: statusFilters[0] })
   }
 
@@ -120,12 +115,9 @@ interface SandboxesTableViewProps {
   columns: ColumnDef<SandboxListRow>[]
   refetch: () => void
   isFetching: boolean
-  hasNextPage?: boolean
-  isFetchingNextPage?: boolean
-  fetchNextPage?: () => void
-  // When true the rows arrive already sorted from the server, so the table only
-  // reflects the sort indicator instead of re-sorting client-side.
-  manualSorting?: boolean
+  hasNextPage: boolean
+  isFetchingNextPage: boolean
+  fetchNextPage: () => void
 }
 
 function SandboxesTableView({
@@ -136,7 +128,6 @@ function SandboxesTableView({
   hasNextPage,
   isFetchingNextPage,
   fetchNextPage,
-  manualSorting = false,
 }: SandboxesTableViewProps) {
   'use no memo'
 
@@ -163,8 +154,6 @@ function SandboxesTableView({
     setGlobalFilter,
   } = useSandboxListTableStore()
 
-  const hasStatusColumn = columns.some((column) => column.id === 'status')
-
   const columnFilters = useMemo(
     () =>
       buildColumnFilters({
@@ -172,16 +161,9 @@ function SandboxesTableView({
         templateFilters,
         cpuCount,
         memoryMB,
-        statusFilters: hasStatusColumn ? statusFilters : undefined,
+        statusFilters,
       }),
-    [
-      startedAtFilter,
-      templateFilters,
-      cpuCount,
-      memoryMB,
-      statusFilters,
-      hasStatusColumn,
-    ]
+    [startedAtFilter, templateFilters, cpuCount, memoryMB, statusFilters]
   )
 
   const activeSorting = getSandboxListEffectiveSorting(sorting)
@@ -199,7 +181,9 @@ function SandboxesTableView({
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     enableSorting: true,
-    manualSorting,
+    // Rows arrive already sorted from the server, so the table only reflects
+    // the sort indicator instead of re-sorting client-side.
+    manualSorting: true,
     enableMultiSort: false,
     enableSortingRemoval: false,
     columnResizeMode: 'onChange',
@@ -297,7 +281,7 @@ function SandboxesTableView({
   )
 }
 
-export function NewSandboxesTable() {
+export function SandboxesTable() {
   const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/sandboxes'>()
   const trpc = useTRPC()
   const pollingInterval = useSandboxListTableStore(
@@ -376,35 +360,6 @@ export function NewSandboxesTable() {
       hasNextPage={hasNextPage}
       isFetchingNextPage={isFetchingNextPage}
       fetchNextPage={fetchNextPage}
-      manualSorting
     />
   )
 }
-
-export function LegacySandboxesTable() {
-  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/sandboxes'>()
-  const trpc = useTRPC()
-  const legacySandboxListColumns = useLegacySandboxListColumns()
-
-  const { data, refetch, isFetching } = useSuspenseQuery(
-    trpc.sandboxes.getSandboxes.queryOptions(
-      { teamSlug },
-      {
-        refetchOnMount: 'always',
-        refetchOnWindowFocus: true,
-        placeholderData: keepPreviousData,
-      }
-    )
-  )
-
-  return (
-    <SandboxesTableView
-      sandboxes={data.sandboxes}
-      columns={legacySandboxListColumns}
-      refetch={refetch}
-      isFetching={isFetching}
-    />
-  )
-}
-
-export default LegacySandboxesTable

@@ -7,7 +7,6 @@ import { PROTECTED_URLS } from '@/configs/urls'
 import {
   CapacityUsage,
   CpuUsage,
-  ResourceSpec,
 } from '@/features/dashboard/common/resource-usage'
 import { useTimezone } from '@/features/dashboard/timezone'
 import { useNow } from '@/lib/hooks/use-now'
@@ -253,32 +252,6 @@ export function StartedAtCell({
           .{formattedTimestamp.subsecondPart}
         </span>
       )}
-    </div>
-  )
-}
-
-export function LegacyStartedAtCell({
-  getValue,
-}: CellContext<SandboxListRow, unknown>) {
-  const { timezone } = useTimezone()
-  const dateValue = (getValue() as string | undefined) ?? ''
-
-  const formattedTimestamp = useMemo(() => {
-    return formatDateParts(dateValue, {
-      timezone,
-      format: 'date-time-no-seconds',
-    })
-  }, [dateValue, timezone])
-
-  return (
-    <div className="h-full overflow-x-hidden whitespace-nowrap font-mono prose-table-numeric">
-      <span className="text-fg-tertiary">
-        {formattedTimestamp?.datePart ?? '--'}
-      </span>{' '}
-      {formattedTimestamp?.timePart ?? '--'}{' '}
-      <span className="text-fg-tertiary">
-        {formattedTimestamp?.timezonePart ?? ''}
-      </span>
     </div>
   )
 }
