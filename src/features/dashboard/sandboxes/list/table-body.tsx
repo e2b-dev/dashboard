@@ -81,8 +81,12 @@ export const SandboxesTableBody = ({
 
   const lastVisibleIndex = virtualizer.getVirtualItems().at(-1)?.index ?? -1
 
+  // Client-side filters shrink centerRows, which would keep this condition
+  // true and drain every page; filtered views only cover loaded pages, with
+  // the load-more button as the manual escape hatch.
   useEffect(() => {
     if (
+      !hasFilter &&
       hasNextPage &&
       !isFetchingNextPage &&
       fetchNextPage &&
@@ -91,6 +95,7 @@ export const SandboxesTableBody = ({
       fetchNextPage()
     }
   }, [
+    hasFilter,
     hasNextPage,
     isFetchingNextPage,
     lastVisibleIndex,
