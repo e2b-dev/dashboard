@@ -49,7 +49,7 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
     activeMatch: `/dashboard/*/templates/**`,
   },
 
-  // Integrations
+  // Integration
   {
     label: 'Agents',
     group: 'integration',
@@ -59,12 +59,12 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
     featureFlag: 'agentsEnabled',
   },
   {
-    label: 'Integrations',
+    label: 'Connections',
     group: 'integration',
-    href: (args) => PROTECTED_URLS.INTEGRATIONS(args.teamSlug!),
+    href: (args) => PROTECTED_URLS.CONNECTIONS(args.teamSlug!),
     icon: IntegrationsIcon,
-    activeMatch: `/dashboard/*/integrations`,
-    teamFeatureFlag: 'integrationsTeams',
+    activeMatch: `/dashboard/*/connections`,
+    teamFeatureFlag: 'connectionsTeams',
   },
   ...(INCLUDE_ARGUS
     ? [

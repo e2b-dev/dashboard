@@ -6,18 +6,18 @@ import { getAuthContext } from '@/core/server/auth'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
 
 export const metadata: Metadata = {
-  title: 'Integrations - E2B',
+  title: 'Connections - E2B',
 }
 
-type IntegrationsPageProps = {
+type ConnectionsPageProps = {
   params: Promise<{
     teamSlug: string
   }>
 }
 
-export default async function IntegrationsPage({
+export default async function ConnectionsPage({
   params,
-}: IntegrationsPageProps) {
+}: ConnectionsPageProps) {
   const [{ teamSlug }, authContext] = await Promise.all([
     params,
     getAuthContext(),
@@ -33,7 +33,7 @@ export default async function IntegrationsPage({
     notFound()
   }
 
-  const enabledTeams = await featureFlags.getPayload('integrationsTeams', {
+  const enabledTeams = await featureFlags.getPayload('connectionsTeams', {
     user: {
       id: authContext.user.id,
       email: authContext.user.email ?? undefined,

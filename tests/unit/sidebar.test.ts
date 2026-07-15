@@ -9,17 +9,17 @@ describe('filterSidebarLinks', () => {
       (flagId) => flagId === 'agentsEnabled',
       () => []
     )
-    const integrationsOnly = filterSidebarLinks(
+    const connectionsOnly = filterSidebarLinks(
       SIDEBAR_MAIN_LINKS,
-      'integrations-team',
+      'connections-team',
       () => false,
-      (flagId) => (flagId === 'integrationsTeams' ? ['integrations-team'] : [])
+      (flagId) => (flagId === 'connectionsTeams' ? ['connections-team'] : [])
     )
 
     expect(agentsOnly.map((link) => link.label)).toContain('Agents')
-    expect(agentsOnly.map((link) => link.label)).not.toContain('Integrations')
-    expect(integrationsOnly.map((link) => link.label)).toContain('Integrations')
-    expect(integrationsOnly.map((link) => link.label)).not.toContain('Agents')
+    expect(agentsOnly.map((link) => link.label)).not.toContain('Connections')
+    expect(connectionsOnly.map((link) => link.label)).toContain('Connections')
+    expect(connectionsOnly.map((link) => link.label)).not.toContain('Agents')
   })
 
   it('does not evaluate flags for unflagged links', () => {
@@ -34,7 +34,7 @@ describe('filterSidebarLinks', () => {
     )
 
     expect(visibleLinks.map((link) => link.label)).not.toContain('Agents')
-    expect(visibleLinks.map((link) => link.label)).not.toContain('Integrations')
+    expect(visibleLinks.map((link) => link.label)).not.toContain('Connections')
     expect(isEnabled).toHaveBeenCalledTimes(1)
     expect(getTeamIds).toHaveBeenCalledTimes(1)
   })

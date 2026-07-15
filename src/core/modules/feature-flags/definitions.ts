@@ -9,12 +9,12 @@ export const FEATURE_FLAGS = {
     description: 'Enables the dashboard agents launcher.',
     exposure: 'server',
   },
-  integrationsTeams: {
+  connectionsTeams: {
     kind: 'payload',
-    key: 'integrations_teams',
+    key: 'connections_teams',
     defaultValue: [] as string[],
     schema: z.array(z.string()),
-    description: 'Team IDs with access to the dashboard integrations page.',
+    description: 'Team IDs with access to the dashboard connections page.',
     exposure: 'both',
   },
   isAdmin: {

@@ -61,13 +61,13 @@ describe('createFeatureFlagService', () => {
     }
 
     const result = await createFeatureFlagService(provider).getPayload(
-      'integrationsTeams',
+      'connectionsTeams',
       context
     )
 
     expect(result).toEqual(['team-id'])
     expect(provider.evaluate).toHaveBeenCalledWith(context, [
-      FEATURE_FLAGS.integrationsTeams,
+      FEATURE_FLAGS.connectionsTeams,
     ])
   })
 
@@ -84,7 +84,7 @@ describe('createFeatureFlagService', () => {
     expect(provider.evaluate).toHaveBeenCalledTimes(1)
     expect(provider.evaluate).toHaveBeenCalledWith(context, [
       FEATURE_FLAGS.agentsEnabled,
-      FEATURE_FLAGS.integrationsTeams,
+      FEATURE_FLAGS.connectionsTeams,
       FEATURE_FLAGS.isAdmin,
       FEATURE_FLAGS.newSandboxList,
       FEATURE_FLAGS.newUsagePage,
@@ -100,10 +100,10 @@ describe('createFeatureFlagService', () => {
         value: true,
       },
       {
-        id: 'integrationsTeams',
-        key: 'integrations_teams',
+        id: 'connectionsTeams',
+        key: 'connections_teams',
         kind: 'payload',
-        description: 'Team IDs with access to the dashboard integrations page.',
+        description: 'Team IDs with access to the dashboard connections page.',
         defaultValue: [],
         value: [],
       },
