@@ -53,16 +53,10 @@ const initialManualConnectionState: ManualConnectionState = {
 }
 
 type DevinConnectionFormProps = {
-  oauthEnabled: boolean
-  oauthMessage?: string
   teamSlug: string
 }
 
-export function DevinConnectionForm({
-  oauthEnabled,
-  oauthMessage,
-  teamSlug,
-}: DevinConnectionFormProps) {
+export function DevinConnectionForm({ teamSlug }: DevinConnectionFormProps) {
   return (
     <div className="flex flex-col gap-7 pb-12">
       <header className="flex flex-col gap-2">
@@ -81,18 +75,13 @@ export function DevinConnectionForm({
         </p>
       </header>
 
-      {oauthEnabled ? (
-        <DevinOAuthConnection oauthMessage={oauthMessage} teamSlug={teamSlug} />
-      ) : null}
       <ManualDevinConnection teamSlug={teamSlug} />
+      <DevinWorkerControls teamSlug={teamSlug} />
     </div>
   )
 }
 
-function DevinOAuthConnection({
-  oauthMessage,
-  teamSlug,
-}: Omit<DevinConnectionFormProps, 'oauthEnabled'>) {
+function DevinWorkerControls({ teamSlug }: DevinConnectionFormProps) {
   const trpcClient = useTRPCClient()
   const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false)
   const [disconnectPending, setDisconnectPending] = useState(false)
@@ -127,61 +116,29 @@ function DevinOAuthConnection({
 
   return (
     <section className="border-stroke flex max-w-2xl flex-col gap-4 border-t pt-5">
-      <div className="flex items-start gap-3">
-        <KeyIcon className="text-icon-tertiary mt-0.5 size-4 shrink-0" />
-        <div>
-          <h2 className="prose-body-highlight text-fg">Connect with Devin</h2>
-          <p className="prose-body text-fg-tertiary mt-1">
-            Authorize E2B in Devin. Devin creates a dedicated pool and scoped
-            service user. After approval, the dashboard creates the worker
-            sandbox and injects the scoped credential without putting it in
-            browser state.
-          </p>
-        </div>
-      </div>
-
-      {oauthMessage ? (
-        <p
-          className="prose-body border-accent-error-highlight/35 bg-accent-error-highlight/10 text-fg border p-3"
-          role="alert"
-        >
-          {oauthMessage}
-        </p>
-      ) : null}
-
-      <div className="flex flex-wrap gap-2">
-        <form
-          action={`/api/connections/devin/start?teamSlug=${encodeURIComponent(teamSlug)}`}
-          method="post"
-        >
-          <Button type="submit">
-            Authorize in Devin
-            <ExternalLinkIcon />
-          </Button>
-        </form>
-        <AlertDialog
-          open={disconnectDialogOpen}
-          onOpenChange={setDisconnectDialogOpen}
-          title="Disconnect Devin workers?"
-          description="This stops every running or paused Devin worker sandbox created for your account in this E2B team. It does not revoke the generated service user in Devin."
-          confirm="Disconnect workers"
-          onConfirm={disconnectWorkers}
-          confirmProps={{
-            disabled: disconnectPending,
-            loading: disconnectPending ? 'Disconnecting workers' : undefined,
-          }}
-          trigger={
-            <Button type="button" variant="secondary">
-              Disconnect workers
-              <LogOutIcon />
-            </Button>
-          }
-        />
-      </div>
+      <h2 className="prose-body-highlight text-fg">Workers</h2>
       <p className="prose-body text-fg-tertiary">
-        Disconnecting stops the E2B workers. To revoke Devin access entirely,
-        delete the generated service user in Devin enterprise settings.
+        Stop every Devin worker sandbox created for your account in this E2B
+        team.
       </p>
+      <AlertDialog
+        open={disconnectDialogOpen}
+        onOpenChange={setDisconnectDialogOpen}
+        title="Disconnect Devin workers?"
+        description="This stops every running or paused Devin worker sandbox created for your account in this E2B team."
+        confirm="Disconnect workers"
+        onConfirm={disconnectWorkers}
+        confirmProps={{
+          disabled: disconnectPending,
+          loading: disconnectPending ? 'Disconnecting workers' : undefined,
+        }}
+        trigger={
+          <Button type="button" variant="secondary">
+            Disconnect workers
+            <LogOutIcon />
+          </Button>
+        }
+      />
     </section>
   )
 }

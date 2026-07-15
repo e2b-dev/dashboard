@@ -36,7 +36,6 @@ vi.mock('e2b', () => ({
 import {
   DevinWorkerLaunchError,
   disconnectDevinWorkers,
-  findStartedDevinWorker,
   launchDevinWorker,
 } from '@/core/modules/devin-outposts/worker.server'
 
@@ -258,45 +257,6 @@ describe('Devin worker launcher', () => {
     await expect(launchDevinWorker(input)).rejects.toMatchObject({
       orphanedSandboxId: 'new-sbx',
     })
-  })
-
-  it('finds a started worker for callback response-loss recovery', async () => {
-    mocks.infraGet.mockResolvedValue(
-      apiResult(200, [sandboxApiResponse('existing-sbx')])
-    )
-    mocks.infraPost.mockResolvedValue(
-      apiResult(200, sandboxApiResponse('existing-sbx'))
-    )
-    mocks.runtime = sandboxWithResults([{ exitCode: 0, stdout: 'running' }])
-
-    await expect(findStartedDevinWorker(input)).resolves.toBe('existing-sbx')
-    expect(mocks.infraPost).toHaveBeenNthCalledWith(
-      1,
-      '/sandboxes/{sandboxID}/connect',
-      expect.objectContaining({ body: { timeout: 1800 } })
-    )
-    expect(mocks.infraPost).toHaveBeenNthCalledWith(
-      2,
-      '/sandboxes/{sandboxID}/connect',
-      expect.objectContaining({ body: { timeout: 86_400 } })
-    )
-  })
-
-  it('does not report an incomplete worker as recovered', async () => {
-    mocks.infraGet.mockResolvedValue(
-      apiResult(200, [sandboxApiResponse('existing-sbx')])
-    )
-    mocks.infraPost.mockResolvedValue(
-      apiResult(200, sandboxApiResponse('existing-sbx'))
-    )
-    mocks.runtime = sandboxWithResults([{ exitCode: 0, stdout: 'stopped' }])
-
-    await expect(findStartedDevinWorker(input)).resolves.toBeNull()
-    expect(mocks.infraPost).toHaveBeenCalledTimes(1)
-    expect(mocks.infraPost).toHaveBeenCalledWith(
-      '/sandboxes/{sandboxID}/connect',
-      expect.objectContaining({ body: { timeout: 1800 } })
-    )
   })
 
   it('disconnects every Devin worker owned by the current user', async () => {

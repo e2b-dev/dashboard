@@ -5,8 +5,6 @@ export const serverSchema = z.object({
 
   BILLING_API_URL: z.url().optional(),
   PLAIN_API_KEY: z.string().min(1).optional(),
-  DEVIN_OUTPOSTS_CONNECT_URL: z.url().optional(),
-  DEVIN_OUTPOSTS_TOKEN_URL: z.url().optional(),
   DEVIN_OUTPOSTS_TEMPLATE: z.string().min(1).optional(),
 
   POSTHOG_API_KEY: z.string().min(1).optional(),

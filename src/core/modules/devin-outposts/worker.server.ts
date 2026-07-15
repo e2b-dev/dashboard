@@ -72,23 +72,6 @@ export async function launchDevinWorker(
   })
 }
 
-export async function findStartedDevinWorker(input: WorkerIdentity) {
-  const sandboxId = await findWorkerSandbox(input)
-  if (!sandboxId) return null
-
-  const activeTimeoutMs = await getActiveWorkerTimeoutMs(input)
-  const sandbox = await connectWorkerSandbox(
-    { ...input, sandboxId },
-    PREPARED_SANDBOX_TIMEOUT_MS
-  )
-  if (!(await sandboxHasStartedWorker(sandbox, input.operationId))) return null
-  await extendWorkerSandbox(
-    { ...input, activeTimeoutMs, sandboxId },
-    activeTimeoutMs
-  )
-  return sandboxId
-}
-
 export async function disconnectDevinWorkers(
   input: Pick<WorkerIdentity, 'accessToken' | 'teamId' | 'userId'>
 ) {
