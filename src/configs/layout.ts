@@ -103,9 +103,17 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
   '/dashboard/*/templates/*/builds': (pathname) =>
     templateDetailLayoutConfig(pathname),
 
-  // integrations
+  // integration
   '/dashboard/*/webhooks': () => ({
     title: 'Webhooks',
+    type: 'default',
+  }),
+  '/dashboard/*/connections': () => ({
+    title: 'Connections',
+    type: 'default',
+  }),
+  '/dashboard/*/byoc': () => ({
+    title: 'BYOC',
     type: 'default',
   }),
   '/dashboard/*/webhooks/*/overview': (pathname) =>

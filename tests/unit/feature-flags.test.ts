@@ -65,6 +65,8 @@ describe('createFeatureFlagService', () => {
     expect(provider.evaluate).toHaveBeenCalledTimes(1)
     expect(provider.evaluate).toHaveBeenCalledWith(context, [
       FEATURE_FLAGS.agentsEnabled,
+      FEATURE_FLAGS.byocEnabled,
+      FEATURE_FLAGS.connectionsEnabled,
       FEATURE_FLAGS.isAdmin,
       FEATURE_FLAGS.newSandboxList,
       FEATURE_FLAGS.newUsagePage,
@@ -76,6 +78,22 @@ describe('createFeatureFlagService', () => {
         key: 'agents_enabled',
         kind: 'boolean',
         description: 'Enables the dashboard agents launcher.',
+        defaultValue: false,
+        value: true,
+      },
+      {
+        id: 'byocEnabled',
+        key: 'byoc_enabled',
+        kind: 'boolean',
+        description: 'Enables the dashboard BYOC page.',
+        defaultValue: false,
+        value: true,
+      },
+      {
+        id: 'connectionsEnabled',
+        key: 'connections_enabled',
+        kind: 'boolean',
+        description: 'Enables the dashboard connections page.',
         defaultValue: false,
         value: true,
       },
