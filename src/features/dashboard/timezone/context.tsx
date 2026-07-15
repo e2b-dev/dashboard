@@ -9,10 +9,10 @@ import {
   useMemo,
   useState,
 } from 'react'
-import { type Timezone, TimezoneSchema } from './schema'
+import { type Timezone, UTC_TIMEZONE } from './schema'
 import { parseTimezone } from './utils'
 
-const DEFAULT_TIMEZONE = TimezoneSchema.parse('UTC')
+const DEFAULT_TIMEZONE = UTC_TIMEZONE
 
 interface TimezoneContextValue {
   timezone: Timezone
@@ -81,6 +81,33 @@ export const TimezoneProvider = ({
       setTimezone,
     }),
     [setTimezone, timezone]
+  )
+
+  return (
+    <TimezoneContext.Provider value={value}>
+      {children}
+    </TimezoneContext.Provider>
+  )
+}
+
+interface TimezoneOverrideProps {
+  children: ReactNode
+  timezone: Timezone
+}
+
+const setTimezoneNoop = async () => false
+
+/**
+ * Pins `useTimezone()` to a fixed timezone for a subtree without touching the
+ * persisted preference. `setTimezone` is disabled under the override.
+ */
+export const TimezoneOverride = ({
+  children,
+  timezone,
+}: TimezoneOverrideProps) => {
+  const value = useMemo(
+    () => ({ timezone, setTimezone: setTimezoneNoop }),
+    [timezone]
   )
 
   return (

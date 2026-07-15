@@ -23,6 +23,14 @@ export const INITIAL_TIMEFRAME_FALLBACK_RANGE_MS = 30 * 24 * 60 * 60 * 1000
 export const HOURLY_SAMPLING_THRESHOLD_DAYS = 3
 export const WEEKLY_SAMPLING_THRESHOLD_DAYS = 60
 
+/**
+ * How far a timeframe may deviate from a preset's boundaries and still be
+ * treated as that preset. Shared between the time-range controls (preset
+ * highlight) and the UTC pin (timeframe re-anchoring) — the two must not
+ * drift, or a highlighted preset would fail to re-anchor.
+ */
+export const PRESET_MATCH_TOLERANCE_MS = 24 * 60 * 60 * 1000
+
 type CalendarDateParts = ReturnType<typeof getDateParts>
 
 const shiftToMonthStart = (
