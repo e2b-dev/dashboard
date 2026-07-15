@@ -194,6 +194,7 @@ export function TemplateCell({
       <Link
         href={PROTECTED_URLS.TEMPLATE_OVERVIEW(team.slug, templateId)}
         onClick={(e) => e.stopPropagation()}
+        className="relative z-10"
       >
         <span className="min-w-0 truncate">{templateIdentifier}</span>
       </Link>
@@ -220,7 +221,7 @@ export function MetadataCell({
 
   return (
     <JsonPopover
-      className="text-fg-tertiary hover:text-fg hover:underline min-w-0 normal-case"
+      className="relative z-10 text-fg-tertiary hover:text-fg hover:underline min-w-0 normal-case"
       json={parsedValue}
     >
       <span className="block w-full truncate">{value}</span>
