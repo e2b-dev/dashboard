@@ -112,6 +112,10 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
     title: 'Connections',
     type: 'default',
   }),
+  '/dashboard/*/byoc': () => ({
+    title: 'BYOC',
+    type: 'default',
+  }),
   '/dashboard/*/webhooks/*/overview': (pathname) =>
     webhookDetailLayoutConfig(pathname),
   '/dashboard/*/webhooks/*/deliveries': (pathname) =>

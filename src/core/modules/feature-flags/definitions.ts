@@ -8,6 +8,13 @@ export const FEATURE_FLAGS = {
     description: 'Enables the dashboard agents launcher.',
     exposure: 'both',
   },
+  byocEnabled: {
+    kind: 'boolean',
+    key: 'byoc_enabled',
+    defaultValue: false,
+    description: 'Enables the dashboard BYOC page.',
+    exposure: 'both',
+  },
   connectionsEnabled: {
     kind: 'boolean',
     key: 'connections_enabled',

@@ -2,6 +2,7 @@ import type { BooleanFeatureFlagId } from '@/core/modules/feature-flags/definiti
 import {
   AccountSettingsIcon,
   CardIcon,
+  CloudIcon,
   GaugeIcon,
   type Icon,
   IntegrationsIcon,
@@ -61,6 +62,14 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
     icon: IntegrationsIcon,
     activeMatch: `/dashboard/*/connections`,
     featureFlag: 'connectionsEnabled',
+  },
+  {
+    label: 'BYOC',
+    group: 'integration',
+    href: (args) => PROTECTED_URLS.BYOC(args.teamSlug!),
+    icon: CloudIcon,
+    activeMatch: `/dashboard/*/byoc`,
+    featureFlag: 'byocEnabled',
   },
   ...(INCLUDE_ARGUS
     ? [
