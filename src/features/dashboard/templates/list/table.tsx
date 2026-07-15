@@ -166,7 +166,7 @@ export default function TemplatesTable() {
 
   return (
     <ClientOnly className="flex h-full min-h-0 flex-col md:max-w-[calc(100svw-var(--sidebar-width-active))] p-3 md:p-6">
-      <TemplatesHeader table={table} />
+      <TemplatesHeader table={table} hasNextPage={hasNextPage} />
 
       <div
         className={cn(

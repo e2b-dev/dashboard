@@ -7,16 +7,21 @@ import { SearchInput } from './table-search'
 
 interface TemplatesHeaderProps {
   table: Table<Template>
+  hasNextPage: boolean
 }
 
-export default function TemplatesHeader({ table }: TemplatesHeaderProps) {
+export default function TemplatesHeader({
+  table,
+  hasNextPage,
+}: TemplatesHeaderProps) {
   'use no memo'
 
   const { globalFilter, isPublic } = useTemplateTableStore()
   const isFiltered = Boolean(globalFilter) || isPublic !== undefined
 
   // With server-side pagination we only know how many rows are currently
-  // loaded, not the grand total.
+  // loaded, not the grand total — so once all pages are loaded the count is
+  // exact, otherwise "N+" marks it as a lower bound.
   const loadedCount = table.options.data.length
 
   return (
@@ -34,7 +39,9 @@ export default function TemplatesHeader({ table }: TemplatesHeaderProps) {
 
       <span className="prose-label-highlight h-9 flex w-full min-w-0 items-center gap-1 uppercase sm:w-auto">
         <span className="text-fg">
-          {loadedCount} {loadedCount === 1 ? 'template' : 'templates'}
+          {loadedCount}
+          {hasNextPage ? '+' : ''}{' '}
+          {loadedCount === 1 && !hasNextPage ? 'template' : 'templates'}
         </span>
         {isFiltered ? (
           <span className="text-fg-tertiary"> · filtered</span>
