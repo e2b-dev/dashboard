@@ -3,7 +3,7 @@ import 'server-only'
 import { randomUUID } from 'node:crypto'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
-import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
+import { AUTH_URLS, BASE_URL, PROTECTED_URLS } from '@/configs/urls'
 import {
   createDevinOAuthAttempt,
   getDevinOAuthConnectUrl,
@@ -19,7 +19,7 @@ import { TeamSlugSchema } from '@/core/shared/schemas/team'
 
 export async function POST(request: NextRequest) {
   const teamSlug = request.nextUrl.searchParams.get('teamSlug') ?? ''
-  const publicOrigin = request.nextUrl.origin
+  const publicOrigin = BASE_URL
   const connectionPath = TeamSlugSchema.safeParse(teamSlug).success
     ? PROTECTED_URLS.CONNECTION_DEVIN(teamSlug)
     : PROTECTED_URLS.DASHBOARD

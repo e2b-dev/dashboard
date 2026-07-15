@@ -10,14 +10,12 @@ import {
 } from '@/core/modules/devin-outposts/oauth.server'
 
 const ORIGINAL_SESSION_SECRET = process.env.E2B_SESSION_SECRET
-const ORIGINAL_CALLBACK_URL = process.env.DEVIN_OUTPOSTS_CALLBACK_URL
 const ORIGINAL_CONNECT_URL = process.env.DEVIN_OUTPOSTS_CONNECT_URL
 const ORIGINAL_TOKEN_URL = process.env.DEVIN_OUTPOSTS_TOKEN_URL
 
 describe('Devin partner OAuth boundary', () => {
   beforeEach(() => {
     process.env.E2B_SESSION_SECRET = 'test-auth-secret-with-enough-entropy'
-    process.env.DEVIN_OUTPOSTS_CALLBACK_URL = 'http://localhost:8765/callback'
     delete process.env.DEVIN_OUTPOSTS_CONNECT_URL
     delete process.env.DEVIN_OUTPOSTS_TOKEN_URL
   })
@@ -27,7 +25,6 @@ describe('Devin partner OAuth boundary', () => {
     vi.unstubAllGlobals()
     vi.unstubAllEnvs()
     restoreEnv('E2B_SESSION_SECRET', ORIGINAL_SESSION_SECRET)
-    restoreEnv('DEVIN_OUTPOSTS_CALLBACK_URL', ORIGINAL_CALLBACK_URL)
     restoreEnv('DEVIN_OUTPOSTS_CONNECT_URL', ORIGINAL_CONNECT_URL)
     restoreEnv('DEVIN_OUTPOSTS_TOKEN_URL', ORIGINAL_TOKEN_URL)
   })
@@ -181,11 +178,7 @@ describe('Devin partner OAuth boundary', () => {
     ).rejects.toMatchObject(new DevinOAuthError('response'))
   })
 
-  it('fails closed for missing or unsafe callback configuration', () => {
-    process.env.DEVIN_OUTPOSTS_CALLBACK_URL = 'https://attacker.example/cb'
-    expect(isDevinOAuthConfigured('https://dashboard.example.com')).toBe(false)
-
-    process.env.DEVIN_OUTPOSTS_CALLBACK_URL = 'http://localhost:8765/callback'
+  it('fails closed without a session secret', () => {
     delete process.env.E2B_SESSION_SECRET
     expect(isDevinOAuthConfigured('http://localhost:3000')).toBe(false)
   })
@@ -210,10 +203,18 @@ describe('Devin partner OAuth boundary', () => {
     expect(isDevinOAuthConfigured('http://localhost:3000')).toBe(false)
   })
 
-  it('requires the callback to use the dashboard hostname', () => {
-    process.env.DEVIN_OUTPOSTS_CALLBACK_URL =
-      'https://oauth.example.com/callback'
-    expect(isDevinOAuthConfigured('https://dashboard.example.com')).toBe(false)
+  it('derives the callback from the dashboard origin', () => {
+    const { connectUrl } = createDevinOAuthAttempt({
+      operationId: '17d18dac-86d9-4a79-91e7-4477bd29327e',
+      returnOrigin: 'https://dashboard.example.com',
+      teamId: 'team-1',
+      teamSlug: 'test-team',
+      userId: 'user-1',
+    })
+
+    expect(connectUrl.searchParams.get('callback_url')).toBe(
+      'https://dashboard.example.com/devin/outpost-callback'
+    )
   })
 
   it('uses an isolated secure host cookie in production', () => {

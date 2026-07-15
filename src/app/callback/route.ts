@@ -20,7 +20,7 @@ import { getAuthContext } from '@/core/server/auth'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
 import { l } from '@/core/shared/clients/logger/logger'
 
-export const maxDuration = 60
+export const maxDuration = 300
 
 export async function GET(request: NextRequest) {
   const fallbackOrigin = fallbackCallbackOrigin(request)

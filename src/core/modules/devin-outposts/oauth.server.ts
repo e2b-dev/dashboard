@@ -49,7 +49,7 @@ export class DevinOAuthError extends Error {
 
 export function isDevinOAuthConfigured(returnOrigin: string) {
   try {
-    validateCallbackHost(getCallbackUrl(), normalizeReturnOrigin(returnOrigin))
+    normalizeReturnOrigin(returnOrigin)
     getConnectUrl()
     getTokenUrl()
     getSecret()
@@ -84,8 +84,7 @@ export function createDevinOAuthAttempt(input: {
 
 export function getDevinOAuthConnectUrl(attempt: DevinOAuthAttempt) {
   const verifier = deriveVerifier(attempt)
-  const callbackUrl = getCallbackUrl()
-  validateCallbackHost(callbackUrl, attempt.returnOrigin)
+  const callbackUrl = getCallbackUrl(attempt.returnOrigin)
   const connectUrl = getConnectUrl()
   connectUrl.searchParams.set('callback_url', callbackUrl)
   connectUrl.searchParams.set('code_challenge', pkceChallenge(verifier))
@@ -204,30 +203,18 @@ function getSecret() {
   return secret
 }
 
-function getCallbackUrl() {
-  const value = process.env.DEVIN_OUTPOSTS_CALLBACK_URL
-  if (!value) throw new DevinOAuthError('config')
-
-  let url: URL
-  try {
-    url = new URL(value)
-  } catch {
-    throw new DevinOAuthError('config')
-  }
-  const localHttp =
-    url.protocol === 'http:' &&
-    (url.hostname === 'localhost' || url.hostname === '127.0.0.1')
+function getCallbackUrl(returnOrigin: string) {
+  const callbackUrl = new URL(returnOrigin)
   if (
-    (!localHttp && url.protocol !== 'https:') ||
-    url.username ||
-    url.password ||
-    url.search ||
-    url.hash ||
-    url.pathname !== '/callback'
+    callbackUrl.hostname === 'localhost' ||
+    callbackUrl.hostname === '127.0.0.1'
   ) {
-    throw new DevinOAuthError('config')
+    callbackUrl.port = '8765'
+    callbackUrl.pathname = '/callback'
+  } else {
+    callbackUrl.pathname = '/devin/outpost-callback'
   }
-  return url.toString()
+  return callbackUrl.toString()
 }
 
 function getConnectUrl() {
@@ -298,12 +285,6 @@ function normalizeReturnOrigin(value: string) {
     throw new DevinOAuthError('config')
   }
   return url.origin
-}
-
-function validateCallbackHost(callbackUrl: string, returnOrigin: string) {
-  if (new URL(callbackUrl).hostname !== new URL(returnOrigin).hostname) {
-    throw new DevinOAuthError('config')
-  }
 }
 
 async function readJsonRecord(response: Response) {

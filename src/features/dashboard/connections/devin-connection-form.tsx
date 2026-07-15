@@ -81,21 +81,18 @@ export function DevinConnectionForm({
         </p>
       </header>
 
-      <DevinOAuthConnection
-        oauthEnabled={oauthEnabled}
-        oauthMessage={oauthMessage}
-        teamSlug={teamSlug}
-      />
+      {oauthEnabled ? (
+        <DevinOAuthConnection oauthMessage={oauthMessage} teamSlug={teamSlug} />
+      ) : null}
       <ManualDevinConnection teamSlug={teamSlug} />
     </div>
   )
 }
 
 function DevinOAuthConnection({
-  oauthEnabled,
   oauthMessage,
   teamSlug,
-}: DevinConnectionFormProps) {
+}: Omit<DevinConnectionFormProps, 'oauthEnabled'>) {
   const trpcClient = useTRPCClient()
   const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false)
   const [disconnectPending, setDisconnectPending] = useState(false)
@@ -153,25 +150,15 @@ function DevinOAuthConnection({
       ) : null}
 
       <div className="flex flex-wrap gap-2">
-        {oauthEnabled ? (
-          <form
-            action={`/api/connections/devin/start?teamSlug=${encodeURIComponent(teamSlug)}`}
-            method="post"
-          >
-            <Button type="submit">
-              Authorize in Devin
-              <ExternalLinkIcon />
-            </Button>
-          </form>
-        ) : (
-          <Button
-            disabled
-            title="Partner OAuth is not configured for this dashboard deployment."
-          >
+        <form
+          action={`/api/connections/devin/start?teamSlug=${encodeURIComponent(teamSlug)}`}
+          method="post"
+        >
+          <Button type="submit">
             Authorize in Devin
             <ExternalLinkIcon />
           </Button>
-        )}
+        </form>
         <AlertDialog
           open={disconnectDialogOpen}
           onOpenChange={setDisconnectDialogOpen}
@@ -195,12 +182,6 @@ function DevinOAuthConnection({
         Disconnecting stops the E2B workers. To revoke Devin access entirely,
         delete the generated service user in Devin enterprise settings.
       </p>
-      {!oauthEnabled ? (
-        <p className="prose-body text-fg-tertiary">
-          Partner OAuth is not configured for this deployment. Use the manual
-          setup below.
-        </p>
-      ) : null}
     </section>
   )
 }

@@ -65,7 +65,7 @@ vi.mock('@/core/modules/devin-outposts/worker.server', () => {
 })
 
 import { POST as start } from '@/app/api/connections/devin/start/route'
-import { GET as callback } from '@/app/callback/route'
+import { GET as callback } from '@/app/devin/outpost-callback/route'
 import { DevinOAuthError } from '@/core/modules/devin-outposts/oauth.server'
 import { DevinWorkerLaunchError } from '@/core/modules/devin-outposts/worker.server'
 
@@ -126,6 +126,7 @@ describe('Devin OAuth routes', () => {
     expect(response.headers.get('set-cookie')).toContain('HttpOnly')
     expect(mocks.createAttempt).toHaveBeenCalledWith(
       expect.objectContaining({
+        returnOrigin: 'http://localhost:3000',
         teamId: 'team-1',
         teamSlug: 'test-team',
         userId: 'user-1',
