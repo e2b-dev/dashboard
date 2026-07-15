@@ -15,7 +15,7 @@ import { formatDateParts, formatDurationPadded } from '@/lib/utils/formatting'
 import { JsonPopover } from '@/ui/json-popover'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
-import { DotIcon, PausedIcon } from '@/ui/primitives/icons'
+import { CpuIcon, DotIcon, MemoryIcon, PausedIcon } from '@/ui/primitives/icons'
 import { useDashboard } from '../../context'
 import { useSandboxMetricsStore } from './stores/metrics-store'
 import type { SandboxListRow } from './table-config'
@@ -40,6 +40,7 @@ const CpuUsageCellView = ({
     <CpuUsage
       usedPct={cpuUsedPct}
       cores={totalCpu}
+      indicatorIcon={CpuIcon}
       className={USAGE_TEXT_CLASSNAME}
     />
   )
@@ -60,6 +61,7 @@ const RamUsageCellView = ({
     <CapacityUsage
       usedGb={memUsedMb != null ? memUsedMb / 1024 : memUsedMb}
       totalGb={totalMem != null ? totalMem / 1024 : totalMem}
+      indicatorIcon={MemoryIcon}
       className={USAGE_TEXT_CLASSNAME}
     />
   )

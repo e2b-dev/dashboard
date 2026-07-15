@@ -1,3 +1,4 @@
+import type { ComponentType } from 'react'
 import { cn } from '@/lib/utils'
 import { formatDecimal, formatNumber } from '@/lib/utils/formatting'
 
@@ -15,26 +16,35 @@ const usageToneClassName = (pct: number, errorAt: number) =>
       ? 'text-accent-warning-highlight'
       : 'text-fg'
 
+const INDICATOR_ICON_CLASSNAME = 'mt-px mr-1 size-3 self-center'
+
 interface CpuUsageProps {
   usedPct?: number | null
   cores?: number | null
   className?: string
+  indicatorIcon?: ComponentType<{ className?: string }>
 }
 
 // 38% · 2 Core
-export function CpuUsage({ usedPct, cores, className }: CpuUsageProps) {
+export function CpuUsage({
+  usedPct,
+  cores,
+  className,
+  indicatorIcon: IndicatorIcon,
+}: CpuUsageProps) {
   const hasUsage = usedPct !== null && usedPct !== undefined
   const pct = Math.round(usedPct ?? 0)
+  const toneClassName = usageToneClassName(pct, CPU_ERROR_PCT)
 
   return (
     <span className={cn(USAGE_WRAPPER_CLASSNAME, className)}>
       {hasUsage ? (
-        <span
-          className={cn(
-            'font-mono inline-flex',
-            usageToneClassName(pct, CPU_ERROR_PCT)
-          )}
-        >
+        <span className="font-mono inline-flex items-baseline text-fg">
+          {IndicatorIcon && pct >= WARNING_PCT ? (
+            <IndicatorIcon
+              className={cn(INDICATOR_ICON_CLASSNAME, toneClassName)}
+            />
+          ) : null}
           {pct}%{' '}
         </span>
       ) : (
@@ -57,6 +67,7 @@ interface CapacityUsageProps {
   usedGb?: number | null
   totalGb?: number | null
   className?: string
+  indicatorIcon?: ComponentType<{ className?: string }>
 }
 
 // 16% · 0.5 / 4 GB
@@ -64,6 +75,7 @@ export function CapacityUsage({
   usedGb,
   totalGb,
   className,
+  indicatorIcon: IndicatorIcon,
 }: CapacityUsageProps) {
   const hasUsage = usedGb !== null && usedGb !== undefined
   const pct = Math.round(hasUsage && totalGb ? (usedGb / totalGb) * 100 : 0)
@@ -73,7 +85,12 @@ export function CapacityUsage({
     <span className={cn(USAGE_WRAPPER_CLASSNAME, className)}>
       {hasUsage ? (
         <>
-          <span className={cn('font-mono inline-flex', toneClassName)}>
+          <span className="font-mono inline-flex items-baseline text-fg">
+            {IndicatorIcon && pct >= WARNING_PCT ? (
+              <IndicatorIcon
+                className={cn(INDICATOR_ICON_CLASSNAME, toneClassName)}
+              />
+            ) : null}
             {pct}%{' '}
           </span>
           <span className="text-fg-tertiary mx-1.5">·</span>
