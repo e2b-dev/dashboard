@@ -71,6 +71,7 @@ export async function sendGa4Event(
         events: [{ name: event.name, params }],
       }),
       signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
+      opentelemetry: { ignore: true },
     })
 
     if (!response.ok) {
