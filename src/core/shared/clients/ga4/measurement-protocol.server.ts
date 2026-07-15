@@ -41,14 +41,6 @@ export function parseGaSessionId(
   return match?.[1] ?? null
 }
 
-// Keeps event counts intact when the _ga cookie is blocked or absent; the
-// event lands unattributed instead of being dropped.
-export function generateFallbackGaClientId(): string {
-  const random = Math.floor(Math.random() * 0x7fffffff)
-  const timestamp = Math.floor(Date.now() / 1000)
-  return `${random}.${timestamp}`
-}
-
 export async function sendGa4Event(
   clientId: string,
   event: Ga4Event

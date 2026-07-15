@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
   gaSessionCookieName,
-  generateFallbackGaClientId,
   parseGaClientId,
   parseGaSessionId,
 } from '@/core/shared/clients/ga4/measurement-protocol.server'
@@ -51,11 +50,5 @@ describe('parseGaSessionId', () => {
     expect(parseGaSessionId('garbage')).toBeNull()
     expect(parseGaSessionId('GA1.1.1247869242.1718123456')).toBeNull()
     expect(parseGaSessionId('GS2.1')).toBeNull()
-  })
-})
-
-describe('generateFallbackGaClientId', () => {
-  it('matches the client id shape', () => {
-    expect(generateFallbackGaClientId()).toMatch(/^\d+\.\d+$/)
   })
 })

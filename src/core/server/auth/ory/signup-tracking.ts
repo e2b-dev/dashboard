@@ -4,7 +4,6 @@ import { after } from 'next/server'
 import {
   type Ga4Event,
   gaSessionCookieName,
-  generateFallbackGaClientId,
   isGa4Configured,
   parseGaClientId,
   parseGaSessionId,
@@ -31,6 +30,17 @@ export function trackOrySignUpEvent(input: TrackOrySignUpInput): void {
   if (!isGa4Configured()) return
 
   const gaClientId = parseGaClientId(input.cookies.get(GA_CLIENT_COOKIE)?.value)
+
+  // A missing _ga cookie means the user blocked analytics; emitting a
+  // synthetic client_id would bypass that choice.
+  if (!gaClientId) {
+    l.info(
+      { key: 'oauth_callback:sign_up_tracking_skipped' },
+      'Skipping GA4 sign_up event because no GA client cookie is present'
+    )
+    return
+  }
+
   const event = buildSignUpEvent(input)
 
   // Reconciliation anchor: compare counts of this log line against GA4 to
@@ -38,15 +48,12 @@ export function trackOrySignUpEvent(input: TrackOrySignUpInput): void {
   l.info(
     {
       key: 'oauth_callback:sign_up_tracked',
-      context: {
-        attributed: !!gaClientId,
-        method: input.method ?? 'unknown',
-      },
+      context: { method: input.method ?? 'unknown' },
     },
     'Queued GA4 sign_up event for newly bootstrapped user'
   )
 
-  after(() => sendGa4Event(gaClientId ?? generateFallbackGaClientId(), event))
+  after(() => sendGa4Event(gaClientId, event))
 }
 
 function buildSignUpEvent(input: TrackOrySignUpInput): Ga4Event {
