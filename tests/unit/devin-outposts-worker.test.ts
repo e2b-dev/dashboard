@@ -307,6 +307,10 @@ describe('Devin worker launcher', () => {
   })
 
   it('disconnects every Devin worker owned by the current user', async () => {
+    const metadata = new URLSearchParams({
+      source: 'dashboard-devin-outposts',
+      userId: input.userId,
+    }).toString()
     mocks.infraGet
       .mockResolvedValueOnce(
         apiResult(200, [sandboxApiResponse('worker-1')], {
@@ -329,9 +333,14 @@ describe('Devin worker launcher', () => {
       expect.objectContaining({
         params: {
           query: expect.objectContaining({
+            metadata,
             nextToken: undefined,
             state: ['running', 'paused'],
           }),
+        },
+        headers: {
+          Authorization: 'Bearer dashboard-access-token',
+          'X-Team-ID': 'team-1',
         },
       })
     )
@@ -340,7 +349,11 @@ describe('Devin worker launcher', () => {
       '/v2/sandboxes',
       expect.objectContaining({
         params: {
-          query: expect.objectContaining({ nextToken: 'next-page' }),
+          query: expect.objectContaining({ metadata, nextToken: 'next-page' }),
+        },
+        headers: {
+          Authorization: 'Bearer dashboard-access-token',
+          'X-Team-ID': 'team-1',
         },
       })
     )

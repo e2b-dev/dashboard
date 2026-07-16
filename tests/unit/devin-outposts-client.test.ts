@@ -3,7 +3,6 @@ import {
   DevinConnectionError,
   discoverDevinAccount,
   normalizeDevinApiUrl,
-  organizationsFromPayload,
   poolsFromPayload,
 } from '@/core/modules/devin-outposts/client.server'
 
@@ -33,18 +32,6 @@ describe('Devin Outposts API boundary', () => {
     expect(() => normalizeDevinApiUrl(value)).toThrow(DevinConnectionError)
   })
 
-  it('parses organizations and ignores malformed records', () => {
-    expect(
-      organizationsFromPayload({
-        items: [
-          { org_id: 'org-1', name: 'Engineering' },
-          { name: 'Missing ID' },
-          null,
-        ],
-      })
-    ).toEqual([{ id: 'org-1', name: 'Engineering' }])
-  })
-
   it('parses Outposts pools and ignores incomplete records', () => {
     expect(
       poolsFromPayload({
@@ -60,9 +47,6 @@ describe('Devin Outposts API boundary', () => {
   })
 
   it('rejects malformed collection payloads', () => {
-    expect(() => organizationsFromPayload({})).toThrow(
-      'Devin returned an unexpected response'
-    )
     expect(() => poolsFromPayload({ items: null })).toThrow(
       'Devin returned an unexpected response'
     )
@@ -86,10 +70,7 @@ describe('Devin Outposts API boundary', () => {
   it('rejects malformed pool responses after authenticated discovery', async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(
-        Response.json({ org_id: 'org-1' }, { status: 200 })
-      )
-      .mockResolvedValueOnce(Response.json({}, { status: 200 }))
+      .mockResolvedValue(Response.json({}, { status: 200 }))
     vi.stubGlobal('fetch', fetchMock)
 
     await expect(
@@ -97,15 +78,36 @@ describe('Devin Outposts API boundary', () => {
     ).rejects.toMatchObject({ kind: 'response' })
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
-      'https://api.devin.ai/v3/self',
+      'https://api.devin.ai/opbeta/outposts/pools',
       expect.objectContaining({
         headers: { Authorization: 'Bearer test-key' },
       })
     )
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      2,
-      'https://api.devin.ai/opbeta/outposts/pools',
-      expect.any(Object)
+    expect(fetchMock).toHaveBeenCalledOnce()
+  })
+
+  it('discovers pools without requesting enterprise organizations', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json({
+        items: [
+          {
+            metadata: { pool_id: 'pool-1' },
+            spec: { name: 'Linux workers', platform: 'linux' },
+          },
+        ],
+      })
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(
+      discoverDevinAccount('https://api.devin.ai', 'test-key')
+    ).resolves.toEqual({
+      pools: [{ id: 'pool-1', name: 'Linux workers', platform: 'linux' }],
+    })
+    expect(fetchMock).toHaveBeenCalledOnce()
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      expect.stringContaining('/v3/enterprise/organizations'),
+      expect.anything()
     )
   })
 })

@@ -9,8 +9,8 @@ import { createTRPCContext } from '@trpc/tanstack-react-query'
 import { useState } from 'react'
 import SuperJSON from 'superjson'
 import type { TRPCAppRouter } from '@/core/server/api/routers'
-import { sanitizeClientInput } from '@/core/shared/observability/sanitize-input'
 import { createQueryClient } from './query-client'
+import { sanitizeTRPCLoggerArgs } from './sanitize-logger-args'
 
 export const { TRPCProvider, useTRPC, useTRPCClient } =
   createTRPCContext<TRPCAppRouter>()
@@ -68,8 +68,8 @@ export function TRPCReactProvider(
       links: [
         loggerLink({
           console: {
-            error: (...args) => console.error(...sanitizeLoggerArgs(args)),
-            log: (...args) => console.log(...sanitizeLoggerArgs(args)),
+            error: (...args) => console.error(...sanitizeTRPCLoggerArgs(args)),
+            log: (...args) => console.log(...sanitizeTRPCLoggerArgs(args)),
           },
           enabled: (opts) =>
             (process.env.NODE_ENV === 'development' &&
@@ -96,22 +96,4 @@ export function TRPCReactProvider(
       <ReactQueryDevtools />
     </QueryClientProvider>
   )
-}
-
-function sanitizeLoggerArgs(args: unknown[]) {
-  return args.map((argument) => {
-    if (
-      !argument ||
-      typeof argument !== 'object' ||
-      Array.isArray(argument) ||
-      !('input' in argument)
-    ) {
-      return argument
-    }
-
-    return {
-      ...argument,
-      input: sanitizeClientInput(argument.input),
-    }
-  })
 }

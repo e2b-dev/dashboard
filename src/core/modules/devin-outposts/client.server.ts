@@ -3,11 +3,6 @@ import 'server-only'
 const REQUEST_TIMEOUT_MS = 15_000
 const ALLOWED_API_HOST_SUFFIXES = ['.devin.ai', '.devinenterprise.com']
 
-export type DevinOrganization = {
-  id: string
-  name: string
-}
-
 export type DevinPool = {
   id: string
   name: string
@@ -15,7 +10,6 @@ export type DevinPool = {
 }
 
 export type DevinDiscovery = {
-  organizations: DevinOrganization[]
   pools: DevinPool[]
 }
 
@@ -64,35 +58,10 @@ export async function discoverDevinAccount(
 ): Promise<DevinDiscovery> {
   const apiUrl = normalizeDevinApiUrl(apiUrlInput)
   const credentials = { apiKey, apiUrl }
-  const self = await devinRequest(credentials, '/v3/self')
-  const selfOrgId = stringField(self, 'org_id')
-
-  const organizations = selfOrgId
-    ? [{ id: selfOrgId, name: selfOrgId }]
-    : organizationsFromPayload(
-        await devinRequest(credentials, '/v3/enterprise/organizations')
-      )
-  if (organizations.length === 0) {
-    throw new DevinConnectionError(
-      'This Devin credential cannot access an organization',
-      'credentials'
-    )
-  }
-
   const pools = poolsFromPayload(
     await devinRequest(credentials, '/opbeta/outposts/pools')
   )
-  return { organizations, pools }
-}
-
-export function organizationsFromPayload(payload: Record<string, unknown>) {
-  return collectionItems(payload)
-    .map((item): DevinOrganization | undefined => {
-      const id = stringField(item, 'org_id')
-      if (!id) return undefined
-      return { id, name: stringField(item, 'name') || id }
-    })
-    .filter((item): item is DevinOrganization => Boolean(item))
+  return { pools }
 }
 
 export function poolsFromPayload(payload: Record<string, unknown>) {

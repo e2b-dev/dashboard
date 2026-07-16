@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createTRPCContext } from '@/core/server/trpc/init'
+import { l } from '@/core/shared/clients/logger/logger'
 
 const mocks = vi.hoisted(() => ({
+  disconnectDevinWorkers: vi.fn(),
+  discoverDevinAccount: vi.fn(),
   featureEnabled: vi.fn(),
   getAuthContext: vi.fn(),
   getTeamIdFromSlug: vi.fn(),
@@ -22,23 +25,34 @@ vi.mock('@/core/modules/feature-flags/feature-flags.server', () => ({
 }))
 
 vi.mock('@/core/modules/devin-outposts/client.server', () => ({
-  DevinConnectionError: class DevinConnectionError extends Error {},
-  discoverDevinAccount: vi.fn(),
+  DevinConnectionError: class DevinConnectionError extends Error {
+    constructor(
+      message: string,
+      readonly kind: string
+    ) {
+      super(message)
+    }
+  },
+  discoverDevinAccount: mocks.discoverDevinAccount,
   normalizeDevinApiUrl: mocks.normalizeDevinApiUrl,
 }))
 
 vi.mock('@/core/modules/devin-outposts/worker.server', () => ({
   DevinWorkerLaunchError: class DevinWorkerLaunchError extends Error {},
-  disconnectDevinWorkers: vi.fn(),
+  disconnectDevinWorkers: mocks.disconnectDevinWorkers,
   launchDevinWorker: mocks.launchDevinWorker,
 }))
 
 const { createCallerFactory } = await import('@/core/server/trpc/init')
+const { DevinConnectionError } = await import(
+  '@/core/modules/devin-outposts/client.server'
+)
 const { connectionsRouter } = await import(
   '@/core/server/api/routers/connections'
 )
 
 const createCaller = createCallerFactory(connectionsRouter)
+const infoSpy = vi.spyOn(l, 'info').mockImplementation(() => undefined)
 const input = {
   teamSlug: 'customer-team',
   apiUrl: 'https://api.devin.ai',
@@ -63,6 +77,8 @@ describe('connectionsRouter.launchDevinWorker', () => {
       data: 'resolved-team-id',
     })
     mocks.featureEnabled.mockResolvedValue(true)
+    mocks.disconnectDevinWorkers.mockResolvedValue({ count: 1 })
+    mocks.discoverDevinAccount.mockResolvedValue({ pools: [] })
     mocks.launchDevinWorker.mockResolvedValue({
       acceptorId: 'acceptor-1',
       reused: false,
@@ -101,5 +117,50 @@ describe('connectionsRouter.launchDevinWorker', () => {
       teamId: 'resolved-team-id',
       userId: 'user-1',
     })
+    const successLog = infoSpy.mock.calls.find(
+      ([context]) => context.key === 'trpc:procedure_success'
+    )?.[0]
+    expect(successLog).toMatchObject({
+      'trpc.procedure.input': {
+        _apiUrl: 'string(20)',
+        _operationId: 'string(36)',
+        _outpostsToken: 'string(21)',
+        _poolId: 'string(6)',
+        teamSlug: 'customer-team',
+      },
+    })
+    expect(JSON.stringify(successLog)).not.toContain(input.outpostsToken)
+  })
+
+  it('disconnects with the server-resolved session and team identity', async () => {
+    await (await caller()).disconnectDevinWorkers({
+      confirm: true,
+      teamSlug: input.teamSlug,
+    })
+
+    expect(mocks.disconnectDevinWorkers).toHaveBeenCalledWith({
+      accessToken: 'dashboard-access-token',
+      teamId: 'resolved-team-id',
+      userId: 'user-1',
+    })
+  })
+
+  it.each([
+    ['credentials', 'UNAUTHORIZED'],
+    ['url', 'BAD_REQUEST'],
+    ['provider', 'BAD_GATEWAY'],
+    ['response', 'BAD_GATEWAY'],
+  ] as const)('maps Devin %s errors to %s', async (kind, code) => {
+    mocks.discoverDevinAccount.mockRejectedValue(
+      new DevinConnectionError('Discovery failed', kind)
+    )
+
+    await expect(
+      (await caller()).discoverDevin({
+        apiKey: 'service-user-key',
+        apiUrl: input.apiUrl,
+        teamSlug: input.teamSlug,
+      })
+    ).rejects.toMatchObject({ code })
   })
 })

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { sanitizeClientInput } from '@/core/server/actions/utils'
+import { sanitizeClientInput } from '@/core/shared/observability/sanitize-input'
 
 describe('sanitizeClientInput', () => {
   it('inlines allowlisted scalar keys verbatim', () => {
@@ -47,6 +47,9 @@ describe('sanitizeClientInput', () => {
       signatureSecret: 'a'.repeat(64),
       password: 'hunter2',
       apiToken: 'tok_secret',
+      apiKey: 'cog_secret',
+      outpostsToken: 'outposts_secret',
+      poolId: 'pool_secret_shaped',
       privateKey: '-----BEGIN PRIVATE KEY-----\n…',
     })
 
@@ -54,6 +57,9 @@ describe('sanitizeClientInput', () => {
       _signatureSecret: 'string(64)',
       _password: 'string(7)',
       _apiToken: 'string(10)',
+      _apiKey: 'string(10)',
+      _outpostsToken: 'string(15)',
+      _poolId: 'string(18)',
       _privateKey: `string(${'-----BEGIN PRIVATE KEY-----\n…'.length})`,
     })
 
@@ -61,6 +67,9 @@ describe('sanitizeClientInput', () => {
     const serialized = JSON.stringify(out)
     expect(serialized).not.toContain('hunter2')
     expect(serialized).not.toContain('tok_secret')
+    expect(serialized).not.toContain('cog_secret')
+    expect(serialized).not.toContain('outposts_secret')
+    expect(serialized).not.toContain('pool_secret_shaped')
     expect(serialized).not.toContain('BEGIN PRIVATE KEY')
     expect(serialized).not.toContain('a'.repeat(64))
   })

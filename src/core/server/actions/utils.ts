@@ -1,7 +1,5 @@
 import { getPublicErrorMessage } from '@/core/shared/errors'
 
-export { sanitizeClientInput } from '@/core/shared/observability/sanitize-input'
-
 type ActionErrorOptions = {
   cause?: unknown
   expected?: boolean

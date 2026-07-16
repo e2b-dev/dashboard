@@ -31,13 +31,11 @@ import {
   getDevinLaunchAttempt,
 } from './devin-launch-attempt'
 
-type Organization = { id: string; name: string }
 type Pool = { id: string; name: string; platform: string }
 
 type ManualConnectionState = {
   accountChecked: boolean
   apiKey: string
-  organizations: Organization[]
   outpostsToken: string
   poolId: string
   pools: Pool[]
@@ -46,7 +44,6 @@ type ManualConnectionState = {
 const initialManualConnectionState: ManualConnectionState = {
   accountChecked: false,
   apiKey: '',
-  organizations: [],
   outpostsToken: '',
   poolId: '',
   pools: [],
@@ -75,8 +72,8 @@ export function DevinConnectionForm({ teamSlug }: DevinConnectionFormProps) {
           </div>
         </div>
         <p className="prose-body text-fg-tertiary max-w-2xl">
-          Discover your Devin organizations and pools from the dashboard, then
-          start a worker using only a scoped machine token inside the sandbox.
+          Discover your Devin Outposts pools from the dashboard, then start a
+          worker using only a scoped machine token inside the sandbox.
         </p>
       </header>
 
@@ -187,14 +184,7 @@ function ManualDevinConnection({
     ) => ({ ...current, ...update }),
     initialManualConnectionState
   )
-  const {
-    accountChecked,
-    apiKey,
-    organizations,
-    outpostsToken,
-    poolId,
-    pools,
-  } = state
+  const { accountChecked, apiKey, outpostsToken, poolId, pools } = state
   const launchAttempt = useRef<DevinLaunchAttempt | null>(null)
   const mounted = useMountedRef()
   const discoverPending = pendingOperation === 'discover'
@@ -211,7 +201,6 @@ function ManualDevinConnection({
   function resetDiscovery() {
     updateState({
       accountChecked: false,
-      organizations: [],
       outpostsToken: '',
       poolId: '',
       pools: [],
@@ -233,7 +222,6 @@ function ManualDevinConnection({
       if (!mounted.current) return
       updateState({
         accountChecked: true,
-        organizations: data.organizations,
         poolId: data.pools.length === 1 ? data.pools[0]?.id || '' : '',
         pools: data.pools,
       })
@@ -324,7 +312,6 @@ function ManualDevinConnection({
                 updateState({
                   accountChecked: false,
                   apiKey: event.target.value,
-                  organizations: [],
                   outpostsToken: '',
                   poolId: '',
                   pools: [],
@@ -381,13 +368,7 @@ function ManualDevinConnection({
         <form className="grid max-w-2xl gap-4" onSubmit={startWorker}>
           {accountChecked ? (
             <p className="prose-body text-fg-tertiary">
-              Account access verified for{' '}
-              <span className="text-fg-secondary">
-                {organizations
-                  .map((organization) => organization.name)
-                  .join(', ')}
-              </span>
-              .
+              Devin account access verified.
             </p>
           ) : null}
 
