@@ -235,6 +235,37 @@ describe('Devin worker launcher', () => {
     expect(mocks.infraDelete).not.toHaveBeenCalled()
   })
 
+  it('cleans a recovered stopped sandbox when setup fails', async () => {
+    mocks.infraGet
+      .mockResolvedValueOnce(apiResult(200, []))
+      .mockResolvedValueOnce(
+        apiResult(200, [sandboxApiResponse('recovered-sbx')])
+      )
+    mocks.infraPost.mockImplementation((path: string) => {
+      if (path === '/sandboxes') {
+        return Promise.reject(new Error('create response timed out'))
+      }
+      if (path === '/sandboxes/{sandboxID}/connect') {
+        return apiResult(200, sandboxApiResponse('recovered-sbx'))
+      }
+      throw new Error(`unexpected path ${path}`)
+    })
+    mocks.runtime = sandboxWithResults([
+      { exitCode: 0, stdout: 'stopped' },
+      { exitCode: 1, stdout: '' },
+    ])
+
+    await expect(launchDevinWorker(input)).rejects.toBeInstanceOf(
+      DevinWorkerLaunchError
+    )
+    expect(mocks.infraDelete).toHaveBeenCalledWith(
+      '/sandboxes/{sandboxID}',
+      expect.objectContaining({
+        params: { path: { sandboxID: 'recovered-sbx' } },
+      })
+    )
+  })
+
   it('keeps the scoped credential out of metadata and command text', async () => {
     const sandbox = sandboxWithResults([
       { exitCode: 0, stdout: '' },

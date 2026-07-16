@@ -33,17 +33,20 @@ export type LaunchDevinWorkerInput = WorkerIdentity & {
 type StartPreparedDevinWorkerInput = LaunchDevinWorkerInput & {
   activeTimeoutMs: number
   cleanupOnFailure: boolean
+  inspectBeforeStart: boolean
   sandboxId: string
 }
 
 type PreparedWorkerIdentity = WorkerIdentity & {
   activeTimeoutMs: number
   cleanupOnFailure: boolean
+  inspectBeforeStart: boolean
   sandboxId: string
 }
 
 type PreparedDevinWorker = {
   cleanupOnFailure: boolean
+  inspectBeforeStart: boolean
   sandboxId: string
 }
 
@@ -66,12 +69,17 @@ export async function launchDevinWorker(
   const activeTimeoutMs = await getActiveWorkerTimeoutMs(input)
   const existingSandboxId = await findWorkerSandbox(input)
   const prepared: PreparedDevinWorker = existingSandboxId
-    ? { cleanupOnFailure: false, sandboxId: existingSandboxId }
+    ? {
+        cleanupOnFailure: false,
+        inspectBeforeStart: true,
+        sandboxId: existingSandboxId,
+      }
     : await prepareDevinWorkerSandbox(input)
   return startPreparedDevinWorker({
     ...input,
     activeTimeoutMs,
     cleanupOnFailure: prepared.cleanupOnFailure,
+    inspectBeforeStart: prepared.inspectBeforeStart,
     sandboxId: prepared.sandboxId,
   })
 }
@@ -109,11 +117,19 @@ async function prepareDevinWorkerSandbox(
 ): Promise<PreparedDevinWorker> {
   try {
     const sandbox = await createWorkerSandbox(input)
-    return { cleanupOnFailure: true, sandboxId: sandbox.sandboxID }
+    return {
+      cleanupOnFailure: true,
+      inspectBeforeStart: false,
+      sandboxId: sandbox.sandboxID,
+    }
   } catch (error) {
     const recoveredSandboxId = await recoverCreatedWorkerSandbox(input)
     if (recoveredSandboxId) {
-      return { cleanupOnFailure: false, sandboxId: recoveredSandboxId }
+      return {
+        cleanupOnFailure: true,
+        inspectBeforeStart: true,
+        sandboxId: recoveredSandboxId,
+      }
     }
 
     l.warn(
@@ -162,7 +178,7 @@ async function persistPreparedDevinConnection(
 async function startPreparedDevinWorker(
   input: StartPreparedDevinWorkerInput
 ): Promise<LaunchDevinWorkerResult> {
-  if (!input.cleanupOnFailure) {
+  if (input.inspectBeforeStart) {
     try {
       const sandbox = await connectWorkerSandbox(
         input,
