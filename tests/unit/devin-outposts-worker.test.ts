@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   infraDelete: vi.fn(),
@@ -73,6 +73,10 @@ describe('Devin worker launcher', () => {
     })
   })
 
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('starts the worker through the bearer-authenticated sandbox API', async () => {
     const sandbox = sandboxWithResults([
       { exitCode: 0, stdout: '' },
@@ -143,17 +147,14 @@ describe('Devin worker launcher', () => {
       }
       throw new Error(`unexpected path ${path}`)
     })
-    mocks.runtime = sandboxWithResults([
-      { exitCode: 0, stdout: '' },
-      { exitCode: 0, stdout: 'running' },
-    ])
+    mocks.runtime = sandboxWithResults([{ exitCode: 0, stdout: 'running' }])
 
     await expect(launchDevinWorker(input)).resolves.toMatchObject({
       reused: true,
       sandboxId: 'existing-sbx',
       workerPid: null,
     })
-    expect(mocks.runtime.commands.run).toHaveBeenCalledTimes(2)
+    expect(mocks.runtime.commands.run).toHaveBeenCalledOnce()
     expect(mocks.infraPost).not.toHaveBeenCalledWith(
       '/sandboxes',
       expect.anything()
@@ -176,6 +177,7 @@ describe('Devin worker launcher', () => {
       throw new Error(`unexpected path ${path}`)
     })
     mocks.runtime = sandboxWithResults([
+      { exitCode: 0, stdout: 'stopped' },
       { exitCode: 0, stdout: '' },
       { exitCode: 0, stdout: 'stopped' },
       { exitCode: 0, stdout: '4242' },
@@ -186,6 +188,51 @@ describe('Devin worker launcher', () => {
       sandboxId: 'recovered-sbx',
     })
     expect(mocks.infraGet).toHaveBeenCalledTimes(2)
+  })
+
+  it('waits for a created sandbox to become visible after response loss', async () => {
+    vi.useFakeTimers()
+    mocks.infraGet
+      .mockResolvedValueOnce(apiResult(200, []))
+      .mockResolvedValueOnce(apiResult(200, []))
+      .mockResolvedValueOnce(
+        apiResult(200, [sandboxApiResponse('recovered-sbx')])
+      )
+    mocks.infraPost.mockImplementation((path: string) => {
+      if (path === '/sandboxes') {
+        return Promise.reject(new Error('create response timed out'))
+      }
+      if (path === '/sandboxes/{sandboxID}/connect') {
+        return apiResult(200, sandboxApiResponse('recovered-sbx'))
+      }
+      throw new Error(`unexpected path ${path}`)
+    })
+    mocks.runtime = sandboxWithResults([
+      { exitCode: 0, stdout: 'stopped' },
+      { exitCode: 0, stdout: '' },
+      { exitCode: 0, stdout: 'stopped' },
+      { exitCode: 0, stdout: '4242' },
+    ])
+
+    const launch = launchDevinWorker(input)
+    await vi.advanceTimersByTimeAsync(200)
+
+    await expect(launch).resolves.toMatchObject({
+      sandboxId: 'recovered-sbx',
+    })
+    expect(mocks.infraGet).toHaveBeenCalledTimes(3)
+  })
+
+  it('does not delete a pre-existing worker when inspection fails', async () => {
+    mocks.infraGet.mockResolvedValue(
+      apiResult(200, [sandboxApiResponse('existing-sbx')])
+    )
+    mocks.infraPost.mockRejectedValue(new Error('connect failed'))
+
+    await expect(launchDevinWorker(input)).rejects.toBeInstanceOf(
+      DevinWorkerLaunchError
+    )
+    expect(mocks.infraDelete).not.toHaveBeenCalled()
   })
 
   it('keeps the scoped credential out of metadata and command text', async () => {

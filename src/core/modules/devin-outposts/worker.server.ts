@@ -10,6 +10,8 @@ import { normalizeDevinApiUrl } from './client.server'
 
 const ACTIVE_WORKER_TIMEOUT_MS = 24 * 60 * 60 * 1000
 const API_REQUEST_TIMEOUT_MS = 10_000
+const CREATE_RECOVERY_ATTEMPTS = 5
+const CREATE_RECOVERY_INTERVAL_MS = 200
 const DISCONNECT_CONCURRENCY = 10
 const DEFAULT_DEVIN_TEMPLATE = 'devin-outposts-worker'
 const PREPARED_SANDBOX_TIMEOUT_MS = 30 * 60 * 1000
@@ -30,18 +32,19 @@ export type LaunchDevinWorkerInput = WorkerIdentity & {
 
 type StartPreparedDevinWorkerInput = LaunchDevinWorkerInput & {
   activeTimeoutMs: number
+  cleanupOnFailure: boolean
   sandboxId: string
 }
 
 type PreparedWorkerIdentity = WorkerIdentity & {
   activeTimeoutMs: number
+  cleanupOnFailure: boolean
   sandboxId: string
 }
 
 type PreparedDevinWorker = {
-  acceptorId: string
+  cleanupOnFailure: boolean
   sandboxId: string
-  started: boolean
 }
 
 export type LaunchDevinWorkerResult = {
@@ -62,12 +65,13 @@ export async function launchDevinWorker(
 ): Promise<LaunchDevinWorkerResult> {
   const activeTimeoutMs = await getActiveWorkerTimeoutMs(input)
   const existingSandboxId = await findWorkerSandbox(input)
-  const prepared = existingSandboxId
-    ? { sandboxId: existingSandboxId }
+  const prepared: PreparedDevinWorker = existingSandboxId
+    ? { cleanupOnFailure: false, sandboxId: existingSandboxId }
     : await prepareDevinWorkerSandbox(input)
   return startPreparedDevinWorker({
     ...input,
     activeTimeoutMs,
+    cleanupOnFailure: prepared.cleanupOnFailure,
     sandboxId: prepared.sandboxId,
   })
 }
@@ -103,19 +107,13 @@ export async function disconnectDevinWorkers(
 async function prepareDevinWorkerSandbox(
   input: WorkerIdentity
 ): Promise<PreparedDevinWorker> {
-  const acceptorId = acceptorIdFor(input.operationId)
-
   try {
     const sandbox = await createWorkerSandbox(input)
-    return { acceptorId, sandboxId: sandbox.sandboxID, started: false }
+    return { cleanupOnFailure: true, sandboxId: sandbox.sandboxID }
   } catch (error) {
-    try {
-      const recoveredSandboxId = await findWorkerSandbox(input)
-      if (recoveredSandboxId) {
-        return { acceptorId, sandboxId: recoveredSandboxId, started: false }
-      }
-    } catch {
-      // Preserve the original create failure below.
+    const recoveredSandboxId = await recoverCreatedWorkerSandbox(input)
+    if (recoveredSandboxId) {
+      return { cleanupOnFailure: false, sandboxId: recoveredSandboxId }
     }
 
     l.warn(
@@ -164,10 +162,24 @@ async function persistPreparedDevinConnection(
 async function startPreparedDevinWorker(
   input: StartPreparedDevinWorkerInput
 ): Promise<LaunchDevinWorkerResult> {
+  if (!input.cleanupOnFailure) {
+    try {
+      const sandbox = await connectWorkerSandbox(
+        input,
+        PREPARED_SANDBOX_TIMEOUT_MS
+      )
+      if (await sandboxHasStartedWorker(sandbox, input.operationId)) {
+        return reusedWorkerResult(input)
+      }
+    } catch {
+      throw new DevinWorkerLaunchError()
+    }
+  }
+
   try {
     await persistPreparedDevinConnection(input)
   } catch {
-    return cleanupFailedWorkerLaunch(input)
+    return failWorkerLaunch(input)
   }
   return startPersistedDevinWorker(input)
 }
@@ -182,12 +194,7 @@ async function startPersistedDevinWorker(
   try {
     sandbox = await connectWorkerSandbox(input, PREPARED_SANDBOX_TIMEOUT_MS)
     if (await sandboxHasStartedWorker(sandbox, input.operationId)) {
-      return {
-        acceptorId,
-        reused: true,
-        sandboxId: input.sandboxId,
-        workerPid: null,
-      }
+      return reusedWorkerResult(input)
     }
 
     const result = await sandbox.commands.run(
@@ -226,13 +233,24 @@ async function startPersistedDevinWorker(
       workerPid: result.stdout.trim(),
     }
   } catch {
-    return cleanupFailedWorkerLaunch(input)
+    return failWorkerLaunch(input)
   }
 }
 
-async function cleanupFailedWorkerLaunch(
+function reusedWorkerResult(
   input: PreparedWorkerIdentity
-): Promise<never> {
+): LaunchDevinWorkerResult {
+  return {
+    acceptorId: acceptorIdFor(input.operationId),
+    reused: true,
+    sandboxId: input.sandboxId,
+    workerPid: null,
+  }
+}
+
+async function failWorkerLaunch(input: PreparedWorkerIdentity): Promise<never> {
+  if (!input.cleanupOnFailure) throw new DevinWorkerLaunchError()
+
   const cleaned = await cleanupPreparedDevinWorker(input).catch(() => false)
   if (!cleaned) {
     l.error(
@@ -306,6 +324,24 @@ async function findWorkerSandbox(input: WorkerIdentity) {
   return sandboxes.find(
     (sandbox) => sandbox.metadata?.devinLaunchOperationId === input.operationId
   )?.sandboxID
+}
+
+async function recoverCreatedWorkerSandbox(input: WorkerIdentity) {
+  for (let attempt = 0; attempt < CREATE_RECOVERY_ATTEMPTS; attempt++) {
+    try {
+      const sandboxId = await findWorkerSandbox(input)
+      if (sandboxId) return sandboxId
+    } catch {
+      // An ambiguous create failure can coincide with transient list errors.
+    }
+
+    if (attempt < CREATE_RECOVERY_ATTEMPTS - 1) {
+      await new Promise((resolve) =>
+        setTimeout(resolve, CREATE_RECOVERY_INTERVAL_MS)
+      )
+    }
+  }
+  return undefined
 }
 
 async function listWorkerSandboxes(
