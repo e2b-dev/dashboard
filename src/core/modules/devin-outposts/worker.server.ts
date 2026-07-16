@@ -188,6 +188,7 @@ async function startPreparedDevinWorker(
         return reusedWorkerResult(input)
       }
     } catch {
+      if (input.cleanupOnFailure) return failWorkerLaunch(input)
       throw new DevinWorkerLaunchError()
     }
   }
