@@ -33,6 +33,8 @@ import {
 
 type Pool = { id: string; name: string; platform: string }
 
+const DEFAULT_DEVIN_API_URL = 'https://api.beta.devinenterprise.com'
+
 type ManualConnectionState = {
   accountChecked: boolean
   apiKey: string
@@ -216,7 +218,7 @@ function ManualDevinConnection({
     try {
       const data = await trpcClient.connections.discoverDevin.mutate({
         apiKey: submittedApiKey,
-        apiUrl: apiUrlRef.current?.value || 'https://api.devin.ai',
+        apiUrl: apiUrlRef.current?.value || DEFAULT_DEVIN_API_URL,
         teamSlug,
       })
       if (!mounted.current) return
@@ -244,7 +246,7 @@ function ManualDevinConnection({
     event.preventDefault()
     if (launchDisabledReason || pendingOperation) return
     const launchPayload = {
-      apiUrl: apiUrlRef.current?.value || 'https://api.devin.ai',
+      apiUrl: apiUrlRef.current?.value || DEFAULT_DEVIN_API_URL,
       outpostsToken,
       poolId,
     }
@@ -331,10 +333,10 @@ function ManualDevinConnection({
                   id="devin-api-url"
                   autoComplete="off"
                   disabled={anyOperationPending}
-                  defaultValue="https://api.devin.ai"
+                  defaultValue={DEFAULT_DEVIN_API_URL}
                   onChange={resetDiscovery}
                   ref={apiUrlRef}
-                  placeholder="https://api.devin.ai"
+                  placeholder={DEFAULT_DEVIN_API_URL}
                 />
               </Field>
             </div>
