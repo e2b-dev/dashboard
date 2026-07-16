@@ -8,9 +8,9 @@ import {
   useMemo,
 } from 'react'
 import {
+  BOOLEAN_FEATURE_FLAGS,
   type BooleanFeatureFlagId,
-  FEATURE_FLAGS,
-} from '@/core/modules/feature-flags/definitions'
+} from '@/core/modules/feature-flags/boolean-definitions'
 import type { EvaluatedFeatureFlag } from '@/core/modules/feature-flags/types'
 
 type FeatureFlagsContextValue = {
@@ -42,7 +42,7 @@ export function FeatureFlagsProvider({
         return evaluatedFlag.value
       }
 
-      return FEATURE_FLAGS[flagId].defaultValue
+      return BOOLEAN_FEATURE_FLAGS[flagId].defaultValue
     },
     [flagsById]
   )
