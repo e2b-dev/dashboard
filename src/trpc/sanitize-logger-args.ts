@@ -1,6 +1,11 @@
 import { sanitizeClientInput } from '@/core/shared/observability/sanitize-input'
 
-export function sanitizeTRPCLoggerArgs(args: unknown[]) {
+export const sanitizedTRPCConsole = {
+  error: (...args: unknown[]) => console.error(...sanitizeTRPCLoggerArgs(args)),
+  log: (...args: unknown[]) => console.log(...sanitizeTRPCLoggerArgs(args)),
+}
+
+function sanitizeTRPCLoggerArgs(args: unknown[]) {
   return args.map((argument) => {
     if (
       !argument ||

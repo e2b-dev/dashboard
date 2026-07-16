@@ -10,7 +10,7 @@ import { useState } from 'react'
 import SuperJSON from 'superjson'
 import type { TRPCAppRouter } from '@/core/server/api/routers'
 import { createQueryClient } from './query-client'
-import { sanitizeTRPCLoggerArgs } from './sanitize-logger-args'
+import { sanitizedTRPCConsole } from './sanitize-logger-args'
 
 export const { TRPCProvider, useTRPC, useTRPCClient } =
   createTRPCContext<TRPCAppRouter>()
@@ -67,10 +67,7 @@ export function TRPCReactProvider(
     createTRPCClient<TRPCAppRouter>({
       links: [
         loggerLink({
-          console: {
-            error: (...args) => console.error(...sanitizeTRPCLoggerArgs(args)),
-            log: (...args) => console.log(...sanitizeTRPCLoggerArgs(args)),
-          },
+          console: sanitizedTRPCConsole,
           enabled: (opts) =>
             (process.env.NODE_ENV === 'development' &&
               typeof window !== 'undefined') ||

@@ -53,6 +53,7 @@ const { connectionsRouter } = await import(
 
 const createCaller = createCallerFactory(connectionsRouter)
 const infoSpy = vi.spyOn(l, 'info').mockImplementation(() => undefined)
+const warnSpy = vi.spyOn(l, 'warn').mockImplementation(() => undefined)
 const input = {
   teamSlug: 'customer-team',
   apiUrl: 'https://api.devin.ai',
@@ -162,5 +163,19 @@ describe('connectionsRouter.launchDevinWorker', () => {
         teamSlug: input.teamSlug,
       })
     ).rejects.toMatchObject({ code })
+
+    if (kind === 'credentials') {
+      const failureLog = warnSpy.mock.calls.find(
+        ([context]) => context.key === 'trpc:procedure_failure'
+      )?.[0]
+      expect(failureLog).toMatchObject({
+        'trpc.procedure.input': {
+          _apiKey: 'string(16)',
+          _apiUrl: 'string(20)',
+          teamSlug: 'customer-team',
+        },
+      })
+      expect(JSON.stringify(failureLog)).not.toContain('service-user-key')
+    }
   })
 })

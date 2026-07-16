@@ -1,31 +1,36 @@
-import { describe, expect, it } from 'vitest'
-import { sanitizeTRPCLoggerArgs } from '@/trpc/sanitize-logger-args'
+import { describe, expect, it, vi } from 'vitest'
+import { sanitizedTRPCConsole } from '@/trpc/sanitize-logger-args'
 
 describe('tRPC browser logger input', () => {
   it.each([
-    'up',
-    'down',
-  ])('sanitizes %s logger payloads at the console sink', (direction) => {
-    const args = sanitizeTRPCLoggerArgs([
-      direction,
-      {
-        input: {
-          apiKey: 'broad-secret',
-          outpostsToken: 'scoped-secret',
-          teamSlug: 'example-team',
-        },
-        result: direction === 'down' ? new Error('failed') : undefined,
-      },
-    ])
+    'error',
+    'log',
+  ] as const)('sanitizes the installed console.%s adapter', (method) => {
+    const consoleSpy = vi
+      .spyOn(console, method)
+      .mockImplementation(() => undefined)
 
-    expect(args[1]).toMatchObject({
+    sanitizedTRPCConsole[method](method === 'log' ? 'up' : 'down', {
       input: {
-        _apiKey: 'string(12)',
-        _outpostsToken: 'string(13)',
+        apiKey: 'broad-secret',
+        outpostsToken: 'scoped-secret',
         teamSlug: 'example-team',
       },
+      result: method === 'error' ? new Error('failed') : undefined,
     })
-    expect(JSON.stringify(args)).not.toContain('broad-secret')
-    expect(JSON.stringify(args)).not.toContain('scoped-secret')
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      method === 'log' ? 'up' : 'down',
+      expect.objectContaining({
+        input: {
+          _apiKey: 'string(12)',
+          _outpostsToken: 'string(13)',
+          teamSlug: 'example-team',
+        },
+      })
+    )
+    expect(JSON.stringify(consoleSpy.mock.calls)).not.toContain('broad-secret')
+    expect(JSON.stringify(consoleSpy.mock.calls)).not.toContain('scoped-secret')
+    consoleSpy.mockRestore()
   })
 })
