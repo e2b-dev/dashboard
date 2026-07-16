@@ -41,7 +41,6 @@ export default async function AgentsPage({ params }: AgentsPageProps) {
     },
     team: {
       id: teamId.data,
-      slug: teamSlug,
     },
   })
 

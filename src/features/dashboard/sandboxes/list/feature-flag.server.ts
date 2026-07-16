@@ -22,6 +22,6 @@ export async function isNewSandboxListEnabled(teamSlug: string) {
       id: authContext.user.id,
       email: authContext.user.email ?? undefined,
     },
-    team: teamId ? { id: teamId, slug: teamSlug } : undefined,
+    team: teamId ? { id: teamId } : undefined,
   })
 }

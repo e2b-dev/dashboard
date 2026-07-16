@@ -69,7 +69,6 @@ export default async function DashboardLayout({
     ? {
         id: team.id,
         name: team.name,
-        slug: teamSlug,
       }
     : undefined
 

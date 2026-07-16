@@ -35,9 +35,7 @@ export default async function UsagePage({
       email: authContext.user.email ?? undefined,
     },
     team:
-      teamId.ok && teamId.data
-        ? { id: teamId.data, slug: teamSlug }
-        : undefined,
+      teamId.ok && teamId.data ? { id: teamId.data } : undefined,
   })
 
   const result = await getUsage({ teamSlug })

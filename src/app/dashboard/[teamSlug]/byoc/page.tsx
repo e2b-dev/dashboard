@@ -38,7 +38,6 @@ export default async function ByocPage({ params }: ByocPageProps) {
     },
     team: {
       id: teamId.data,
-      slug: teamSlug,
     },
   })
 

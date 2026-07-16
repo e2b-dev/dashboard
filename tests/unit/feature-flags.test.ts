@@ -11,7 +11,6 @@ const context = {
   },
   team: {
     id: 'team-id',
-    slug: 'team-slug',
     name: 'Team Name',
   },
 } satisfies FeatureFlagContext
@@ -192,7 +191,6 @@ describe('createOpenFeatureEvaluationContext', () => {
       team: {
         targetingKey: 'team-id',
         name: 'Team Name',
-        slug: 'team-slug',
       },
     })
   })

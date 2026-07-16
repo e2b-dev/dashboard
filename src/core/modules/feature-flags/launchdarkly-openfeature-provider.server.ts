@@ -50,7 +50,6 @@ export function createOpenFeatureEvaluationContext(
       targetingKey: context.team.id,
       ...definedStringAttributes({
         name: context.team.name,
-        slug: context.team.slug,
       }),
     },
   }

@@ -5,7 +5,6 @@ export type FeatureFlagContext = {
   }
   team?: {
     id: string
-    slug?: string
     name?: string
   }
 }
