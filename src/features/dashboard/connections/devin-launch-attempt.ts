@@ -12,7 +12,7 @@ export type DevinLaunchAttempt = {
 export async function getDevinLaunchAttempt(
   previous: DevinLaunchAttempt | null,
   payload: DevinLaunchPayload,
-  createOperationId: () => string = crypto.randomUUID
+  createOperationId: () => string = () => crypto.randomUUID()
 ) {
   const fingerprint = await launchFingerprint(payload)
   if (previous?.fingerprint === fingerprint) return previous

@@ -1,8 +1,12 @@
 import { webcrypto } from 'node:crypto'
-import { beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { getDevinLaunchAttempt } from '@/features/dashboard/connections/devin-launch-attempt'
 
 beforeAll(() => {
+  vi.stubGlobal('crypto', webcrypto)
+})
+
+afterEach(() => {
   vi.stubGlobal('crypto', webcrypto)
 })
 
@@ -13,6 +17,21 @@ const payload = {
 }
 
 describe('Devin launch attempt identity', () => {
+  it('calls the browser UUID generator with its Crypto receiver', async () => {
+    const brandedCrypto = {
+      randomUUID() {
+        if (this !== brandedCrypto) throw new TypeError('Illegal invocation')
+        return 'operation-1'
+      },
+      subtle: webcrypto.subtle,
+    }
+    vi.stubGlobal('crypto', brandedCrypto)
+
+    await expect(getDevinLaunchAttempt(null, payload)).resolves.toMatchObject({
+      operationId: 'operation-1',
+    })
+  })
+
   it('reuses the operation ID only for the exact launch payload', async () => {
     const createOperationId = vi
       .fn()
