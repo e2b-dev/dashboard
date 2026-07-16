@@ -12,6 +12,15 @@ import { useTRPCClient } from '@/trpc/client'
 import { AlertDialog } from '@/ui/alert-dialog'
 import { Button } from '@/ui/primitives/button'
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/ui/primitives/dialog'
+import {
+  AddIcon,
   CheckCircleIcon,
   ExternalLinkIcon,
   KeyIcon,
@@ -26,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/ui/primitives/select'
+import { Textarea } from '@/ui/primitives/textarea'
 import {
   type DevinLaunchAttempt,
   getDevinLaunchAttempt,
@@ -55,7 +65,12 @@ type DevinConnectionFormProps = {
   teamSlug: string
 }
 
-type PendingOperation = 'disconnect' | 'discover' | 'launch' | null
+type PendingOperation =
+  | 'create-pool'
+  | 'disconnect'
+  | 'discover'
+  | 'launch'
+  | null
 
 export function DevinConnectionForm({ teamSlug }: DevinConnectionFormProps) {
   const [pendingOperation, setPendingOperation] =
@@ -179,6 +194,8 @@ function ManualDevinConnection({
   const router = useRouter()
   const trpcClient = useTRPCClient()
   const apiUrlRef = useRef<HTMLInputElement>(null)
+  const serviceApiKeyRef = useEphemeralServiceApiKey()
+  const poolCreationInFlight = useRef(false)
   const [state, updateState] = useReducer(
     (
       current: ManualConnectionState,
@@ -189,6 +206,11 @@ function ManualDevinConnection({
   const { accountChecked, apiKey, outpostsToken, poolId, pools } = state
   const launchAttempt = useRef<DevinLaunchAttempt | null>(null)
   const mounted = useMountedRef()
+  const [poolDialogOpen, setPoolDialogOpen] = useState(false)
+  const [newPoolName, setNewPoolName] = useState('')
+  const [newPoolDescription, setNewPoolDescription] = useState('')
+  const [poolCreationError, setPoolCreationError] = useState('')
+  const createPoolPending = pendingOperation === 'create-pool'
   const discoverPending = pendingOperation === 'discover'
   const launchPending = pendingOperation === 'launch'
   const anyOperationPending = pendingOperation !== null
@@ -201,6 +223,8 @@ function ManualDevinConnection({
   })()
 
   function resetDiscovery() {
+    serviceApiKeyRef.current = ''
+    setPoolDialogOpen(false)
     updateState({
       accountChecked: false,
       outpostsToken: '',
@@ -222,6 +246,7 @@ function ManualDevinConnection({
         teamSlug,
       })
       if (!mounted.current) return
+      serviceApiKeyRef.current = submittedApiKey
       updateState({
         accountChecked: true,
         poolId: data.pools.length === 1 ? data.pools[0]?.id || '' : '',
@@ -230,6 +255,7 @@ function ManualDevinConnection({
       toast(defaultSuccessToast('Devin account checked.'))
     } catch (error) {
       if (!mounted.current) return
+      serviceApiKeyRef.current = ''
       resetDiscovery()
       toast(
         defaultErrorToast(
@@ -239,6 +265,63 @@ function ManualDevinConnection({
         )
       )
     }
+    if (mounted.current) setPendingOperation(null)
+  }
+
+  function closePoolDialog() {
+    setPoolDialogOpen(false)
+    setNewPoolName('')
+    setNewPoolDescription('')
+    setPoolCreationError('')
+  }
+
+  async function createPool(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const name = newPoolName.trim()
+    if (
+      !name ||
+      pendingOperation ||
+      poolCreationInFlight.current ||
+      !serviceApiKeyRef.current
+    )
+      return
+    if (pools.some((pool) => pool.name === name)) {
+      setPoolCreationError(`An Outposts pool named ${name} already exists.`)
+      return
+    }
+
+    setPoolCreationError('')
+    poolCreationInFlight.current = true
+    setPendingOperation('create-pool')
+    try {
+      const data = await trpcClient.connections.createDevinPool.mutate({
+        apiKey: serviceApiKeyRef.current,
+        apiUrl: apiUrlRef.current?.value || DEFAULT_DEVIN_API_URL,
+        description: newPoolDescription.trim() || undefined,
+        name,
+        teamSlug,
+      })
+      if (mounted.current) {
+        updateState({
+          poolId: data.pool.id,
+          pools: [
+            ...pools.filter((pool) => pool.id !== data.pool.id),
+            data.pool,
+          ],
+        })
+        closePoolDialog()
+        toast(defaultSuccessToast(`Created Outposts pool ${data.pool.name}.`))
+      }
+    } catch (error) {
+      if (mounted.current) {
+        setPoolCreationError(
+          error instanceof Error && error.message
+            ? error.message
+            : 'Could not create the Devin Outposts pool.'
+        )
+      }
+    }
+    poolCreationInFlight.current = false
     if (mounted.current) setPendingOperation(null)
   }
 
@@ -287,72 +370,18 @@ function ManualDevinConnection({
 
   return (
     <>
-      <section className="border-stroke flex flex-col gap-4 border-t pt-5">
-        <div className="flex items-start gap-3">
-          <KeyIcon className="text-icon-tertiary mt-0.5 size-4 shrink-0" />
-          <div>
-            <h2 className="prose-body-highlight text-fg">Manual setup</h2>
-            <p className="prose-body text-fg-tertiary mt-1 max-w-2xl">
-              Use an existing service-user API key and scoped Outposts machine
-              token. The API key is sent to the dashboard server only for the
-              lookup, then cleared and never sent to the sandbox.
-            </p>
-          </div>
-        </div>
-
-        <form className="grid max-w-2xl gap-3" onSubmit={checkAccount}>
-          <Field id="devin-api-key" label="Service-user API key">
-            <Input
-              id="devin-api-key"
-              autoComplete="off"
-              data-1p-ignore
-              data-form-type="other"
-              disabled={anyOperationPending}
-              type="password"
-              value={apiKey}
-              onChange={(event) => {
-                updateState({
-                  accountChecked: false,
-                  apiKey: event.target.value,
-                  outpostsToken: '',
-                  poolId: '',
-                  pools: [],
-                })
-              }}
-              placeholder="cog_..."
-            />
-          </Field>
-
-          <details className="group">
-            <summary className="prose-body-highlight text-fg-secondary cursor-pointer select-none">
-              Advanced API settings
-            </summary>
-            <div className="mt-3">
-              <Field id="devin-api-url" label="Devin API URL">
-                <Input
-                  id="devin-api-url"
-                  autoComplete="off"
-                  disabled={anyOperationPending}
-                  defaultValue={DEFAULT_DEVIN_API_URL}
-                  onChange={resetDiscovery}
-                  ref={apiUrlRef}
-                  placeholder={DEFAULT_DEVIN_API_URL}
-                />
-              </Field>
-            </div>
-          </details>
-
-          <Button
-            className="w-full sm:w-fit"
-            disabled={!apiKey.trim() || anyOperationPending}
-            loading={discoverPending ? 'Checking account' : undefined}
-            title={!apiKey.trim() ? 'Enter a Devin API key.' : undefined}
-            type="submit"
-          >
-            Check Devin account
-          </Button>
-        </form>
-      </section>
+      <AccountDiscoverySection
+        apiKey={apiKey}
+        apiUrlRef={apiUrlRef}
+        disabled={anyOperationPending}
+        pending={discoverPending}
+        onApiKeyChange={(value) => {
+          serviceApiKeyRef.current = ''
+          updateState(manualStateForApiKey(value))
+        }}
+        onApiUrlChange={resetDiscovery}
+        onSubmit={checkAccount}
+      />
 
       <section className="border-stroke flex flex-col gap-4 border-t pt-5">
         <div className="flex items-start gap-3">
@@ -367,87 +396,301 @@ function ManualDevinConnection({
           </div>
         </div>
 
-        <form className="grid max-w-2xl gap-4" onSubmit={startWorker}>
-          {accountChecked ? (
-            <p className="prose-body text-fg-tertiary">
-              Devin account access verified.
-            </p>
-          ) : null}
+        <Dialog
+          open={poolDialogOpen}
+          onOpenChange={(open) => {
+            if (createPoolPending) return
+            if (open) {
+              setPoolCreationError('')
+              setPoolDialogOpen(true)
+            } else {
+              closePoolDialog()
+            }
+          }}
+        >
+          <form className="grid max-w-2xl gap-4" onSubmit={startWorker}>
+            {accountChecked ? (
+              <p className="prose-body text-fg-tertiary">
+                Devin account access verified.
+              </p>
+            ) : null}
 
-          <div className="max-w-sm">
-            <Field id="devin-pool" label="Outposts pool">
-              <Select
+            <PoolSelector
+              accountChecked={accountChecked}
+              disabled={anyOperationPending}
+              onChange={(value) => updateState({ poolId: value })}
+              poolId={poolId}
+              pools={pools}
+            />
+
+            <Field id="devin-outposts-token" label="Outposts machine token">
+              <Input
+                id="devin-outposts-token"
+                autoComplete="off"
+                data-1p-ignore
+                data-form-type="other"
                 disabled={
                   !accountChecked || pools.length === 0 || anyOperationPending
                 }
-                value={poolId}
-                onValueChange={(value) => updateState({ poolId: value })}
-              >
-                <SelectTrigger id="devin-pool" className="h-9 border-solid">
-                  <SelectValue placeholder="Select pool" />
-                </SelectTrigger>
-                <SelectContent>
-                  {pools.map((pool) => (
-                    <SelectItem key={pool.id} value={pool.id}>
-                      {pool.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                type="password"
+                value={outpostsToken}
+                onChange={(event) =>
+                  updateState({ outpostsToken: event.target.value })
+                }
+                placeholder="Token with the outposts machine scope"
+              />
             </Field>
-          </div>
 
-          {accountChecked && pools.length === 0 ? (
-            <p className="prose-body text-accent-warning-highlight">
-              This account has no Outposts pools. Create one in Devin, then
-              check the account again.
+            <p className="prose-body text-fg-tertiary">
+              This scoped token is injected into the worker sandbox. Do not use
+              a broad enterprise administrator credential here.
             </p>
-          ) : null}
 
-          <Field id="devin-outposts-token" label="Outposts machine token">
-            <Input
-              id="devin-outposts-token"
-              autoComplete="off"
-              data-1p-ignore
-              data-form-type="other"
-              disabled={
-                !accountChecked || pools.length === 0 || anyOperationPending
-              }
-              type="password"
-              value={outpostsToken}
-              onChange={(event) =>
-                updateState({ outpostsToken: event.target.value })
-              }
-              placeholder="Token with the outposts machine scope"
-            />
-          </Field>
+            <Button
+              aria-describedby="devin-launch-status"
+              className="w-full sm:w-fit"
+              disabled={Boolean(launchDisabledReason) || anyOperationPending}
+              loading={launchPending ? 'Starting worker' : undefined}
+              title={launchDisabledReason}
+              type="submit"
+            >
+              Start worker sandbox
+              <ExternalLinkIcon />
+            </Button>
+            <output
+              className="prose-body text-fg-tertiary"
+              id="devin-launch-status"
+            >
+              {launchDisabledReason ||
+                'Ready to create an E2B sandbox and start the Devin worker.'}
+            </output>
+          </form>
 
-          <p className="prose-body text-fg-tertiary">
-            This scoped token is injected into the worker sandbox. Do not use a
-            broad enterprise administrator credential here.
-          </p>
-
-          <Button
-            aria-describedby="devin-launch-status"
-            className="w-full sm:w-fit"
-            disabled={Boolean(launchDisabledReason) || anyOperationPending}
-            loading={launchPending ? 'Starting worker' : undefined}
-            title={launchDisabledReason}
-            type="submit"
-          >
-            Start worker sandbox
-            <ExternalLinkIcon />
-          </Button>
-          <output
-            className="prose-body text-fg-tertiary"
-            id="devin-launch-status"
-          >
-            {launchDisabledReason ||
-              'Ready to create an E2B sandbox and start the Devin worker.'}
-          </output>
-        </form>
+          <PoolCreationDialogContent
+            description={newPoolDescription}
+            error={poolCreationError}
+            name={newPoolName}
+            pending={createPoolPending}
+            onCancel={closePoolDialog}
+            onDescriptionChange={setNewPoolDescription}
+            onNameChange={setNewPoolName}
+            onSubmit={createPool}
+          />
+        </Dialog>
       </section>
     </>
+  )
+}
+
+function AccountDiscoverySection({
+  apiKey,
+  apiUrlRef,
+  disabled,
+  onApiKeyChange,
+  onApiUrlChange,
+  onSubmit,
+  pending,
+}: {
+  apiKey: string
+  apiUrlRef: React.RefObject<HTMLInputElement | null>
+  disabled: boolean
+  onApiKeyChange: (value: string) => void
+  onApiUrlChange: () => void
+  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void
+  pending: boolean
+}) {
+  return (
+    <section className="border-stroke flex flex-col gap-4 border-t pt-5">
+      <div className="flex items-start gap-3">
+        <KeyIcon className="text-icon-tertiary mt-0.5 size-4 shrink-0" />
+        <div>
+          <h2 className="prose-body-highlight text-fg">Manual setup</h2>
+          <p className="prose-body text-fg-tertiary mt-1 max-w-2xl">
+            Use an existing service-user API key and scoped Outposts machine
+            token. The API key stays only in this page session for account and
+            pool setup. It is cleared when the account changes or this page
+            closes, and is never sent to the sandbox.
+          </p>
+        </div>
+      </div>
+      <form className="grid max-w-2xl gap-3" onSubmit={onSubmit}>
+        <Field id="devin-api-key" label="Service-user API key">
+          <Input
+            id="devin-api-key"
+            autoComplete="off"
+            data-1p-ignore
+            data-form-type="other"
+            disabled={disabled}
+            onChange={(event) => onApiKeyChange(event.target.value)}
+            placeholder="cog_..."
+            type="password"
+            value={apiKey}
+          />
+        </Field>
+        <details className="group">
+          <summary className="prose-body-highlight text-fg-secondary cursor-pointer select-none">
+            Advanced API settings
+          </summary>
+          <div className="mt-3">
+            <Field id="devin-api-url" label="Devin API URL">
+              <Input
+                id="devin-api-url"
+                autoComplete="off"
+                defaultValue={DEFAULT_DEVIN_API_URL}
+                disabled={disabled}
+                onChange={onApiUrlChange}
+                placeholder={DEFAULT_DEVIN_API_URL}
+                ref={apiUrlRef}
+              />
+            </Field>
+          </div>
+        </details>
+        <Button
+          className="w-full sm:w-fit"
+          disabled={!apiKey.trim() || disabled}
+          loading={pending ? 'Checking account' : undefined}
+          title={!apiKey.trim() ? 'Enter a Devin API key.' : undefined}
+          type="submit"
+        >
+          Check Devin account
+        </Button>
+      </form>
+    </section>
+  )
+}
+
+function PoolSelector({
+  accountChecked,
+  disabled,
+  onChange,
+  poolId,
+  pools,
+}: {
+  accountChecked: boolean
+  disabled: boolean
+  onChange: (value: string) => void
+  poolId: string
+  pools: Pool[]
+}) {
+  return (
+    <>
+      <div className="flex max-w-2xl items-end gap-2">
+        <div className="min-w-0 flex-1">
+          <Field id="devin-pool" label="Outposts pool">
+            <Select
+              disabled={!accountChecked || pools.length === 0 || disabled}
+              onValueChange={onChange}
+              value={poolId}
+            >
+              <SelectTrigger id="devin-pool" className="h-9 border-solid">
+                <SelectValue placeholder="Select pool" />
+              </SelectTrigger>
+              <SelectContent>
+                {pools.map((pool) => (
+                  <SelectItem key={pool.id} value={pool.id}>
+                    {pool.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+        </div>
+        <DialogTrigger asChild>
+          <Button
+            disabled={!accountChecked || disabled}
+            type="button"
+            variant="secondary"
+          >
+            <AddIcon />
+            Create pool
+          </Button>
+        </DialogTrigger>
+      </div>
+      {accountChecked && pools.length === 0 ? (
+        <p className="prose-body text-accent-warning-highlight">
+          This account has no Outposts pools. Create one to continue.
+        </p>
+      ) : null}
+    </>
+  )
+}
+
+function PoolCreationDialogContent({
+  description,
+  error,
+  name,
+  onCancel,
+  onDescriptionChange,
+  onNameChange,
+  onSubmit,
+  pending,
+}: {
+  description: string
+  error: string
+  name: string
+  onCancel: () => void
+  onDescriptionChange: (value: string) => void
+  onNameChange: (value: string) => void
+  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void
+  pending: boolean
+}) {
+  return (
+    <DialogContent hideClose>
+      <form className="grid gap-4" onSubmit={onSubmit}>
+        <DialogHeader className="gap-2 text-left">
+          <DialogTitle>Create Outposts pool</DialogTitle>
+          <DialogDescription>
+            Sessions assigned to this pool run on machines connected by its
+            workers.
+          </DialogDescription>
+        </DialogHeader>
+        <Field id="devin-new-pool-name" label="Pool name">
+          <Input
+            id="devin-new-pool-name"
+            autoFocus
+            disabled={pending}
+            maxLength={128}
+            onChange={(event) => onNameChange(event.target.value)}
+            placeholder="e2b-dev-workers"
+            value={name}
+          />
+        </Field>
+        <Field id="devin-new-pool-description" label="Description (optional)">
+          <Textarea
+            id="devin-new-pool-description"
+            disabled={pending}
+            maxLength={500}
+            onChange={(event) => onDescriptionChange(event.target.value)}
+            placeholder="What runs in this pool"
+            rows={3}
+            value={description}
+          />
+        </Field>
+        <p className="prose-body text-fg-tertiary">Platform: Ubuntu / Linux</p>
+        {error ? (
+          <p className="prose-body text-accent-error-highlight" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <div className="flex justify-end gap-2">
+          <Button
+            disabled={pending}
+            onClick={onCancel}
+            type="button"
+            variant="tertiary"
+          >
+            Cancel
+          </Button>
+          <Button
+            disabled={!name.trim() || pending}
+            loading={pending ? 'Creating pool' : undefined}
+            type="submit"
+          >
+            Create pool
+          </Button>
+        </div>
+      </form>
+    </DialogContent>
   )
 }
 
@@ -460,6 +703,27 @@ function useMountedRef() {
     }
   }, [])
   return mounted
+}
+
+function useEphemeralServiceApiKey() {
+  const apiKeyRef = useRef('')
+  useEffect(
+    () => () => {
+      apiKeyRef.current = ''
+    },
+    []
+  )
+  return apiKeyRef
+}
+
+function manualStateForApiKey(apiKey: string): ManualConnectionState {
+  return {
+    accountChecked: false,
+    apiKey,
+    outpostsToken: '',
+    poolId: '',
+    pools: [],
+  }
 }
 
 function Field({

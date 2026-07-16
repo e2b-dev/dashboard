@@ -3,6 +3,7 @@ import { createTRPCContext } from '@/core/server/trpc/init'
 import { l } from '@/core/shared/clients/logger/logger'
 
 const mocks = vi.hoisted(() => ({
+  createDevinPool: vi.fn(),
   disconnectDevinWorkers: vi.fn(),
   discoverDevinAccount: vi.fn(),
   featureEnabled: vi.fn(),
@@ -28,11 +29,13 @@ vi.mock('@/core/modules/devin-outposts/client.server', () => ({
   DevinConnectionError: class DevinConnectionError extends Error {
     constructor(
       message: string,
-      readonly kind: string
+      readonly kind: string,
+      readonly status?: number
     ) {
       super(message)
     }
   },
+  createDevinPool: mocks.createDevinPool,
   discoverDevinAccount: mocks.discoverDevinAccount,
   normalizeDevinApiUrl: mocks.normalizeDevinApiUrl,
 }))
@@ -79,6 +82,11 @@ describe('connectionsRouter.launchDevinWorker', () => {
     })
     mocks.featureEnabled.mockResolvedValue(true)
     mocks.disconnectDevinWorkers.mockResolvedValue({ count: 1 })
+    mocks.createDevinPool.mockResolvedValue({
+      id: 'pool-created',
+      name: 'new-pool',
+      platform: 'linux',
+    })
     mocks.discoverDevinAccount.mockResolvedValue({ pools: [] })
     mocks.launchDevinWorker.mockResolvedValue({
       acceptorId: 'acceptor-1',
@@ -144,6 +152,89 @@ describe('connectionsRouter.launchDevinWorker', () => {
       teamId: 'resolved-team-id',
       userId: 'user-1',
     })
+  })
+
+  it('creates a pool after checking for a duplicate with the same credential', async () => {
+    mocks.normalizeDevinApiUrl.mockReturnValue(input.apiUrl)
+    mocks.discoverDevinAccount.mockResolvedValue({ pools: [] })
+
+    await expect(
+      (await caller()).createDevinPool({
+        apiKey: 'service-user-key',
+        apiUrl: input.apiUrl,
+        name: 'new-pool',
+        teamSlug: input.teamSlug,
+      })
+    ).resolves.toEqual({
+      pool: {
+        id: 'pool-created',
+        name: 'new-pool',
+        platform: 'linux',
+      },
+    })
+
+    expect(mocks.discoverDevinAccount).toHaveBeenCalledWith(
+      input.apiUrl,
+      'service-user-key'
+    )
+    expect(mocks.createDevinPool).toHaveBeenCalledWith(
+      input.apiUrl,
+      'service-user-key',
+      {
+        description: 'E2B Devin Outposts pool (new-pool)',
+        name: 'new-pool',
+      }
+    )
+    const successLog = infoSpy.mock.calls.find(
+      ([context]) => context['trpc.procedure.name'] === 'createDevinPool'
+    )?.[0]
+    expect(successLog).toMatchObject({
+      'trpc.procedure.input': {
+        _apiKey: 'string(16)',
+        _apiUrl: 'string(20)',
+        _name: 'string(8)',
+        teamSlug: 'customer-team',
+      },
+    })
+    expect(JSON.stringify(successLog)).not.toContain('service-user-key')
+  })
+
+  it('rejects a duplicate pool before creating it', async () => {
+    mocks.normalizeDevinApiUrl.mockReturnValue(input.apiUrl)
+    mocks.discoverDevinAccount.mockResolvedValue({
+      pools: [{ id: 'pool-existing', name: 'new-pool', platform: 'linux' }],
+    })
+
+    await expect(
+      (await caller()).createDevinPool({
+        apiKey: 'service-user-key',
+        apiUrl: input.apiUrl,
+        name: 'new-pool',
+        teamSlug: input.teamSlug,
+      })
+    ).rejects.toMatchObject({ code: 'CONFLICT' })
+    expect(mocks.createDevinPool).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    [409, 'CONFLICT'],
+    [400, 'BAD_REQUEST'],
+    [422, 'BAD_REQUEST'],
+  ] as const)('maps Devin create status %s to %s', async (status, code) => {
+    mocks.normalizeDevinApiUrl.mockReturnValue(input.apiUrl)
+    mocks.discoverDevinAccount.mockResolvedValue({ pools: [] })
+    mocks.createDevinPool.mockRejectedValue(
+      new DevinConnectionError('Create failed', 'provider', status)
+    )
+
+    await expect(
+      (await caller()).createDevinPool({
+        apiKey: 'service-user-key',
+        apiUrl: input.apiUrl,
+        name: 'new-pool',
+        teamSlug: input.teamSlug,
+      })
+    ).rejects.toMatchObject({ code })
   })
 
   it.each([

@@ -1,6 +1,7 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 import {
+  createDevinPool,
   DevinConnectionError,
   discoverDevinAccount,
   normalizeDevinApiUrl,
@@ -32,7 +33,73 @@ const connectionsProcedure = protectedTeamProcedure.use(
   }
 )
 
+function mapDevinError(error: DevinConnectionError) {
+  return new TRPCError({
+    code:
+      error.kind === 'credentials'
+        ? 'UNAUTHORIZED'
+        : error.kind === 'url'
+          ? 'BAD_REQUEST'
+          : error.status === 409
+            ? 'CONFLICT'
+            : error.status === 400 || error.status === 422
+              ? 'BAD_REQUEST'
+              : 'BAD_GATEWAY',
+    message: error.message,
+  })
+}
+
 export const connectionsRouter = createTRPCRouter({
+  createDevinPool: connectionsProcedure
+    .input(
+      z.object({
+        apiKey: z.string().trim().min(1).max(4096),
+        apiUrl: z.string().trim().min(1).max(512),
+        description: z.string().trim().max(500).optional(),
+        name: z
+          .string()
+          .trim()
+          .regex(
+            /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/,
+            'Pool name must start with a letter or number and use only letters, numbers, dots, underscores, or hyphens'
+          ),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const description =
+        input.description || `E2B Devin Outposts pool (${input.name})`
+      let apiUrl: string
+      try {
+        apiUrl = normalizeDevinApiUrl(input.apiUrl)
+      } catch (error) {
+        if (error instanceof DevinConnectionError) throw mapDevinError(error)
+        throw error
+      }
+
+      try {
+        const discovered = await discoverDevinAccount(apiUrl, input.apiKey)
+        if (discovered.pools.some((pool) => pool.name === input.name)) {
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message: `An Outposts pool named ${input.name} already exists`,
+          })
+        }
+        return {
+          pool: await createDevinPool(apiUrl, input.apiKey, {
+            description,
+            name: input.name,
+          }),
+        }
+      } catch (error) {
+        if (error instanceof TRPCError) throw error
+        if (error instanceof DevinConnectionError) throw mapDevinError(error)
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Could not create the Devin Outposts pool',
+        })
+      }
+    }),
+
   disconnectDevinWorkers: connectionsProcedure
     .input(z.object({ confirm: z.literal(true) }))
     .mutation(async ({ ctx }) => {
@@ -61,17 +128,7 @@ export const connectionsRouter = createTRPCRouter({
       try {
         return await discoverDevinAccount(input.apiUrl, input.apiKey)
       } catch (error) {
-        if (error instanceof DevinConnectionError) {
-          throw new TRPCError({
-            code:
-              error.kind === 'credentials'
-                ? 'UNAUTHORIZED'
-                : error.kind === 'url'
-                  ? 'BAD_REQUEST'
-                  : 'BAD_GATEWAY',
-            message: error.message,
-          })
-        }
+        if (error instanceof DevinConnectionError) throw mapDevinError(error)
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Could not check the Devin account',

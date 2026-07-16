@@ -16,7 +16,8 @@ export type DevinDiscovery = {
 export class DevinConnectionError extends Error {
   constructor(
     message: string,
-    readonly kind: 'credentials' | 'provider' | 'response' | 'url'
+    readonly kind: 'credentials' | 'provider' | 'response' | 'url',
+    readonly status?: number
   ) {
     super(message)
   }
@@ -64,27 +65,84 @@ export async function discoverDevinAccount(
   return { pools }
 }
 
+export async function createDevinPool(
+  apiUrlInput: string,
+  apiKey: string,
+  input: { name: string; description: string }
+) {
+  const apiUrl = normalizeDevinApiUrl(apiUrlInput)
+  const credentials = { apiKey, apiUrl }
+  let payload: Record<string, unknown>
+
+  try {
+    payload = await devinRequest(credentials, '/opbeta/outposts/pools', {
+      body: JSON.stringify({
+        description: input.description,
+        name: input.name,
+        platform: 'linux',
+      }),
+      method: 'POST',
+    })
+  } catch (error) {
+    if (
+      error instanceof DevinConnectionError &&
+      error.kind === 'provider' &&
+      (!error.status || error.status >= 500)
+    ) {
+      const matchingPool = await reconcileCreatedPool(credentials, input.name)
+      if (matchingPool) return matchingPool
+      throw new DevinConnectionError(
+        'Could not confirm whether Devin created the pool. Check the account before retrying.',
+        'provider'
+      )
+    }
+    throw error
+  }
+
+  const pool = poolFromPayload(payload)
+  if (!pool) {
+    const matchingPool = await reconcileCreatedPool(credentials, input.name)
+    if (matchingPool) return matchingPool
+    throw new DevinConnectionError(
+      'Devin accepted the pool request but returned an unexpected response. Check the account before retrying.',
+      'response'
+    )
+  }
+  return pool
+}
+
+async function reconcileCreatedPool(
+  credentials: { apiUrl: string; apiKey: string },
+  name: string
+) {
+  try {
+    return poolsFromPayload(
+      await devinRequest(credentials, '/opbeta/outposts/pools')
+    ).find((pool) => pool.name === name)
+  } catch {
+    return undefined
+  }
+}
+
 export function poolsFromPayload(payload: Record<string, unknown>) {
   return collectionItems(payload)
-    .map((item): DevinPool | undefined => {
-      const metadata = recordField(item, 'metadata')
-      const spec = recordField(item, 'spec')
-      const id = stringField(metadata, 'pool_id')
-      const name = stringField(spec, 'name')
-      if (!id || !name) return undefined
-      return { id, name, platform: stringField(spec, 'platform') }
-    })
+    .map(poolFromPayload)
     .filter((item): item is DevinPool => Boolean(item))
 }
 
 async function devinRequest(
   credentials: { apiUrl: string; apiKey: string },
-  path: string
+  path: string,
+  init?: Pick<RequestInit, 'body' | 'method'>
 ) {
   let response: Response
   try {
     response = await fetch(`${credentials.apiUrl}${path}`, {
-      headers: { Authorization: `Bearer ${credentials.apiKey}` },
+      headers: {
+        Authorization: `Bearer ${credentials.apiKey}`,
+        ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
+      },
+      ...init,
       cache: 'no-store',
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     })
@@ -100,8 +158,15 @@ async function devinRequest(
   }
   if (!response.ok) {
     throw new DevinConnectionError(
-      'Devin account discovery is unavailable',
-      'provider'
+      init?.method !== 'POST'
+        ? 'Devin account discovery is unavailable'
+        : response.status === 409
+          ? 'An Outposts pool with this name already exists'
+          : response.status === 400 || response.status === 422
+            ? 'Devin rejected the Outposts pool configuration'
+            : 'Devin could not create the Outposts pool',
+      'provider',
+      response.status
     )
   }
 
@@ -129,6 +194,15 @@ async function devinRequest(
     )
   }
   return payload as Record<string, unknown>
+}
+
+function poolFromPayload(item: Record<string, unknown>) {
+  const metadata = recordField(item, 'metadata')
+  const spec = recordField(item, 'spec')
+  const id = stringField(metadata, 'pool_id')
+  const name = stringField(spec, 'name')
+  if (!id || !name) return undefined
+  return { id, name, platform: stringField(spec, 'platform') }
 }
 
 function records(value: unknown) {
