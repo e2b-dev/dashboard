@@ -1,4 +1,4 @@
-import type { BooleanFeatureFlagId } from '@/core/modules/feature-flags/definitions'
+import type { BooleanFeatureFlagId } from '@/core/modules/feature-flags/boolean-definitions'
 import {
   AccountSettingsIcon,
   CardIcon,

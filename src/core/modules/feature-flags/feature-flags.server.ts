@@ -5,6 +5,8 @@ import {
   type BooleanFeatureFlagId,
   FEATURE_FLAGS,
   type FeatureFlagId,
+  type PayloadFeatureFlagId,
+  type PayloadFeatureFlagValue,
 } from '@/core/modules/feature-flags/definitions'
 import type {
   EvaluatedFeatureFlag,
@@ -23,6 +25,10 @@ export type FeatureFlagService = {
     flagId: BooleanFeatureFlagId,
     context: FeatureFlagContext
   ): Promise<boolean>
+  getPayload<Id extends PayloadFeatureFlagId>(
+    flagId: Id,
+    context: FeatureFlagContext
+  ): Promise<PayloadFeatureFlagValue<Id>>
   evaluateAll(context: FeatureFlagContext): Promise<EvaluatedFeatureFlag[]>
 }
 
@@ -105,11 +111,23 @@ export function createFeatureFlagService(
       return flag.defaultValue
     },
 
+    async getPayload(flagId, context) {
+      const flag = FEATURE_FLAGS[flagId]
+      const snapshot = await provider.evaluate(context, [flag])
+
+      return parsePayload(
+        flag,
+        snapshot.getPayload(flag.key)
+      ) as PayloadFeatureFlagValue<typeof flagId>
+    },
+
     async evaluateAll(context) {
-      const flags = Object.entries(FEATURE_FLAGS) as [
-        FeatureFlagId,
-        FeatureFlagDefinition,
-      ][]
+      const flags = (
+        Object.entries(FEATURE_FLAGS) as [
+          FeatureFlagId,
+          FeatureFlagDefinition,
+        ][]
+      ).filter(([, flag]) => flag.exposure !== 'server')
       const snapshot = await provider.evaluate(
         context,
         flags.map(([, flag]) => flag)

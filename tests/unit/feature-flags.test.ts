@@ -52,7 +52,71 @@ describe('createFeatureFlagService', () => {
     expect(result).toBe(false)
   })
 
-  it('evaluates the registry in a single provider call', async () => {
+  it('evaluates payload flags through the provider', async () => {
+    const payload = [
+      {
+        name: 'Development service',
+        template: 'development-template',
+        description: 'Development connection',
+      },
+    ]
+    const provider = {
+      evaluate: vi.fn().mockResolvedValue({
+        getFlagValue: vi.fn(),
+        getPayload: vi.fn().mockReturnValue(payload),
+      }),
+    }
+
+    const result = await createFeatureFlagService(provider).getPayload(
+      'developmentConnections',
+      context
+    )
+
+    expect(result).toEqual(payload)
+    expect(provider.evaluate).toHaveBeenCalledWith(context, [
+      FEATURE_FLAGS.developmentConnections,
+    ])
+  })
+
+  it('falls back to the payload default when validation fails', async () => {
+    const provider = {
+      evaluate: vi.fn().mockResolvedValue({
+        getFlagValue: vi.fn(),
+        getPayload: vi.fn().mockReturnValue([
+          {
+            name: '',
+            template: 'development-template',
+            description: 'Development connection',
+          },
+        ]),
+      }),
+    }
+
+    const result = await createFeatureFlagService(provider).getPayload(
+      'developmentConnections',
+      context
+    )
+
+    expect(result).toEqual([])
+  })
+
+  it('falls back to the payload default when the provider has no value', async () => {
+    const provider = {
+      evaluate: vi.fn().mockResolvedValue({
+        getFlagValue: vi.fn(),
+        getPayload: vi.fn().mockReturnValue(undefined),
+      }),
+    }
+
+    const result = await createFeatureFlagService(provider).getPayload(
+      'developmentConnections',
+      context
+    )
+
+    expect(result).toEqual([])
+  })
+
+  it('evaluates only client-exposed flags for the client snapshot', async () => {
     const provider = {
       evaluate: vi.fn().mockResolvedValue({
         getFlagValue: vi.fn().mockReturnValue(true),
@@ -67,9 +131,7 @@ describe('createFeatureFlagService', () => {
       FEATURE_FLAGS.agentsEnabled,
       FEATURE_FLAGS.byocEnabled,
       FEATURE_FLAGS.connectionsEnabled,
-      FEATURE_FLAGS.isAdmin,
       FEATURE_FLAGS.newSandboxList,
-      FEATURE_FLAGS.newUsagePage,
       FEATURE_FLAGS.disableE2BAccessTokenProvisioning,
     ])
     expect(result).toEqual([
@@ -98,28 +160,11 @@ describe('createFeatureFlagService', () => {
         value: true,
       },
       {
-        id: 'isAdmin',
-        key: 'is_admin',
-        kind: 'boolean',
-        description: 'Enables dashboard admin-only surfaces.',
-        defaultValue: false,
-        value: true,
-      },
-      {
         id: 'newSandboxList',
         key: 'new_sandbox_list',
         kind: 'boolean',
         description:
           'Enables the new sandbox list with pagination and paused sandbox coverage.',
-        defaultValue: false,
-        value: true,
-      },
-      {
-        id: 'newUsagePage',
-        key: 'new-usage-page',
-        kind: 'boolean',
-        description:
-          'Enables the redesigned (Dashboard 2.0) usage page skeleton.',
         defaultValue: false,
         value: true,
       },
