@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useReducer, useRef, useState } from 'react'
+import { useEffect, useReducer, useRef, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import {
   defaultErrorToast,
@@ -26,6 +26,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/ui/primitives/select'
+import {
+  type DevinLaunchAttempt,
+  getDevinLaunchAttempt,
+} from './devin-launch-attempt'
 
 type Organization = { id: string; name: string }
 type Pool = { id: string; name: string; platform: string }
@@ -33,8 +37,6 @@ type Pool = { id: string; name: string; platform: string }
 type ManualConnectionState = {
   accountChecked: boolean
   apiKey: string
-  discoverPending: boolean
-  launchPending: boolean
   organizations: Organization[]
   outpostsToken: string
   poolId: string
@@ -44,8 +46,6 @@ type ManualConnectionState = {
 const initialManualConnectionState: ManualConnectionState = {
   accountChecked: false,
   apiKey: '',
-  discoverPending: false,
-  launchPending: false,
   organizations: [],
   outpostsToken: '',
   poolId: '',
@@ -56,7 +56,12 @@ type DevinConnectionFormProps = {
   teamSlug: string
 }
 
+type PendingOperation = 'disconnect' | 'discover' | 'launch' | null
+
 export function DevinConnectionForm({ teamSlug }: DevinConnectionFormProps) {
+  const [pendingOperation, setPendingOperation] =
+    useState<PendingOperation>(null)
+
   return (
     <div className="flex flex-col gap-7 pb-12">
       <header className="flex flex-col gap-2">
@@ -75,25 +80,44 @@ export function DevinConnectionForm({ teamSlug }: DevinConnectionFormProps) {
         </p>
       </header>
 
-      <ManualDevinConnection teamSlug={teamSlug} />
-      <DevinWorkerControls teamSlug={teamSlug} />
+      <ManualDevinConnection
+        pendingOperation={pendingOperation}
+        setPendingOperation={setPendingOperation}
+        teamSlug={teamSlug}
+      />
+      <DevinWorkerControls
+        pendingOperation={pendingOperation}
+        setPendingOperation={setPendingOperation}
+        teamSlug={teamSlug}
+      />
     </div>
   )
 }
 
-function DevinWorkerControls({ teamSlug }: DevinConnectionFormProps) {
+type OperationProps = DevinConnectionFormProps & {
+  pendingOperation: PendingOperation
+  setPendingOperation: (operation: PendingOperation) => void
+}
+
+function DevinWorkerControls({
+  pendingOperation,
+  setPendingOperation,
+  teamSlug,
+}: OperationProps) {
   const trpcClient = useTRPCClient()
   const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false)
-  const [disconnectPending, setDisconnectPending] = useState(false)
+  const mounted = useMountedRef()
+  const disconnectPending = pendingOperation === 'disconnect'
 
   async function disconnectWorkers() {
-    if (disconnectPending) return
-    setDisconnectPending(true)
+    if (pendingOperation) return
+    setPendingOperation('disconnect')
     try {
       const data = await trpcClient.connections.disconnectDevinWorkers.mutate({
         confirm: true,
         teamSlug,
       })
+      if (!mounted.current) return
       toast(
         defaultSuccessToast(
           data.count === 0
@@ -103,6 +127,7 @@ function DevinWorkerControls({ teamSlug }: DevinConnectionFormProps) {
       )
       setDisconnectDialogOpen(false)
     } catch (error) {
+      if (!mounted.current) return
       toast(
         defaultErrorToast(
           error instanceof Error && error.message
@@ -111,7 +136,7 @@ function DevinWorkerControls({ teamSlug }: DevinConnectionFormProps) {
         )
       )
     }
-    setDisconnectPending(false)
+    if (mounted.current) setPendingOperation(null)
   }
 
   return (
@@ -129,11 +154,15 @@ function DevinWorkerControls({ teamSlug }: DevinConnectionFormProps) {
         confirm="Disconnect workers"
         onConfirm={disconnectWorkers}
         confirmProps={{
-          disabled: disconnectPending,
+          disabled: pendingOperation !== null,
           loading: disconnectPending ? 'Disconnecting workers' : undefined,
         }}
         trigger={
-          <Button type="button" variant="secondary">
+          <Button
+            disabled={pendingOperation !== null}
+            type="button"
+            variant="secondary"
+          >
             Disconnect workers
             <LogOutIcon />
           </Button>
@@ -143,7 +172,11 @@ function DevinWorkerControls({ teamSlug }: DevinConnectionFormProps) {
   )
 }
 
-function ManualDevinConnection({ teamSlug }: { teamSlug: string }) {
+function ManualDevinConnection({
+  pendingOperation,
+  setPendingOperation,
+  teamSlug,
+}: OperationProps) {
   const router = useRouter()
   const trpcClient = useTRPCClient()
   const apiUrlRef = useRef<HTMLInputElement>(null)
@@ -157,14 +190,16 @@ function ManualDevinConnection({ teamSlug }: { teamSlug: string }) {
   const {
     accountChecked,
     apiKey,
-    discoverPending,
-    launchPending,
     organizations,
     outpostsToken,
     poolId,
     pools,
   } = state
-  const launchOperationId = useRef<string | null>(null)
+  const launchAttempt = useRef<DevinLaunchAttempt | null>(null)
+  const mounted = useMountedRef()
+  const discoverPending = pendingOperation === 'discover'
+  const launchPending = pendingOperation === 'launch'
+  const anyOperationPending = pendingOperation !== null
 
   const launchDisabledReason = (() => {
     if (!accountChecked) return 'Check the Devin account first.'
@@ -185,15 +220,17 @@ function ManualDevinConnection({ teamSlug }: { teamSlug: string }) {
 
   async function checkAccount(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!apiKey.trim() || discoverPending || launchPending) return
+    if (!apiKey.trim() || pendingOperation) return
     const submittedApiKey = apiKey
-    updateState({ apiKey: '', discoverPending: true })
+    updateState({ apiKey: '' })
+    setPendingOperation('discover')
     try {
       const data = await trpcClient.connections.discoverDevin.mutate({
         apiKey: submittedApiKey,
         apiUrl: apiUrlRef.current?.value || 'https://api.devin.ai',
         teamSlug,
       })
+      if (!mounted.current) return
       updateState({
         accountChecked: true,
         organizations: data.organizations,
@@ -202,6 +239,7 @@ function ManualDevinConnection({ teamSlug }: { teamSlug: string }) {
       })
       toast(defaultSuccessToast('Devin account checked.'))
     } catch (error) {
+      if (!mounted.current) return
       resetDiscovery()
       toast(
         defaultErrorToast(
@@ -211,26 +249,31 @@ function ManualDevinConnection({ teamSlug }: { teamSlug: string }) {
         )
       )
     }
-    updateState({ discoverPending: false })
+    if (mounted.current) setPendingOperation(null)
   }
 
   async function startWorker(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (launchDisabledReason || launchPending) return
-    const submittedToken = outpostsToken
-    updateState({ launchPending: true, outpostsToken: '' })
-    if (!launchOperationId.current) {
-      launchOperationId.current = crypto.randomUUID()
+    if (launchDisabledReason || pendingOperation) return
+    const launchPayload = {
+      apiUrl: apiUrlRef.current?.value || 'https://api.devin.ai',
+      outpostsToken,
+      poolId,
     }
+    setPendingOperation('launch')
+    updateState({ outpostsToken: '' })
     try {
+      launchAttempt.current = await getDevinLaunchAttempt(
+        launchAttempt.current,
+        launchPayload
+      )
       const data = await trpcClient.connections.launchDevinWorker.mutate({
-        apiUrl: apiUrlRef.current?.value || 'https://api.devin.ai',
-        operationId: launchOperationId.current,
-        outpostsToken: submittedToken,
-        poolId,
+        ...launchPayload,
+        operationId: launchAttempt.current.operationId,
         teamSlug,
       })
-      launchOperationId.current = null
+      if (!mounted.current) return
+      launchAttempt.current = null
       toast(
         defaultSuccessToast(
           data.reused
@@ -240,6 +283,7 @@ function ManualDevinConnection({ teamSlug }: { teamSlug: string }) {
       )
       router.push(PROTECTED_URLS.SANDBOX_TERMINAL(teamSlug, data.sandboxId))
     } catch (error) {
+      if (!mounted.current) return
       toast(
         defaultErrorToast(
           error instanceof Error && error.message
@@ -248,7 +292,7 @@ function ManualDevinConnection({ teamSlug }: { teamSlug: string }) {
         )
       )
     }
-    updateState({ launchPending: false })
+    if (mounted.current) setPendingOperation(null)
   }
 
   return (
@@ -271,7 +315,9 @@ function ManualDevinConnection({ teamSlug }: { teamSlug: string }) {
             <Input
               id="devin-api-key"
               autoComplete="off"
-              disabled={discoverPending || launchPending}
+              data-1p-ignore
+              data-form-type="other"
+              disabled={anyOperationPending}
               type="password"
               value={apiKey}
               onChange={(event) => {
@@ -297,7 +343,7 @@ function ManualDevinConnection({ teamSlug }: { teamSlug: string }) {
                 <Input
                   id="devin-api-url"
                   autoComplete="off"
-                  disabled={discoverPending || launchPending}
+                  disabled={anyOperationPending}
                   defaultValue="https://api.devin.ai"
                   onChange={resetDiscovery}
                   ref={apiUrlRef}
@@ -309,7 +355,7 @@ function ManualDevinConnection({ teamSlug }: { teamSlug: string }) {
 
           <Button
             className="w-full sm:w-fit"
-            disabled={!apiKey.trim() || discoverPending || launchPending}
+            disabled={!apiKey.trim() || anyOperationPending}
             loading={discoverPending ? 'Checking account' : undefined}
             title={!apiKey.trim() ? 'Enter a Devin API key.' : undefined}
             type="submit"
@@ -349,7 +395,7 @@ function ManualDevinConnection({ teamSlug }: { teamSlug: string }) {
             <Field id="devin-pool" label="Outposts pool">
               <Select
                 disabled={
-                  !accountChecked || pools.length === 0 || launchPending
+                  !accountChecked || pools.length === 0 || anyOperationPending
                 }
                 value={poolId}
                 onValueChange={(value) => updateState({ poolId: value })}
@@ -379,7 +425,11 @@ function ManualDevinConnection({ teamSlug }: { teamSlug: string }) {
             <Input
               id="devin-outposts-token"
               autoComplete="off"
-              disabled={!accountChecked || pools.length === 0 || launchPending}
+              data-1p-ignore
+              data-form-type="other"
+              disabled={
+                !accountChecked || pools.length === 0 || anyOperationPending
+              }
               type="password"
               value={outpostsToken}
               onChange={(event) =>
@@ -397,7 +447,7 @@ function ManualDevinConnection({ teamSlug }: { teamSlug: string }) {
           <Button
             aria-describedby="devin-launch-status"
             className="w-full sm:w-fit"
-            disabled={Boolean(launchDisabledReason) || launchPending}
+            disabled={Boolean(launchDisabledReason) || anyOperationPending}
             loading={launchPending ? 'Starting worker' : undefined}
             title={launchDisabledReason}
             type="submit"
@@ -416,6 +466,17 @@ function ManualDevinConnection({ teamSlug }: { teamSlug: string }) {
       </section>
     </>
   )
+}
+
+function useMountedRef() {
+  const mounted = useRef(true)
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+    }
+  }, [])
+  return mounted
 }
 
 function Field({
