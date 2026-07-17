@@ -83,6 +83,7 @@ type Deployment = TRPCRouterOutputs['byoc']['listDeployments'][number]
 type DeploymentEvent = TRPCRouterOutputs['byoc']['listEvents'][number]
 type ByocOperation = TRPCRouterOutputs['byoc']['listOperations'][number]
 type ByocLocation = TRPCRouterOutputs['byoc']['locations'][number]
+type ByocProvider = ByocLocation['provider']
 type TopologyDraft = {
   apiNodeCount: number
   apiMachineType: string
@@ -251,6 +252,7 @@ export function ByocDeploymentPanel({
   const [connectionDialogOpen, setConnectionDialogOpen] = useState(false)
   const [setupStarted, setSetupStarted] = useState(false)
   const [setupProjectId, setSetupProjectId] = useState('')
+  const [selectedProvider, setSelectedProvider] = useState<ByocProvider>()
   const [selectedLocation, setSelectedLocation] = useState<ByocLocation>()
   const [pendingLocation, setPendingLocation] = useState<ByocLocation>()
   const [deployerServiceAccountEmail, setDeployerServiceAccountEmail] =
@@ -342,19 +344,24 @@ export function ByocDeploymentPanel({
   const deployment =
     availableDeployments?.find((item) => item.id === selectedDeploymentId) ??
     latestByTimestamp(availableDeployments)
-  const connectionLocation = connection?.authorized_projects[0]
+  const connectionLocation: ByocLocation | undefined = connection
+    ?.authorized_projects[0]
     ? {
+        provider: 'gcp',
         region: connection.authorized_projects[0].default_region,
         zone: connection.authorized_projects[0].default_zone,
       }
     : undefined
   const allocatedLocation = allocatedTargetQuery.data
-    ? {
-        region: allocatedTargetQuery.data.region,
-        zone: allocatedTargetQuery.data.zone,
-      }
+    ? targetLocation(allocatedTargetQuery.data)
     : undefined
-  const immutableLocation = deployment?.gcp ?? connectionLocation
+  const immutableLocation: ByocLocation | undefined = deployment
+    ? {
+        provider: 'gcp',
+        region: deployment.gcp.region,
+        zone: deployment.gcp.zone,
+      }
+    : connectionLocation
   const target = allocatedTargetQuery.data ?? allocateTarget.data
   const location = resolvedTargetLocation(
     immutableLocation,
@@ -366,6 +373,7 @@ export function ByocDeploymentPanel({
     connectionsQuery.data,
     deploymentsQuery.data
   )
+  const provider = target?.provider ?? location?.provider ?? selectedProvider
   const connectionUsesExpectedDeployer = Boolean(
     connection?.subject_email.startsWith(`${target?.deployerAccountId}@`)
   )
@@ -379,7 +387,7 @@ export function ByocDeploymentPanel({
     requestIntents.createDeployment,
   ])
   const setupDeployerServiceAccountEmail =
-    setupProjectId && target?.deployerAccountId
+    setupProjectId && target?.provider === 'gcp' && target.deployerAccountId
       ? `${target.deployerAccountId}@${setupProjectId}.iam.gserviceaccount.com`
       : ''
   const resolvedDeployerServiceAccountEmail =
@@ -402,11 +410,20 @@ export function ByocDeploymentPanel({
     if (
       !locationChangeLocked &&
       target &&
-      (target.region !== nextLocation.region ||
-        target.zone !== nextLocation.zone)
+      !sameLocation(targetLocation(target), nextLocation)
     ) {
       setPendingLocation(nextLocation)
     }
+  }
+  const handleProviderChange = (nextProvider: ByocProvider) => {
+    if (target) return
+    requestIntents.connection.clear()
+    allocateTarget.reset()
+    createConnection.reset()
+    setSelectedProvider(nextProvider)
+    setSelectedLocation(undefined)
+    setSetupProjectId('')
+    setDeployerServiceAccountEmail('')
   }
 
   const eventsQuery = useQuery({
@@ -843,10 +860,11 @@ export function ByocDeploymentPanel({
             allocatedTargetQuery.isFetching
           }
           onGenerateIdentity={() => {
-            if (!location) return
+            if (location?.provider !== 'gcp') return
             allocateTarget.mutate({ teamSlug, ...location })
           }}
           onConnect={() => {
+            if (location?.provider !== 'gcp') return
             const intent = requestIntents.connection.get(
               deployment?.cloud_connection_id
             )
@@ -883,6 +901,7 @@ export function ByocDeploymentPanel({
           onLocationChange={
             target ? handleReservedLocationChange : setSelectedLocation
           }
+          onProviderChange={handleProviderChange}
           onDeploy={runDeploy}
           onValidate={runValidate}
           onRefresh={() => void refresh()}
@@ -892,6 +911,7 @@ export function ByocDeploymentPanel({
             allocateTarget.isPending || updateTargetLocation.isPending
           }
           projectId={displayedSetupProjectId}
+          provider={provider}
           setupStarted={setupStarted || !!connection}
           target={target}
           topology={topology}
@@ -905,7 +925,7 @@ export function ByocDeploymentPanel({
           }}
           description={
             pendingLocation && allocatedLocation
-              ? `Change this team's reserved location from ${allocatedLocation.region} / ${allocatedLocation.zone} to ${pendingLocation.region} / ${pendingLocation.zone}? The target key, namespace, and domain will stay the same.`
+              ? `Change this team's reserved location from ${formatLocation(allocatedLocation)} to ${formatLocation(pendingLocation)}? The target key, namespace, and domain will stay the same.`
               : 'Confirm the new BYOC location.'
           }
           onConfirm={() => {
@@ -957,8 +977,8 @@ export function ByocDeploymentPanel({
             <CardTitle>Complete configuration first</CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-fg-secondary">
-            Choose a location, connect the deployer service account, and save
-            the initial topology before managing infrastructure.
+            Choose a cloud and location, connect the cloud account, and save the
+            initial topology before managing infrastructure.
           </CardContent>
           <CardFooter className="mt-0 justify-end border-stroke py-4">
             <Button
@@ -1638,10 +1658,12 @@ function ByocSetupFlow({
   onValidate,
   onRefresh,
   onLocationChange,
+  onProviderChange,
   onSetupStart,
   onSetupProjectIdChange,
   operationPending,
   projectId,
+  provider,
   setupStarted,
   target,
   targetPending,
@@ -1673,10 +1695,12 @@ function ByocSetupFlow({
   onValidate: () => void
   onRefresh: () => void
   onLocationChange: (location: ByocLocation) => void
+  onProviderChange: (provider: ByocProvider) => void
   onSetupStart: () => void
   onSetupProjectIdChange: (value: string) => void
   operationPending: boolean
   projectId: string
+  provider?: ByocProvider
   setupStarted: boolean
   target?: ByocTarget
   targetPending: boolean
@@ -1698,16 +1722,16 @@ function ByocSetupFlow({
               <CloudIcon className="size-5 text-fg-secondary" />
             </div>
             <h2 className="mt-5 text-xl font-medium text-fg">
-              Deploy sandboxes in your own Google Cloud project
+              Deploy sandboxes in your own cloud account
             </h2>
             <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-fg-secondary">
-              E2B provisions and operates a dedicated region in your project.
-              Your sandbox workloads stay on infrastructure your team controls.
+              E2B provisions and operates a dedicated region in infrastructure
+              your team controls.
             </p>
             <div className="mt-6 grid gap-px border border-stroke bg-stroke text-left sm:grid-cols-3">
               <SetupBenefit
-                label="Your project"
-                text="Infrastructure and workload boundaries remain in your GCP account."
+                label="Your account"
+                text="Infrastructure and workload boundaries remain in your cloud account."
               />
               <SetupBenefit
                 label="Managed deployment"
@@ -1751,8 +1775,8 @@ function ByocSetupFlow({
             />
           </div>
           <p className="mt-1 text-sm text-fg-secondary">
-            Connect your project, choose the initial capacity, and let E2B
-            deploy the region.
+            Choose a cloud and region, connect your account, and let E2B deploy
+            the region.
           </p>
         </div>
         <Button variant="secondary" onClick={onRefresh}>
@@ -1788,8 +1812,10 @@ function ByocSetupFlow({
           onConnect={onConnect}
           onGenerateIdentity={onGenerateIdentity}
           onLocationChange={onLocationChange}
+          onProviderChange={onProviderChange}
           onProjectIdChange={onSetupProjectIdChange}
           projectId={projectId}
+          provider={provider}
           target={target}
           targetPending={targetPending}
         />
@@ -1856,7 +1882,7 @@ function SetupStepRail({
     .every((check) => isCompletedCheck(check.status))
   const verificationReady = isCompletedCheck(checks.at(-1)?.status)
   const steps = [
-    { label: 'Service account', complete: connectionReady },
+    { label: 'Cloud access', complete: connectionReady },
     { label: 'Configuration', complete: !!deployment },
     { label: 'Infrastructure', complete: infrastructureReady },
     { label: 'Applications', complete: applicationsReady },
@@ -1941,8 +1967,10 @@ function SetupServiceAccount({
   onConnect,
   onGenerateIdentity,
   onLocationChange,
+  onProviderChange,
   onProjectIdChange,
   projectId,
+  provider,
   target,
   targetPending,
 }: {
@@ -1958,37 +1986,76 @@ function SetupServiceAccount({
   onConnect: () => void
   onGenerateIdentity: () => void
   onLocationChange: (location: ByocLocation) => void
+  onProviderChange: (provider: ByocProvider) => void
   onProjectIdChange: (value: string) => void
   projectId: string
+  provider?: ByocProvider
   target?: ByocTarget
   targetPending: boolean
 }) {
   const validProjectId = /^[a-z][a-z0-9-]{4,28}[a-z0-9]$/.test(projectId)
   const commandProjectId = validProjectId ? projectId : 'YOUR_GCP_PROJECT_ID'
+  const availableProviders = [
+    ...new Set(locations.map((candidate) => candidate.provider)),
+  ]
+  const providerLocations = provider
+    ? locations.filter((candidate) => candidate.provider === provider)
+    : []
+  const awsSelected = provider === 'aws'
+  const providerLocked = !!target || locationLocked
 
   return (
     <section className="mx-auto w-full max-w-5xl min-w-0">
       <Card variant="layer" className="min-w-0 overflow-hidden rounded-lg">
         <CardHeader>
-          <CardTitle>Create the deployer service account</CardTitle>
+          <CardTitle>Choose cloud and location</CardTitle>
         </CardHeader>
         <CardContent className="grid min-w-0 gap-5">
           <p className="prose-body max-w-2xl text-fg-secondary">
-            Choose the GCP location and project that will own the BYOC region.
-            Generating this team's deployer identity reserves its stable name.
-            The location can change until you connect a cloud project.
+            Choose the cloud first, then a region available for that provider.
+            Generating this team's target reserves its provider and stable
+            identity.
           </p>
 
           <div className="grid gap-4 md:grid-cols-3">
             <label
               className="grid min-w-0 gap-2 text-sm font-medium"
+              htmlFor="byoc-setup-provider"
+            >
+              Cloud
+              <Select
+                disabled={isPending || targetPending || providerLocked}
+                onValueChange={(value) =>
+                  onProviderChange(value as ByocProvider)
+                }
+                value={provider}
+              >
+                <SelectTrigger
+                  className="h-10 min-w-0 bg-bg"
+                  id="byoc-setup-provider"
+                >
+                  <SelectValue placeholder="Select a cloud" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableProviders.map((candidate) => (
+                    <SelectItem key={candidate} value={candidate}>
+                      {providerLabel(candidate)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+            <label
+              className="grid min-w-0 gap-2 text-sm font-medium"
               htmlFor="byoc-setup-location"
             >
-              Region and zone
+              Region
               <Select
-                disabled={isPending || targetPending || locationLocked}
+                disabled={
+                  !provider || isPending || targetPending || locationLocked
+                }
                 onValueChange={(value) => {
-                  const nextLocation = locations.find(
+                  const nextLocation = providerLocations.find(
                     (candidate) => locationKey(candidate) === value
                   )
                   if (nextLocation) onLocationChange(nextLocation)
@@ -1999,66 +2066,99 @@ function SetupServiceAccount({
                   className="h-10 min-w-0 bg-bg"
                   id="byoc-setup-location"
                 >
-                  <SelectValue placeholder="Select a location" />
+                  <SelectValue placeholder="Select a region" />
                 </SelectTrigger>
                 <SelectContent>
-                  {locations.map((candidate) => (
+                  {providerLocations.map((candidate) => (
                     <SelectItem
                       key={locationKey(candidate)}
                       value={locationKey(candidate)}
                     >
-                      {candidate.region} / {candidate.zone}
+                      {candidate.region}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </label>
-            <label
-              className="grid min-w-0 gap-2 text-sm font-medium"
-              htmlFor="byoc-setup-project-id"
-            >
-              Google Cloud project ID
-              <input
-                autoComplete="off"
-                className="h-10 min-w-0 rounded-md border border-stroke bg-bg px-3 font-mono text-sm font-normal text-fg outline-none focus:border-stroke-active"
-                id="byoc-setup-project-id"
-                disabled={isPending}
-                onChange={(event) =>
-                  onProjectIdChange(event.currentTarget.value)
-                }
-                placeholder="your-gcp-project-id"
-                spellCheck={false}
-                value={projectId}
-              />
-            </label>
-            <div className="grid min-w-0 gap-2 text-sm font-medium">
-              Project deployer identity
-              <div className="flex h-10 min-w-0 items-center rounded-md border border-stroke bg-bg-1 px-3 font-mono text-sm font-normal text-fg-secondary">
-                <span className="truncate">
-                  {validProjectId
-                    ? deployerServiceAccountEmail ||
-                      'Generate the deployer identity first'
-                    : target && deployerAccountId
-                      ? `${deployerAccountId}@<project>.iam.gserviceaccount.com`
-                      : 'Generate the deployer identity first'}
-                </span>
+            {provider === 'gcp' ? (
+              <div className="grid min-w-0 gap-2 text-sm font-medium">
+                Zone
+                <div className="flex h-10 min-w-0 items-center rounded-md border border-stroke bg-bg-1 px-3 font-mono text-sm font-normal text-fg-secondary">
+                  {location?.provider === 'gcp'
+                    ? location.zone
+                    : 'Select a region'}
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          {provider === 'gcp' ? (
+            <div className="grid gap-4 md:grid-cols-2">
+              <label
+                className="grid min-w-0 gap-2 text-sm font-medium"
+                htmlFor="byoc-setup-project-id"
+              >
+                Google Cloud project ID
+                <input
+                  autoComplete="off"
+                  className="h-10 min-w-0 rounded-md border border-stroke bg-bg px-3 font-mono text-sm font-normal text-fg outline-none focus:border-stroke-active"
+                  id="byoc-setup-project-id"
+                  disabled={isPending}
+                  onChange={(event) =>
+                    onProjectIdChange(event.currentTarget.value)
+                  }
+                  placeholder="your-gcp-project-id"
+                  spellCheck={false}
+                  value={projectId}
+                />
+              </label>
+              <div className="grid min-w-0 gap-2 text-sm font-medium">
+                Google Cloud deployer identity
+                <div className="flex h-10 min-w-0 items-center rounded-md border border-stroke bg-bg-1 px-3 font-mono text-sm font-normal text-fg-secondary">
+                  <span className="truncate">
+                    {validProjectId
+                      ? deployerServiceAccountEmail ||
+                        'Generate the deployer identity first'
+                      : target && deployerAccountId
+                        ? `${deployerAccountId}@<project>.iam.gserviceaccount.com`
+                        : 'Generate the deployer identity first'}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
+          ) : null}
 
-          <div className="flex gap-2 border border-stroke bg-bg p-3 text-xs leading-5 text-fg-secondary">
-            <InfoIcon className="mt-0.5 size-4 shrink-0" />
-            {locationLocked
-              ? 'This team location cannot change after a cloud connection or deployment exists.'
-              : target
-                ? "Changing the location keeps this team's target key, namespace, and domain."
-                : 'You can change the location until a cloud connection or deployment exists.'}{' '}
-            E2B uses short-lived impersonation credentials and never receives a
-            deployer service-account key. Runtime credentials created by the
-            current modules remain in customer-owned Terraform state.
-          </div>
+          {awsSelected ? (
+            <div className="flex gap-2 border border-accent-warning-highlight/35 bg-accent-warning-highlight/10 p-3 text-sm leading-5 text-fg">
+              <WarningIcon className="mt-0.5 size-4 shrink-0 text-accent-warning-highlight" />
+              <div>
+                <p className="font-medium">AWS setup is not available yet</p>
+                <p className="mt-1 text-fg-secondary">
+                  {target
+                    ? 'This team is locked to Amazon Web Services because its target is already allocated. This dashboard does not yet support the AWS account connection or deployment steps.'
+                    : 'AWS regions can be selected, but this dashboard does not yet support AWS account connections or deployments. No target will be reserved until that workflow is available.'}
+                </p>
+              </div>
+            </div>
+          ) : null}
 
-          {target ? (
+          {provider === 'gcp' ? (
+            <div className="flex gap-2 border border-stroke bg-bg p-3 text-xs leading-5 text-fg-secondary">
+              <InfoIcon className="mt-0.5 size-4 shrink-0" />
+              {providerLocked
+                ? `This team is locked to ${providerLabel(provider)} after target allocation.`
+                : 'Changing the cloud clears the selected region and project before target allocation.'}{' '}
+              {locationLocked
+                ? 'The region cannot change after a cloud connection or deployment exists.'
+                : target
+                  ? "Changing the region keeps this team's target key, namespace, and domain."
+                  : 'The region can change until a cloud connection or deployment exists.'}{' '}
+              E2B uses short-lived impersonation credentials and never receives
+              a deployer service-account key.
+            </div>
+          ) : null}
+
+          {target?.provider === 'gcp' ? (
             <Tabs defaultValue="gcloud" className="min-w-0 gap-3">
               <TabsList className="h-9 w-fit gap-5 border-b-0 bg-bg p-0 max-md:px-0">
                 <TabsTrigger layoutkey="byoc-setup-access-tabs" value="gcloud">
@@ -2108,13 +2208,21 @@ function SetupServiceAccount({
         </CardContent>
         <CardFooter className="mt-0 justify-between gap-4 border-stroke py-4 max-sm:flex-col max-sm:items-stretch">
           <p className="text-xs text-fg-secondary">
-            {target && isPending
-              ? `Checking access (attempt ${failureCount + 1}). IAM changes are retried every 5 seconds while this page is open.`
-              : target
-                ? 'Run the command, then verify that E2B can impersonate the deployer.'
-                : "Review the location, then generate this team's permanent deployer identity."}
+            {awsSelected
+              ? target
+                ? 'The allocated AWS provider cannot be changed. AWS connection and deployment support is still required to continue.'
+                : 'AWS connection and deployment support must be added before this target can be reserved.'
+              : target && isPending
+                ? `Checking access (attempt ${failureCount + 1}). IAM changes are retried every 5 seconds while this page is open.`
+                : target
+                  ? 'Run the command, then verify that E2B can impersonate the deployer.'
+                  : "Review the location, then generate this team's permanent deployer identity."}
           </p>
-          {target ? (
+          {awsSelected ? (
+            <Button className="shrink-0" disabled>
+              AWS setup unavailable
+            </Button>
+          ) : target ? (
             <Button
               className="shrink-0"
               disabled={
@@ -2132,7 +2240,7 @@ function SetupServiceAccount({
           ) : (
             <Button
               className="shrink-0"
-              disabled={!location || targetPending}
+              disabled={location?.provider !== 'gcp' || targetPending}
               loading={targetPending ? 'Generating' : undefined}
               onClick={onGenerateIdentity}
             >
@@ -2244,8 +2352,8 @@ function SetupConfiguration({
         <CardContent className="grid gap-3">
           <TargetCell label="Project" value={projectId} />
           <TargetCell
-            label="Region / zone"
-            value={target ? `${target.region} / ${target.zone}` : undefined}
+            label="Location"
+            value={target ? formatLocation(targetLocation(target)) : undefined}
           />
           <TargetCell label="Domain" value={target?.domainName} />
         </CardContent>
@@ -2555,7 +2663,32 @@ function ConnectGCPDialog({
 const emptyUuid = '00000000-0000-0000-0000-000000000000'
 
 function locationKey(location: ByocLocation) {
-  return `${location.region}/${location.zone}`
+  return `${location.provider}/${location.region}/${location.provider === 'gcp' ? location.zone : ''}`
+}
+
+function providerLabel(provider: ByocProvider) {
+  return provider === 'gcp' ? 'Google Cloud' : 'Amazon Web Services'
+}
+
+function formatLocation(location: ByocLocation) {
+  return location.provider === 'gcp'
+    ? `${location.region} / ${location.zone}`
+    : location.region
+}
+
+function targetLocation(target: ByocTarget): ByocLocation {
+  return target.provider === 'gcp'
+    ? { provider: 'gcp', region: target.region, zone: target.zone }
+    : { provider: 'aws', region: target.region }
+}
+
+function sameLocation(left: ByocLocation, right: ByocLocation) {
+  return (
+    left.provider === right.provider &&
+    left.region === right.region &&
+    (left.provider !== 'gcp' ||
+      (right.provider === 'gcp' && left.zone === right.zone))
+  )
 }
 
 function topologyFromDeployment(deployment?: Deployment): TopologyDraft {
