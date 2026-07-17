@@ -83,6 +83,24 @@ const byocTargetIdentitySchema = z.discriminatedUnion('provider', [
   }),
 ])
 
+const bootstrapArtifactSchema = z.object({
+  id: z.string().min(1).max(64),
+  label: z.string().min(1).max(64),
+  language: z.string().min(1).max(32),
+  filename: z.string().min(1).max(128).optional(),
+  content: z.string().min(1).max(250_000),
+})
+
+const bootstrapBundleSchema = z.object({
+  schema_version: z.literal('v1'),
+  provider: z.enum(['gcp', 'aws']),
+  target_key: z.string().regex(/^[a-z][a-z0-9]{11}$/),
+  cloud_account_id: z.string().min(1).max(128),
+  artifacts: z.array(bootstrapArtifactSchema).min(1).max(8),
+})
+
+export type BootstrapBundle = z.infer<typeof bootstrapBundleSchema>
+
 type ByocTargetIdentity = z.infer<typeof byocTargetIdentitySchema>
 
 export type DeploymentStatus =
@@ -459,6 +477,38 @@ export function createByocDeploymentsRepository({
 
     allocatedTarget() {
       return getAllocatedTarget()
+    },
+
+    async bootstrapBundle(
+      expectedTargetKey: string,
+      expectedProvider: ByocProvider,
+      cloudAccountId: string
+    ) {
+      const response = await request<unknown>(
+        `/target-identities/${encodeURIComponent(teamId)}/bootstrap`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            expected_target_key: expectedTargetKey,
+            cloud_account_id: cloudAccountId,
+          }),
+        }
+      )
+      const parsed = bootstrapBundleSchema.safeParse(response)
+      if (
+        !parsed.success ||
+        parsed.data.target_key !== expectedTargetKey ||
+        parsed.data.provider !== expectedProvider ||
+        parsed.data.cloud_account_id !== cloudAccountId ||
+        new Set(parsed.data.artifacts.map((artifact) => artifact.id)).size !==
+          parsed.data.artifacts.length
+      ) {
+        throw new TRPCError({
+          code: 'BAD_GATEWAY',
+          message: 'BYOC deployments runner returned invalid setup artifacts.',
+        })
+      }
+      return parsed.data
     },
 
     async resetTarget(expectedTargetKey: string) {

@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { CreateApiKeyDialog } from '@/features/dashboard/settings/keys'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils'
@@ -85,6 +85,7 @@ type Deployment = TRPCRouterOutputs['byoc']['listDeployments'][number]
 type DeploymentEvent = TRPCRouterOutputs['byoc']['listEvents'][number]
 type ByocOperation = TRPCRouterOutputs['byoc']['listOperations'][number]
 type ByocLocation = TRPCRouterOutputs['byoc']['locations'][number]
+type BootstrapBundle = TRPCRouterOutputs['byoc']['bootstrapBundle']
 type ByocProvider = ByocLocation['provider']
 type TopologyDraft = {
   apiNodeCount: number
@@ -93,152 +94,6 @@ type TopologyDraft = {
   clientMachineType: string
   clickHouseNodeCount: number
   clickHouseMachineType: string
-}
-
-const bootstrapRoles = [
-  'roles/serviceusage.serviceUsageAdmin',
-  'roles/compute.admin',
-  'roles/storage.admin',
-  'roles/secretmanager.admin',
-  'roles/artifactregistry.admin',
-  'roles/certificatemanager.owner',
-  'roles/memorystore.admin',
-  'roles/networkconnectivity.admin',
-  'roles/servicenetworking.networksAdmin',
-  'roles/iap.tunnelResourceAccessor',
-  'roles/iam.serviceAccountAdmin',
-  'roles/iam.serviceAccountUser',
-  'roles/iam.serviceAccountKeyAdmin',
-  'roles/resourcemanager.projectIamAdmin',
-]
-function bootstrapCommand({
-  deployerServiceAccount,
-  e2bPrincipals,
-  projectId,
-}: {
-  deployerServiceAccount: string
-  e2bPrincipals: string[]
-  projectId: string
-}) {
-  return `export PROJECT_ID="${projectId}"
-export DEPLOYER_SA="${deployerServiceAccount}"
-E2B_PRINCIPALS=(${e2bPrincipals.map((principal) => `"${principal}"`).join(' ')})
-
-gcloud services enable \\
-  iam.googleapis.com \\
-  cloudresourcemanager.googleapis.com \\
-  serviceusage.googleapis.com \\
-  --project="$PROJECT_ID"
-
-gcloud iam service-accounts create "$DEPLOYER_SA" \\
-  --project="$PROJECT_ID" \\
-  --display-name="E2B BYOC deployer"
-
-for ROLE in \\
-  ${bootstrapRoles.join(' \\\n  ')}
-do
-  gcloud projects add-iam-policy-binding "$PROJECT_ID" \\
-    --member="serviceAccount:\${DEPLOYER_SA}@\${PROJECT_ID}.iam.gserviceaccount.com" \\
-    --role="$ROLE" \\
-    --condition=None
-done
-
-for E2B_PRINCIPAL in "\${E2B_PRINCIPALS[@]}"
-do
-  gcloud iam service-accounts add-iam-policy-binding \\
-    "\${DEPLOYER_SA}@\${PROJECT_ID}.iam.gserviceaccount.com" \\
-    --project="$PROJECT_ID" \\
-    --member="$E2B_PRINCIPAL" \\
-    --role="roles/iam.serviceAccountTokenCreator"
-done`
-}
-
-function bootstrapTerraform({
-  deployerServiceAccount,
-  e2bPrincipals,
-  projectId,
-}: {
-  deployerServiceAccount: string
-  e2bPrincipals: string[]
-  projectId: string
-}) {
-  return `terraform {
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = ">= 6.50.0"
-    }
-  }
-}
-
-variable "project_id" {
-  type    = string
-  default = "${projectId}"
-}
-
-variable "deployer_account_id" {
-  type    = string
-  default = "${deployerServiceAccount}"
-}
-
-variable "e2b_principals" {
-  type    = set(string)
-  default = [${e2bPrincipals.map((principal) => `"${principal}"`).join(', ')}]
-}
-
-provider "google" {
-  project = var.project_id
-}
-
-locals {
-  bootstrap_apis = toset([
-    "iam.googleapis.com",
-    "cloudresourcemanager.googleapis.com",
-    "serviceusage.googleapis.com",
-  ])
-
-  byoc_deployer_roles = toset([
-    ${bootstrapRoles.map((role) => `"${role}"`).join(',\n    ')}
-  ])
-}
-
-resource "google_project_service" "bootstrap" {
-  for_each = local.bootstrap_apis
-
-  project            = var.project_id
-  service            = each.value
-  disable_on_destroy = false
-}
-
-resource "google_service_account" "byoc_deployer" {
-  project      = var.project_id
-  account_id   = var.deployer_account_id
-  display_name = "E2B BYOC deployer"
-
-  depends_on = [google_project_service.bootstrap]
-}
-
-resource "google_project_iam_member" "byoc_deployer_roles" {
-  for_each = local.byoc_deployer_roles
-
-  project = var.project_id
-  role    = each.value
-  member  = "serviceAccount:\${google_service_account.byoc_deployer.email}"
-
-  depends_on = [google_project_service.bootstrap]
-}
-
-resource "google_service_account_iam_member" "e2b_impersonation" {
-  for_each = var.e2b_principals
-
-  service_account_id = google_service_account.byoc_deployer.name
-  role               = "roles/iam.serviceAccountTokenCreator"
-  member             = each.value
-}
-
-output "byoc_deployer_service_account" {
-  value = google_service_account.byoc_deployer.email
-}`
 }
 
 export function ByocDeploymentPanel({
@@ -573,6 +428,9 @@ export function ByocDeploymentPanel({
       queryClient.invalidateQueries(
         trpc.byoc.allocatedTarget.queryFilter({ teamSlug })
       ),
+      queryClient.invalidateQueries(
+        trpc.byoc.bootstrapBundle.queryFilter({ teamSlug })
+      ),
       queryClient.invalidateQueries(trpc.byoc.health.queryFilter({ teamSlug })),
       connection?.id
         ? queryClient.invalidateQueries(
@@ -738,9 +596,21 @@ export function ByocDeploymentPanel({
     selectedProject?.id ||
     connection?.authorized_projects[0]?.project_id ||
     ''
-  const selectedProjectPrincipal =
-    selectedProject?.e2b_principal ??
-    connection?.authorized_projects[0]?.e2b_principal
+  const bootstrapBundleQuery = useQuery({
+    ...trpc.byoc.bootstrapBundle.queryOptions({
+      teamSlug,
+      expectedTargetKey: target?.targetKey ?? '',
+      expectedProvider: target?.provider ?? 'gcp',
+      cloudAccountId: displayedSetupProjectId,
+    }),
+    enabled:
+      !!target &&
+      isValidCloudAccountId(target.provider, displayedSetupProjectId),
+  })
+  const currentBootstrapBundle =
+    !bootstrapBundleQuery.isFetching && !bootstrapBundleQuery.error
+      ? bootstrapBundleQuery.data
+      : undefined
   const deploymentKey = `${teamSlug}:${deployment?.id ?? ''}`
   const destroyConfirmationValue =
     destroyConfirmation.deploymentKey === deploymentKey
@@ -897,6 +767,9 @@ export function ByocDeploymentPanel({
       <>
         <ByocSetupFlow
           activeOperation={activeOperation}
+          bootstrapBundle={currentBootstrapBundle}
+          bootstrapError={mutationError(bootstrapBundleQuery.error)}
+          bootstrapPending={bootstrapBundleQuery.isFetching}
           canCreateDeployment={canCreateDeployment}
           canDeploy={canDeploy}
           connection={
@@ -1508,95 +1381,11 @@ export function ByocDeploymentPanel({
                     {connection ? 'Replace connection' : 'Connect cloud'}
                   </Button>
                 </div>
-                {deployment?.provider === 'aws' ? (
-                  <div className="grid gap-3 border border-stroke bg-bg p-4 text-sm">
-                    <TargetCell
-                      label="AWS account"
-                      value={deployment.aws?.account_id}
-                    />
-                    <TargetCell
-                      label="Web identity role"
-                      value={deployment.aws?.role_arn}
-                    />
-                    <p className="text-xs leading-5 text-fg-secondary">
-                      The worker assumes only this account-local role with a
-                      short-lived Google-signed identity token.
-                    </p>
-                  </div>
-                ) : (
-                  <Tabs defaultValue="gcloud" className="min-w-0 gap-3">
-                    <TabsList className="h-9 w-fit gap-5 border-b-0 bg-bg p-0 max-md:px-0">
-                      <TabsTrigger layoutkey="byoc-access-tabs" value="gcloud">
-                        gcloud
-                      </TabsTrigger>
-                      <TabsTrigger
-                        layoutkey="byoc-access-tabs"
-                        value="terraform"
-                      >
-                        Terraform
-                      </TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="gcloud" className="mt-0 min-w-0">
-                      <CodeBlock
-                        className="min-w-0 max-w-full overflow-hidden rounded-md"
-                        icon={<TerminalIcon />}
-                        title="GCP bootstrap command"
-                        viewportProps={{
-                          className: 'max-h-[420px] max-w-full',
-                        }}
-                      >
-                        {bootstrapCommand({
-                          deployerServiceAccount:
-                            deployment?.deployer_service_account.email.split(
-                              '@'
-                            )[0] ??
-                            connection?.subject_email.split('@')[0] ??
-                            target?.deployerAccountId ??
-                            '',
-                          e2bPrincipals:
-                            target?.e2bPrincipals ??
-                            (selectedProjectPrincipal
-                              ? [selectedProjectPrincipal]
-                              : []),
-                          projectId:
-                            selectedProject?.id ??
-                            deployment?.gcp.project_id ??
-                            '',
-                        })}
-                      </CodeBlock>
-                    </TabsContent>
-                    <TabsContent value="terraform" className="mt-0 min-w-0">
-                      <CodeBlock
-                        className="min-w-0 max-w-full overflow-hidden rounded-md"
-                        icon={<TerminalIcon />}
-                        lang="hcl"
-                        title="Terraform bootstrap snippet"
-                        viewportProps={{
-                          className: 'max-h-[420px] max-w-full',
-                        }}
-                      >
-                        {bootstrapTerraform({
-                          deployerServiceAccount:
-                            deployment?.deployer_service_account.email.split(
-                              '@'
-                            )[0] ??
-                            connection?.subject_email.split('@')[0] ??
-                            target?.deployerAccountId ??
-                            '',
-                          e2bPrincipals:
-                            target?.e2bPrincipals ??
-                            (selectedProjectPrincipal
-                              ? [selectedProjectPrincipal]
-                              : []),
-                          projectId:
-                            selectedProject?.id ??
-                            deployment?.gcp.project_id ??
-                            '',
-                        })}
-                      </CodeBlock>
-                    </TabsContent>
-                  </Tabs>
-                )}
+                <BootstrapArtifacts
+                  bundle={currentBootstrapBundle}
+                  error={mutationError(bootstrapBundleQuery.error)}
+                  isPending={bootstrapBundleQuery.isFetching}
+                />
               </CardContent>
             </Card>
             <DestroyByocCard
@@ -1614,9 +1403,11 @@ export function ByocDeploymentPanel({
       </Tabs>
 
       <ConnectCloudDialog
+        bootstrapBundle={currentBootstrapBundle}
+        bootstrapError={mutationError(bootstrapBundleQuery.error)}
+        bootstrapPending={bootstrapBundleQuery.isFetching}
         deployerAccountId={target?.deployerAccountId ?? ''}
         deployerServiceAccountEmail={resolvedDeployerServiceAccountEmail}
-        e2bPrincipals={target?.e2bPrincipals ?? []}
         error={mutationError(createConnection.error)}
         isPending={createConnection.isPending || operationPending}
         onConnect={() => {
@@ -1780,6 +1571,9 @@ function DestroyByocCard({
 
 function ByocSetupFlow({
   activeOperation,
+  bootstrapBundle,
+  bootstrapError,
+  bootstrapPending,
   canCreateDeployment,
   canDeploy,
   connection,
@@ -1819,6 +1613,9 @@ function ByocSetupFlow({
   updateTopology,
 }: {
   activeOperation?: ByocOperation
+  bootstrapBundle?: BootstrapBundle
+  bootstrapError?: string
+  bootstrapPending: boolean
   canCreateDeployment: boolean
   canDeploy: boolean
   connection?: TRPCRouterOutputs['byoc']['listCloudConnections'][number]
@@ -1950,6 +1747,9 @@ function ByocSetupFlow({
 
       {!connection ? (
         <SetupServiceAccount
+          bootstrapBundle={bootstrapBundle}
+          bootstrapError={bootstrapError}
+          bootstrapPending={bootstrapPending}
           deployerAccountId={deployerAccountId}
           deployerServiceAccountEmail={deployerServiceAccountEmail}
           e2bPrincipals={e2bPrincipals}
@@ -2107,6 +1907,9 @@ function SetupStepRail({
 }
 
 function SetupServiceAccount({
+  bootstrapBundle,
+  bootstrapError,
+  bootstrapPending,
   deployerAccountId,
   deployerServiceAccountEmail,
   e2bPrincipals,
@@ -2128,6 +1931,9 @@ function SetupServiceAccount({
   targetPending,
   targetResetLocked,
 }: {
+  bootstrapBundle?: BootstrapBundle
+  bootstrapError?: string
+  bootstrapPending: boolean
   deployerAccountId: string
   deployerServiceAccountEmail: string
   e2bPrincipals: string[]
@@ -2153,7 +1959,6 @@ function SetupServiceAccount({
     provider === 'aws'
       ? /^[0-9]{12}$/.test(projectId)
       : /^[a-z][a-z0-9-]{4,28}[a-z0-9]$/.test(projectId)
-  const commandProjectId = validProjectId ? projectId : 'YOUR_GCP_PROJECT_ID'
   const availableProviders = [
     ...new Set(locations.map((candidate) => candidate.provider)),
   ]
@@ -2328,63 +2133,12 @@ function SetupServiceAccount({
             </div>
           ) : null}
 
-          {target?.provider === 'aws' ? (
-            <div className="flex gap-2 border border-stroke bg-bg p-3 text-sm leading-5 text-fg-secondary">
-              <InfoIcon className="mt-0.5 size-4 shrink-0" />
-              <p>
-                Create the scoped IAM role named{' '}
-                <code className="font-mono text-fg">
-                  {target.deployerAccountId}
-                </code>{' '}
-                with the E2B worker web-identity trust policy, then enter the
-                AWS account ID above. Verification assumes only that role.
-              </p>
-            </div>
-          ) : null}
-
-          {target?.provider === 'gcp' ? (
-            <Tabs defaultValue="gcloud" className="min-w-0 gap-3">
-              <TabsList className="h-9 w-fit gap-5 border-b-0 bg-bg p-0 max-md:px-0">
-                <TabsTrigger layoutkey="byoc-setup-access-tabs" value="gcloud">
-                  gcloud
-                </TabsTrigger>
-                <TabsTrigger
-                  layoutkey="byoc-setup-access-tabs"
-                  value="terraform"
-                >
-                  Terraform
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="gcloud" className="mt-0 min-w-0">
-                <CodeBlock
-                  className="min-w-0 max-w-full overflow-hidden"
-                  icon={<TerminalIcon />}
-                  title="Run in Cloud Shell"
-                  viewportProps={{ className: 'max-h-[420px] max-w-full' }}
-                >
-                  {bootstrapCommand({
-                    deployerServiceAccount: deployerAccountId,
-                    e2bPrincipals,
-                    projectId: commandProjectId,
-                  })}
-                </CodeBlock>
-              </TabsContent>
-              <TabsContent value="terraform" className="mt-0 min-w-0">
-                <CodeBlock
-                  className="min-w-0 max-w-full overflow-hidden"
-                  icon={<TerminalIcon />}
-                  lang="hcl"
-                  title="Terraform bootstrap snippet"
-                  viewportProps={{ className: 'max-h-[420px] max-w-full' }}
-                >
-                  {bootstrapTerraform({
-                    deployerServiceAccount: deployerAccountId,
-                    e2bPrincipals,
-                    projectId: commandProjectId,
-                  })}
-                </CodeBlock>
-              </TabsContent>
-            </Tabs>
+          {target && validProjectId ? (
+            <BootstrapArtifacts
+              bundle={bootstrapBundle}
+              error={bootstrapError}
+              isPending={bootstrapPending}
+            />
           ) : null}
           {error ? (
             <p className="text-sm text-accent-error-highlight">{error}</p>
@@ -2404,6 +2158,7 @@ function SetupServiceAccount({
               disabled={
                 !location ||
                 !validProjectId ||
+                !bootstrapBundle ||
                 (provider === 'gcp' && e2bPrincipals.length === 0) ||
                 isPending
               }
@@ -2745,10 +2500,85 @@ function isCompletedCheck(status?: DeploymentCheckStatus) {
   return status === 'passed' || status === 'skipped'
 }
 
+function BootstrapArtifacts({
+  bundle,
+  error,
+  isPending,
+}: {
+  bundle?: BootstrapBundle
+  error?: string
+  isPending: boolean
+}) {
+  const tabsLayoutKey = `byoc-bootstrap-${useId()}`
+  if (isPending) {
+    return (
+      <div className="flex items-center gap-2 border border-stroke bg-bg p-3 text-sm text-fg-secondary">
+        <SpinnerIcon className="size-4" />
+        Loading current setup instructions from the deployment service...
+      </div>
+    )
+  }
+  if (error) {
+    return (
+      <div
+        className="border border-accent-error-highlight/35 bg-accent-error-highlight/10 p-3 text-sm text-fg"
+        role="alert"
+      >
+        {error}
+      </div>
+    )
+  }
+  if (!bundle) {
+    return (
+      <div className="border border-stroke bg-bg p-3 text-sm text-fg-secondary">
+        Select a valid cloud account and current target to load setup
+        instructions.
+      </div>
+    )
+  }
+
+  const firstArtifact = bundle.artifacts[0]
+  if (!firstArtifact) return null
+  return (
+    <Tabs defaultValue={firstArtifact.id} className="min-w-0 gap-3">
+      <TabsList className="h-9 w-fit gap-5 border-b-0 bg-bg p-0 max-md:px-0">
+        {bundle.artifacts.map((artifact) => (
+          <TabsTrigger
+            key={artifact.id}
+            layoutkey={tabsLayoutKey}
+            value={artifact.id}
+          >
+            {artifact.label}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+      {bundle.artifacts.map((artifact) => (
+        <TabsContent
+          key={artifact.id}
+          value={artifact.id}
+          className="mt-0 min-w-0"
+        >
+          <CodeBlock
+            className="min-w-0 max-w-full overflow-hidden rounded-md"
+            icon={<TerminalIcon />}
+            lang={artifact.language === 'hcl' ? 'hcl' : undefined}
+            title={artifact.filename ?? artifact.label}
+            viewportProps={{ className: 'max-h-[420px] max-w-full' }}
+          >
+            {artifact.content}
+          </CodeBlock>
+        </TabsContent>
+      ))}
+    </Tabs>
+  )
+}
+
 function ConnectCloudDialog({
+  bootstrapBundle,
+  bootstrapError,
+  bootstrapPending,
   deployerAccountId,
   deployerServiceAccountEmail,
-  e2bPrincipals,
   error,
   isPending,
   onConnect,
@@ -2757,9 +2587,11 @@ function ConnectCloudDialog({
   provider,
   projectId,
 }: {
+  bootstrapBundle?: BootstrapBundle
+  bootstrapError?: string
+  bootstrapPending: boolean
   deployerAccountId: string
   deployerServiceAccountEmail: string
-  e2bPrincipals: string[]
   error?: string
   isPending: boolean
   onConnect: () => void
@@ -2775,11 +2607,6 @@ function ConnectCloudDialog({
     : ''
   const validIdentity =
     expectedIdentity !== '' && deployerServiceAccountEmail === expectedIdentity
-  const accountId =
-    provider === 'gcp'
-      ? deployerServiceAccountEmail.split('@')[0] || deployerAccountId
-      : deployerAccountId
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[min(760px,90vh)] max-w-2xl overflow-y-auto">
@@ -2817,27 +2644,11 @@ function ConnectCloudDialog({
             </p>
           </div>
 
-          {provider === 'gcp' ? (
-            <CodeBlock
-              className="overflow-hidden rounded-md"
-              icon={<TerminalIcon />}
-              title="Bootstrap access"
-              viewportProps={{ className: 'max-h-64' }}
-            >
-              {bootstrapCommand({
-                deployerServiceAccount: accountId,
-                e2bPrincipals,
-                projectId,
-              })}
-            </CodeBlock>
-          ) : (
-            <div className="border border-stroke bg-bg-1 p-3 text-sm leading-5 text-fg-secondary">
-              Confirm that the scoped role named{' '}
-              <code className="font-mono text-fg">{deployerAccountId}</code>{' '}
-              trusts the E2B worker through Google web identity federation.
-              Verification checks the assumed AWS account before saving.
-            </div>
-          )}
+          <BootstrapArtifacts
+            bundle={bootstrapBundle}
+            error={bootstrapError}
+            isPending={bootstrapPending}
+          />
 
           {error ? (
             <div className="rounded-md border border-accent-error-highlight/35 bg-accent-error-highlight/10 p-3 text-sm text-fg">
@@ -2855,11 +2666,7 @@ function ConnectCloudDialog({
             Cancel
           </Button>
           <Button
-            disabled={
-              !validIdentity ||
-              (provider === 'gcp' && e2bPrincipals.length === 0) ||
-              isPending
-            }
+            disabled={!validIdentity || !bootstrapBundle || isPending}
             loading={isPending ? 'Verifying' : undefined}
             onClick={onConnect}
           >
@@ -2875,6 +2682,12 @@ const emptyUuid = '00000000-0000-0000-0000-000000000000'
 
 function locationKey(location: ByocLocation) {
   return `${location.provider}/${location.region}/${location.provider === 'gcp' ? location.zone : ''}`
+}
+
+function isValidCloudAccountId(provider: ByocProvider, value: string) {
+  return provider === 'aws'
+    ? /^[0-9]{12}$/.test(value)
+    : /^[a-z][a-z0-9-]{4,28}[a-z0-9]$/.test(value)
 }
 
 function providerLabel(provider: ByocProvider) {

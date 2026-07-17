@@ -511,6 +511,202 @@ describe('BYOC deployments repository', () => {
     )
   })
 
+  it('loads versioned bootstrap artifacts for the current target', async () => {
+    mockRunner({
+      routes: {
+        [`POST /target-identities/${teamId}/bootstrap`]: (_url, init) => {
+          expect(JSON.parse(String(init.body))).toEqual({
+            expected_target_key: targetKey,
+            cloud_account_id: projectId,
+          })
+          return Response.json({
+            schema_version: 'v1',
+            provider: 'gcp',
+            target_key: targetKey,
+            cloud_account_id: projectId,
+            artifacts: [
+              {
+                id: 'gcloud',
+                label: 'gcloud',
+                language: 'bash',
+                filename: 'bootstrap.sh',
+                content: 'gcloud services enable iam.googleapis.com',
+              },
+            ],
+          })
+        },
+      },
+    })
+
+    const bundle = await createByocDeploymentsRepository({
+      teamId,
+    }).bootstrapBundle(targetKey, 'gcp', projectId)
+
+    expect(bundle.schema_version).toBe('v1')
+    expect(bundle.target_key).toBe(targetKey)
+    expect(bundle.artifacts[0]?.id).toBe('gcloud')
+  })
+
+  it('rejects bootstrap artifacts for another target', async () => {
+    mockRunner({
+      routes: {
+        [`POST /target-identities/${teamId}/bootstrap`]: () =>
+          Response.json({
+            schema_version: 'v1',
+            provider: 'gcp',
+            target_key: 'zzz123def456',
+            cloud_account_id: projectId,
+            artifacts: [
+              {
+                id: 'terraform',
+                label: 'Terraform',
+                language: 'hcl',
+                content: 'terraform {}',
+              },
+            ],
+          }),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).bootstrapBundle(
+        targetKey,
+        'gcp',
+        projectId
+      )
+    ).rejects.toMatchObject({ code: 'BAD_GATEWAY' })
+  })
+
+  it('rejects bootstrap artifacts for another provider', async () => {
+    mockRunner({
+      routes: {
+        [`POST /target-identities/${teamId}/bootstrap`]: () =>
+          Response.json({
+            schema_version: 'v1',
+            provider: 'aws',
+            target_key: targetKey,
+            cloud_account_id: projectId,
+            artifacts: [
+              {
+                id: 'commands',
+                label: 'Commands',
+                language: 'bash',
+                content: 'aws sts get-caller-identity',
+              },
+            ],
+          }),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).bootstrapBundle(
+        targetKey,
+        'gcp',
+        projectId
+      )
+    ).rejects.toMatchObject({ code: 'BAD_GATEWAY' })
+  })
+
+  it('rejects bootstrap artifacts for another cloud account', async () => {
+    mockRunner({
+      routes: {
+        [`POST /target-identities/${teamId}/bootstrap`]: () =>
+          Response.json({
+            schema_version: 'v1',
+            provider: 'gcp',
+            target_key: targetKey,
+            cloud_account_id: 'another-project-1',
+            artifacts: [
+              {
+                id: 'gcloud',
+                label: 'gcloud',
+                language: 'bash',
+                content: 'gcloud services enable iam.googleapis.com',
+              },
+            ],
+          }),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).bootstrapBundle(
+        targetKey,
+        'gcp',
+        projectId
+      )
+    ).rejects.toMatchObject({ code: 'BAD_GATEWAY' })
+  })
+
+  it('rejects duplicate bootstrap artifact IDs', async () => {
+    mockRunner({
+      routes: {
+        [`POST /target-identities/${teamId}/bootstrap`]: () =>
+          Response.json({
+            schema_version: 'v1',
+            provider: 'gcp',
+            target_key: targetKey,
+            cloud_account_id: projectId,
+            artifacts: [
+              {
+                id: 'terraform',
+                label: 'Terraform',
+                language: 'hcl',
+                content: 'terraform {}',
+              },
+              {
+                id: 'terraform',
+                label: 'Duplicate',
+                language: 'hcl',
+                content: 'terraform {}',
+              },
+            ],
+          }),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).bootstrapBundle(
+        targetKey,
+        'gcp',
+        projectId
+      )
+    ).rejects.toMatchObject({ code: 'BAD_GATEWAY' })
+  })
+
+  it.each([
+    {
+      schema_version: 'v2',
+      artifacts: [
+        { id: 'gcloud', label: 'gcloud', language: 'bash', content: 'echo ok' },
+      ],
+    },
+    { schema_version: 'v1', artifacts: [] },
+  ])('rejects malformed bootstrap bundle %#', async ({
+    schema_version,
+    artifacts,
+  }) => {
+    mockRunner({
+      routes: {
+        [`POST /target-identities/${teamId}/bootstrap`]: () =>
+          Response.json({
+            schema_version,
+            provider: 'gcp',
+            target_key: targetKey,
+            cloud_account_id: projectId,
+            artifacts,
+          }),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).bootstrapBundle(
+        targetKey,
+        'gcp',
+        projectId
+      )
+    ).rejects.toMatchObject({ code: 'BAD_GATEWAY' })
+  })
+
   it('rejects an invalid target reset response', async () => {
     mockRunner({
       routes: {

@@ -119,6 +119,24 @@ export const byocRouter = createTRPCRouter({
     createByocDeploymentsRepository({ teamId: ctx.teamId }).allocatedTarget()
   ),
 
+  bootstrapBundle: protectedTeamProcedure
+    .input(
+      z.object({
+        expectedTargetKey: z.string().regex(/^[a-z][a-z0-9]{11}$/),
+        expectedProvider: z.enum(['gcp', 'aws']),
+        cloudAccountId: z.string().trim().min(1).max(128),
+      })
+    )
+    .query(({ ctx, input }) =>
+      createByocDeploymentsRepository({
+        teamId: ctx.teamId,
+      }).bootstrapBundle(
+        input.expectedTargetKey,
+        input.expectedProvider,
+        input.cloudAccountId
+      )
+    ),
+
   resetTarget: protectedTeamProcedure
     .input(
       z.object({ expectedTargetKey: z.string().regex(/^[a-z][a-z0-9]{11}$/) })
