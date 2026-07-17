@@ -13,7 +13,7 @@ describe('filterSidebarLinks', () => {
     )
     const byocOnly = filterSidebarLinks(
       SIDEBAR_MAIN_LINKS,
-      (flagId) => flagId === 'byocEnabled'
+      (flagId) => flagId === 'byocSetup'
     )
 
     expect(agentsOnly.map((link) => link.label)).toContain('Agents')

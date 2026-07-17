@@ -112,13 +112,12 @@ export function createFeatureFlagService(
     },
 
     async getPayload(flagId, context) {
-      const flag = FEATURE_FLAGS[flagId]
+      const flag = FEATURE_FLAGS[flagId] as PayloadFeatureFlagDefinition<
+        PayloadFeatureFlagValue<typeof flagId>
+      >
       const snapshot = await provider.evaluate(context, [flag])
 
-      return parsePayload(
-        flag,
-        snapshot.getPayload(flag.key)
-      ) as PayloadFeatureFlagValue<typeof flagId>
+      return parsePayload(flag, snapshot.getPayload(flag.key))
     },
 
     async evaluateAll(context) {
