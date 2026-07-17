@@ -13,11 +13,17 @@ export default async function TemplatesListPage({
   const { teamSlug } = await params
 
   prefetch(
-    trpc.templates.getTemplates.infiniteQueryOptions({
-      teamSlug,
-      limit: TEMPLATES_PAGE_SIZE,
-      sort: TEMPLATES_DEFAULT_SORT,
-    })
+    trpc.templates.getTemplates.infiniteQueryOptions(
+      {
+        teamSlug,
+        limit: TEMPLATES_PAGE_SIZE,
+        sort: TEMPLATES_DEFAULT_SORT,
+      },
+      {
+        getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+        initialCursor: undefined,
+      }
+    )
   )
 
   return (
