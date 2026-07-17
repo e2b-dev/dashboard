@@ -4,6 +4,7 @@ import { AUTH_URLS } from '@/configs/urls'
 import { featureFlags } from '@/core/modules/feature-flags/feature-flags.server'
 import { getAuthContext } from '@/core/server/auth'
 import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
+import { ByocSetup } from '@/features/dashboard/byoc/byoc-setup'
 
 export const metadata: Metadata = {
   title: 'BYOC - E2B',
@@ -31,7 +32,7 @@ export default async function ByocPage({ params }: ByocPageProps) {
     notFound()
   }
 
-  const byocEnabled = await featureFlags.isEnabled('byocEnabled', {
+  const byocSetup = await featureFlags.getPayload('byocSetup', {
     user: {
       id: authContext.user.id,
       email: authContext.user.email ?? undefined,
@@ -42,9 +43,9 @@ export default async function ByocPage({ params }: ByocPageProps) {
     },
   })
 
-  if (!byocEnabled) {
+  if (!byocSetup.enabled) {
     notFound()
   }
 
-  return null
+  return <ByocSetup config={byocSetup} />
 }

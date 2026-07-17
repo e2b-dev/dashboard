@@ -22,13 +22,15 @@ type SidebarNavArgs = {
   teamSlug?: string
 }
 
+export type SidebarFeatureFlagId = BooleanFeatureFlagId | 'byocSetup'
+
 export type SidebarNavItem = {
   label: string
   href: (args: SidebarNavArgs) => string
   icon: Icon
   group?: string
   activeMatch?: string
-  featureFlag?: BooleanFeatureFlagId
+  featureFlag?: SidebarFeatureFlagId
 }
 
 export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
@@ -69,7 +71,7 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
     href: (args) => PROTECTED_URLS.BYOC(args.teamSlug!),
     icon: CloudIcon,
     activeMatch: `/dashboard/*/byoc`,
-    featureFlag: 'byocEnabled',
+    featureFlag: 'byocSetup',
   },
   ...(INCLUDE_ARGUS
     ? [
@@ -148,7 +150,7 @@ export const SIDEBAR_ALL_LINKS = [...SIDEBAR_MAIN_LINKS, ...SIDEBAR_EXTRA_LINKS]
 
 export function filterSidebarLinks(
   links: SidebarNavItem[],
-  isEnabled: (flagId: BooleanFeatureFlagId) => boolean
+  isEnabled: (flagId: SidebarFeatureFlagId) => boolean
 ) {
   return links.filter(
     (link) => !link.featureFlag || isEnabled(link.featureFlag)

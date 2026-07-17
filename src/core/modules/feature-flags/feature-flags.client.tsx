@@ -16,6 +16,7 @@ import type { EvaluatedFeatureFlag } from '@/core/modules/feature-flags/types'
 type FeatureFlagsContextValue = {
   flags: EvaluatedFeatureFlag[]
   isEnabled(flagId: BooleanFeatureFlagId): boolean
+  hasPayload(flagId: 'byocSetup'): boolean
 }
 
 const FeatureFlagsContext = createContext<FeatureFlagsContextValue | undefined>(
@@ -47,10 +48,17 @@ export function FeatureFlagsProvider({
     [flagsById]
   )
 
-  const value = useMemo(
-    () => ({ flags: initialFlags, isEnabled }),
-    [initialFlags, isEnabled]
-  )
+  const hasPayload = (flagId: 'byocSetup') => {
+    const value = flagsById.get(flagId)?.value
+    return (
+      typeof value === 'object' &&
+      value !== null &&
+      'enabled' in value &&
+      value.enabled === true
+    )
+  }
+
+  const value = { flags: initialFlags, hasPayload, isEnabled }
 
   return (
     <FeatureFlagsContext.Provider value={value}>

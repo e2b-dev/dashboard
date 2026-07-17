@@ -16,8 +16,48 @@ export const developmentConnectionSchema = z.object({
 
 export type DevelopmentConnection = z.infer<typeof developmentConnectionSchema>
 
+const gcpRegionSchema = z
+  .string()
+  .trim()
+  .regex(/^[a-z][a-z0-9-]{2,62}$/)
+
+const byocSetupTemplateSchema = z.string().trim().min(1).max(50_000)
+
+export const byocSetupSchema = z.object({
+  enabled: z.literal(true),
+  principal: z
+    .string()
+    .trim()
+    .regex(
+      /^serviceAccount:[a-z][a-z0-9-]{4,28}[a-z0-9]@[a-z][a-z0-9-]{4,28}[a-z0-9]\.iam\.gserviceaccount\.com$/
+    ),
+  regions: z
+    .array(gcpRegionSchema)
+    .min(1)
+    .max(20)
+    .refine((regions) => new Set(regions).size === regions.length),
+  templates: z.object({
+    gcloud: byocSetupTemplateSchema,
+    terraform: byocSetupTemplateSchema,
+  }),
+})
+
+export type ByocSetupConfig = z.infer<typeof byocSetupSchema>
+export type ByocSetupValue = ByocSetupConfig | { enabled: false }
+
 export const FEATURE_FLAGS = {
   ...BOOLEAN_FEATURE_FLAGS,
+  byocSetup: {
+    kind: 'payload',
+    key: 'byoc_setup',
+    defaultValue: { enabled: false } as ByocSetupValue,
+    schema: z.discriminatedUnion('enabled', [
+      z.object({ enabled: z.literal(false) }),
+      byocSetupSchema,
+    ]),
+    description: 'Configures team-targeted BYOC onboarding.',
+    exposure: 'both',
+  },
   developmentConnections: {
     kind: 'payload',
     key: 'dev_connections',

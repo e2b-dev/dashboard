@@ -16,6 +16,17 @@ const context = {
   },
 } satisfies FeatureFlagContext
 
+const byocSetup = {
+  enabled: true,
+  principal:
+    'serviceAccount:byoc-deployments-api@example-project.iam.gserviceaccount.com',
+  regions: ['us-central1', 'us-west1'],
+  templates: {
+    gcloud: 'gcloud --project={{PROJECT_ID}}',
+    terraform: 'project_id = "{{PROJECT_ID}}"',
+  },
+}
+
 describe('createFeatureFlagService', () => {
   it('evaluates boolean flags through the provider', async () => {
     const provider = {
@@ -120,7 +131,11 @@ describe('createFeatureFlagService', () => {
     const provider = {
       evaluate: vi.fn().mockResolvedValue({
         getFlagValue: vi.fn().mockReturnValue(true),
-        getPayload: vi.fn(),
+        getPayload: vi
+          .fn()
+          .mockImplementation((key) =>
+            key === FEATURE_FLAGS.byocSetup.key ? byocSetup : undefined
+          ),
       }),
     }
 
@@ -129,10 +144,10 @@ describe('createFeatureFlagService', () => {
     expect(provider.evaluate).toHaveBeenCalledTimes(1)
     expect(provider.evaluate).toHaveBeenCalledWith(context, [
       FEATURE_FLAGS.agentsEnabled,
-      FEATURE_FLAGS.byocEnabled,
       FEATURE_FLAGS.connectionsEnabled,
       FEATURE_FLAGS.newSandboxList,
       FEATURE_FLAGS.disableE2BAccessTokenProvisioning,
+      FEATURE_FLAGS.byocSetup,
     ])
     expect(result).toEqual([
       {
@@ -140,14 +155,6 @@ describe('createFeatureFlagService', () => {
         key: 'agents_enabled',
         kind: 'boolean',
         description: 'Enables the dashboard agents launcher.',
-        defaultValue: false,
-        value: true,
-      },
-      {
-        id: 'byocEnabled',
-        key: 'byoc_enabled',
-        kind: 'boolean',
-        description: 'Enables the dashboard BYOC page.',
         defaultValue: false,
         value: true,
       },
@@ -176,6 +183,14 @@ describe('createFeatureFlagService', () => {
           'Disables provisioning of e2b access tokens via generateE2BUserAccessToken. When enabled, the legacy CLI flow shows an upgrade prompt and the createAccessToken tRPC mutation returns an error.',
         defaultValue: false,
         value: true,
+      },
+      {
+        id: 'byocSetup',
+        key: 'byoc_setup',
+        kind: 'payload',
+        description: 'Configures team-targeted BYOC onboarding.',
+        defaultValue: { enabled: false },
+        value: byocSetup,
       },
     ])
   })
