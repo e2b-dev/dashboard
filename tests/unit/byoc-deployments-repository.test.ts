@@ -12,6 +12,7 @@ const originalEnv = {
   domainName: process.env.BYOC_DOMAIN_NAME,
   e2bPrincipal: process.env.BYOC_E2B_PRINCIPAL,
   e2bPrincipals: process.env.BYOC_E2B_PRINCIPALS,
+  awsRegions: process.env.BYOC_AWS_REGIONS,
   locations: process.env.BYOC_GCP_LOCATIONS,
   region: process.env.BYOC_GCP_REGION,
   sdkDomain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
@@ -42,6 +43,13 @@ const targetIdentity = {
   ],
 }
 
+const awsTargetIdentity = {
+  ...targetIdentity,
+  provider: 'aws' as const,
+  region: 'us-east-2',
+  zone: undefined,
+}
+
 type RouteHandler = (
   url: URL,
   init: RequestInit
@@ -68,7 +76,7 @@ function mockRunner({
   identity = {},
   routes = {},
 }: {
-  identity?: Partial<typeof targetIdentity>
+  identity?: Partial<typeof targetIdentity> | Partial<typeof awsTargetIdentity>
   routes?: Record<string, RouteHandler>
 } = {}) {
   vi.mocked(fetch).mockImplementation(
@@ -167,6 +175,7 @@ describe('BYOC deployments repository', () => {
     process.env.BYOC_GCP_REGION = 'us-test1'
     process.env.BYOC_GCP_ZONE = 'us-test1-a'
     delete process.env.BYOC_GCP_LOCATIONS
+    delete process.env.BYOC_AWS_REGIONS
     process.env.NEXT_PUBLIC_E2B_DOMAIN = 'test.example.com'
     delete process.env.BYOC_E2B_PRINCIPALS
     vi.stubGlobal('fetch', vi.fn())
@@ -178,6 +187,7 @@ describe('BYOC deployments repository', () => {
     process.env.BYOC_DOMAIN_NAME = originalEnv.domainName
     process.env.BYOC_E2B_PRINCIPAL = originalEnv.e2bPrincipal
     process.env.BYOC_E2B_PRINCIPALS = originalEnv.e2bPrincipals
+    process.env.BYOC_AWS_REGIONS = originalEnv.awsRegions
     process.env.BYOC_GCP_LOCATIONS = originalEnv.locations
     process.env.BYOC_GCP_REGION = originalEnv.region
     process.env.BYOC_GCP_ZONE = originalEnv.zone
@@ -211,6 +221,7 @@ describe('BYOC deployments repository', () => {
       namespace: targetStem,
       domainName: `${targetStem}.test.example.com`,
       prefix: `${targetStem}-`,
+      provider: 'gcp',
       e2bPrincipal:
         'serviceAccount:runner@test-control.iam.gserviceaccount.com',
       e2bPrincipals: [
@@ -302,10 +313,100 @@ describe('BYOC deployments repository', () => {
     const locations = createByocDeploymentsRepository({ teamId }).locations()
 
     expect(locations).toEqual([
-      { region: 'us-central1', zone: 'us-central1-a' },
-      { region: 'us-east4', zone: 'us-east4-a' },
+      { provider: 'gcp', region: 'us-central1', zone: 'us-central1-a' },
+      { provider: 'gcp', region: 'us-east4', zone: 'us-east4-a' },
     ])
     expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it('adds configured AWS regions to the provider-discriminated locations', () => {
+    process.env.BYOC_AWS_REGIONS = JSON.stringify([
+      'us-east-2',
+      'eu-west-1',
+      'us-east-2',
+    ])
+
+    expect(createByocDeploymentsRepository({ teamId }).locations()).toEqual([
+      { provider: 'gcp', region: 'us-test1', zone: 'us-test1-a' },
+      { provider: 'aws', region: 'us-east-2' },
+      { provider: 'aws', region: 'eu-west-1' },
+    ])
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it('accepts comma-separated AWS region configuration', () => {
+    process.env.BYOC_AWS_REGIONS = 'us-east-2, eu-central-1'
+
+    expect(createByocDeploymentsRepository({ teamId }).locations()).toEqual([
+      { provider: 'gcp', region: 'us-test1', zone: 'us-test1-a' },
+      { provider: 'aws', region: 'us-east-2' },
+      { provider: 'aws', region: 'eu-central-1' },
+    ])
+  })
+
+  it('rejects malformed AWS region configuration', () => {
+    process.env.BYOC_AWS_REGIONS = '["us-east-2", "not-a-region"]'
+
+    expect(() =>
+      createByocDeploymentsRepository({ teamId }).locations()
+    ).toThrow('BYOC_AWS_REGIONS is not configured correctly.')
+  })
+
+  it('allocates AWS targets with a provider and no zone', async () => {
+    mockRunner({ identity: awsTargetIdentity })
+
+    const target = await createByocDeploymentsRepository({ teamId }).target({
+      provider: 'aws',
+      region: 'us-east-2',
+    })
+
+    expect(target).toMatchObject({
+      provider: 'aws',
+      region: 'us-east-2',
+      deployerAccountId: targetStem,
+    })
+    expect(target).not.toHaveProperty('zone')
+    expect(JSON.parse(String(fetchCall(1)[1]?.body))).toEqual({
+      team_id: teamId,
+      provider: 'aws',
+      region: 'us-east-2',
+      domain_base: 'test.example.com',
+      e2b_principal:
+        'serviceAccount:runner@test-control.iam.gserviceaccount.com',
+      e2b_principals: [
+        'serviceAccount:runner@test-control.iam.gserviceaccount.com',
+      ],
+    })
+  })
+
+  it('rejects an allocated target whose stored provider does not match', async () => {
+    mockRunner({ identity: targetIdentity })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).target({
+        provider: 'aws',
+        region: 'us-east-2',
+      })
+    ).rejects.toThrow(
+      'The stored BYOC target does not match this dashboard configuration.'
+    )
+  })
+
+  it('does not allow a team to allocate a second provider', async () => {
+    mockRunner({
+      routes: {
+        [`GET /target-identities/${teamId}`]: () =>
+          Response.json(targetIdentity),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).target({
+        provider: 'aws',
+        region: 'us-east-2',
+      })
+    ).rejects.toThrow('already has a different BYOC location reserved')
+    expect(fetch).toHaveBeenCalledTimes(1)
   })
 
   it('loads an allocated target without mutating it', async () => {
@@ -386,6 +487,49 @@ describe('BYOC deployments repository', () => {
       region: 'europe-west1',
       zone: 'europe-west1-b',
     })
+  })
+
+  it('keeps the allocated provider immutable during location updates', async () => {
+    mockRunner({
+      routes: {
+        [`GET /target-identities/${teamId}`]: () =>
+          Response.json(targetIdentity),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).updateTargetLocation(
+        { provider: 'gcp', region: 'us-test1', zone: 'us-test1-a' },
+        { provider: 'aws', region: 'us-east-2' }
+      )
+    ).rejects.toThrow('cloud provider cannot change after allocation')
+    expect(fetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('updates an AWS region without sending zone fields', async () => {
+    mockRunner({
+      routes: {
+        [`GET /target-identities/${teamId}`]: () =>
+          Response.json(awsTargetIdentity),
+        [`PATCH /target-identities/${teamId}/location`]: (_url, init) => {
+          expect(JSON.parse(String(init.body))).toEqual({
+            expected_region: 'us-east-2',
+            region: 'eu-west-1',
+          })
+          return Response.json({
+            ...awsTargetIdentity,
+            region: 'eu-west-1',
+          })
+        },
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).updateTargetLocation(
+        { provider: 'aws', region: 'us-east-2' },
+        { provider: 'aws', region: 'eu-west-1' }
+      )
+    ).resolves.toMatchObject({ provider: 'aws', region: 'eu-west-1' })
   })
 
   it('rejects a location response that changes the stable target identity', async () => {
@@ -673,6 +817,28 @@ describe('BYOC deployments repository', () => {
         clientRequestId
       )
     ).resolves.toMatchObject({ id: connectionId })
+  })
+
+  it('rejects AWS cloud connections before parsing GCP credentials', async () => {
+    mockRunner({
+      routes: {
+        [`GET /target-identities/${teamId}`]: () =>
+          Response.json(awsTargetIdentity),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).createCloudConnection(
+        'not-a-google-service-account',
+        undefined,
+        clientRequestId,
+        undefined,
+        { provider: 'aws', region: 'us-east-2' }
+      )
+    ).rejects.toThrow(
+      'AWS cloud connections and deployments are not supported by this dashboard yet.'
+    )
+    expect(fetch).toHaveBeenCalledTimes(1)
   })
 
   it('grandfathers a retired allocated location through connection setup', async () => {
@@ -1108,6 +1274,26 @@ describe('BYOC deployments repository', () => {
         .mocked(fetch)
         .mock.calls.map(([input, init]) => requestKey(input, init).key)
     ).toEqual([`GET /deployments/${deploymentId}`])
+  })
+
+  it('rejects AWS deployments intentionally instead of reading GCP fields', async () => {
+    mockRunner({
+      routes: {
+        [`GET /deployments/${deploymentId}`]: () =>
+          Response.json({
+            ...deployment(),
+            provider: 'aws',
+            gcp: undefined,
+          }),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).getDeployment(deploymentId)
+    ).rejects.toThrow(
+      'AWS cloud connections and deployments are not supported by this dashboard yet.'
+    )
+    expect(fetch).toHaveBeenCalledTimes(1)
   })
 
   it('blocks destruction when persisted target metadata does not match', async () => {

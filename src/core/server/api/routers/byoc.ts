@@ -11,32 +11,47 @@ const connectionIdInput = z.object({
   connectionId: z.string().uuid(),
 })
 
+const providerLocationInput = z.discriminatedUnion('provider', [
+  z.object({
+    provider: z.literal('gcp'),
+    region: z.string().min(1),
+    zone: z.string().min(1),
+  }),
+  z.object({
+    provider: z.literal('aws'),
+    region: z.string().min(1),
+  }),
+])
+
+const legacyGcpLocationInput = z.object({
+  region: z.string().min(1),
+  zone: z.string().min(1),
+})
+
+const locationInput = z
+  .union([providerLocationInput, legacyGcpLocationInput])
+  .transform((location) =>
+    'provider' in location
+      ? location
+      : { provider: 'gcp' as const, ...location }
+  )
+
 const createCloudConnectionInput = z.object({
   clientRequestId: z.string().uuid(),
   deployerServiceAccountEmail: z.string().email().max(254),
   deploymentId: z.string().uuid().optional(),
   expectedCloudConnectionId: z.string().uuid().optional(),
-  location: z
-    .object({
-      region: z.string().min(1),
-      zone: z.string().min(1),
-    })
-    .optional(),
+  location: locationInput.optional(),
 })
 
-const optionalLocationInput = z
-  .object({
-    region: z.string().min(1).optional(),
-    zone: z.string().min(1).optional(),
-  })
-  .refine((value) => Boolean(value.region) === Boolean(value.zone), {
-    message: 'Region and zone must be selected together.',
-  })
-
-const locationInput = z.object({
-  region: z.string().min(1),
-  zone: z.string().min(1),
-})
+const optionalLocationInput = z.union([
+  locationInput,
+  z.object({
+    provider: z.undefined().optional(),
+    region: z.undefined().optional(),
+    zone: z.undefined().optional(),
+  }),
+])
 
 const topologyInput = z.object({
   apiNodeCount: z.number().int().min(1).max(20),
@@ -79,25 +94,17 @@ export const byocRouter = createTRPCRouter({
     ),
 
   allocateTarget: protectedTeamProcedure
-    .input(
-      z.object({
-        region: z.string().min(1),
-        zone: z.string().min(1),
-      })
-    )
+    .input(locationInput)
     .mutation(({ ctx, input }) =>
       createByocDeploymentsRepository({ teamId: ctx.teamId }).target(input)
     ),
 
   target: protectedTeamProcedure
     .input(optionalLocationInput)
-    .query(({ ctx, input }) =>
-      createByocDeploymentsRepository({ teamId: ctx.teamId }).target(
-        input.region && input.zone
-          ? { region: input.region, zone: input.zone }
-          : undefined
-      )
-    ),
+    .query(({ ctx, input }) => {
+      const repository = createByocDeploymentsRepository({ teamId: ctx.teamId })
+      return input.region ? repository.target(input) : repository.target()
+    }),
 
   health: protectedTeamProcedure.query(({ ctx }) => {
     return createByocDeploymentsRepository({ teamId: ctx.teamId }).health()

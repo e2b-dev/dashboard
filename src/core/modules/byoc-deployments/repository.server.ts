@@ -1,11 +1,27 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
-interface ByocTarget {
-  deployerAccountId: string
-  sdkDomain: string
+export type ByocProvider = 'gcp' | 'aws'
+
+export interface ByocGcpLocation {
+  provider: 'gcp'
   region: string
   zone: string
+}
+
+export interface ByocAwsLocation {
+  provider: 'aws'
+  region: string
+}
+
+export type ByocLocation = ByocGcpLocation | ByocAwsLocation
+
+type LegacyByocGcpLocation = Omit<ByocGcpLocation, 'provider'>
+export type ByocLocationInput = ByocLocation | LegacyByocGcpLocation
+
+type ByocTarget = ByocLocation & {
+  deployerAccountId: string
+  sdkDomain: string
   namespace: string
   domainName: string
   prefix: string
@@ -13,28 +29,39 @@ interface ByocTarget {
   e2bPrincipals: string[]
 }
 
-export interface ByocLocation {
-  region: string
-  zone: string
-}
+const configuredGcpLocationSchema = z.object({
+  region: z.string().regex(/^[a-z][a-z0-9-]+$/),
+  zone: z.string().regex(/^[a-z][a-z0-9-]+$/),
+})
 
-const byocLocationSchema = z
-  .object({
-    region: z.string().regex(/^[a-z][a-z0-9-]+$/),
-    zone: z.string().regex(/^[a-z][a-z0-9-]+$/),
-  })
+const gcpLocationSchema = configuredGcpLocationSchema
+  .extend({ provider: z.literal('gcp') })
   .refine(isValidGcpLocation, {
     message: 'Zone must belong to the selected GCP region.',
   })
 
-const byocLocationsSchema = z.array(byocLocationSchema).min(1)
+const awsRegionSchema = z
+  .string()
+  .max(63)
+  .regex(/^[a-z]{2}(?:-[a-z0-9]+)+-[0-9]+$/)
+  .refine((region) => !region.includes('--'))
 
-const byocTargetIdentitySchema = z.object({
+const awsLocationSchema = z.object({
+  provider: z.literal('aws'),
+  region: awsRegionSchema,
+})
+
+const byocLocationSchema = z.discriminatedUnion('provider', [
+  gcpLocationSchema,
+  awsLocationSchema,
+])
+
+const configuredGcpLocationsSchema = z.array(configuredGcpLocationSchema).min(1)
+
+const byocTargetIdentityBaseSchema = z.object({
   team_id: z.string().min(1).max(128),
   target_key: z.string().regex(/^[a-z][a-z0-9]{11}$/),
-  provider: z.literal('gcp'),
   region: z.string().min(1),
-  zone: z.string().min(1),
   namespace: z.string().min(1),
   domain_name: z.string().min(1),
   prefix: z.string().min(1),
@@ -42,6 +69,18 @@ const byocTargetIdentitySchema = z.object({
   e2b_principal: z.string().min(1),
   e2b_principals: z.array(z.string().min(1)).min(1),
 })
+
+const byocTargetIdentitySchema = z.discriminatedUnion('provider', [
+  byocTargetIdentityBaseSchema.extend({
+    provider: z.literal('gcp'),
+    zone: z.string().min(1),
+  }),
+  byocTargetIdentityBaseSchema.extend({
+    provider: z.literal('aws'),
+    region: awsRegionSchema,
+    zone: z.literal('').optional(),
+  }),
+])
 
 type ByocTargetIdentity = z.infer<typeof byocTargetIdentitySchema>
 
@@ -70,7 +109,7 @@ export interface CloudConnection {
   id: string
   client_request_id?: string
   team_id: string
-  provider: 'gcp'
+  provider: ByocProvider
   mode: 'keyless_impersonation' | 'mock'
   status: string
   subject_email: string
@@ -99,7 +138,7 @@ export interface CloudProjectAuthorization {
 export interface CloudProject {
   id: string
   name: string
-  provider: 'gcp'
+  provider: ByocProvider
   default_region: string
   default_zone: string
   namespace: string
@@ -120,7 +159,7 @@ export interface Deployment {
   team_id: string
   cloud_connection_id?: string
   cloud_project_id?: string
-  provider: 'gcp'
+  provider: ByocProvider
   gcp: {
     project_id: string
     region: string
@@ -270,7 +309,7 @@ export function createByocDeploymentsRepository({
   function getTarget(location: ByocLocation) {
     const desiredTarget = getByocTargetBase(location)
     const domainBase = requiredEnv('BYOC_DOMAIN_NAME')
-    const targetKey = `${location.region}/${location.zone}`
+    const targetKey = locationKey(location)
     const existingTarget = targetPromises.get(targetKey)
     if (existingTarget) return existingTarget
 
@@ -278,9 +317,9 @@ export function createByocDeploymentsRepository({
       method: 'POST',
       body: JSON.stringify({
         team_id: teamId,
-        provider: 'gcp',
+        provider: location.provider,
         region: desiredTarget.region,
-        zone: desiredTarget.zone,
+        ...(location.provider === 'gcp' && { zone: location.zone }),
         domain_base: domainBase,
         e2b_principal: desiredTarget.e2bPrincipal,
         e2b_principals: desiredTarget.e2bPrincipals,
@@ -330,8 +369,7 @@ export function createByocDeploymentsRepository({
     if (allocatedTarget) {
       if (
         requestedLocation &&
-        (allocatedTarget.region !== requestedLocation.region ||
-          allocatedTarget.zone !== requestedLocation.zone)
+        !sameLocation(allocatedTarget, requestedLocation)
       ) {
         throw new TRPCError({
           code: 'PRECONDITION_FAILED',
@@ -344,7 +382,7 @@ export function createByocDeploymentsRepository({
     const [defaultLocation] = getSuggestedLocations()
     const selectedLocation = requestedLocation ?? defaultLocation
     if (!selectedLocation) throw invalidLocationsConfiguration()
-    assertValidGcpLocation(selectedLocation)
+    assertValidLocation(selectedLocation)
     return getTarget(selectedLocation)
   }
 
@@ -361,12 +399,15 @@ export function createByocDeploymentsRepository({
         message: 'Cloud connection not found.',
       })
     }
+    assertGcpProvider(connection.provider)
     const allocatedTarget = await getAllocatedTarget()
+    if (allocatedTarget) assertGcpTarget(allocatedTarget)
     const authorization = connection.authorized_projects.find((project) =>
       allocatedTarget
         ? project.default_region === allocatedTarget.region &&
           project.default_zone === allocatedTarget.zone
         : isValidGcpLocation({
+            provider: 'gcp',
             region: project.default_region,
             zone: project.default_zone,
           })
@@ -378,6 +419,7 @@ export function createByocDeploymentsRepository({
       })
     }
     const target = await resolveTarget({
+      provider: 'gcp',
       region: authorization.default_region,
       zone: authorization.default_zone,
     })
@@ -409,10 +451,12 @@ export function createByocDeploymentsRepository({
     },
 
     async updateTargetLocation(
-      expectedLocation: ByocLocation,
-      location: ByocLocation
+      expectedLocationInput: ByocLocationInput,
+      locationInput: ByocLocationInput
     ) {
-      assertValidGcpLocation(location)
+      const expectedLocation = normalizeLocation(expectedLocationInput)
+      const location = normalizeLocation(locationInput)
+      assertValidLocation(location)
       const current = await getAllocatedTarget()
       if (!current) {
         throw new TRPCError({
@@ -420,14 +464,17 @@ export function createByocDeploymentsRepository({
           message: 'BYOC target identity is not allocated.',
         })
       }
-      if (
-        current.region !== expectedLocation.region ||
-        current.zone !== expectedLocation.zone
-      ) {
+      if (!sameLocation(current, expectedLocation)) {
         throw new TRPCError({
           code: 'CONFLICT',
           message:
             'The BYOC location changed since this page loaded. Refresh before retrying.',
+        })
+      }
+      if (current.provider !== location.provider) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'The BYOC cloud provider cannot change after allocation.',
         })
       }
 
@@ -437,9 +484,11 @@ export function createByocDeploymentsRepository({
           method: 'PATCH',
           body: JSON.stringify({
             expected_region: expectedLocation.region,
-            expected_zone: expectedLocation.zone,
+            ...(expectedLocation.provider === 'gcp' && {
+              expected_zone: expectedLocation.zone,
+            }),
             region: location.region,
-            zone: location.zone,
+            ...(location.provider === 'gcp' && { zone: location.zone }),
           }),
         }
       )
@@ -452,8 +501,7 @@ export function createByocDeploymentsRepository({
       }
       const updated = storedByocTarget(parsed.data, sdkDomain)
       if (
-        updated.region !== location.region ||
-        updated.zone !== location.zone ||
+        !sameLocation(updated, location) ||
         updated.deployerAccountId !== current.deployerAccountId ||
         updated.namespace !== current.namespace ||
         updated.domainName !== current.domainName ||
@@ -472,8 +520,8 @@ export function createByocDeploymentsRepository({
       return updated
     },
 
-    target(location?: ByocLocation) {
-      return resolveTarget(location)
+    target(location?: ByocLocationInput) {
+      return resolveTarget(location ? normalizeLocation(location) : undefined)
     },
 
     health() {
@@ -485,14 +533,23 @@ export function createByocDeploymentsRepository({
       deploymentId: string | undefined,
       clientRequestId: string,
       expectedCloudConnectionId?: string,
-      location?: ByocLocation
+      location?: ByocLocationInput
     ) {
-      const projectId = serviceAccountProjectId(deployerServiceAccountEmail)
       const deployment = deploymentId
         ? await getOwnedDeployment(deploymentId)
         : undefined
-      const selectedLocation = deployment?.gcp ?? location
+      const selectedLocation: ByocLocation | undefined = deployment
+        ? {
+            provider: 'gcp',
+            region: deployment.gcp.region,
+            zone: deployment.gcp.zone,
+          }
+        : location
+          ? normalizeLocation(location)
+          : undefined
       const target = await resolveTarget(selectedLocation)
+      assertGcpTarget(target)
+      const projectId = serviceAccountProjectId(deployerServiceAccountEmail)
       const connectionTarget = deployment
         ? configuredTargetForDeployment(deployment, [target])
         : target
@@ -544,23 +601,27 @@ export function createByocDeploymentsRepository({
         request<{ cloud_connections: CloudConnection[] }>('/cloud-connections'),
         getAllocatedTarget(),
       ])
+      if (allocatedTarget) assertGcpTarget(allocatedTarget)
       const connections = await Promise.all(
         response.cloud_connections.map(async (connection) => {
-          if (connection.team_id !== teamId || connection.provider !== 'gcp') {
+          if (connection.team_id !== teamId) {
             return undefined
           }
+          assertGcpProvider(connection.provider)
           const authorization = connection.authorized_projects.find(
             (project) =>
               allocatedTarget
                 ? project.default_region === allocatedTarget.region &&
                   project.default_zone === allocatedTarget.zone
                 : isValidGcpLocation({
+                    provider: 'gcp',
                     region: project.default_region,
                     zone: project.default_zone,
                   })
           )
           if (!authorization) return undefined
           const target = await resolveTarget({
+            provider: 'gcp',
             region: authorization.default_region,
             zone: authorization.default_zone,
           })
@@ -722,7 +783,7 @@ function createCloudConnectionWithMode(
   mode: CloudConnection['mode'],
   deployerServiceAccountEmail: string,
   projectId: string,
-  target: ByocTarget,
+  target: ByocTarget & ByocGcpLocation,
   deploymentId: string | undefined,
   clientRequestId: string,
   expectedCloudConnectionId?: string
@@ -953,8 +1014,7 @@ function getByocTarget(
   const target = storedByocTarget(identity, sdkDomain)
   const resourceStem = `t${identity.target_key}`
   if (
-    target.region !== desired.region ||
-    target.zone !== desired.zone ||
+    !sameLocation(target, desired) ||
     target.namespace !== resourceStem ||
     target.prefix !== `${resourceStem}-` ||
     target.domainName !== `${resourceStem}.${domainBase}` ||
@@ -982,9 +1042,8 @@ function storedByocTarget(
     })
   }
   const resourceStem = `t${identity.target_key}`
-  const target: ByocTarget = {
+  const commonTarget = {
     region: identity.region,
-    zone: identity.zone,
     namespace: identity.namespace,
     domainName: identity.domain_name,
     prefix: identity.prefix,
@@ -993,8 +1052,12 @@ function storedByocTarget(
     e2bPrincipals: identity.e2b_principals,
     sdkDomain,
   }
+  const target: ByocTarget =
+    identity.provider === 'gcp'
+      ? { ...commonTarget, provider: 'gcp', zone: identity.zone }
+      : { ...commonTarget, provider: 'aws' }
   if (
-    identity.provider !== 'gcp' ||
+    !byocLocationSchema.safeParse(target).success ||
     target.namespace !== resourceStem ||
     target.prefix !== `${resourceStem}-` ||
     !target.domainName.startsWith(`${resourceStem}.`) ||
@@ -1021,7 +1084,7 @@ function sameStringSet(left: string[], right: string[]) {
 
 function getByocTargetBase(
   location: ByocLocation
-): Pick<ByocTarget, 'region' | 'zone' | 'e2bPrincipal' | 'e2bPrincipals'> {
+): ByocLocation & Pick<ByocTarget, 'e2bPrincipal' | 'e2bPrincipals'> {
   const e2bPrincipal = requiredEnv('BYOC_E2B_PRINCIPAL')
   const additionalPrincipals = process.env.BYOC_E2B_PRINCIPALS?.split(',')
     .map((principal) => principal.trim())
@@ -1037,6 +1100,7 @@ function getByocTargetBase(
 
 function getSuggestedLocations(): ByocLocation[] {
   const configured = process.env.BYOC_GCP_LOCATIONS?.trim()
+  let gcpLocations: ByocGcpLocation[]
   if (configured) {
     let value: unknown
     try {
@@ -1044,24 +1108,26 @@ function getSuggestedLocations(): ByocLocation[] {
     } catch {
       throw invalidLocationsConfiguration()
     }
-    const parsed = byocLocationsSchema.safeParse(value)
+    const parsed = configuredGcpLocationsSchema.safeParse(value)
     if (!parsed.success) throw invalidLocationsConfiguration()
-    return parsed.data.filter(
-      (location, index, locations) =>
-        locations.findIndex(
-          (candidate) =>
-            candidate.region === location.region &&
-            candidate.zone === location.zone
-        ) === index
-    )
+    const locations = z
+      .array(gcpLocationSchema)
+      .safeParse(
+        parsed.data.map((location) => ({ provider: 'gcp', ...location }))
+      )
+    if (!locations.success) throw invalidLocationsConfiguration()
+    gcpLocations = locations.data
+  } else {
+    gcpLocations = [
+      gcpLocationSchema.parse({
+        provider: 'gcp',
+        region: requiredEnv('BYOC_GCP_REGION'),
+        zone: requiredEnv('BYOC_GCP_ZONE'),
+      }),
+    ]
   }
 
-  return [
-    byocLocationSchema.parse({
-      region: requiredEnv('BYOC_GCP_REGION'),
-      zone: requiredEnv('BYOC_GCP_ZONE'),
-    }),
-  ]
+  return deduplicateLocations([...gcpLocations, ...getConfiguredAwsLocations()])
 }
 
 function invalidLocationsConfiguration() {
@@ -1072,6 +1138,7 @@ function invalidLocationsConfiguration() {
 }
 
 function isValidGcpLocation(location: ByocLocation) {
+  if (location.provider !== 'gcp') return false
   const { region, zone } = location
   return (
     region.length <= 63 &&
@@ -1085,11 +1152,95 @@ function isValidGcpLocation(location: ByocLocation) {
   )
 }
 
-function assertValidGcpLocation(location: ByocLocation) {
+function assertValidLocation(location: ByocLocation) {
+  if (location.provider === 'aws') {
+    if (!awsRegionSchema.safeParse(location.region).success) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'Select a valid AWS region.',
+      })
+    }
+    return
+  }
   if (!isValidGcpLocation(location)) {
     throw new TRPCError({
       code: 'BAD_REQUEST',
       message: 'Select a valid GCP region and matching zone.',
+    })
+  }
+}
+
+function normalizeLocation(location: ByocLocationInput): ByocLocation {
+  if ('provider' in location && location.provider === 'aws') {
+    return {
+      provider: 'aws',
+      region: location.region,
+    }
+  }
+  return {
+    provider: 'gcp',
+    region: location.region,
+    zone: location.zone,
+  }
+}
+
+function sameLocation(left: ByocLocation, right: ByocLocation) {
+  return (
+    left.provider === right.provider &&
+    left.region === right.region &&
+    (left.provider !== 'gcp' ||
+      (right.provider === 'gcp' && left.zone === right.zone))
+  )
+}
+
+function locationKey(location: ByocLocation) {
+  return `${location.provider}/${location.region}/${location.provider === 'gcp' ? location.zone : ''}`
+}
+
+function deduplicateLocations(locations: ByocLocation[]) {
+  return locations.filter(
+    (location, index) =>
+      locations.findIndex(
+        (candidate) => locationKey(candidate) === locationKey(location)
+      ) === index
+  )
+}
+
+function getConfiguredAwsLocations(): ByocAwsLocation[] {
+  const configured = process.env.BYOC_AWS_REGIONS?.trim()
+  if (!configured) return []
+
+  let regions: unknown
+  try {
+    regions = configured.startsWith('[')
+      ? JSON.parse(configured)
+      : configured.split(',').map((region) => region.trim())
+  } catch {
+    throw invalidAwsRegionsConfiguration()
+  }
+  const parsed = z.array(awsRegionSchema).min(1).safeParse(regions)
+  if (!parsed.success) throw invalidAwsRegionsConfiguration()
+  return [...new Set(parsed.data)].map((region) => ({
+    provider: 'aws',
+    region,
+  }))
+}
+
+function invalidAwsRegionsConfiguration() {
+  return new TRPCError({
+    code: 'PRECONDITION_FAILED',
+    message: 'BYOC_AWS_REGIONS is not configured correctly.',
+  })
+}
+
+function assertGcpTarget(
+  target: ByocTarget
+): asserts target is ByocTarget & ByocGcpLocation {
+  if (target.provider !== 'gcp') {
+    throw new TRPCError({
+      code: 'PRECONDITION_FAILED',
+      message:
+        'AWS cloud connections and deployments are not supported by this dashboard yet.',
     })
   }
 }
@@ -1106,6 +1257,7 @@ function requiredEnv(name: string) {
 }
 
 function isConfiguredProject(project: CloudProject, target: ByocTarget) {
+  if (project.provider !== 'gcp' || target.provider !== 'gcp') return false
   return (
     project.default_region === target.region &&
     project.default_zone === target.zone &&
@@ -1142,6 +1294,7 @@ function isConfiguredConnection(
   teamId: string,
   target: ByocTarget
 ) {
+  if (connection.provider !== 'gcp' || target.provider !== 'gcp') return false
   return (
     connection.team_id === teamId &&
     connection.authorized_projects.some((project) => {
@@ -1180,6 +1333,7 @@ function assertConfiguredDeployment(
       message: 'BYOC deployment resource not found.',
     })
   }
+  assertGcpProvider(deployment.provider)
   if (!configuredTargetForDeployment(deployment, targets)) {
     throw new TRPCError({
       code: 'PRECONDITION_FAILED',
@@ -1195,10 +1349,10 @@ function assertAllowedDeployment(deployment: Deployment, teamId: string) {
       message: 'BYOC deployment resource not found.',
     })
   }
+  assertGcpProvider(deployment.provider)
   const account = deployment.prefix.replace(/-+$/, '')
   const expectedEmail = `${account}@${deployment.gcp.project_id}.iam.gserviceaccount.com`
   if (
-    deployment.provider !== 'gcp' ||
     deployment.deployer_service_account.project_id !==
       deployment.gcp.project_id ||
     deployment.deployer_service_account.account_id !== account ||
@@ -1302,10 +1456,21 @@ function configuredTargetForDeployment(
   }
 
   return targets.find(
-    (target) =>
+    (target): target is ByocTarget & ByocGcpLocation =>
+      target.provider === 'gcp' &&
       deployment.gcp.region === target.region &&
       deployment.gcp.zone === target.zone &&
       deployment.domain_name === target.domainName &&
       deployment.prefix === target.prefix
   )
+}
+
+function assertGcpProvider(provider: ByocProvider) {
+  if (provider !== 'gcp') {
+    throw new TRPCError({
+      code: 'PRECONDITION_FAILED',
+      message:
+        'AWS cloud connections and deployments are not supported by this dashboard yet.',
+    })
+  }
 }
