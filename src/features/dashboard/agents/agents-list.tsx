@@ -2,16 +2,20 @@
 
 import Link from 'next/link'
 import type { ComponentType } from 'react'
-import { SiClaude, SiOpenai } from 'react-icons/si'
+import { SiClaude } from 'react-icons/si'
 import { cn } from '@/lib/utils'
 import { Button } from '@/ui/primitives/button'
-import { ExternalLinkIcon, UnpackIcon } from '@/ui/primitives/icons'
+import {
+  ExternalLinkIcon,
+  TerminalIcon,
+  UnpackIcon,
+} from '@/ui/primitives/icons'
 import type { AgentTemplateConfig } from './config'
 
 const AGENT_ICONS = {
   claude: SiClaude,
   open: UnpackIcon,
-  openai: SiOpenai,
+  openai: TerminalIcon,
 } satisfies Record<
   AgentTemplateConfig['icon'],
   ComponentType<{ className?: string }>

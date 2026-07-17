@@ -41,10 +41,13 @@ export default function TagDeleteDialog({
   const queryClient = useQueryClient()
   const { toast } = useToast()
 
-  const tagGroupsQueryKey = trpc.templates.getTagGroups.infiniteQueryOptions({
-    teamSlug,
-    templateId,
-  }).queryKey
+  const tagGroupsQueryKey = trpc.templates.getTagGroups.infiniteQueryOptions(
+    { teamSlug, templateId },
+    {
+      getNextPageParam: (page) => page.nextCursor ?? undefined,
+      initialCursor: undefined,
+    }
+  ).queryKey
   const tagCountQueryKey = trpc.templates.getTagCount.queryOptions({
     teamSlug,
     templateId,

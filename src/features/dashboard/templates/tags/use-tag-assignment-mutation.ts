@@ -28,10 +28,13 @@ export function useTagAssignmentMutation({
 
   const invalidate = useCallback(() => {
     queryClient.invalidateQueries({
-      queryKey: trpc.templates.getTagGroups.infiniteQueryOptions({
-        teamSlug,
-        templateId,
-      }).queryKey,
+      queryKey: trpc.templates.getTagGroups.infiniteQueryOptions(
+        { teamSlug, templateId },
+        {
+          getNextPageParam: (page) => page.nextCursor ?? undefined,
+          initialCursor: undefined,
+        }
+      ).queryKey,
     })
     queryClient.invalidateQueries({
       queryKey: trpc.templates.getTagCount.queryOptions({

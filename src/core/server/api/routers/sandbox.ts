@@ -175,7 +175,7 @@ export const sandboxRouter = createTRPCRouter({
           message: 'startMs must be before endMs',
         })
         .refine(
-          ({ startMs, endMs }) => {
+          ({ startMs, endMs }: { startMs: number; endMs: number }) => {
             const now = Date.now()
             return (
               startMs >= now - SANDBOX_MONITORING_METRICS_RETENTION_MS &&

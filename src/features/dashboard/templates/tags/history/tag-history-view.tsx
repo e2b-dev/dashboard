@@ -118,11 +118,13 @@ export default function TagHistoryView({
   ])
 
   const tagAssignmentsQueryKey =
-    trpc.templates.getTagAssignments.infiniteQueryOptions({
-      teamSlug,
-      templateId,
-      tag,
-    }).queryKey
+    trpc.templates.getTagAssignments.infiniteQueryOptions(
+      { teamSlug, templateId, tag },
+      {
+        getNextPageParam: (page) => page.nextCursor ?? undefined,
+        initialCursor: undefined,
+      }
+    ).queryKey
 
   const handleTagDeleted = async () => {
     await queryClient.invalidateQueries({ queryKey: tagAssignmentsQueryKey })

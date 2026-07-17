@@ -189,8 +189,10 @@ const BuildsTable = ({
   const columnSizeVars = useColumnSizeVars(table)
 
   // Handlers
-  const buildsQueryKey =
-    trpc.builds.list.infiniteQueryOptions(queryInput).queryKey
+  const buildsQueryKey = trpc.builds.list.infiniteQueryOptions(queryInput, {
+    getNextPageParam: (page) => page.nextCursor ?? undefined,
+    initialCursor: undefined,
+  }).queryKey
 
   const handleLoadMore = useCallback(() => {
     fetchNextPage()
