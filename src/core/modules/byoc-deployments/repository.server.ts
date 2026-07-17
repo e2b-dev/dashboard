@@ -20,6 +20,7 @@ type LegacyByocGcpLocation = Omit<ByocGcpLocation, 'provider'>
 export type ByocLocationInput = ByocLocation | LegacyByocGcpLocation
 
 type ByocTarget = ByocLocation & {
+  targetKey: string
   deployerAccountId: string
   sdkDomain: string
   namespace: string
@@ -458,6 +459,31 @@ export function createByocDeploymentsRepository({
 
     allocatedTarget() {
       return getAllocatedTarget()
+    },
+
+    async resetTarget(expectedTargetKey: string) {
+      const response = await request<unknown>(
+        `/target-identities/${encodeURIComponent(teamId)}`,
+        {
+          method: 'DELETE',
+          body: JSON.stringify({ expected_target_key: expectedTargetKey }),
+        }
+      )
+      if (
+        !response ||
+        typeof response !== 'object' ||
+        !('reset' in response) ||
+        typeof response.reset !== 'boolean'
+      ) {
+        throw new TRPCError({
+          code: 'BAD_GATEWAY',
+          message:
+            'BYOC deployments runner returned an invalid reset response.',
+        })
+      }
+      allocatedTargetPromise = Promise.resolve(null)
+      targetPromises.clear()
+      return response
     },
 
     async updateTargetLocation(
@@ -985,7 +1011,7 @@ function getPublicRunnerError(
     return 'The BYOC location changed since this page loaded. Refresh before retrying.'
   }
   if (errorCode === 'target_identity_locked') {
-    return 'The BYOC location cannot change after a cloud connection or deployment exists.'
+    return 'The BYOC cloud and location cannot change after a cloud connection or deployment exists.'
   }
   if (errorCode === 'active_operation') {
     return 'Another BYOC operation is still running. Wait for it to finish, then refresh.'
@@ -1058,6 +1084,7 @@ function storedByocTarget(
   }
   const resourceStem = `t${identity.target_key}`
   const commonTarget = {
+    targetKey: identity.target_key,
     region: identity.region,
     namespace: identity.namespace,
     domainName: identity.domain_name,

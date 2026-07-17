@@ -43,6 +43,7 @@ import {
   SettingsIcon,
   SpinnerIcon,
   TerminalIcon,
+  UndoIcon,
   WarningIcon,
 } from '@/ui/primitives/icons'
 import {
@@ -256,6 +257,7 @@ export function ByocDeploymentPanel({
   const [selectedProvider, setSelectedProvider] = useState<ByocProvider>()
   const [selectedLocation, setSelectedLocation] = useState<ByocLocation>()
   const [pendingLocation, setPendingLocation] = useState<ByocLocation>()
+  const [resetTargetDialogKey, setResetTargetDialogKey] = useState<string>()
   const [deployerServiceAccountEmail, setDeployerServiceAccountEmail] =
     useState('')
   const [createdApiKey, setCreatedApiKey] = useState<string>()
@@ -312,6 +314,38 @@ export function ByocDeploymentPanel({
       },
     })
   )
+  const resetTarget = useMutation(
+    trpc.byoc.resetTarget.mutationOptions({
+      onSuccess: () => {
+        queryClient.setQueryData(
+          trpc.byoc.allocatedTarget.queryOptions({ teamSlug }).queryKey,
+          null
+        )
+        allocateTarget.reset()
+        updateTargetLocation.reset()
+        setSelectedProvider(undefined)
+        setSelectedLocation(undefined)
+        setPendingLocation(undefined)
+        setSetupProjectId('')
+        setDeployerServiceAccountEmail('')
+        setSetupStarted(false)
+        setResetTargetDialogKey(undefined)
+      },
+      onSettled: async () => {
+        await Promise.all([
+          queryClient.invalidateQueries(
+            trpc.byoc.allocatedTarget.queryFilter({ teamSlug })
+          ),
+          queryClient.invalidateQueries(
+            trpc.byoc.listCloudConnections.queryFilter({ teamSlug })
+          ),
+          queryClient.invalidateQueries(
+            trpc.byoc.listDeployments.queryFilter({ teamSlug })
+          ),
+        ])
+      },
+    })
+  )
   const healthQuery = useQuery(trpc.byoc.health.queryOptions({ teamSlug }))
   const connectionsQuery = useQuery(
     trpc.byoc.listCloudConnections.queryOptions({ teamSlug })
@@ -354,7 +388,9 @@ export function ByocDeploymentPanel({
   const immutableLocation: ByocLocation | undefined = deployment
     ? deploymentLocation(deployment)
     : connectionLocation
-  const target = allocatedTargetQuery.data ?? allocateTarget.data
+  const target = allocatedTargetQuery.isSuccess
+    ? (allocatedTargetQuery.data ?? undefined)
+    : allocateTarget.data
   const location = resolvedTargetLocation(
     immutableLocation,
     selectedLocation,
@@ -365,6 +401,12 @@ export function ByocDeploymentPanel({
     connectionsQuery.data,
     deploymentsQuery.data
   )
+  const targetResetLocked =
+    connectionsQuery.isPending ||
+    connectionsQuery.isError ||
+    deploymentsQuery.isPending ||
+    deploymentsQuery.isError ||
+    locationChangeLocked
   const provider = target?.provider ?? location?.provider ?? selectedProvider
   const connectionUsesExpectedDeployer = Boolean(
     connection &&
@@ -764,6 +806,7 @@ export function ByocDeploymentPanel({
     destroyError ??
     mutationError(allocateTarget.error) ??
     mutationError(updateTargetLocation.error) ??
+    mutationError(resetTarget.error) ??
     queryError(allocatedTargetQuery.error) ??
     queryError(locationsQuery.error) ??
     queryError(healthQuery.error) ??
@@ -885,6 +928,11 @@ export function ByocDeploymentPanel({
             if (!location) return
             allocateTarget.mutate({ teamSlug, ...location })
           }}
+          onResetTarget={() => {
+            if (!target) return
+            resetTarget.reset()
+            setResetTargetDialogKey(target.targetKey)
+          }}
           onConnect={() => {
             if (!location || !setupDeployerServiceAccountEmail) return
             const intent = requestIntents.connection.get(
@@ -936,15 +984,48 @@ export function ByocDeploymentPanel({
           onSetupStart={() => setSetupStarted(true)}
           operationPending={operationPending}
           targetPending={
-            allocateTarget.isPending || updateTargetLocation.isPending
+            allocateTarget.isPending ||
+            updateTargetLocation.isPending ||
+            resetTarget.isPending
           }
           projectId={displayedSetupProjectId}
           provider={provider}
           setupStarted={setupStarted || !!connection}
           target={target}
+          targetResetLocked={targetResetLocked}
           topology={topology}
           updateTopology={updateTopology}
         />
+        <AlertDialog
+          confirm="Reset selection"
+          confirmProps={{
+            loading: resetTarget.isPending ? 'Resetting' : undefined,
+          }}
+          description="This releases the reserved cloud, target key, namespace, domain, and deployer identity. A new selection will generate a new target identity."
+          onConfirm={() => {
+            if (!resetTargetDialogKey) return
+            resetTarget.mutate({
+              teamSlug,
+              expectedTargetKey: resetTargetDialogKey,
+            })
+          }}
+          onOpenChange={(open) => {
+            if (!open && !resetTarget.isPending) {
+              setResetTargetDialogKey(undefined)
+            }
+          }}
+          open={!!resetTargetDialogKey}
+          title="Reset BYOC cloud selection?"
+        >
+          {resetTarget.error ? (
+            <p
+              className="border border-accent-error-highlight/35 bg-accent-error-highlight/10 p-3 text-sm text-fg"
+              role="alert"
+            >
+              {mutationError(resetTarget.error)}
+            </p>
+          ) : null}
+        </AlertDialog>
         <AlertDialog
           confirm="Change location"
           confirmProps={{
@@ -1720,6 +1801,7 @@ function ByocSetupFlow({
   onCreateDeployment,
   onDeploy,
   onGenerateIdentity,
+  onResetTarget,
   onValidate,
   onRefresh,
   onLocationChange,
@@ -1732,6 +1814,7 @@ function ByocSetupFlow({
   setupStarted,
   target,
   targetPending,
+  targetResetLocked,
   topology,
   updateTopology,
 }: {
@@ -1757,6 +1840,7 @@ function ByocSetupFlow({
   onCreateDeployment: () => void
   onDeploy: () => void
   onGenerateIdentity: () => void
+  onResetTarget: () => void
   onValidate: () => void
   onRefresh: () => void
   onLocationChange: (location: ByocLocation) => void
@@ -1769,6 +1853,7 @@ function ByocSetupFlow({
   setupStarted: boolean
   target?: ByocTarget
   targetPending: boolean
+  targetResetLocked: boolean
   topology: TopologyDraft
   updateTopology: (patch: Partial<TopologyDraft>) => void
 }) {
@@ -1876,6 +1961,7 @@ function ByocSetupFlow({
           locationLocked={locationLocked}
           onConnect={onConnect}
           onGenerateIdentity={onGenerateIdentity}
+          onResetTarget={onResetTarget}
           onLocationChange={onLocationChange}
           onProviderChange={onProviderChange}
           onProjectIdChange={onSetupProjectIdChange}
@@ -1883,6 +1969,7 @@ function ByocSetupFlow({
           provider={provider}
           target={target}
           targetPending={targetPending}
+          targetResetLocked={targetResetLocked}
         />
       ) : configuring ? (
         <SetupConfiguration
@@ -2031,6 +2118,7 @@ function SetupServiceAccount({
   locationLocked,
   onConnect,
   onGenerateIdentity,
+  onResetTarget,
   onLocationChange,
   onProviderChange,
   onProjectIdChange,
@@ -2038,6 +2126,7 @@ function SetupServiceAccount({
   provider,
   target,
   targetPending,
+  targetResetLocked,
 }: {
   deployerAccountId: string
   deployerServiceAccountEmail: string
@@ -2050,6 +2139,7 @@ function SetupServiceAccount({
   locationLocked: boolean
   onConnect: () => void
   onGenerateIdentity: () => void
+  onResetTarget: () => void
   onLocationChange: (location: ByocLocation) => void
   onProviderChange: (provider: ByocProvider) => void
   onProjectIdChange: (value: string) => void
@@ -2057,6 +2147,7 @@ function SetupServiceAccount({
   provider?: ByocProvider
   target?: ByocTarget
   targetPending: boolean
+  targetResetLocked: boolean
 }) {
   const validProjectId =
     provider === 'aws'
@@ -2205,19 +2296,35 @@ function SetupServiceAccount({
           ) : null}
 
           {provider ? (
-            <div className="flex gap-2 border border-stroke bg-bg p-3 text-xs leading-5 text-fg-secondary">
-              <InfoIcon className="mt-0.5 size-4 shrink-0" />
-              {providerLocked
-                ? `This team is locked to ${providerLabel(provider)} after target allocation.`
-                : 'Changing the cloud clears the selected region and project before target allocation.'}{' '}
-              {locationLocked
-                ? 'The region cannot change after a cloud connection or deployment exists.'
-                : target
-                  ? "Changing the region keeps this team's target key, namespace, and domain."
-                  : 'The region can change until a cloud connection or deployment exists.'}{' '}
-              E2B uses short-lived{' '}
-              {provider === 'gcp' ? 'impersonation' : 'web identity'}{' '}
-              credentials and never receives a long-lived cloud credential.
+            <div className="flex flex-col gap-3 border border-stroke bg-bg p-3 text-xs leading-5 text-fg-secondary sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex min-w-0 gap-2">
+                <InfoIcon className="mt-0.5 size-4 shrink-0" />
+                <span>
+                  {providerLocked
+                    ? `This team has reserved ${providerLabel(provider)}.`
+                    : 'Changing the cloud clears the selected region and project before target allocation.'}{' '}
+                  {locationLocked
+                    ? 'The region cannot change after a cloud connection or deployment exists.'
+                    : target
+                      ? 'You can change the region or reset the cloud selection until a connection or deployment exists.'
+                      : 'The region can change until a cloud connection or deployment exists.'}{' '}
+                  E2B uses short-lived{' '}
+                  {provider === 'gcp' ? 'impersonation' : 'web identity'}{' '}
+                  credentials and never receives a long-lived cloud credential.
+                </span>
+              </div>
+              {target && !targetResetLocked ? (
+                <Button
+                  className="shrink-0"
+                  disabled={isPending || targetPending}
+                  onClick={onResetTarget}
+                  size="small"
+                  variant="secondary"
+                >
+                  <UndoIcon />
+                  Reset cloud selection
+                </Button>
+              ) : null}
             </div>
           ) : null}
 

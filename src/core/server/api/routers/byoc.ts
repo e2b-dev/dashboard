@@ -119,6 +119,16 @@ export const byocRouter = createTRPCRouter({
     createByocDeploymentsRepository({ teamId: ctx.teamId }).allocatedTarget()
   ),
 
+  resetTarget: protectedTeamProcedure
+    .input(
+      z.object({ expectedTargetKey: z.string().regex(/^[a-z][a-z0-9]{11}$/) })
+    )
+    .mutation(({ ctx, input }) =>
+      createByocDeploymentsRepository({ teamId: ctx.teamId }).resetTarget(
+        input.expectedTargetKey
+      )
+    ),
+
   updateTargetLocation: protectedTeamProcedure
     .input(
       z.object({

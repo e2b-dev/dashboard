@@ -258,6 +258,7 @@ describe('BYOC deployments repository', () => {
     })
 
     expect(target).toEqual({
+      targetKey,
       deployerAccountId: targetStem,
       sdkDomain: 'test.example.com',
       region: 'us-test1',
@@ -489,6 +490,73 @@ describe('BYOC deployments repository', () => {
     ).resolves.toBeNull()
   })
 
+  it('resets an allocated target with the team-scoped runner route', async () => {
+    mockRunner({
+      routes: {
+        [`DELETE /target-identities/${teamId}`]: (_url, init) => {
+          expect(init.method).toBe('DELETE')
+          expect(JSON.parse(String(init.body))).toEqual({
+            expected_target_key: targetKey,
+          })
+          return Response.json({ reset: true })
+        },
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).resetTarget(targetKey)
+    ).resolves.toEqual({ reset: true })
+    expect(requestKey(...fetchCall(0)).key).toBe(
+      `DELETE /target-identities/${teamId}`
+    )
+  })
+
+  it('rejects an invalid target reset response', async () => {
+    mockRunner({
+      routes: {
+        [`DELETE /target-identities/${teamId}`]: () =>
+          Response.json({ ok: true }),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).resetTarget(targetKey)
+    ).rejects.toThrow('invalid reset response')
+  })
+
+  it('accepts an idempotent target reset response', async () => {
+    mockRunner({
+      routes: {
+        [`DELETE /target-identities/${teamId}`]: () =>
+          Response.json({ reset: false }),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).resetTarget(targetKey)
+    ).resolves.toEqual({ reset: false })
+  })
+
+  it('maps a locked target reset without treating it as success', async () => {
+    mockRunner({
+      routes: {
+        [`DELETE /target-identities/${teamId}`]: () =>
+          Response.json(
+            { code: 'target_identity_locked', error: 'internal details' },
+            { status: 409 }
+          ),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).resetTarget(targetKey)
+    ).rejects.toMatchObject({
+      code: 'CONFLICT',
+      message:
+        'The BYOC cloud and location cannot change after a cloud connection or deployment exists.',
+    })
+  })
+
   it('updates an allocated location with compare-and-swap metadata', async () => {
     process.env.BYOC_GCP_LOCATIONS = JSON.stringify([
       { region: 'us-test1', zone: 'us-test1-a' },
@@ -614,7 +682,7 @@ describe('BYOC deployments repository', () => {
     ],
     [
       'target_identity_locked',
-      'The BYOC location cannot change after a cloud connection or deployment exists.',
+      'The BYOC cloud and location cannot change after a cloud connection or deployment exists.',
     ],
   ])('maps %s location conflicts', async (code, message) => {
     process.env.BYOC_GCP_LOCATIONS = JSON.stringify([
