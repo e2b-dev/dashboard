@@ -14,11 +14,17 @@ export default async function WebhookDeliveriesPage({
   const { teamSlug, webhookId } = await params
 
   prefetch(
-    trpc.webhooks.listDeliveries.infiniteQueryOptions({
-      teamSlug,
-      webhookId,
-      limit: 25,
-    })
+    trpc.webhooks.listDeliveries.infiniteQueryOptions(
+      {
+        teamSlug,
+        webhookId,
+        limit: 25,
+      },
+      {
+        getNextPageParam: (page) => page.nextCursor ?? undefined,
+        initialCursor: undefined,
+      }
+    )
   )
 
   return <WebhookDeliveriesContent teamSlug={teamSlug} webhookId={webhookId} />

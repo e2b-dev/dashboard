@@ -11,12 +11,18 @@ export default async function TemplateTagHistoryPage({
   const decodedTag = decodeURIComponent(tag)
 
   prefetch(
-    trpc.templates.getTagAssignments.infiniteQueryOptions({
-      teamSlug,
-      templateId,
-      tag: decodedTag,
-      limit: TAG_HISTORY_PAGE_LIMIT,
-    })
+    trpc.templates.getTagAssignments.infiniteQueryOptions(
+      {
+        teamSlug,
+        templateId,
+        tag: decodedTag,
+        limit: TAG_HISTORY_PAGE_LIMIT,
+      },
+      {
+        getNextPageParam: (page) => page.nextCursor ?? undefined,
+        initialCursor: undefined,
+      }
+    )
   )
 
   return (

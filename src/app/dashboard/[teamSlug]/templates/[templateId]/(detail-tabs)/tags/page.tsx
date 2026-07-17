@@ -10,13 +10,19 @@ export default async function TemplateTagsPage({
   const { teamSlug, templateId } = await params
 
   prefetch(
-    trpc.templates.getTagGroups.infiniteQueryOptions({
-      teamSlug,
-      templateId,
-      limit: TAGS_PAGE_LIMIT,
-      search: undefined,
-      sort: undefined,
-    })
+    trpc.templates.getTagGroups.infiniteQueryOptions(
+      {
+        teamSlug,
+        templateId,
+        limit: TAGS_PAGE_LIMIT,
+        search: undefined,
+        sort: undefined,
+      },
+      {
+        getNextPageParam: (page) => page.nextCursor ?? undefined,
+        initialCursor: undefined,
+      }
+    )
   )
   prefetch(trpc.templates.getTagCount.queryOptions({ teamSlug, templateId }))
 
