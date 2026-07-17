@@ -110,7 +110,7 @@ export interface CloudConnection {
   client_request_id?: string
   team_id: string
   provider: ByocProvider
-  mode: 'keyless_impersonation' | 'mock'
+  mode: 'keyless_impersonation' | 'web_identity' | 'mock'
   status: string
   subject_email: string
   authorized_projects: CloudProjectAuthorization[]
@@ -165,6 +165,11 @@ export interface Deployment {
     region: string
     zone: string
   }
+  aws?: {
+    account_id: string
+    region: string
+    role_arn: string
+  }
   domain_name: string
   prefix: string
   deployer_service_account: {
@@ -180,6 +185,7 @@ export interface Deployment {
   terraform_backend?: {
     bucket?: string
     prefix?: string
+    key?: string
   }
   cluster_id?: string
   cluster_endpoint?: string
@@ -399,30 +405,34 @@ export function createByocDeploymentsRepository({
         message: 'Cloud connection not found.',
       })
     }
-    assertGcpProvider(connection.provider)
     const allocatedTarget = await getAllocatedTarget()
-    if (allocatedTarget) assertGcpTarget(allocatedTarget)
-    const authorization = connection.authorized_projects.find((project) =>
-      allocatedTarget
-        ? project.default_region === allocatedTarget.region &&
-          project.default_zone === allocatedTarget.zone
-        : isValidGcpLocation({
-            provider: 'gcp',
-            region: project.default_region,
-            zone: project.default_zone,
-          })
-    )
+    if (allocatedTarget && allocatedTarget.provider !== connection.provider) {
+      throw new TRPCError({
+        code: 'PRECONDITION_FAILED',
+        message: 'Cloud connection does not use the allocated BYOC provider.',
+      })
+    }
+    const authorization = connection.authorized_projects.find((project) => {
+      const location = authorizationLocation(connection.provider, project)
+      return (
+        location !== undefined &&
+        (!allocatedTarget || sameLocation(allocatedTarget, location))
+      )
+    })
     if (!authorization) {
       throw new TRPCError({
         code: 'PRECONDITION_FAILED',
         message: 'Cloud connection does not use an allowed BYOC location.',
       })
     }
-    const target = await resolveTarget({
-      provider: 'gcp',
-      region: authorization.default_region,
-      zone: authorization.default_zone,
-    })
+    const location = authorizationLocation(connection.provider, authorization)
+    if (!location) {
+      throw new TRPCError({
+        code: 'PRECONDITION_FAILED',
+        message: 'Cloud connection does not use an allowed BYOC location.',
+      })
+    }
+    const target = await resolveTarget(location)
     if (!isConfiguredConnection(connection, teamId, target)) {
       throw new TRPCError({
         code: 'PRECONDITION_FAILED',
@@ -529,7 +539,7 @@ export function createByocDeploymentsRepository({
     },
 
     async createCloudConnection(
-      deployerServiceAccountEmail: string,
+      deployerIdentity: string,
       deploymentId: string | undefined,
       clientRequestId: string,
       expectedCloudConnectionId?: string,
@@ -539,17 +549,12 @@ export function createByocDeploymentsRepository({
         ? await getOwnedDeployment(deploymentId)
         : undefined
       const selectedLocation: ByocLocation | undefined = deployment
-        ? {
-            provider: 'gcp',
-            region: deployment.gcp.region,
-            zone: deployment.gcp.zone,
-          }
+        ? deploymentLocation(deployment)
         : location
           ? normalizeLocation(location)
           : undefined
       const target = await resolveTarget(selectedLocation)
-      assertGcpTarget(target)
-      const projectId = serviceAccountProjectId(deployerServiceAccountEmail)
+      const projectId = cloudAccountID(deployerIdentity, target)
       const connectionTarget = deployment
         ? configuredTargetForDeployment(deployment, [target])
         : target
@@ -569,22 +574,19 @@ export function createByocDeploymentsRepository({
             'The deployment connection changed or is unavailable. Refresh before replacing it.',
         })
       }
-      if (deployment && projectId !== deployment.gcp.project_id) {
+      if (deployment && projectId !== deploymentCloudAccountID(deployment)) {
         throw new TRPCError({
           code: 'PRECONDITION_FAILED',
           message:
-            'The deployer service account must belong to the deployment project.',
+            'The deployer identity must belong to the deployment target.',
         })
       }
-      assertExpectedDeployerAccount(
-        deployerServiceAccountEmail,
-        target.deployerAccountId
-      )
+      assertExpectedDeployerIdentity(deployerIdentity, target)
       const connection = await createCloudConnectionWithMode(
         request,
         teamId,
-        getCloudConnectionMode(),
-        deployerServiceAccountEmail,
+        getCloudConnectionMode(target.provider),
+        deployerIdentity,
         projectId,
         connectionTarget,
         deploymentId,
@@ -601,30 +603,36 @@ export function createByocDeploymentsRepository({
         request<{ cloud_connections: CloudConnection[] }>('/cloud-connections'),
         getAllocatedTarget(),
       ])
-      if (allocatedTarget) assertGcpTarget(allocatedTarget)
       const connections = await Promise.all(
         response.cloud_connections.map(async (connection) => {
           if (connection.team_id !== teamId) {
             return undefined
           }
-          assertGcpProvider(connection.provider)
+          if (
+            allocatedTarget &&
+            connection.provider !== allocatedTarget.provider
+          ) {
+            return undefined
+          }
           const authorization = connection.authorized_projects.find(
-            (project) =>
-              allocatedTarget
-                ? project.default_region === allocatedTarget.region &&
-                  project.default_zone === allocatedTarget.zone
-                : isValidGcpLocation({
-                    provider: 'gcp',
-                    region: project.default_region,
-                    zone: project.default_zone,
-                  })
+            (project) => {
+              const location = authorizationLocation(
+                connection.provider,
+                project
+              )
+              return (
+                location !== undefined &&
+                (!allocatedTarget || sameLocation(allocatedTarget, location))
+              )
+            }
           )
           if (!authorization) return undefined
-          const target = await resolveTarget({
-            provider: 'gcp',
-            region: authorization.default_region,
-            zone: authorization.default_zone,
-          })
+          const location = authorizationLocation(
+            connection.provider,
+            authorization
+          )
+          if (!location) return undefined
+          const target = await resolveTarget(location)
           return isConfiguredConnection(connection, teamId, target)
             ? connection
             : undefined
@@ -636,12 +644,15 @@ export function createByocDeploymentsRepository({
     },
 
     async listProjects(connectionId: string) {
-      const connection = await getOwnedCloudConnection(connectionId)
+      const ownedConnection = await getOwnedCloudConnection(connectionId)
       const response = await request<{ projects: CloudProject[] }>(
         `/cloud-connections/${connectionId}/projects`
       )
-      const projects = response.projects.filter((project) =>
-        isConfiguredProject(project, connection.target)
+      const projects = response.projects.filter(
+        (project) =>
+          ownedConnection.connection.authorized_projects.some(
+            (authorization) => authorization.project_id === project.id
+          ) && isConfiguredProject(project, ownedConnection.target)
       )
       if (projects.length === 0) {
         throw new TRPCError({
@@ -661,10 +672,7 @@ export function createByocDeploymentsRepository({
       const ownedConnection = await getOwnedCloudConnection(connectionId)
       const connection = ownedConnection.connection
       const target = ownedConnection.target
-      assertExpectedDeployerAccount(
-        connection.subject_email,
-        target.deployerAccountId
-      )
+      assertExpectedDeployerIdentity(connection.subject_email, target)
       if (
         !connection.authorized_projects.some(
           (project) => project.project_id === projectId
@@ -687,10 +695,7 @@ export function createByocDeploymentsRepository({
       })
 
       assertConfiguredDeployment(deployment, teamId, [target])
-      assertExpectedDeployerAccount(
-        deployment.deployer_service_account.email,
-        target.deployerAccountId
-      )
+      assertDeploymentDeployerIdentity(deployment, target)
       return sanitizeDeployment(deployment)
     },
 
@@ -735,7 +740,8 @@ export function createByocDeploymentsRepository({
       settings: TerraformSettings,
       clientRequestId: string
     ) {
-      await getOwnedDeployment(deploymentId)
+      const deployment = await getOwnedDeployment(deploymentId)
+      assertTopologyForProvider(deployment.provider, settings)
       return request<ByocOperation>(
         `/deployments/${deploymentId}/operations/deploy`,
         {
@@ -781,9 +787,9 @@ function createCloudConnectionWithMode(
   request: <T>(path: string, init?: RequestInit) => Promise<T>,
   teamId: string,
   mode: CloudConnection['mode'],
-  deployerServiceAccountEmail: string,
+  deployerIdentity: string,
   projectId: string,
-  target: ByocTarget & ByocGcpLocation,
+  target: ByocTarget,
   deploymentId: string | undefined,
   clientRequestId: string,
   expectedCloudConnectionId?: string
@@ -797,15 +803,15 @@ function createCloudConnectionWithMode(
       client_request_id: clientRequestId,
       expected_cloud_connection_id: expectedCloudConnectionId,
       team_id: teamId,
-      provider: 'gcp',
+      provider: target.provider,
       mode,
-      subject_email: deployerServiceAccountEmail,
+      subject_email: deployerIdentity,
       authorized_projects: [
         {
           project_id: projectId,
           name: projectId,
           default_region: target.region,
-          default_zone: target.zone,
+          default_zone: target.provider === 'gcp' ? target.zone : '',
           namespace: target.namespace,
           domain_name: target.domainName,
           prefix: target.prefix,
@@ -818,7 +824,10 @@ function createCloudConnectionWithMode(
   )
 }
 
-function getCloudConnectionMode(): CloudConnection['mode'] {
+function getCloudConnectionMode(
+  provider: ByocProvider
+): CloudConnection['mode'] {
+  if (provider === 'aws') return 'web_identity'
   if (process.env.DEPLOYMENT_MOCK === 'true') {
     return 'mock'
   }
@@ -941,6 +950,12 @@ function getPublicRunnerError(
   const errorCode = runnerError.code
   if (errorCode === 'deployer_verification_unavailable') {
     return 'E2B cannot use the deployer service account yet. Retrying verification may succeed.'
+  }
+  if (errorCode === 'aws_deployer_verification_unavailable') {
+    return 'E2B cannot assume the deployer IAM role yet. Retrying verification may succeed.'
+  }
+  if (errorCode === 'invalid_aws_identity') {
+    return 'The AWS deployer role could not be verified. Check its web identity trust and account ID.'
   }
   if (errorCode === 'deployer_missing_permissions') {
     const suffix = runnerError.missingPermissions?.length
@@ -1233,18 +1248,6 @@ function invalidAwsRegionsConfiguration() {
   })
 }
 
-function assertGcpTarget(
-  target: ByocTarget
-): asserts target is ByocTarget & ByocGcpLocation {
-  if (target.provider !== 'gcp') {
-    throw new TRPCError({
-      code: 'PRECONDITION_FAILED',
-      message:
-        'AWS cloud connections and deployments are not supported by this dashboard yet.',
-    })
-  }
-}
-
 function requiredEnv(name: string) {
   const value = process.env[name]?.trim()
   if (!value) {
@@ -1257,10 +1260,12 @@ function requiredEnv(name: string) {
 }
 
 function isConfiguredProject(project: CloudProject, target: ByocTarget) {
-  if (project.provider !== 'gcp' || target.provider !== 'gcp') return false
+  if (project.provider !== target.provider) return false
   return (
     project.default_region === target.region &&
-    project.default_zone === target.zone &&
+    (target.provider === 'gcp'
+      ? project.default_zone === target.zone
+      : project.default_zone === '') &&
     project.namespace === target.namespace &&
     project.domain_name === target.domainName &&
     project.prefix === target.prefix
@@ -1280,13 +1285,70 @@ function serviceAccountProjectId(email: string) {
   return email.slice(at + 1, -suffix.length)
 }
 
-function assertExpectedDeployerAccount(email: string, accountId: string) {
-  if (email.slice(0, email.lastIndexOf('@')) !== accountId) {
+const awsRoleArnSchema = z
+  .string()
+  .regex(/^arn:aws:iam::([0-9]{12}):role\/(.+)$/)
+
+function tryParseAwsRoleArn(roleArn: string) {
+  const parsed = awsRoleArnSchema.safeParse(roleArn.trim())
+  if (!parsed.success) return undefined
+  const match = /^arn:aws:iam::([0-9]{12}):role\/(.+)$/.exec(parsed.data)
+  if (!match?.[1] || !match[2]) return undefined
+  const roleName = match[2].split('/').at(-1)
+  return roleName ? { accountId: match[1], roleName } : undefined
+}
+
+function parseAwsRoleArn(roleArn: string) {
+  const parsed = tryParseAwsRoleArn(roleArn)
+  if (!parsed) {
     throw new TRPCError({
-      code: 'PRECONDITION_FAILED',
-      message: 'Use the deployer service account generated for this team.',
+      code: 'BAD_REQUEST',
+      message: 'Enter an AWS IAM role ARN.',
     })
   }
+  return parsed
+}
+
+function cloudAccountID(identity: string, target: ByocTarget) {
+  return target.provider === 'gcp'
+    ? serviceAccountProjectId(identity)
+    : parseAwsRoleArn(identity).accountId
+}
+
+function assertExpectedDeployerIdentity(identity: string, target: ByocTarget) {
+  const actualAccount =
+    target.provider === 'gcp'
+      ? identity.slice(0, identity.lastIndexOf('@'))
+      : parseAwsRoleArn(identity).roleName
+  if (actualAccount !== target.deployerAccountId) {
+    throw new TRPCError({
+      code: 'PRECONDITION_FAILED',
+      message: `Use the deployer ${target.provider === 'gcp' ? 'service account' : 'IAM role'} generated for this team.`,
+    })
+  }
+}
+
+function authorizationLocation(
+  provider: ByocProvider,
+  project: CloudProjectAuthorization
+): ByocLocation | undefined {
+  if (provider === 'aws') {
+    const location: ByocAwsLocation = {
+      provider: 'aws',
+      region: project.default_region,
+    }
+    return project.default_zone === '' &&
+      awsLocationSchema.safeParse(location).success
+      ? location
+      : undefined
+  }
+  if (provider !== 'gcp') return undefined
+  const location: ByocGcpLocation = {
+    provider: 'gcp',
+    region: project.default_region,
+    zone: project.default_zone,
+  }
+  return isValidGcpLocation(location) ? location : undefined
 }
 
 function isConfiguredConnection(
@@ -1294,13 +1356,24 @@ function isConfiguredConnection(
   teamId: string,
   target: ByocTarget
 ) {
-  if (connection.provider !== 'gcp' || target.provider !== 'gcp') return false
+  if (connection.provider !== target.provider) return false
+  const awsRole =
+    target.provider === 'aws'
+      ? tryParseAwsRoleArn(connection.subject_email)
+      : undefined
   return (
     connection.team_id === teamId &&
+    (target.provider === 'gcp' || connection.mode === 'web_identity') &&
+    (target.provider === 'gcp' ||
+      awsRole?.roleName === target.deployerAccountId) &&
     connection.authorized_projects.some((project) => {
       return (
+        (target.provider === 'gcp' ||
+          awsRole?.accountId === project.project_id) &&
         project.default_region === target.region &&
-        project.default_zone === target.zone &&
+        (target.provider === 'gcp'
+          ? project.default_zone === target.zone
+          : project.default_zone === '') &&
         project.namespace === target.namespace &&
         project.domain_name === target.domainName &&
         project.prefix === target.prefix
@@ -1333,13 +1406,32 @@ function assertConfiguredDeployment(
       message: 'BYOC deployment resource not found.',
     })
   }
-  assertGcpProvider(deployment.provider)
   if (!configuredTargetForDeployment(deployment, targets)) {
     throw new TRPCError({
       code: 'PRECONDITION_FAILED',
       message: 'Deployment target does not match the configured BYOC target.',
     })
   }
+}
+
+function assertDeploymentDeployerIdentity(
+  deployment: Deployment,
+  target: ByocTarget
+) {
+  if (target.provider === 'gcp') {
+    assertExpectedDeployerIdentity(
+      deployment.deployer_service_account.email,
+      target
+    )
+    return
+  }
+  if (!deployment.aws) {
+    throw new TRPCError({
+      code: 'PRECONDITION_FAILED',
+      message: 'Deployment target metadata is inconsistent.',
+    })
+  }
+  assertExpectedDeployerIdentity(deployment.aws.role_arn, target)
 }
 
 function assertAllowedDeployment(deployment: Deployment, teamId: string) {
@@ -1349,14 +1441,24 @@ function assertAllowedDeployment(deployment: Deployment, teamId: string) {
       message: 'BYOC deployment resource not found.',
     })
   }
-  assertGcpProvider(deployment.provider)
   const account = deployment.prefix.replace(/-+$/, '')
-  const expectedEmail = `${account}@${deployment.gcp.project_id}.iam.gserviceaccount.com`
+  const validProviderMetadata =
+    deployment.provider === 'gcp'
+      ? deployment.gcp.project_id !== '' &&
+        deployment.deployer_service_account.project_id ===
+          deployment.gcp.project_id &&
+        deployment.deployer_service_account.account_id === account &&
+        deployment.deployer_service_account.email ===
+          `${account}@${deployment.gcp.project_id}.iam.gserviceaccount.com`
+      : deployment.provider === 'aws' &&
+        deployment.aws !== undefined &&
+        deployment.cloud_project_id === deployment.aws.account_id &&
+        awsRegionSchema.safeParse(deployment.aws.region).success &&
+        tryParseAwsRoleArn(deployment.aws.role_arn)?.accountId ===
+          deployment.aws.account_id &&
+        tryParseAwsRoleArn(deployment.aws.role_arn)?.roleName === account
   if (
-    deployment.deployer_service_account.project_id !==
-      deployment.gcp.project_id ||
-    deployment.deployer_service_account.account_id !== account ||
-    deployment.deployer_service_account.email !== expectedEmail ||
+    !validProviderMetadata ||
     !deployment.domain_name.startsWith(`${account}.`)
   ) {
     throw new TRPCError({
@@ -1378,19 +1480,26 @@ function sanitizeDeployment(deployment: RunnerDeployment): Deployment {
     cloud_project_id: deployment.cloud_project_id,
     provider: deployment.provider,
     gcp: {
-      project_id: deployment.gcp.project_id,
-      region: deployment.gcp.region,
-      zone: deployment.gcp.zone,
+      project_id: deployment.gcp?.project_id ?? '',
+      region: deployment.gcp?.region ?? '',
+      zone: deployment.gcp?.zone ?? '',
     },
+    ...(deployment.aws && {
+      aws: {
+        account_id: deployment.aws.account_id,
+        region: deployment.aws.region,
+        role_arn: deployment.aws.role_arn,
+      },
+    }),
     domain_name: deployment.domain_name,
     prefix: deployment.prefix,
     deployer_service_account: {
-      account_id: deployment.deployer_service_account.account_id,
-      email: deployment.deployer_service_account.email,
-      display_name: deployment.deployer_service_account.display_name,
-      project_id: deployment.deployer_service_account.project_id,
-      status: deployment.deployer_service_account.status,
-      roles: [...deployment.deployer_service_account.roles],
+      account_id: deployment.deployer_service_account?.account_id ?? '',
+      email: deployment.deployer_service_account?.email ?? '',
+      display_name: deployment.deployer_service_account?.display_name ?? '',
+      project_id: deployment.deployer_service_account?.project_id ?? '',
+      status: deployment.deployer_service_account?.status ?? '',
+      roles: [...(deployment.deployer_service_account?.roles ?? [])],
     },
     terraform_settings: deployment.terraform_settings
       ? {
@@ -1434,43 +1543,106 @@ function sanitizeTerraformBackend(configs?: string[]) {
       metadata.bucket = value
     }
     if (
-      key === 'prefix' &&
+      (key === 'prefix' || key === 'key') &&
       value.length <= 1024 &&
       /^[A-Za-z0-9._/-]+$/.test(value)
     ) {
-      metadata.prefix = value
+      metadata[key] = value
     }
   }
-  return metadata.bucket || metadata.prefix ? metadata : undefined
+  return metadata.bucket || metadata.prefix || metadata.key
+    ? metadata
+    : undefined
 }
 
 function configuredTargetForDeployment(
   deployment: Deployment,
   targets: ByocTarget[]
 ) {
-  if (
-    deployment.provider !== 'gcp' ||
-    deployment.deployer_service_account.project_id !== deployment.gcp.project_id
-  ) {
-    return undefined
-  }
-
-  return targets.find(
-    (target): target is ByocTarget & ByocGcpLocation =>
-      target.provider === 'gcp' &&
-      deployment.gcp.region === target.region &&
-      deployment.gcp.zone === target.zone &&
-      deployment.domain_name === target.domainName &&
-      deployment.prefix === target.prefix
-  )
+  return targets.find((target) => {
+    if (
+      target.provider !== deployment.provider ||
+      deployment.domain_name !== target.domainName ||
+      deployment.prefix !== target.prefix
+    ) {
+      return false
+    }
+    if (target.provider === 'gcp') {
+      return (
+        deployment.gcp.region === target.region &&
+        deployment.gcp.zone === target.zone &&
+        deployment.deployer_service_account.project_id ===
+          deployment.gcp.project_id
+      )
+    }
+    return (
+      deployment.aws?.region === target.region &&
+      deployment.cloud_project_id === deployment.aws.account_id &&
+      tryParseAwsRoleArn(deployment.aws.role_arn)?.accountId ===
+        deployment.aws.account_id &&
+      tryParseAwsRoleArn(deployment.aws.role_arn)?.roleName ===
+        target.deployerAccountId
+    )
+  })
 }
 
-function assertGcpProvider(provider: ByocProvider) {
-  if (provider !== 'gcp') {
-    throw new TRPCError({
-      code: 'PRECONDITION_FAILED',
-      message:
-        'AWS cloud connections and deployments are not supported by this dashboard yet.',
-    })
+function deploymentLocation(deployment: Deployment): ByocLocation {
+  if (deployment.provider === 'aws' && deployment.aws) {
+    return { provider: 'aws', region: deployment.aws.region }
+  }
+  if (deployment.provider === 'gcp') {
+    return {
+      provider: 'gcp',
+      region: deployment.gcp.region,
+      zone: deployment.gcp.zone,
+    }
+  }
+  throw new TRPCError({
+    code: 'PRECONDITION_FAILED',
+    message: 'Deployment target metadata is inconsistent.',
+  })
+}
+
+function deploymentCloudAccountID(deployment: Deployment) {
+  return deployment.provider === 'aws'
+    ? deployment.aws?.account_id
+    : deployment.gcp.project_id
+}
+
+const supportedMachineTypes: Record<
+  ByocProvider,
+  Record<'api' | 'client' | 'clickhouse', ReadonlySet<string>>
+> = {
+  gcp: {
+    api: new Set(['e2-standard-4', 'e2-standard-8', 'n2-standard-8']),
+    client: new Set(['n2-standard-8', 'n2-standard-16', 'n2-highmem-8']),
+    clickhouse: new Set(['e2-standard-4', 'e2-standard-8', 'n2-standard-8']),
+  },
+  aws: {
+    api: new Set(['t3.xlarge', 'm7i.2xlarge', 'm7i.4xlarge']),
+    client: new Set(['m8i.4xlarge', 'm8i.8xlarge', 'm8i.12xlarge']),
+    clickhouse: new Set(['t3.xlarge', 'm7i.2xlarge', 'm7i.4xlarge']),
+  },
+}
+
+function assertTopologyForProvider(
+  provider: ByocProvider,
+  settings: TerraformSettings
+) {
+  const values = [
+    ['api', settings.api_machine_type],
+    ['client', settings.client_machine_type],
+    ['clickhouse', settings.clickhouse_machine_type],
+  ] as const
+  for (const [role, machineType] of values) {
+    if (
+      machineType &&
+      !supportedMachineTypes[provider][role].has(machineType)
+    ) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: `${machineType} is not a supported ${provider.toUpperCase()} ${role} machine type.`,
+      })
+    }
   }
 }

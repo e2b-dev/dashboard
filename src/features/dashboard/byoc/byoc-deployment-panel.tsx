@@ -344,23 +344,14 @@ export function ByocDeploymentPanel({
   const deployment =
     availableDeployments?.find((item) => item.id === selectedDeploymentId) ??
     latestByTimestamp(availableDeployments)
-  const connectionLocation: ByocLocation | undefined = connection
-    ?.authorized_projects[0]
-    ? {
-        provider: 'gcp',
-        region: connection.authorized_projects[0].default_region,
-        zone: connection.authorized_projects[0].default_zone,
-      }
+  const connectionLocation = connection
+    ? cloudConnectionLocation(connection)
     : undefined
   const allocatedLocation = allocatedTargetQuery.data
     ? targetLocation(allocatedTargetQuery.data)
     : undefined
   const immutableLocation: ByocLocation | undefined = deployment
-    ? {
-        provider: 'gcp',
-        region: deployment.gcp.region,
-        zone: deployment.gcp.zone,
-      }
+    ? deploymentLocation(deployment)
     : connectionLocation
   const target = allocatedTargetQuery.data ?? allocateTarget.data
   const location = resolvedTargetLocation(
@@ -375,7 +366,9 @@ export function ByocDeploymentPanel({
   )
   const provider = target?.provider ?? location?.provider ?? selectedProvider
   const connectionUsesExpectedDeployer = Boolean(
-    connection?.subject_email.startsWith(`${target?.deployerAccountId}@`)
+    connection &&
+      target &&
+      isExpectedDeployerIdentity(connection.subject_email, target)
   )
   useEffect(() => {
     requestIntents.connection.acknowledge(connection?.client_request_id)
@@ -387,13 +380,15 @@ export function ByocDeploymentPanel({
     requestIntents.createDeployment,
   ])
   const setupDeployerServiceAccountEmail =
-    setupProjectId && target?.provider === 'gcp' && target.deployerAccountId
-      ? `${target.deployerAccountId}@${setupProjectId}.iam.gserviceaccount.com`
+    setupProjectId && target?.deployerAccountId
+      ? target.provider === 'gcp'
+        ? `${target.deployerAccountId}@${setupProjectId}.iam.gserviceaccount.com`
+        : `arn:aws:iam::${setupProjectId}:role/${target.deployerAccountId}`
       : ''
   const resolvedDeployerServiceAccountEmail =
     deployerServiceAccountEmail || setupDeployerServiceAccountEmail
 
-  const savedTopology = topologyFromDeployment(deployment)
+  const savedTopology = topologyFromDeployment(deployment, provider)
   const topology =
     topologyDraft && topologyDraft.deploymentId === deployment?.id
       ? topologyDraft.value
@@ -669,7 +664,7 @@ export function ByocDeploymentPanel({
 
   const selectedProject =
     projectsQuery.data?.find(
-      (project) => project.id === deployment?.gcp.project_id
+      (project) => project.id === deploymentCloudAccountId(deployment)
     ) ?? projectsQuery.data?.[0]
   const displayedSetupProjectId =
     setupProjectId ||
@@ -860,11 +855,11 @@ export function ByocDeploymentPanel({
             allocatedTargetQuery.isFetching
           }
           onGenerateIdentity={() => {
-            if (location?.provider !== 'gcp') return
+            if (!location) return
             allocateTarget.mutate({ teamSlug, ...location })
           }}
           onConnect={() => {
-            if (location?.provider !== 'gcp') return
+            if (!location || !setupDeployerServiceAccountEmail) return
             const intent = requestIntents.connection.get(
               deployment?.cloud_connection_id
             )
@@ -894,7 +889,9 @@ export function ByocDeploymentPanel({
             setSetupProjectId(projectId)
             setDeployerServiceAccountEmail(
               projectId && target?.deployerAccountId
-                ? `${target.deployerAccountId}@${projectId}.iam.gserviceaccount.com`
+                ? target.provider === 'gcp'
+                  ? `${target.deployerAccountId}@${projectId}.iam.gserviceaccount.com`
+                  : `arn:aws:iam::${projectId}:role/${target.deployerAccountId}`
                 : ''
             )
           }}
@@ -1007,7 +1004,7 @@ export function ByocDeploymentPanel({
           </div>
           <p className="mt-1 truncate text-sm text-fg-secondary">
             {deployment
-              ? `${deployment.gcp.region} · ${deployment.domain_name}`
+              ? `${deploymentLocation(deployment).region} · ${deployment.domain_name}`
               : 'Deploy and operate a dedicated E2B region.'}
           </p>
         </div>
@@ -1203,8 +1200,12 @@ export function ByocDeploymentPanel({
                   mono
                 />
                 <SummaryRow
-                  label="Prefix"
-                  value={deployment?.terraform_backend?.prefix ?? 'unavailable'}
+                  label={deployment?.provider === 'aws' ? 'Key' : 'Prefix'}
+                  value={
+                    (deployment?.provider === 'aws'
+                      ? deployment.terraform_backend?.key
+                      : deployment?.terraform_backend?.prefix) ?? 'unavailable'
+                  }
                   mono
                 />
                 <p className="prose-caption text-fg-secondary">
@@ -1230,11 +1231,10 @@ export function ByocDeploymentPanel({
                   count={topology.apiNodeCount}
                   label="API nodes"
                   machineType={topology.apiMachineType}
-                  machineTypes={[
-                    'e2-standard-4',
-                    'e2-standard-8',
-                    'n2-standard-8',
-                  ]}
+                  machineTypes={machineTypesForProvider(
+                    deployment?.provider ?? 'gcp',
+                    'api'
+                  )}
                   max={20}
                   onCountChange={(apiNodeCount) =>
                     updateTopology({ apiNodeCount })
@@ -1247,11 +1247,10 @@ export function ByocDeploymentPanel({
                   count={topology.clientNodeCount}
                   label="Sandbox nodes"
                   machineType={topology.clientMachineType}
-                  machineTypes={[
-                    'n2-standard-8',
-                    'n2-standard-16',
-                    'n2-highmem-8',
-                  ]}
+                  machineTypes={machineTypesForProvider(
+                    deployment?.provider ?? 'gcp',
+                    'client'
+                  )}
                   max={100}
                   onCountChange={(clientNodeCount) =>
                     updateTopology({ clientNodeCount })
@@ -1264,11 +1263,10 @@ export function ByocDeploymentPanel({
                   count={topology.clickHouseNodeCount}
                   label="ClickHouse nodes"
                   machineType={topology.clickHouseMachineType}
-                  machineTypes={[
-                    'e2-standard-4',
-                    'e2-standard-8',
-                    'n2-standard-8',
-                  ]}
+                  machineTypes={machineTypesForProvider(
+                    deployment?.provider ?? 'gcp',
+                    'clickhouse'
+                  )}
                   max={10}
                   onCountChange={(clickHouseNodeCount) =>
                     updateTopology({ clickHouseNodeCount })
@@ -1315,14 +1313,20 @@ export function ByocDeploymentPanel({
               </CardHeader>
               <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
                 <TargetCell
-                  label="Project"
-                  value={deployment?.gcp.project_id ?? selectedProject?.id}
+                  label={
+                    deployment?.provider === 'aws' ? 'AWS account' : 'Project'
+                  }
+                  value={
+                    deploymentCloudAccountId(deployment) ?? selectedProject?.id
+                  }
                 />
                 <TargetCell
-                  label="Region / zone"
+                  label={
+                    deployment?.provider === 'aws' ? 'Region' : 'Region / zone'
+                  }
                   value={
                     deployment
-                      ? `${deployment.gcp.region} / ${deployment.gcp.zone}`
+                      ? formatLocation(deploymentLocation(deployment))
                       : undefined
                   }
                 />
@@ -1367,8 +1371,10 @@ export function ByocDeploymentPanel({
                   <div className="min-w-0">
                     <p className="text-sm font-medium">Active deployer</p>
                     <p className="truncate font-mono text-sm text-fg-secondary">
-                      {deployment?.deployer_service_account.email ??
-                        connection?.subject_email ??
+                      {(deployment?.provider === 'aws'
+                        ? deployment.aws?.role_arn
+                        : deployment?.deployer_service_account.email) ||
+                        connection?.subject_email ||
                         'not verified'}
                     </p>
                   </div>
@@ -1376,82 +1382,109 @@ export function ByocDeploymentPanel({
                     disabled={operationPending}
                     onClick={() => {
                       setDeployerServiceAccountEmail(
-                        target?.deployerAccountId && deployment?.gcp.project_id
-                          ? `${target.deployerAccountId}@${deployment.gcp.project_id}.iam.gserviceaccount.com`
+                        target?.deployerAccountId &&
+                          deploymentCloudAccountId(deployment)
+                          ? target.provider === 'gcp'
+                            ? `${target.deployerAccountId}@${deploymentCloudAccountId(deployment)}.iam.gserviceaccount.com`
+                            : `arn:aws:iam::${deploymentCloudAccountId(deployment)}:role/${target.deployerAccountId}`
                           : ''
                       )
                       setConnectionDialogOpen(true)
                     }}
                     variant="secondary"
                   >
-                    {connection ? 'Replace connection' : 'Connect GCP'}
+                    {connection ? 'Replace connection' : 'Connect cloud'}
                   </Button>
                 </div>
-                <Tabs defaultValue="gcloud" className="min-w-0 gap-3">
-                  <TabsList className="h-9 w-fit gap-5 border-b-0 bg-bg p-0 max-md:px-0">
-                    <TabsTrigger layoutkey="byoc-access-tabs" value="gcloud">
-                      gcloud
-                    </TabsTrigger>
-                    <TabsTrigger layoutkey="byoc-access-tabs" value="terraform">
-                      Terraform
-                    </TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="gcloud" className="mt-0 min-w-0">
-                    <CodeBlock
-                      className="min-w-0 max-w-full overflow-hidden rounded-md"
-                      icon={<TerminalIcon />}
-                      title="GCP bootstrap command"
-                      viewportProps={{ className: 'max-h-[420px] max-w-full' }}
-                    >
-                      {bootstrapCommand({
-                        deployerServiceAccount:
-                          deployment?.deployer_service_account.email.split(
-                            '@'
-                          )[0] ??
-                          connection?.subject_email.split('@')[0] ??
-                          target?.deployerAccountId ??
-                          '',
-                        e2bPrincipals:
-                          target?.e2bPrincipals ??
-                          (selectedProjectPrincipal
-                            ? [selectedProjectPrincipal]
-                            : []),
-                        projectId:
-                          selectedProject?.id ??
-                          deployment?.gcp.project_id ??
-                          '',
-                      })}
-                    </CodeBlock>
-                  </TabsContent>
-                  <TabsContent value="terraform" className="mt-0 min-w-0">
-                    <CodeBlock
-                      className="min-w-0 max-w-full overflow-hidden rounded-md"
-                      icon={<TerminalIcon />}
-                      lang="hcl"
-                      title="Terraform bootstrap snippet"
-                      viewportProps={{ className: 'max-h-[420px] max-w-full' }}
-                    >
-                      {bootstrapTerraform({
-                        deployerServiceAccount:
-                          deployment?.deployer_service_account.email.split(
-                            '@'
-                          )[0] ??
-                          connection?.subject_email.split('@')[0] ??
-                          target?.deployerAccountId ??
-                          '',
-                        e2bPrincipals:
-                          target?.e2bPrincipals ??
-                          (selectedProjectPrincipal
-                            ? [selectedProjectPrincipal]
-                            : []),
-                        projectId:
-                          selectedProject?.id ??
-                          deployment?.gcp.project_id ??
-                          '',
-                      })}
-                    </CodeBlock>
-                  </TabsContent>
-                </Tabs>
+                {deployment?.provider === 'aws' ? (
+                  <div className="grid gap-3 border border-stroke bg-bg p-4 text-sm">
+                    <TargetCell
+                      label="AWS account"
+                      value={deployment.aws?.account_id}
+                    />
+                    <TargetCell
+                      label="Web identity role"
+                      value={deployment.aws?.role_arn}
+                    />
+                    <p className="text-xs leading-5 text-fg-secondary">
+                      The worker assumes only this account-local role with a
+                      short-lived Google-signed identity token.
+                    </p>
+                  </div>
+                ) : (
+                  <Tabs defaultValue="gcloud" className="min-w-0 gap-3">
+                    <TabsList className="h-9 w-fit gap-5 border-b-0 bg-bg p-0 max-md:px-0">
+                      <TabsTrigger layoutkey="byoc-access-tabs" value="gcloud">
+                        gcloud
+                      </TabsTrigger>
+                      <TabsTrigger
+                        layoutkey="byoc-access-tabs"
+                        value="terraform"
+                      >
+                        Terraform
+                      </TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="gcloud" className="mt-0 min-w-0">
+                      <CodeBlock
+                        className="min-w-0 max-w-full overflow-hidden rounded-md"
+                        icon={<TerminalIcon />}
+                        title="GCP bootstrap command"
+                        viewportProps={{
+                          className: 'max-h-[420px] max-w-full',
+                        }}
+                      >
+                        {bootstrapCommand({
+                          deployerServiceAccount:
+                            deployment?.deployer_service_account.email.split(
+                              '@'
+                            )[0] ??
+                            connection?.subject_email.split('@')[0] ??
+                            target?.deployerAccountId ??
+                            '',
+                          e2bPrincipals:
+                            target?.e2bPrincipals ??
+                            (selectedProjectPrincipal
+                              ? [selectedProjectPrincipal]
+                              : []),
+                          projectId:
+                            selectedProject?.id ??
+                            deployment?.gcp.project_id ??
+                            '',
+                        })}
+                      </CodeBlock>
+                    </TabsContent>
+                    <TabsContent value="terraform" className="mt-0 min-w-0">
+                      <CodeBlock
+                        className="min-w-0 max-w-full overflow-hidden rounded-md"
+                        icon={<TerminalIcon />}
+                        lang="hcl"
+                        title="Terraform bootstrap snippet"
+                        viewportProps={{
+                          className: 'max-h-[420px] max-w-full',
+                        }}
+                      >
+                        {bootstrapTerraform({
+                          deployerServiceAccount:
+                            deployment?.deployer_service_account.email.split(
+                              '@'
+                            )[0] ??
+                            connection?.subject_email.split('@')[0] ??
+                            target?.deployerAccountId ??
+                            '',
+                          e2bPrincipals:
+                            target?.e2bPrincipals ??
+                            (selectedProjectPrincipal
+                              ? [selectedProjectPrincipal]
+                              : []),
+                          projectId:
+                            selectedProject?.id ??
+                            deployment?.gcp.project_id ??
+                            '',
+                        })}
+                      </CodeBlock>
+                    </TabsContent>
+                  </Tabs>
+                )}
               </CardContent>
             </Card>
             <DestroyByocCard
@@ -1468,7 +1501,7 @@ export function ByocDeploymentPanel({
         </TabsContent>
       </Tabs>
 
-      <ConnectGCPDialog
+      <ConnectCloudDialog
         deployerAccountId={target?.deployerAccountId ?? ''}
         deployerServiceAccountEmail={resolvedDeployerServiceAccountEmail}
         e2bPrincipals={target?.e2bPrincipals ?? []}
@@ -1489,8 +1522,9 @@ export function ByocDeploymentPanel({
         }}
         onOpenChange={setConnectionDialogOpen}
         open={connectionDialogOpen}
+        provider={deployment?.provider ?? target?.provider ?? 'gcp'}
         projectId={
-          deployment?.gcp.project_id ??
+          deploymentCloudAccountId(deployment) ??
           connection?.authorized_projects[0]?.project_id ??
           ''
         }
@@ -1993,7 +2027,10 @@ function SetupServiceAccount({
   target?: ByocTarget
   targetPending: boolean
 }) {
-  const validProjectId = /^[a-z][a-z0-9-]{4,28}[a-z0-9]$/.test(projectId)
+  const validProjectId =
+    provider === 'aws'
+      ? /^[0-9]{12}$/.test(projectId)
+      : /^[a-z][a-z0-9-]{4,28}[a-z0-9]$/.test(projectId)
   const commandProjectId = validProjectId ? projectId : 'YOUR_GCP_PROJECT_ID'
   const availableProviders = [
     ...new Set(locations.map((candidate) => candidate.provider)),
@@ -2001,7 +2038,6 @@ function SetupServiceAccount({
   const providerLocations = provider
     ? locations.filter((candidate) => candidate.provider === provider)
     : []
-  const awsSelected = provider === 'aws'
   const providerLocked = !!target || locationLocked
 
   return (
@@ -2092,13 +2128,15 @@ function SetupServiceAccount({
             ) : null}
           </div>
 
-          {provider === 'gcp' ? (
+          {provider ? (
             <div className="grid gap-4 md:grid-cols-2">
               <label
                 className="grid min-w-0 gap-2 text-sm font-medium"
                 htmlFor="byoc-setup-project-id"
               >
-                Google Cloud project ID
+                {provider === 'gcp'
+                  ? 'Google Cloud project ID'
+                  : 'AWS account ID'}
                 <input
                   autoComplete="off"
                   className="h-10 min-w-0 rounded-md border border-stroke bg-bg px-3 font-mono text-sm font-normal text-fg outline-none focus:border-stroke-active"
@@ -2107,20 +2145,27 @@ function SetupServiceAccount({
                   onChange={(event) =>
                     onProjectIdChange(event.currentTarget.value)
                   }
-                  placeholder="your-gcp-project-id"
+                  inputMode={provider === 'aws' ? 'numeric' : undefined}
+                  placeholder={
+                    provider === 'gcp' ? 'your-gcp-project-id' : '123456789012'
+                  }
                   spellCheck={false}
                   value={projectId}
                 />
               </label>
               <div className="grid min-w-0 gap-2 text-sm font-medium">
-                Google Cloud deployer identity
+                {provider === 'gcp'
+                  ? 'Google Cloud deployer identity'
+                  : 'AWS deployer role'}
                 <div className="flex h-10 min-w-0 items-center rounded-md border border-stroke bg-bg-1 px-3 font-mono text-sm font-normal text-fg-secondary">
                   <span className="truncate">
                     {validProjectId
                       ? deployerServiceAccountEmail ||
                         'Generate the deployer identity first'
                       : target && deployerAccountId
-                        ? `${deployerAccountId}@<project>.iam.gserviceaccount.com`
+                        ? provider === 'gcp'
+                          ? `${deployerAccountId}@<project>.iam.gserviceaccount.com`
+                          : `arn:aws:iam::<account>:role/${deployerAccountId}`
                         : 'Generate the deployer identity first'}
                   </span>
                 </div>
@@ -2128,21 +2173,7 @@ function SetupServiceAccount({
             </div>
           ) : null}
 
-          {awsSelected ? (
-            <div className="flex gap-2 border border-accent-warning-highlight/35 bg-accent-warning-highlight/10 p-3 text-sm leading-5 text-fg">
-              <WarningIcon className="mt-0.5 size-4 shrink-0 text-accent-warning-highlight" />
-              <div>
-                <p className="font-medium">AWS setup is not available yet</p>
-                <p className="mt-1 text-fg-secondary">
-                  {target
-                    ? 'This team is locked to Amazon Web Services because its target is already allocated. This dashboard does not yet support the AWS account connection or deployment steps.'
-                    : 'AWS regions can be selected, but this dashboard does not yet support AWS account connections or deployments. No target will be reserved until that workflow is available.'}
-                </p>
-              </div>
-            </div>
-          ) : null}
-
-          {provider === 'gcp' ? (
+          {provider ? (
             <div className="flex gap-2 border border-stroke bg-bg p-3 text-xs leading-5 text-fg-secondary">
               <InfoIcon className="mt-0.5 size-4 shrink-0" />
               {providerLocked
@@ -2153,8 +2184,23 @@ function SetupServiceAccount({
                 : target
                   ? "Changing the region keeps this team's target key, namespace, and domain."
                   : 'The region can change until a cloud connection or deployment exists.'}{' '}
-              E2B uses short-lived impersonation credentials and never receives
-              a deployer service-account key.
+              E2B uses short-lived{' '}
+              {provider === 'gcp' ? 'impersonation' : 'web identity'}{' '}
+              credentials and never receives a long-lived cloud credential.
+            </div>
+          ) : null}
+
+          {target?.provider === 'aws' ? (
+            <div className="flex gap-2 border border-stroke bg-bg p-3 text-sm leading-5 text-fg-secondary">
+              <InfoIcon className="mt-0.5 size-4 shrink-0" />
+              <p>
+                Create the scoped IAM role named{' '}
+                <code className="font-mono text-fg">
+                  {target.deployerAccountId}
+                </code>{' '}
+                with the E2B worker web-identity trust policy, then enter the
+                AWS account ID above. Verification assumes only that role.
+              </p>
             </div>
           ) : null}
 
@@ -2208,27 +2254,19 @@ function SetupServiceAccount({
         </CardContent>
         <CardFooter className="mt-0 justify-between gap-4 border-stroke py-4 max-sm:flex-col max-sm:items-stretch">
           <p className="text-xs text-fg-secondary">
-            {awsSelected
-              ? target
-                ? 'The allocated AWS provider cannot be changed. AWS connection and deployment support is still required to continue.'
-                : 'AWS connection and deployment support must be added before this target can be reserved.'
-              : target && isPending
-                ? `Checking access (attempt ${failureCount + 1}). IAM changes are retried every 5 seconds while this page is open.`
-                : target
-                  ? 'Run the command, then verify that E2B can impersonate the deployer.'
-                  : "Review the location, then generate this team's permanent deployer identity."}
+            {target && isPending
+              ? `Checking access (attempt ${failureCount + 1}). IAM changes are retried every 5 seconds while this page is open.`
+              : target
+                ? `Create the ${provider === 'gcp' ? 'service account' : 'IAM role'}, then verify that E2B can assume it.`
+                : "Review the location, then generate this team's permanent deployer identity."}
           </p>
-          {awsSelected ? (
-            <Button className="shrink-0" disabled>
-              AWS setup unavailable
-            </Button>
-          ) : target ? (
+          {target ? (
             <Button
               className="shrink-0"
               disabled={
                 !location ||
                 !validProjectId ||
-                e2bPrincipals.length === 0 ||
+                (provider === 'gcp' && e2bPrincipals.length === 0) ||
                 isPending
               }
               loading={isPending ? 'Verifying' : undefined}
@@ -2240,7 +2278,7 @@ function SetupServiceAccount({
           ) : (
             <Button
               className="shrink-0"
-              disabled={location?.provider !== 'gcp' || targetPending}
+              disabled={!location || targetPending}
               loading={targetPending ? 'Generating' : undefined}
               onClick={onGenerateIdentity}
             >
@@ -2290,7 +2328,10 @@ function SetupConfiguration({
             count={topology.apiNodeCount}
             label="API nodes"
             machineType={topology.apiMachineType}
-            machineTypes={['e2-standard-4', 'e2-standard-8', 'n2-standard-8']}
+            machineTypes={machineTypesForProvider(
+              target?.provider ?? 'gcp',
+              'api'
+            )}
             max={20}
             onCountChange={(apiNodeCount) => updateTopology({ apiNodeCount })}
             onMachineTypeChange={(apiMachineType) =>
@@ -2301,7 +2342,10 @@ function SetupConfiguration({
             count={topology.clientNodeCount}
             label="Sandbox nodes"
             machineType={topology.clientMachineType}
-            machineTypes={['n2-standard-8', 'n2-standard-16', 'n2-highmem-8']}
+            machineTypes={machineTypesForProvider(
+              target?.provider ?? 'gcp',
+              'client'
+            )}
             max={100}
             onCountChange={(clientNodeCount) =>
               updateTopology({ clientNodeCount })
@@ -2314,7 +2358,10 @@ function SetupConfiguration({
             count={topology.clickHouseNodeCount}
             label="ClickHouse nodes"
             machineType={topology.clickHouseMachineType}
-            machineTypes={['e2-standard-4', 'e2-standard-8', 'n2-standard-8']}
+            machineTypes={machineTypesForProvider(
+              target?.provider ?? 'gcp',
+              'clickhouse'
+            )}
             max={10}
             onCountChange={(clickHouseNodeCount) =>
               updateTopology({ clickHouseNodeCount })
@@ -2350,7 +2397,10 @@ function SetupConfiguration({
           <CardTitle>Deployment target</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3">
-          <TargetCell label="Project" value={projectId} />
+          <TargetCell
+            label={target?.provider === 'aws' ? 'AWS account' : 'Project'}
+            value={projectId}
+          />
           <TargetCell
             label="Location"
             value={target ? formatLocation(targetLocation(target)) : undefined}
@@ -2557,7 +2607,7 @@ function isCompletedCheck(status?: DeploymentCheckStatus) {
   return status === 'passed' || status === 'skipped'
 }
 
-function ConnectGCPDialog({
+function ConnectCloudDialog({
   deployerAccountId,
   deployerServiceAccountEmail,
   e2bPrincipals,
@@ -2566,6 +2616,7 @@ function ConnectGCPDialog({
   onConnect,
   onOpenChange,
   open,
+  provider,
   projectId,
 }: {
   deployerAccountId: string
@@ -2576,38 +2627,47 @@ function ConnectGCPDialog({
   onConnect: () => void
   onOpenChange: (open: boolean) => void
   open: boolean
+  provider: ByocProvider
   projectId: string
 }) {
-  const expectedSuffix = projectId
-    ? `@${projectId}.iam.gserviceaccount.com`
+  const expectedIdentity = projectId
+    ? provider === 'gcp'
+      ? `${deployerAccountId}@${projectId}.iam.gserviceaccount.com`
+      : `arn:aws:iam::${projectId}:role/${deployerAccountId}`
     : ''
-  const expectedEmail = `${deployerAccountId}${expectedSuffix}`
-  const validEmail =
-    !!expectedSuffix && deployerServiceAccountEmail === expectedEmail
+  const validIdentity =
+    expectedIdentity !== '' && deployerServiceAccountEmail === expectedIdentity
   const accountId =
-    deployerServiceAccountEmail.split('@')[0] || deployerAccountId
+    provider === 'gcp'
+      ? deployerServiceAccountEmail.split('@')[0] || deployerAccountId
+      : deployerAccountId
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[min(760px,90vh)] max-w-2xl overflow-y-auto">
         <DialogHeader className="gap-2 text-left">
-          <DialogTitle>Connect Google Cloud</DialogTitle>
+          <DialogTitle>
+            Connect{' '}
+            {provider === 'gcp' ? 'Google Cloud' : 'Amazon Web Services'}
+          </DialogTitle>
           <DialogDescription>
-            Create a project-local deployer identity, grant E2B permission to
-            impersonate it, then verify the connection.
+            Create an account-local deployer identity, grant the E2B worker
+            short-lived access, then verify the connection.
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-5">
           <div className="grid gap-2">
             <label className="text-sm font-medium" htmlFor="byoc-deployer-sa">
-              Deployer service account
+              {provider === 'gcp'
+                ? 'Deployer service account'
+                : 'Deployer IAM role'}
             </label>
             <input
               autoComplete="off"
               className="h-10 rounded-md border border-stroke bg-bg px-3 font-mono text-sm text-fg outline-none focus:border-stroke-active"
               id="byoc-deployer-sa"
-              placeholder={expectedEmail}
+              placeholder={expectedIdentity}
               readOnly
               spellCheck={false}
               value={deployerServiceAccountEmail}
@@ -2619,18 +2679,27 @@ function ConnectGCPDialog({
             </p>
           </div>
 
-          <CodeBlock
-            className="overflow-hidden rounded-md"
-            icon={<TerminalIcon />}
-            title="Bootstrap access"
-            viewportProps={{ className: 'max-h-64' }}
-          >
-            {bootstrapCommand({
-              deployerServiceAccount: accountId,
-              e2bPrincipals,
-              projectId,
-            })}
-          </CodeBlock>
+          {provider === 'gcp' ? (
+            <CodeBlock
+              className="overflow-hidden rounded-md"
+              icon={<TerminalIcon />}
+              title="Bootstrap access"
+              viewportProps={{ className: 'max-h-64' }}
+            >
+              {bootstrapCommand({
+                deployerServiceAccount: accountId,
+                e2bPrincipals,
+                projectId,
+              })}
+            </CodeBlock>
+          ) : (
+            <div className="border border-stroke bg-bg-1 p-3 text-sm leading-5 text-fg-secondary">
+              Confirm that the scoped role named{' '}
+              <code className="font-mono text-fg">{deployerAccountId}</code>{' '}
+              trusts the E2B worker through Google web identity federation.
+              Verification checks the assumed AWS account before saving.
+            </div>
+          )}
 
           {error ? (
             <div className="rounded-md border border-accent-error-highlight/35 bg-accent-error-highlight/10 p-3 text-sm text-fg">
@@ -2648,7 +2717,11 @@ function ConnectGCPDialog({
             Cancel
           </Button>
           <Button
-            disabled={!validEmail || e2bPrincipals.length === 0 || isPending}
+            disabled={
+              !validIdentity ||
+              (provider === 'gcp' && e2bPrincipals.length === 0) ||
+              isPending
+            }
             loading={isPending ? 'Verifying' : undefined}
             onClick={onConnect}
           >
@@ -2682,6 +2755,43 @@ function targetLocation(target: ByocTarget): ByocLocation {
     : { provider: 'aws', region: target.region }
 }
 
+function deploymentLocation(deployment: Deployment): ByocLocation {
+  return deployment.provider === 'aws' && deployment.aws
+    ? { provider: 'aws', region: deployment.aws.region }
+    : {
+        provider: 'gcp',
+        region: deployment.gcp.region,
+        zone: deployment.gcp.zone,
+      }
+}
+
+function deploymentCloudAccountId(deployment?: Deployment) {
+  return deployment?.provider === 'aws'
+    ? deployment.aws?.account_id
+    : deployment?.gcp.project_id
+}
+
+function cloudConnectionLocation(
+  connection: TRPCRouterOutputs['byoc']['listCloudConnections'][number]
+): ByocLocation | undefined {
+  const target = connection.authorized_projects[0]
+  if (!target) return undefined
+  return connection.provider === 'aws'
+    ? { provider: 'aws', region: target.default_region }
+    : {
+        provider: 'gcp',
+        region: target.default_region,
+        zone: target.default_zone,
+      }
+}
+
+function isExpectedDeployerIdentity(identity: string, target: ByocTarget) {
+  return target.provider === 'gcp'
+    ? identity.startsWith(`${target.deployerAccountId}@`)
+    : identity.startsWith('arn:aws:iam::') &&
+        identity.split('/').at(-1) === target.deployerAccountId
+}
+
 function sameLocation(left: ByocLocation, right: ByocLocation) {
   return (
     left.provider === right.provider &&
@@ -2691,19 +2801,40 @@ function sameLocation(left: ByocLocation, right: ByocLocation) {
   )
 }
 
-function topologyFromDeployment(deployment?: Deployment): TopologyDraft {
+function machineTypesForProvider(
+  provider: ByocProvider,
+  role: 'api' | 'client' | 'clickhouse'
+) {
+  if (provider === 'aws') {
+    return role === 'client'
+      ? ['m8i.4xlarge', 'm8i.8xlarge', 'm8i.12xlarge']
+      : ['t3.xlarge', 'm7i.2xlarge', 'm7i.4xlarge']
+  }
+  return role === 'client'
+    ? ['n2-standard-8', 'n2-standard-16', 'n2-highmem-8']
+    : ['e2-standard-4', 'e2-standard-8', 'n2-standard-8']
+}
+
+function topologyFromDeployment(
+  deployment?: Deployment,
+  provider: ByocProvider = 'gcp'
+): TopologyDraft {
+  const apiDefault = machineTypesForProvider(provider, 'api')[0] ?? ''
+  const clientDefault = machineTypesForProvider(provider, 'client')[0] ?? ''
+  const clickhouseDefault =
+    machineTypesForProvider(provider, 'clickhouse')[0] ?? ''
   return {
     apiNodeCount: deployment?.terraform_settings?.api_node_count ?? 1,
     apiMachineType:
-      deployment?.terraform_settings?.api_machine_type ?? 'e2-standard-4',
+      deployment?.terraform_settings?.api_machine_type ?? apiDefault,
     clientNodeCount: deployment?.terraform_settings?.client_node_count ?? 1,
     clientMachineType:
-      deployment?.terraform_settings?.client_machine_type ?? 'n2-standard-8',
+      deployment?.terraform_settings?.client_machine_type ?? clientDefault,
     clickHouseNodeCount:
       deployment?.terraform_settings?.clickhouse_node_count ?? 1,
     clickHouseMachineType:
       deployment?.terraform_settings?.clickhouse_machine_type ??
-      'e2-standard-4',
+      clickhouseDefault,
   }
 }
 

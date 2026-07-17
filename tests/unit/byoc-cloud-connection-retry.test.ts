@@ -24,6 +24,21 @@ describe('BYOC cloud connection retry policy', () => {
     ).toBe(false)
   })
 
+  it('retries transient AWS role propagation failures', () => {
+    expect(
+      shouldRetryCloudConnectionVerification(
+        0,
+        'E2B cannot assume the deployer IAM role yet. Retrying verification may succeed.'
+      )
+    ).toBe(true)
+    expect(
+      shouldRetryCloudConnectionVerification(
+        0,
+        'The AWS deployer role could not be verified. Check its web identity trust and account ID.'
+      )
+    ).toBe(false)
+  })
+
   it('does not retry target mismatches or generic service failures', () => {
     expect(
       shouldRetryCloudConnectionVerification(

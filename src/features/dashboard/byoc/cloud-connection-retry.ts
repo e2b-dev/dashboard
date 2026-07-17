@@ -7,7 +7,8 @@ export function shouldRetryCloudConnectionVerification(
 ) {
   return (
     failureCount < cloudConnectionRetryLimit &&
-    message?.includes('E2B cannot use the deployer service account yet') ===
-      true
+    (message?.includes('E2B cannot use the deployer service account yet') ===
+      true ||
+      message?.includes('E2B cannot assume the deployer IAM role yet') === true)
   )
 }

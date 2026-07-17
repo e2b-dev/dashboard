@@ -38,7 +38,13 @@ const locationInput = z
 
 const createCloudConnectionInput = z.object({
   clientRequestId: z.string().uuid(),
-  deployerServiceAccountEmail: z.string().email().max(254),
+  deployerServiceAccountEmail: z.union([
+    z.string().email().max(254),
+    z
+      .string()
+      .max(2048)
+      .regex(/^arn:aws:iam::[0-9]{12}:role\/.+$/),
+  ]),
   deploymentId: z.string().uuid().optional(),
   expectedCloudConnectionId: z.string().uuid().optional(),
   location: locationInput.optional(),
@@ -57,17 +63,17 @@ const topologyInput = z.object({
   apiNodeCount: z.number().int().min(1).max(20),
   apiMachineType: z
     .string()
-    .regex(/^[a-z0-9-]+$/)
+    .regex(/^[a-z0-9.-]+$/)
     .max(64),
   clientNodeCount: z.number().int().min(1).max(100),
   clientMachineType: z
     .string()
-    .regex(/^[a-z0-9-]+$/)
+    .regex(/^[a-z0-9.-]+$/)
     .max(64),
   clickHouseNodeCount: z.number().int().min(1).max(10),
   clickHouseMachineType: z
     .string()
-    .regex(/^[a-z0-9-]+$/)
+    .regex(/^[a-z0-9.-]+$/)
     .max(64),
 })
 

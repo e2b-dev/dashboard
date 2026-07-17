@@ -27,6 +27,8 @@ const deploymentId = '11111111-1111-4111-8111-111111111111'
 const clientRequestId = '33333333-3333-4333-8333-333333333333'
 const projectId = 'test-project'
 const deployerEmail = `${targetStem}@${projectId}.iam.gserviceaccount.com`
+const awsAccountId = '899188253580'
+const awsRoleArn = `arn:aws:iam::${awsAccountId}:role/${targetStem}`
 const targetIdentity = {
   team_id: teamId,
   target_key: targetKey,
@@ -136,6 +138,26 @@ function cloudConnection(
   }
 }
 
+function awsCloudConnection(
+  overrides: Partial<CloudConnection> = {}
+): CloudConnection {
+  return cloudConnection({
+    provider: 'aws',
+    mode: 'web_identity',
+    subject_email: awsRoleArn,
+    authorized_projects: [
+      authorization({
+        project_id: awsAccountId,
+        name: awsAccountId,
+        default_region: 'us-east-2',
+        default_zone: '',
+        authorization_model: 'web_identity',
+      }),
+    ],
+    ...overrides,
+  })
+}
+
 function deployment(overrides: Partial<Deployment> = {}): Deployment {
   return {
     id: deploymentId,
@@ -163,6 +185,28 @@ function deployment(overrides: Partial<Deployment> = {}): Deployment {
     updated_at: '2026-07-11T00:00:00Z',
     ...overrides,
   }
+}
+
+function awsDeployment(overrides: Partial<Deployment> = {}): Deployment {
+  return deployment({
+    cloud_project_id: awsAccountId,
+    provider: 'aws',
+    gcp: { project_id: '', region: '', zone: '' },
+    aws: {
+      account_id: awsAccountId,
+      region: 'us-east-2',
+      role_arn: awsRoleArn,
+    },
+    deployer_service_account: {
+      account_id: '',
+      email: '',
+      display_name: '',
+      project_id: '',
+      status: '',
+      roles: [],
+    },
+    ...overrides,
+  })
 }
 
 describe('BYOC deployments repository', () => {
@@ -819,7 +863,53 @@ describe('BYOC deployments repository', () => {
     ).resolves.toMatchObject({ id: connectionId })
   })
 
-  it('rejects AWS cloud connections before parsing GCP credentials', async () => {
+  it('creates AWS web identity connections from an IAM role ARN', async () => {
+    mockRunner({
+      routes: {
+        [`GET /target-identities/${teamId}`]: () =>
+          Response.json(awsTargetIdentity),
+        'POST /cloud-connections': (_url, init) => {
+          expect(JSON.parse(String(init.body))).toEqual({
+            client_request_id: clientRequestId,
+            team_id: teamId,
+            provider: 'aws',
+            mode: 'web_identity',
+            subject_email: awsRoleArn,
+            authorized_projects: [
+              {
+                project_id: awsAccountId,
+                name: awsAccountId,
+                default_region: 'us-east-2',
+                default_zone: '',
+                namespace: targetStem,
+                domain_name: `${targetStem}.test.example.com`,
+                prefix: `${targetStem}-`,
+                e2b_principal:
+                  'serviceAccount:runner@test-control.iam.gserviceaccount.com',
+              },
+            ],
+          })
+          return Response.json(awsCloudConnection())
+        },
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).createCloudConnection(
+        awsRoleArn,
+        undefined,
+        clientRequestId,
+        undefined,
+        { provider: 'aws', region: 'us-east-2' }
+      )
+    ).resolves.toMatchObject({
+      provider: 'aws',
+      mode: 'web_identity',
+      subject_email: awsRoleArn,
+    })
+  })
+
+  it('rejects AWS roles that do not use the allocated team role name', async () => {
     mockRunner({
       routes: {
         [`GET /target-identities/${teamId}`]: () =>
@@ -829,15 +919,13 @@ describe('BYOC deployments repository', () => {
 
     await expect(
       createByocDeploymentsRepository({ teamId }).createCloudConnection(
-        'not-a-google-service-account',
+        `arn:aws:iam::${awsAccountId}:role/another-team`,
         undefined,
         clientRequestId,
         undefined,
         { provider: 'aws', region: 'us-east-2' }
       )
-    ).rejects.toThrow(
-      'AWS cloud connections and deployments are not supported by this dashboard yet.'
-    )
+    ).rejects.toThrow('Use the deployer IAM role generated for this team.')
     expect(fetch).toHaveBeenCalledTimes(1)
   })
 
@@ -888,6 +976,97 @@ describe('BYOC deployments repository', () => {
     await expect(
       createByocDeploymentsRepository({ teamId }).listCloudConnections()
     ).resolves.toEqual([expect.objectContaining({ id: connectionId })])
+  })
+
+  it('lists only AWS connections and projects matching the allocated target', async () => {
+    mockRunner({
+      routes: {
+        [`GET /target-identities/${teamId}`]: () =>
+          Response.json(awsTargetIdentity),
+        'GET /cloud-connections': () =>
+          Response.json({
+            cloud_connections: [
+              awsCloudConnection(),
+              awsCloudConnection({
+                id: '44444444-4444-4444-8444-444444444444',
+                subject_email: `arn:aws:iam::${awsAccountId}:role/wrong-role`,
+              }),
+            ],
+          }),
+        [`GET /cloud-connections/${connectionId}/projects`]: () =>
+          Response.json({
+            projects: [
+              {
+                id: awsAccountId,
+                name: awsAccountId,
+                provider: 'aws',
+                default_region: 'us-east-2',
+                default_zone: '',
+                namespace: targetStem,
+                domain_name: `${targetStem}.test.example.com`,
+                prefix: `${targetStem}-`,
+                authorization_status: 'authorized',
+                required_roles: [],
+                mock: false,
+                ready_for_smokes: true,
+              },
+              {
+                id: '111111111111',
+                name: 'wrong-region',
+                provider: 'aws',
+                default_region: 'us-west-2',
+                default_zone: '',
+                namespace: targetStem,
+                domain_name: `${targetStem}.test.example.com`,
+                prefix: `${targetStem}-`,
+                authorization_status: 'authorized',
+                required_roles: [],
+                mock: false,
+                ready_for_smokes: true,
+              },
+            ],
+          }),
+      },
+    })
+
+    const repository = createByocDeploymentsRepository({ teamId })
+    await expect(repository.listCloudConnections()).resolves.toEqual([
+      expect.objectContaining({ id: connectionId, provider: 'aws' }),
+    ])
+    await expect(repository.listProjects(connectionId)).resolves.toEqual([
+      expect.objectContaining({ id: awsAccountId, provider: 'aws' }),
+    ])
+  })
+
+  it('creates an AWS deployment from connection-owned account metadata', async () => {
+    mockRunner({
+      routes: {
+        [`GET /target-identities/${teamId}`]: () =>
+          Response.json(awsTargetIdentity),
+        'GET /cloud-connections': () =>
+          Response.json({ cloud_connections: [awsCloudConnection()] }),
+        'POST /deployments': (_url, init) => {
+          expect(JSON.parse(String(init.body))).toEqual({
+            client_request_id: clientRequestId,
+            team_id: teamId,
+            cloud_connection_id: connectionId,
+            cloud_project_id: awsAccountId,
+          })
+          return Response.json(awsDeployment())
+        },
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).createDeployment(
+        connectionId,
+        awsAccountId,
+        clientRequestId
+      )
+    ).resolves.toMatchObject({
+      provider: 'aws',
+      aws: { account_id: awsAccountId, region: 'us-east-2' },
+    })
   })
 
   it('uses a connection after its allocated location is retired', async () => {
@@ -1276,24 +1455,95 @@ describe('BYOC deployments repository', () => {
     ).toEqual([`GET /deployments/${deploymentId}`])
   })
 
-  it('rejects AWS deployments intentionally instead of reading GCP fields', async () => {
+  it('sanitizes AWS deployments with empty GCP and service account plans', async () => {
     mockRunner({
       routes: {
         [`GET /deployments/${deploymentId}`]: () =>
           Response.json({
-            ...deployment(),
-            provider: 'aws',
+            ...awsDeployment(),
             gcp: undefined,
+            deployer_service_account: undefined,
+            terraform_backend_configs: [
+              'bucket=customer-state',
+              'key=terraform/byoc/deployments/deployment-aws/state',
+              'role_arn=never-expose',
+            ],
           }),
       },
     })
 
     await expect(
       createByocDeploymentsRepository({ teamId }).getDeployment(deploymentId)
-    ).rejects.toThrow(
-      'AWS cloud connections and deployments are not supported by this dashboard yet.'
-    )
+    ).resolves.toMatchObject({
+      provider: 'aws',
+      gcp: { project_id: '', region: '', zone: '' },
+      aws: {
+        account_id: awsAccountId,
+        region: 'us-east-2',
+        role_arn: awsRoleArn,
+      },
+      deployer_service_account: {
+        account_id: '',
+        email: '',
+        project_id: '',
+        roles: [],
+      },
+      terraform_backend: {
+        bucket: 'customer-state',
+        key: 'terraform/byoc/deployments/deployment-aws/state',
+      },
+    })
     expect(fetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('rejects AWS machine types for GCP deployments before enqueueing', async () => {
+    mockRunner({
+      routes: {
+        [`GET /deployments/${deploymentId}`]: () => Response.json(deployment()),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).deploy(
+        deploymentId,
+        { api_machine_type: 'm8i.4xlarge' },
+        clientRequestId
+      )
+    ).rejects.toThrow('m8i.4xlarge is not a supported GCP api machine type.')
+    expect(fetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('accepts supported AWS machine types when enqueueing', async () => {
+    mockRunner({
+      routes: {
+        [`GET /deployments/${deploymentId}`]: () =>
+          Response.json(awsDeployment()),
+        [`POST /deployments/${deploymentId}/operations/deploy`]: (
+          _url,
+          init
+        ) => {
+          expect(JSON.parse(String(init.body))).toMatchObject({
+            client_request_id: clientRequestId,
+            api_machine_type: 't3.xlarge',
+            client_machine_type: 'm8i.4xlarge',
+            clickhouse_machine_type: 'm7i.2xlarge',
+          })
+          return Response.json({ id: 'operation-aws' })
+        },
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).deploy(
+        deploymentId,
+        {
+          api_machine_type: 't3.xlarge',
+          client_machine_type: 'm8i.4xlarge',
+          clickhouse_machine_type: 'm7i.2xlarge',
+        },
+        clientRequestId
+      )
+    ).resolves.toMatchObject({ id: 'operation-aws' })
   })
 
   it('blocks destruction when persisted target metadata does not match', async () => {
