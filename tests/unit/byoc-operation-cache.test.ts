@@ -3,6 +3,7 @@ import {
   createOptimisticOperation,
   preserveOptimisticOperations,
   removeOptimisticOperation,
+  upsertDeployment,
   upsertOperation,
 } from '@/features/dashboard/byoc/operation-cache'
 
@@ -84,5 +85,14 @@ describe('BYOC operation cache', () => {
     expect(preserveOptimisticOperations([optimistic], [durable])).toEqual([
       durable,
     ])
+  })
+
+  it('seeds a newly created deployment before background refresh', () => {
+    const prior = { id: 'deployment-1' }
+    const created = { id: 'deployment-2' }
+
+    expect(
+      upsertDeployment([prior, { id: created.id }], created as never)
+    ).toEqual([created, prior])
   })
 })

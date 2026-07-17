@@ -77,6 +77,39 @@ const topologyInput = z.object({
     .max(64),
 })
 
+type ByocRepository = ReturnType<typeof createByocDeploymentsRepository>
+type InitialDeploymentInput = {
+  connectionId: string
+  deploymentClientRequestId: string
+  operationClientRequestId: string
+  projectId: string
+  topology: z.infer<typeof topologyInput>
+}
+
+export async function createInitialDeployment(
+  repository: Pick<ByocRepository, 'createDeployment' | 'deploy'>,
+  input: InitialDeploymentInput
+) {
+  const deployment = await repository.createDeployment(
+    input.connectionId,
+    input.projectId,
+    input.deploymentClientRequestId
+  )
+  const operation = await repository.deploy(
+    deployment.id,
+    {
+      api_node_count: input.topology.apiNodeCount,
+      api_machine_type: input.topology.apiMachineType,
+      client_node_count: input.topology.clientNodeCount,
+      client_machine_type: input.topology.clientMachineType,
+      clickhouse_node_count: input.topology.clickHouseNodeCount,
+      clickhouse_machine_type: input.topology.clickHouseMachineType,
+    },
+    input.operationClientRequestId
+  )
+  return { deployment, operation }
+}
+
 export const byocRouter = createTRPCRouter({
   locations: protectedTeamProcedure.query(({ ctx }) =>
     createByocDeploymentsRepository({ teamId: ctx.teamId }).locations()
@@ -160,6 +193,23 @@ export const byocRouter = createTRPCRouter({
         input.projectId,
         input.clientRequestId
       )
+    }),
+
+  createDeploymentAndDeploy: protectedTeamProcedure
+    .input(
+      z.object({
+        connectionId: z.string().uuid(),
+        deploymentClientRequestId: z.string().uuid(),
+        operationClientRequestId: z.string().uuid(),
+        projectId: z.string().min(1),
+        topology: topologyInput,
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const repository = createByocDeploymentsRepository({
+        teamId: ctx.teamId,
+      })
+      return createInitialDeployment(repository, input)
     }),
 
   listDeployments: protectedTeamProcedure.query(({ ctx }) => {

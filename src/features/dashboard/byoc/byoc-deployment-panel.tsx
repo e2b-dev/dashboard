@@ -71,6 +71,7 @@ import {
   type OperationMutationInput,
   preserveOptimisticOperations,
   removeOptimisticOperation,
+  upsertDeployment,
   upsertOperation,
 } from './operation-cache'
 import {
@@ -589,6 +590,30 @@ export function ByocDeploymentPanel({
     })
   )
 
+  const createInitialDeployment = useMutation(
+    trpc.byoc.createDeploymentAndDeploy.mutationOptions({
+      onSuccess: async (data) => {
+        setSelectedDeploymentId(data.deployment.id)
+        setTopologyDraft((current) =>
+          current ? { ...current, deploymentId: data.deployment.id } : current
+        )
+        queryClient.setQueryData<Deployment[]>(
+          trpc.byoc.listDeployments.queryOptions({ teamSlug }).queryKey,
+          (current) => upsertDeployment(current, data.deployment)
+        )
+        setOperationBaseline({
+          kind: 'deploy',
+          clientRequestId: data.operation.client_request_id,
+        })
+        replaceOptimisticOperation(data.operation)
+        requestIntents.createDeployment.clear()
+        requestIntents.deploy.clear()
+        void refresh()
+        await router.push(`/dashboard/${teamSlug}/byoc/infrastructure`)
+      },
+    })
+  )
+
   const deploy = useMutation(
     trpc.byoc.deploy.mutationOptions({
       onMutate: async (variables) => {
@@ -681,6 +706,7 @@ export function ByocDeploymentPanel({
       : ''
   const operationPending =
     createDeployment.isPending ||
+    createInitialDeployment.isPending ||
     deploy.isPending ||
     validate.isPending ||
     destroy.isPending ||
@@ -732,6 +758,7 @@ export function ByocDeploymentPanel({
   const error =
     mutationError(createConnection.error) ??
     mutationError(createDeployment.error) ??
+    mutationError(createInitialDeployment.error) ??
     deployError ??
     validateError ??
     destroyError ??
@@ -837,7 +864,7 @@ export function ByocDeploymentPanel({
           createConnectionError={mutationError(createConnection.error)}
           createConnectionFailureCount={createConnection.failureCount}
           createConnectionPending={createConnection.isPending}
-          createDeploymentPending={createDeployment.isPending}
+          createDeploymentPending={createInitialDeployment.isPending}
           deployerServiceAccountEmail={setupDeployerServiceAccountEmail}
           deployerAccountId={target?.deployerAccountId ?? ''}
           deployment={deployment}
@@ -874,12 +901,16 @@ export function ByocDeploymentPanel({
           }}
           onCreateDeployment={() => {
             if (!connection) return
-            const clientRequestId = requestIntents.createDeployment.get()
-            createDeployment.mutate({
-              clientRequestId,
+            const deploymentClientRequestId =
+              requestIntents.createDeployment.get()
+            const operationClientRequestId = requestIntents.deploy.get()
+            createInitialDeployment.mutate({
               teamSlug,
               connectionId: connection.id,
+              deploymentClientRequestId,
+              operationClientRequestId,
               projectId: selectedProject?.id ?? '',
+              topology,
             })
           }}
           onSetupProjectIdChange={(value) => {
@@ -2375,10 +2406,10 @@ function SetupConfiguration({
           {!deployment ? (
             <Button
               disabled={!canCreateDeployment || operationPending}
-              loading={createDeploymentPending ? 'Saving' : undefined}
+              loading={createDeploymentPending ? 'Deploying' : undefined}
               onClick={onCreateDeployment}
             >
-              Save initial configuration
+              Deploy initial configuration
               <ArrowRightIcon />
             </Button>
           ) : (

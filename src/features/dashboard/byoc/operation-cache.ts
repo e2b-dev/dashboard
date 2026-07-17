@@ -1,6 +1,7 @@
 import type { TRPCRouterOutputs } from '@/trpc/client'
 
 type ByocOperation = TRPCRouterOutputs['byoc']['listOperations'][number]
+type ByocDeployment = TRPCRouterOutputs['byoc']['listDeployments'][number]
 
 export type OperationMutationInput = {
   deploymentId: string
@@ -35,6 +36,16 @@ export function upsertOperation(
         item.id !== operation.id &&
         item.client_request_id !== operation.client_request_id
     ),
+  ]
+}
+
+export function upsertDeployment(
+  current: ByocDeployment[] | undefined,
+  deployment: ByocDeployment
+) {
+  return [
+    deployment,
+    ...(current ?? []).filter((item) => item.id !== deployment.id),
   ]
 }
 
