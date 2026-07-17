@@ -1,9 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TERMINAL_SESSION_STORAGE_PREFIX } from '@/features/dashboard/terminal/constants'
+import {
+  hasPtyOptionsSearchParams,
+  normalizePtyOptions,
+  parseEnvVars,
+  parsePtyOptionsFromSearchParams,
+} from '@/features/dashboard/terminal/pty-options'
 import { openTerminalSandbox } from '@/features/dashboard/terminal/sandbox-session'
 import {
   clearStoredTerminalSession,
+  readStoredTerminalPtyOptions,
   readStoredTerminalSession,
+  writeStoredTerminalPtyOptions,
   writeStoredTerminalSession,
 } from '@/features/dashboard/terminal/storage'
 import {
@@ -27,11 +35,15 @@ const mockOpenTerminal = vi.fn()
 
 function installLocalStorage() {
   const values = new Map<string, string>()
+  const cookies = new Map<string, string>()
 
   Object.defineProperty(globalThis, 'window', {
     configurable: true,
     value: {
       innerWidth: 1200,
+      location: {
+        protocol: 'http:',
+      },
       localStorage: {
         getItem: vi.fn((key: string) => values.get(key) ?? null),
         setItem: vi.fn((key: string, value: string) => {
@@ -40,6 +52,27 @@ function installLocalStorage() {
         removeItem: vi.fn((key: string) => {
           values.delete(key)
         }),
+      },
+    },
+  })
+
+  Object.defineProperty(globalThis, 'document', {
+    configurable: true,
+    value: {
+      get cookie() {
+        return Array.from(cookies)
+          .map(([key, value]) => `${key}=${value}`)
+          .join('; ')
+      },
+      set cookie(value: string) {
+        const [cookieValue] = value.split(';')
+        const separator = cookieValue.indexOf('=')
+        if (separator <= 0) return
+
+        cookies.set(
+          cookieValue.slice(0, separator),
+          cookieValue.slice(separator + 1)
+        )
       },
     },
   })
@@ -95,6 +128,77 @@ describe('dashboard terminal helpers', () => {
     it('normalizes explicit overrides', () => {
       expect(resolveTerminalTemplateOverride('  ', 'python')).toBe('base')
       expect(resolveTerminalTemplateOverride('../base', 'python')).toBeNull()
+    })
+  })
+
+  describe('PTY settings', () => {
+    it('normalizes optional PTY create options', () => {
+      expect(
+        normalizePtyOptions({
+          user: ' root ',
+          cwd: ' /app ',
+          envs: {
+            DEBUG: '1',
+            '': 'ignored',
+          },
+        })
+      ).toEqual({
+        user: 'root',
+        cwd: '/app',
+        envs: {
+          DEBUG: '1',
+        },
+      })
+    })
+
+    it('parses newline-delimited environment variables', () => {
+      expect(parseEnvVars('DEBUG=1\nNAME=value=with-equals\n\nbad')).toEqual({
+        DEBUG: '1',
+        NAME: 'value=with-equals',
+      })
+      expect(parseEnvVars('')).toBeUndefined()
+    })
+
+    it('parses PTY options from terminal query params', () => {
+      expect(
+        parsePtyOptionsFromSearchParams({
+          user: ' root ',
+          cwd: ' /app ',
+          env: ['DEBUG=1', 'NAME=value=with-equals', 'bad'],
+        })
+      ).toEqual({
+        user: 'root',
+        cwd: '/app',
+        envs: {
+          DEBUG: '1',
+          NAME: 'value=with-equals',
+        },
+      })
+    })
+
+    it('detects PTY options in terminal query params', () => {
+      expect(hasPtyOptionsSearchParams({})).toBe(false)
+      expect(hasPtyOptionsSearchParams({ user: '' })).toBe(true)
+      expect(hasPtyOptionsSearchParams({ env: ['DEBUG=1'] })).toBe(true)
+    })
+
+    it('round-trips saved PTY options through a cookie', () => {
+      writeStoredTerminalPtyOptions('user-123', {
+        user: 'root',
+        cwd: '/app',
+        envs: {
+          DEBUG: '1',
+        },
+      })
+
+      expect(readStoredTerminalPtyOptions('user-123')).toEqual({
+        user: 'root',
+        cwd: '/app',
+        envs: {
+          DEBUG: '1',
+        },
+      })
+      expect(window.localStorage.setItem).not.toHaveBeenCalled()
     })
   })
 

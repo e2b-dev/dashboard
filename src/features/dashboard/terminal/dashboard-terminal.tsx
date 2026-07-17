@@ -1,15 +1,27 @@
 'use client'
 
 import type { CommandHandle, Sandbox } from 'e2b'
-import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useReducer,
+  useRef,
+  useState,
+} from 'react'
 import { useTRPCClient } from '@/trpc/client'
 import {
-  DEFAULT_CWD,
   TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS,
   TERMINAL_AUTOSTART_DEBOUNCE_MS,
 } from './constants'
 import DashboardTerminalCommandDialog from './dashboard-terminal-command-dialog'
+import { normalizePtyOptions, type TerminalPtyOptions } from './pty-options'
+import PtySettingsDialog from './pty-settings-dialog'
 import { openTerminalSandbox } from './sandbox-session'
+import {
+  readStoredTerminalPtyOptions,
+  writeStoredTerminalPtyOptions,
+} from './storage'
 import {
   normalizeTerminalTemplate,
   resolveTerminalTemplateOverride,
@@ -29,6 +41,7 @@ const FLUSH_INPUT_RETRY_INTERVAL_MS = 250
 const MAX_INPUT_FLUSH_RETRIES = 2
 
 interface DashboardTerminalProps {
+  allowPtySettings?: boolean
   autoStart?: boolean
   getSandbox?: TerminalSandboxResolver
   launchTarget?: TerminalLaunchTarget
@@ -40,7 +53,59 @@ interface DashboardTerminalProps {
   userId: string
 }
 
+type TerminalUiState = {
+  arePtySettingsLoaded: boolean
+  isPtySettingsOpen: boolean
+  pendingLaunch: PendingTerminalLaunch | null
+  ptyOptions: TerminalPtyOptions
+}
+
+type TerminalUiAction =
+  | { options: TerminalPtyOptions; type: 'loadPtyOptions' }
+  | { open: boolean; type: 'setPtySettingsOpen' }
+  | { launch: PendingTerminalLaunch | null; type: 'setPendingLaunch' }
+  | { options: TerminalPtyOptions; type: 'setPtyOptions' }
+
+function terminalUiReducer(
+  state: TerminalUiState,
+  action: TerminalUiAction
+): TerminalUiState {
+  switch (action.type) {
+    case 'loadPtyOptions':
+      return {
+        ...state,
+        arePtySettingsLoaded: true,
+        ptyOptions: action.options,
+      }
+    case 'setPtySettingsOpen':
+      return { ...state, isPtySettingsOpen: action.open }
+    case 'setPendingLaunch':
+      return { ...state, pendingLaunch: action.launch }
+    case 'setPtyOptions':
+      return { ...state, ptyOptions: action.options }
+  }
+}
+
+function getInitialPtyOptions({
+  launchTargetPtyOptions,
+  requiresConfirmation,
+}: {
+  launchTargetPtyOptions: TerminalPtyOptions
+  requiresConfirmation: boolean
+}) {
+  return requiresConfirmation ? {} : launchTargetPtyOptions
+}
+
+function parseSerializedPtyOptions(value: string): TerminalPtyOptions {
+  try {
+    return normalizePtyOptions(JSON.parse(value) as TerminalPtyOptions)
+  } catch {
+    return {}
+  }
+}
+
 export default function DashboardTerminal({
+  allowPtySettings = false,
   autoStart = false,
   getSandbox,
   launchTarget,
@@ -58,9 +123,25 @@ export default function DashboardTerminal({
   const [template, setTemplate] = useState(
     normalizeTerminalTemplate(launchTarget?.template) ?? 'base'
   )
-  const [pendingLaunch, setPendingLaunch] =
-    useState<PendingTerminalLaunch | null>(null)
+  const launchTargetPtyOptions = normalizePtyOptions(
+    launchTarget?.ptyOptions ?? {}
+  )
+  const launchTargetPtyOptionsKey = JSON.stringify(launchTargetPtyOptions)
+  const launchTargetRequiresConfirmation =
+    launchTarget?.requiresConfirmation === true
+  const [uiState, dispatchUi] = useReducer(terminalUiReducer, null, () => ({
+    arePtySettingsLoaded: !allowPtySettings,
+    isPtySettingsOpen: false,
+    pendingLaunch: null,
+    ptyOptions: getInitialPtyOptions({
+      launchTargetPtyOptions,
+      requiresConfirmation: launchTargetRequiresConfirmation,
+    }),
+  }))
+  const { arePtySettingsLoaded, isPtySettingsOpen, pendingLaunch, ptyOptions } =
+    uiState
 
+  const ptyOptionsRef = useRef<TerminalPtyOptions>(ptyOptions)
   const sandboxRef = useRef<Sandbox | null>(null)
   const ptyRef = useRef<CommandHandle | null>(null)
   const pidRef = useRef<number | undefined>(undefined)
@@ -337,7 +418,7 @@ export default function DashboardTerminal({
           rows: terminalSize.rows,
           timeoutMs: 0,
           requestTimeoutMs: TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS,
-          cwd: DEFAULT_CWD,
+          ...normalizePtyOptions(ptyOptionsRef.current),
           onData: (data) => {
             appendOutput(data)
           },
@@ -445,14 +526,17 @@ export default function DashboardTerminal({
         return
       }
 
-      if (command.trim()) {
-        // Commands can come from links, so require an explicit click before
-        // sending anything into the PTY.
-        setPendingLaunch({
-          command: command.trim(),
-          target: {
-            ...options.target,
-            template: nextTemplate,
+      if (command.trim() || options.target?.requiresConfirmation) {
+        // Commands and PTY settings can come from links, so require an
+        // explicit click before using them to start or write to a terminal.
+        dispatchUi({
+          type: 'setPendingLaunch',
+          launch: {
+            command: command.trim() || undefined,
+            target: {
+              ...options.target,
+              template: nextTemplate,
+            },
           },
         })
         return
@@ -472,25 +556,39 @@ export default function DashboardTerminal({
   )
 
   const confirmPendingLaunch = useCallback(
-    (command: string) => {
+    (command?: string, confirmedPtyOptions?: TerminalPtyOptions) => {
       if (!pendingLaunch) return
 
-      const normalizedCommand = command.trim()
-      if (!normalizedCommand) return
+      const normalizedCommand = command?.trim() ?? ''
+      if (pendingLaunch.command && !normalizedCommand) return
 
       const { target: launchTarget } = pendingLaunch
+      const hasConfirmedPtyOptions = confirmedPtyOptions !== undefined
+      const nextPtyOptions = hasConfirmedPtyOptions
+        ? normalizePtyOptions({
+            ...launchTarget?.ptyOptions,
+            ...confirmedPtyOptions,
+          })
+        : ptyOptionsRef.current
+      const nextLaunchTarget = {
+        ...launchTarget,
+        ...(hasConfirmedPtyOptions ? { ptyOptions: nextPtyOptions } : {}),
+      }
       const launchTemplate = launchTarget?.template ?? 'base'
       const launchSandboxId = launchTarget?.sandboxId
 
       if (
         status === 'ready' &&
         template === launchTemplate &&
+        launchTarget?.requiresConfirmation !== true &&
         launchTarget?.forceNewSandbox !== true &&
         (!launchSandboxId || activeSandboxId === launchSandboxId)
       ) {
-        setPendingLaunch(null)
-        runCommand(normalizedCommand)
-        if (activeSandboxId) {
+        dispatchUi({ type: 'setPendingLaunch', launch: null })
+        if (normalizedCommand) {
+          runCommand(normalizedCommand)
+        }
+        if (activeSandboxId && normalizedCommand) {
           updateTerminalUrl({
             clearCommand: true,
             sandboxId: activeSandboxId,
@@ -503,11 +601,18 @@ export default function DashboardTerminal({
         return
       }
 
-      setPendingLaunch(null)
-      pendingCommandsRef.current = [normalizedCommand]
+      dispatchUi({ type: 'setPendingLaunch', launch: null })
+      if (hasConfirmedPtyOptions) {
+        ptyOptionsRef.current = nextPtyOptions
+        dispatchUi({ type: 'setPtyOptions', options: nextPtyOptions })
+      }
+      pendingCommandsRef.current = normalizedCommand ? [normalizedCommand] : []
       void startTerminal({
         forceNewSandbox: !launchSandboxId && template !== launchTemplate,
-        target: launchTarget,
+        target: {
+          ...nextLaunchTarget,
+          requiresConfirmation: false,
+        },
       })
     },
     [
@@ -555,7 +660,54 @@ export default function DashboardTerminal({
     startTerminal,
   ])
 
+  const applyPtyOptions = (
+    options: TerminalPtyOptions,
+    { makeDefault }: { makeDefault: boolean }
+  ) => {
+    ptyOptionsRef.current = options
+    dispatchUi({ type: 'setPtyOptions', options })
+    if (makeDefault) {
+      writeStoredTerminalPtyOptions(userId, options)
+    }
+
+    if (sandboxScoped) {
+      if (!reconnectSandboxId && !getSandbox) return
+
+      void startTerminal({
+        target: reconnectTarget,
+      })
+      return
+    }
+
+    if (status === 'ready' || status === 'error') {
+      void startTerminal({ forceNewSandbox: true })
+    }
+  }
+
   useEffect(() => {
+    if (!allowPtySettings) return
+
+    const storedOptions = readStoredTerminalPtyOptions(userId)
+    const currentLaunchTargetPtyOptions = parseSerializedPtyOptions(
+      launchTargetPtyOptionsKey
+    )
+    const nextOptions = normalizePtyOptions({
+      ...storedOptions,
+      ...(launchTargetRequiresConfirmation
+        ? {}
+        : currentLaunchTargetPtyOptions),
+    })
+    ptyOptionsRef.current = nextOptions
+    dispatchUi({ type: 'loadPtyOptions', options: nextOptions })
+  }, [
+    allowPtySettings,
+    launchTargetPtyOptionsKey,
+    launchTargetRequiresConfirmation,
+    userId,
+  ])
+
+  useEffect(() => {
+    if (!arePtySettingsLoaded) return
     if (!autoStart || status !== 'idle' || isStartingRef.current) return
 
     const autoStartTimer = window.setTimeout(() => {
@@ -569,7 +721,13 @@ export default function DashboardTerminal({
     return () => {
       window.clearTimeout(autoStartTimer)
     }
-  }, [autoStart, launchTarget, queueTerminalCommand, status])
+  }, [
+    arePtySettingsLoaded,
+    autoStart,
+    launchTarget,
+    queueTerminalCommand,
+    status,
+  ])
 
   const handlePageHide = useEffectEvent((event: PageTransitionEvent) => {
     if (event.persisted) return
@@ -606,6 +764,7 @@ export default function DashboardTerminal({
   return (
     <>
       <TerminalPanel
+        canConfigurePty={allowPtySettings}
         sandboxId={activeSandboxId}
         restartDisabled={restartDisabled}
         restartLabel={restartLabel}
@@ -613,12 +772,24 @@ export default function DashboardTerminal({
         terminalContainerRef={terminalContainerRef}
         onFocusTerminal={focusTerminal}
         onCopyTerminalText={() => void copyTerminalText()}
+        onConfigurePty={() =>
+          dispatchUi({ type: 'setPtySettingsOpen', open: true })
+        }
         onRestartTerminal={restartTerminal}
+      />
+
+      <PtySettingsDialog
+        open={isPtySettingsOpen}
+        options={ptyOptions}
+        onApply={applyPtyOptions}
+        onOpenChange={(open) =>
+          dispatchUi({ type: 'setPtySettingsOpen', open })
+        }
       />
 
       <DashboardTerminalCommandDialog
         launch={pendingLaunch}
-        onCancel={() => setPendingLaunch(null)}
+        onCancel={() => dispatchUi({ type: 'setPendingLaunch', launch: null })}
         onConfirm={confirmPendingLaunch}
       />
     </>
