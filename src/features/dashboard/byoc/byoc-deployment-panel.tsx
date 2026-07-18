@@ -2834,6 +2834,7 @@ function OperationSummary({
   operation?: ByocOperation
 }) {
   const latest = eventsForOperation(events, operation).at(-1)
+  const waitingMessage = operation ? operationDispatchMessage(operation) : null
   return (
     <div className="flex min-w-0 flex-col gap-2 rounded-md border border-stroke bg-bg p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -2858,7 +2859,8 @@ function OperationSummary({
         ) : null}
       </div>
       <p className="prose-body text-fg-secondary">
-        {latest?.message ??
+        {waitingMessage ??
+          latest?.message ??
           (deployment
             ? `Deployment is ${deployment.status.replaceAll('_', ' ')}.`
             : 'Connect a GCP project and create a deployment to begin.')}
@@ -2878,8 +2880,46 @@ function OperationSummary({
           {operation.error}
         </p>
       ) : null}
+      {operation && isActiveOperation(operation.status) ? (
+        <div className="grid gap-2 border-t border-stroke pt-3 text-xs text-fg-tertiary sm:grid-cols-3">
+          <SummaryRow
+            label="Worker"
+            value={operation.dispatch_state?.replaceAll('_', ' ') ?? 'pending'}
+          />
+          <SummaryRow
+            label="Attempts"
+            value={String(operation.dispatch_attempts ?? 0)}
+          />
+          <SummaryRow
+            label="Heartbeat"
+            value={
+              operation.heartbeat_at
+                ? new Date(operation.heartbeat_at).toLocaleTimeString('en-US', {
+                    timeZone: 'UTC',
+                  })
+                : 'not started'
+            }
+          />
+        </div>
+      ) : null}
     </div>
   )
+}
+
+function operationDispatchMessage(operation: ByocOperation) {
+  if (operation.status !== 'queued' && operation.status !== 'stale') return null
+  if (operation.dispatch_state === 'retry_scheduled') {
+    const retryAt = operation.next_dispatch_at
+      ? new Date(operation.next_dispatch_at).toLocaleTimeString('en-US', {
+          timeZone: 'UTC',
+        })
+      : null
+    return `${operation.dispatch_error ?? 'Worker start failed; retry scheduled.'}${retryAt ? ` Next attempt after ${retryAt} UTC.` : ''}`
+  }
+  if (operation.dispatch_state === 'worker_requested') {
+    return 'Worker requested; waiting for its first heartbeat.'
+  }
+  return 'Waiting for the deployment controller to request a worker.'
 }
 
 function TopologyControl({

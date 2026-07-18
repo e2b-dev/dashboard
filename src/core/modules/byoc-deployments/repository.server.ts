@@ -256,6 +256,17 @@ export interface ByocOperation {
   kind: 'deploy' | 'validate' | 'destroy'
   status: OperationStatus
   client_request_id: string
+  lease_expires_at?: string
+  heartbeat_at?: string
+  dispatched_at?: string
+  dispatch_state?:
+    | 'pending'
+    | 'worker_requested'
+    | 'retry_scheduled'
+    | 'claimed'
+  dispatch_attempts: number
+  dispatch_error?: string
+  next_dispatch_at?: string
   error?: string
   created_at: string
   updated_at: string
