@@ -2875,6 +2875,15 @@ function OperationSummary({
 }
 
 function operationDispatchMessage(operation: ByocOperation) {
+  if (operation.dispatch_state === 'recovery_pending') {
+    if (operation.recovery_reason === 'worker_claim_overdue') {
+      return 'The requested worker is overdue. The deployment controller may request another worker; the first successful claim wins.'
+    }
+    if (operation.recovery_reason === 'lease_expired') {
+      return 'The previous worker lease expired. The deployment controller is recovering this operation.'
+    }
+    return 'The deployment controller is recovering this operation from durable progress.'
+  }
   if (operation.status !== 'queued' && operation.status !== 'stale') return null
   if (operation.dispatch_state === 'retry_scheduled') {
     const retryAt = operation.next_dispatch_at

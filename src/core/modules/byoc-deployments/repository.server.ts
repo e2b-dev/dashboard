@@ -352,9 +352,12 @@ export interface ByocOperation {
     | 'worker_requested'
     | 'retry_scheduled'
     | 'claimed'
+    | 'recovery_pending'
   dispatch_attempts: number
   dispatch_error?: string
   next_dispatch_at?: string
+  redispatch_eligible_at?: string
+  recovery_reason?: 'worker_claim_overdue' | 'lease_expired'
   error?: string
   created_at: string
   updated_at: string
