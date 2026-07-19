@@ -474,6 +474,82 @@ describe('BYOC deployments repository', () => {
     )
   })
 
+  it('loads the backend-owned post-allocation view', async () => {
+    mockRunner({
+      routes: {
+        [`GET /teams/${teamId}/view`]: () =>
+          Response.json({
+            version: 1,
+            phase: 'cloud_access',
+            status: 'action_required',
+            title: 'Connect your cloud account',
+            description: 'Create the generated identity.',
+            deployment_id: deploymentId,
+            target: targetIdentity,
+            steps: [
+              { id: 'cloud_access', label: 'Cloud access', status: 'current' },
+            ],
+            actions: [
+              {
+                id: 'connect_cloud',
+                label: 'Verify and continue',
+                kind: 'primary',
+                enabled: true,
+              },
+            ],
+            updated_at: '2026-07-11T00:00:00Z',
+          }),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).teamView(targetKey)
+    ).resolves.toMatchObject({
+      version: 1,
+      phase: 'cloud_access',
+      deployment_id: deploymentId,
+      target: { team_id: teamId },
+    })
+  })
+
+  it('rejects a backend view for another team', async () => {
+    mockRunner({
+      routes: {
+        [`GET /teams/${teamId}/view`]: () =>
+          Response.json({
+            version: 1,
+            target: { ...targetIdentity, team_id: 'team-b' },
+          }),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).teamView(targetKey)
+    ).rejects.toThrow('BYOC deployments runner returned an invalid team view.')
+  })
+
+  it('rejects a backend view for a previous target allocation', async () => {
+    mockRunner({
+      routes: {
+        [`GET /teams/${teamId}/view`]: () =>
+          Response.json({
+            version: 1,
+            phase: 'cloud_access',
+            status: 'action_required',
+            title: 'Connect your cloud account',
+            description: 'Create the generated identity.',
+            target: { ...targetIdentity, target_key: 'old123target' },
+            steps: [],
+            updated_at: '2026-07-11T00:00:00Z',
+          }),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).teamView(targetKey)
+    ).rejects.toThrow('BYOC deployments runner returned an invalid team view.')
+  })
+
   it('returns no allocated target for a new team', async () => {
     mockRunner({
       routes: {

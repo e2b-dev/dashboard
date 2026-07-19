@@ -250,10 +250,98 @@ export type OperationStatus =
   | 'cancelled'
   | 'stale'
 
+export interface ByocTeamViewStep {
+  id: string
+  label: string
+  status: 'pending' | 'current' | 'complete' | 'skipped' | 'failed'
+  description?: string
+}
+
+export interface ByocTeamViewFact {
+  label: string
+  value: string
+}
+
+export interface ByocTeamViewAction {
+  id: string
+  label: string
+  kind: 'primary' | 'secondary' | 'danger'
+  enabled: boolean
+}
+
+export interface ByocTeamView {
+  version: 1
+  phase: string
+  status: string
+  title: string
+  description: string
+  deployment_id?: string
+  target: ByocTargetIdentity
+  steps: ByocTeamViewStep[]
+  facts?: ByocTeamViewFact[]
+  actions?: ByocTeamViewAction[]
+  activity?: DeploymentEvent[]
+  updated_at: string
+}
+
+const byocTeamViewSchema = z.object({
+  version: z.literal(1),
+  phase: z.string().min(1).max(128),
+  status: z.string().min(1).max(128),
+  title: z.string().min(1).max(256),
+  description: z.string().max(4096),
+  deployment_id: z.uuid().optional(),
+  target: byocTargetIdentitySchema,
+  steps: z
+    .array(
+      z.object({
+        id: z.string().min(1).max(128),
+        label: z.string().min(1).max(256),
+        status: z.enum(['pending', 'current', 'complete', 'skipped', 'failed']),
+        description: z.string().max(4096).optional(),
+      })
+    )
+    .max(50),
+  facts: z
+    .array(
+      z.object({
+        label: z.string().min(1).max(256),
+        value: z.string().max(4096),
+      })
+    )
+    .max(50)
+    .optional(),
+  actions: z
+    .array(
+      z.object({
+        id: z.string().min(1).max(128),
+        label: z.string().min(1).max(256),
+        kind: z.enum(['primary', 'secondary', 'danger']),
+        enabled: z.boolean(),
+      })
+    )
+    .max(20)
+    .optional(),
+  activity: z
+    .array(
+      z.object({
+        deployment_id: z.uuid(),
+        sequence: z.number().int().nonnegative(),
+        phase: z.string().max(128),
+        level: z.string().max(64),
+        message: z.string().max(16_384),
+        created_at: z.string(),
+      })
+    )
+    .max(2_000)
+    .optional(),
+  updated_at: z.string(),
+})
+
 export interface ByocOperation {
   id: string
   deployment_id: string
-  kind: 'deploy' | 'validate' | 'destroy'
+  kind: 'deploy' | 'upgrade' | 'plan' | 'validate' | 'destroy'
   status: OperationStatus
   client_request_id: string
   lease_expires_at?: string
@@ -482,6 +570,22 @@ export function createByocDeploymentsRepository({
   }
 
   return {
+    async teamView(expectedTargetKey: string) {
+      const response = await request<unknown>(`/teams/${teamId}/view`, {})
+      const parsed = byocTeamViewSchema.safeParse(response)
+      if (
+        !parsed.success ||
+        parsed.data.target.team_id !== teamId ||
+        parsed.data.target.target_key !== expectedTargetKey
+      ) {
+        throw new TRPCError({
+          code: 'BAD_GATEWAY',
+          message: 'BYOC deployments runner returned an invalid team view.',
+        })
+      }
+      return parsed.data as ByocTeamView
+    },
+
     locations() {
       return getSuggestedLocations()
     },

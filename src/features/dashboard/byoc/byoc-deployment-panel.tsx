@@ -59,14 +59,9 @@ import {
   shouldRetryCloudConnectionVerification,
 } from './cloud-connection-retry'
 import {
-  buildDeploymentChecks,
   type DeploymentCheckStatus,
   eventsForOperation,
 } from './deployment-checks'
-import {
-  recommendedByocOperation,
-  recommendedByocOperationLabel,
-} from './operation-action'
 import {
   createOptimisticOperation,
   type OperationMutationInput,
@@ -79,6 +74,7 @@ import {
   resolvedTargetLocation,
   targetLocationChangeLocked,
 } from './target-location'
+import { findRetryTeamViewAction, findTeamViewAction } from './team-view'
 import { useByocRequestIntents } from './use-byoc-request-intents'
 
 type Deployment = TRPCRouterOutputs['byoc']['listDeployments'][number]
@@ -169,6 +165,17 @@ export function ByocDeploymentPanel({
       },
     })
   )
+  const teamViewQuery = useQuery({
+    ...trpc.byoc.view.queryOptions({
+      teamSlug,
+      expectedTargetKey:
+        (allocatedTargetQuery.data ?? allocateTarget.data)?.targetKey ??
+        'aaaaaaaaaaaa',
+    }),
+    enabled: Boolean(allocatedTargetQuery.data ?? allocateTarget.data),
+    refetchInterval: (query) =>
+      query.state.data?.status === 'in_progress' ? 1500 : false,
+  })
   const resetTarget = useMutation(
     trpc.byoc.resetTarget.mutationOptions({
       onSuccess: () => {
@@ -232,6 +239,9 @@ export function ByocDeploymentPanel({
     (item) => item.status !== 'destroyed'
   )
   const deployment =
+    deploymentsQuery.data?.find(
+      (item) => item.id === teamViewQuery.data?.deployment_id
+    ) ??
     availableDeployments?.find((item) => item.id === selectedDeploymentId) ??
     latestByTimestamp(availableDeployments)
   const connectionLocation = connection
@@ -263,11 +273,6 @@ export function ByocDeploymentPanel({
     deploymentsQuery.isError ||
     locationChangeLocked
   const provider = target?.provider ?? location?.provider ?? selectedProvider
-  const connectionUsesExpectedDeployer = Boolean(
-    connection &&
-      target &&
-      isExpectedDeployerIdentity(connection.subject_email, target)
-  )
   useEffect(() => {
     requestIntents.connection.acknowledge(connection?.client_request_id)
     requestIntents.createDeployment.acknowledge(deployment?.client_request_id)
@@ -428,6 +433,7 @@ export function ByocDeploymentPanel({
       queryClient.invalidateQueries(
         trpc.byoc.allocatedTarget.queryFilter({ teamSlug })
       ),
+      queryClient.invalidateQueries(trpc.byoc.view.queryFilter({ teamSlug })),
       queryClient.invalidateQueries(
         trpc.byoc.bootstrapBundle.queryFilter({ teamSlug })
       ),
@@ -627,21 +633,32 @@ export function ByocDeploymentPanel({
     (operationsQuery.isError && !operationsQuery.data)
   const selectedDeploymentActive = deployment ? isActive(deployment) : false
   const anyDeploymentActive = deploymentsQuery.data?.some(isActive) ?? false
+  const createDeploymentAction = findTeamViewAction(
+    teamViewQuery.data,
+    'create_deployment'
+  )
+  const updateAction = findTeamViewAction(teamViewQuery.data, 'update')
+  const deployAction = findTeamViewAction(teamViewQuery.data, 'deploy')
+  const validateAction = findTeamViewAction(teamViewQuery.data, 'validate')
+  const destroyAction = findTeamViewAction(teamViewQuery.data, 'destroy')
   const canCreateDeployment =
     !!connection?.id &&
     !!selectedProject &&
     !operationPending &&
     !anyDeploymentActive &&
+    createDeploymentAction?.enabled === true &&
     !deploymentsQuery.data?.some((item) => item.status !== 'destroyed')
   const canDeploy =
     !!deployment?.id &&
     !selectedDeploymentActive &&
     canRunDeploy(deployment) &&
+    (updateAction?.enabled === true || deployAction?.enabled === true) &&
     !operationPending
   const canDestroy =
     !!deployment?.id &&
     !selectedDeploymentActive &&
     deployment.status !== 'destroyed' &&
+    destroyAction?.enabled === true &&
     !operationPending &&
     destroyConfirmationValue === 'destroy'
   const discoveredSubmittedOperation =
@@ -678,6 +695,7 @@ export function ByocDeploymentPanel({
     mutationError(updateTargetLocation.error) ??
     mutationError(resetTarget.error) ??
     queryError(allocatedTargetQuery.error) ??
+    queryError(teamViewQuery.error) ??
     queryError(locationsQuery.error) ??
     queryError(healthQuery.error) ??
     queryError(connectionsQuery.error) ??
@@ -685,6 +703,34 @@ export function ByocDeploymentPanel({
     queryError(deploymentsQuery.error) ??
     queryError(operationsQuery.error) ??
     queryError(eventsQuery.error)
+
+  if (target && teamViewQuery.isError && !teamViewQuery.data) {
+    return (
+      <main className="flex min-w-0 flex-col gap-4">
+        <section className="border-b border-stroke pb-4">
+          <h1 className="prose-headline-medium">BYOC</h1>
+          <p className="mt-1 text-sm text-fg-secondary">
+            The deployment service owns this team&apos;s setup state.
+          </p>
+        </section>
+        <div className="grid min-h-80 place-items-center border border-stroke bg-bg-1 p-6 text-center">
+          <div className="max-w-lg">
+            <WarningIcon className="mx-auto size-5 text-accent-error-highlight" />
+            <p className="mt-3 text-sm text-fg">
+              {queryError(teamViewQuery.error)}
+            </p>
+            <Button
+              className="mt-4"
+              onClick={() => void teamViewQuery.refetch()}
+            >
+              <RefreshIcon />
+              Retry
+            </Button>
+          </div>
+        </div>
+      </main>
+    )
+  }
   const runDeploy = () => {
     if (!deployment) return
     validate.reset()
@@ -706,14 +752,11 @@ export function ByocDeploymentPanel({
       clientRequestId,
     })
   }
-  const runRecommendedOperation = () => {
+  const runBackendPrimaryAction = () => {
     if (
-      recommendedByocOperation({
-        clusterId: deployment?.cluster_id,
-        deploymentStatus: deployment?.status ?? 'draft',
-        latestOperation,
-        topologyDirty,
-      }) === 'validate'
+      validateAction?.enabled &&
+      !updateAction?.enabled &&
+      !deployAction?.enabled
     ) {
       runValidate()
       return
@@ -732,6 +775,7 @@ export function ByocDeploymentPanel({
   if (
     locationsQuery.isPending ||
     allocatedTargetQuery.isPending ||
+    (!!target && teamViewQuery.isPending) ||
     connectionsQuery.isPending ||
     deploymentsQuery.isPending
   ) {
@@ -756,27 +800,21 @@ export function ByocDeploymentPanel({
   const durableRouteAttached = Boolean(
     deployment?.cluster_id && deployment.cluster_endpoint
   )
-  const setupInProgress =
-    !deployment ||
-    (deployment.status !== 'attached' &&
-      !durableRouteAttached &&
-      latestOperation?.kind !== 'destroy')
+  const setupInProgress = Boolean(
+    target &&
+      teamViewQuery.data &&
+      !['ready', 'destroyed'].includes(teamViewQuery.data.phase)
+  )
 
   if (setupInProgress && view === 'configuration') {
     return (
       <>
         <ByocSetupFlow
-          activeOperation={activeOperation}
           bootstrapBundle={currentBootstrapBundle}
           bootstrapError={mutationError(bootstrapBundleQuery.error)}
           bootstrapPending={bootstrapBundleQuery.isFetching}
           canCreateDeployment={canCreateDeployment}
           canDeploy={canDeploy}
-          connection={
-            deployment || connectionUsesExpectedDeployer
-              ? connection
-              : undefined
-          }
           createConnectionError={mutationError(createConnection.error)}
           createConnectionFailureCount={createConnection.failureCount}
           createConnectionPending={createConnection.isPending}
@@ -785,7 +823,6 @@ export function ByocDeploymentPanel({
           deployerAccountId={target?.deployerAccountId ?? ''}
           deployment={deployment}
           deploymentEvents={eventsQuery.data ?? []}
-          deploymentOperation={latestOperation}
           e2bPrincipals={target?.e2bPrincipals ?? []}
           error={error}
           locations={locationsQuery.data ?? []}
@@ -852,6 +889,7 @@ export function ByocDeploymentPanel({
           }
           onProviderChange={handleProviderChange}
           onDeploy={runDeploy}
+          onDestroy={runDestroy}
           onValidate={runValidate}
           onRefresh={() => void refresh()}
           onSetupStart={() => setSetupStarted(true)}
@@ -867,6 +905,7 @@ export function ByocDeploymentPanel({
           target={target}
           targetResetLocked={targetResetLocked}
           topology={topology}
+          view={teamViewQuery.data}
           updateTopology={updateTopology}
         />
         <AlertDialog
@@ -984,13 +1023,14 @@ export function ByocDeploymentPanel({
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="prose-headline-medium">BYOC</h1>
             <StatusBadge
-              status={activeOperation?.status ?? deployment?.status}
+              status={teamViewQuery.data?.status ?? deployment?.status}
             />
           </div>
           <p className="mt-1 truncate text-sm text-fg-secondary">
-            {deployment
-              ? `${deploymentLocation(deployment).region} · ${deployment.domain_name}`
-              : 'Deploy and operate a dedicated E2B region.'}
+            {teamViewQuery.data?.description ??
+              (deployment
+                ? `${deploymentLocation(deployment).region} · ${deployment.domain_name}`
+                : 'Deploy and operate a dedicated E2B region.')}
           </p>
         </div>
         <div className="flex shrink-0 gap-2">
@@ -1036,7 +1076,7 @@ export function ByocDeploymentPanel({
             <div className="flex items-center gap-2">
               <Button
                 disabled={!canDeploy}
-                onClick={runRecommendedOperation}
+                onClick={runBackendPrimaryAction}
                 loading={
                   deploy.isPending
                     ? 'Deploying'
@@ -1046,14 +1086,13 @@ export function ByocDeploymentPanel({
                 }
               >
                 <SettingsIcon />
-                {recommendedByocOperationLabel({
-                  clusterId: deployment.cluster_id,
-                  deploymentStatus: deployment.status,
-                  latestOperation,
-                  topologyDirty,
-                })}
+                {deployAction?.label ??
+                  updateAction?.label ??
+                  validateAction?.label ??
+                  'Review changes'}
               </Button>
-              {deployment.cluster_id ? (
+              {deployment.cluster_id &&
+              (updateAction?.enabled || validateAction?.enabled) ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -1067,10 +1106,18 @@ export function ByocDeploymentPanel({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onSelect={runDeploy}>
-                      <RefreshIcon />
-                      Reconcile infrastructure
-                    </DropdownMenuItem>
+                    {updateAction?.enabled ? (
+                      <DropdownMenuItem onSelect={runDeploy}>
+                        <RefreshIcon />
+                        {updateAction.label}
+                      </DropdownMenuItem>
+                    ) : null}
+                    {validateAction?.enabled ? (
+                      <DropdownMenuItem onSelect={runValidate}>
+                        <CheckCircleIcon />
+                        {validateAction.label}
+                      </DropdownMenuItem>
+                    ) : null}
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : null}
@@ -1109,11 +1156,9 @@ export function ByocDeploymentPanel({
                   deployment={deployment}
                   events={eventsQuery.data ?? []}
                   operation={latestOperation}
+                  view={teamViewQuery.data}
                 />
-                <DeploymentChecklist
-                  events={eventsQuery.data ?? []}
-                  operation={latestOperation}
-                />
+                <DeploymentChecklist steps={teamViewQuery.data?.steps ?? []} />
               </CardContent>
             </Card>
             <Card
@@ -1570,13 +1615,11 @@ function DestroyByocCard({
 }
 
 function ByocSetupFlow({
-  activeOperation,
   bootstrapBundle,
   bootstrapError,
   bootstrapPending,
   canCreateDeployment,
   canDeploy,
-  connection,
   createConnectionError,
   createConnectionFailureCount,
   createConnectionPending,
@@ -1585,7 +1628,6 @@ function ByocSetupFlow({
   deployerAccountId,
   deployment,
   deploymentEvents,
-  deploymentOperation,
   e2bPrincipals,
   error,
   locations,
@@ -1594,6 +1636,7 @@ function ByocSetupFlow({
   onConnect,
   onCreateDeployment,
   onDeploy,
+  onDestroy,
   onGenerateIdentity,
   onResetTarget,
   onValidate,
@@ -1610,15 +1653,14 @@ function ByocSetupFlow({
   targetPending,
   targetResetLocked,
   topology,
+  view,
   updateTopology,
 }: {
-  activeOperation?: ByocOperation
   bootstrapBundle?: BootstrapBundle
   bootstrapError?: string
   bootstrapPending: boolean
   canCreateDeployment: boolean
   canDeploy: boolean
-  connection?: TRPCRouterOutputs['byoc']['listCloudConnections'][number]
   createConnectionError?: string
   createConnectionFailureCount: number
   createConnectionPending: boolean
@@ -1627,7 +1669,6 @@ function ByocSetupFlow({
   deployerAccountId: string
   deployment?: Deployment
   deploymentEvents: DeploymentEvent[]
-  deploymentOperation?: ByocOperation
   e2bPrincipals: string[]
   error?: string
   locations: ByocLocation[]
@@ -1636,6 +1677,7 @@ function ByocSetupFlow({
   onConnect: () => void
   onCreateDeployment: () => void
   onDeploy: () => void
+  onDestroy: () => void
   onGenerateIdentity: () => void
   onResetTarget: () => void
   onValidate: () => void
@@ -1652,9 +1694,10 @@ function ByocSetupFlow({
   targetPending: boolean
   targetResetLocked: boolean
   topology: TopologyDraft
+  view?: TRPCRouterOutputs['byoc']['view']
   updateTopology: (patch: Partial<TopologyDraft>) => void
 }) {
-  if (!setupStarted && !connection) {
+  if (!setupStarted && !target) {
     return (
       <main className="flex min-w-0 flex-col gap-6">
         <section className="border-b border-stroke pb-4">
@@ -1699,16 +1742,21 @@ function ByocSetupFlow({
     )
   }
 
-  const configuring =
-    !!connection &&
-    (!deployment ||
-      ['draft', 'plan_ready', 'plan_changed', 'plan_noop'].includes(
-        deployment.status
-      )) &&
-    !activeOperation
-  const checks = buildDeploymentChecks(deploymentEvents, deploymentOperation)
-  const completedChecks = checks.filter((check) =>
-    isCompletedCheck(check.status)
+  const cloudAccessRequired = view?.phase === 'cloud_access'
+  const configuring = view?.phase === 'configuration'
+  const configurationAction =
+    findTeamViewAction(view, 'create_deployment') ??
+    findTeamViewAction(view, 'deploy')
+  const retryAction = findRetryTeamViewAction(view)
+  const retry =
+    retryAction?.id === 'retry_destroy'
+      ? onDestroy
+      : retryAction?.id === 'retry_validate'
+        ? onValidate
+        : onDeploy
+  const steps = view?.steps ?? []
+  const completedSteps = steps.filter(
+    (step) => step.status === 'complete' || step.status === 'skipped'
   ).length
 
   return (
@@ -1716,14 +1764,14 @@ function ByocSetupFlow({
       <section className="flex flex-col gap-3 border-b border-stroke pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="prose-headline-medium">Set up BYOC</h1>
-            <StatusBadge
-              status={activeOperation?.status ?? deployment?.status}
-            />
+            <h1 className="prose-headline-medium">
+              {view?.title ?? 'Set up BYOC'}
+            </h1>
+            <StatusBadge status={view?.status ?? deployment?.status} />
           </div>
           <p className="mt-1 text-sm text-fg-secondary">
-            Choose a cloud and region, connect your account, and let E2B deploy
-            the region.
+            {view?.description ??
+              'Choose a cloud and region, connect your account, and let E2B deploy the region.'}
           </p>
         </div>
         <Button variant="secondary" onClick={onRefresh}>
@@ -1732,11 +1780,7 @@ function ByocSetupFlow({
         </Button>
       </section>
 
-      <SetupStepRail
-        connectionReady={!!connection}
-        deployment={deployment}
-        checks={checks}
-      />
+      {view ? <SetupStepRail steps={steps} /> : null}
 
       {error ? (
         <div className="flex items-start gap-2 border border-accent-error-highlight/35 bg-accent-error-highlight/10 p-3 text-fg">
@@ -1745,7 +1789,7 @@ function ByocSetupFlow({
         </div>
       ) : null}
 
-      {!connection ? (
+      {cloudAccessRequired ? (
         <SetupServiceAccount
           bootstrapBundle={bootstrapBundle}
           bootstrapError={bootstrapError}
@@ -1777,6 +1821,7 @@ function ByocSetupFlow({
           canDeploy={canDeploy}
           createDeploymentPending={createDeploymentPending}
           deployment={deployment}
+          actionLabel={configurationAction?.label}
           onCreateDeployment={onCreateDeployment}
           onDeploy={onDeploy}
           operationPending={operationPending}
@@ -1787,21 +1832,13 @@ function ByocSetupFlow({
         />
       ) : (
         <SetupDeploymentProgress
-          checks={checks}
-          completedChecks={completedChecks}
-          deployment={deployment}
+          completedSteps={completedSteps}
           events={deploymentEvents}
-          onRetry={
-            deployment?.cluster_id &&
-            !(
-              deploymentOperation?.kind === 'validate' &&
-              deploymentOperation.status === 'failed_terminal'
-            )
-              ? onValidate
-              : onDeploy
-          }
-          operation={deploymentOperation}
+          onRetry={retry}
           operationPending={operationPending}
+          retryAction={retryAction}
+          steps={steps}
+          view={view}
         />
       )}
     </main>
@@ -1818,32 +1855,21 @@ function SetupBenefit({ label, text }: { label: string; text: string }) {
 }
 
 function SetupStepRail({
-  checks,
-  connectionReady,
-  deployment,
+  steps,
 }: {
-  checks: ReturnType<typeof buildDeploymentChecks>
-  connectionReady: boolean
-  deployment?: Deployment
+  steps: TRPCRouterOutputs['byoc']['view']['steps']
 }) {
-  const infrastructureReady = checks
-    .filter((check) => check.group === 'infrastructure')
-    .every((check) => isCompletedCheck(check.status))
-  const applicationsReady = checks
-    .filter((check) => check.group === 'applications')
-    .every((check) => isCompletedCheck(check.status))
-  const verificationReady = isCompletedCheck(checks.at(-1)?.status)
-  const steps = [
-    { label: 'Cloud access', complete: connectionReady },
-    { label: 'Configuration', complete: !!deployment },
-    { label: 'Infrastructure', complete: infrastructureReady },
-    { label: 'Applications', complete: applicationsReady },
-    { label: 'Verification', complete: verificationReady },
-  ]
-  const current = Math.max(
-    0,
-    steps.findIndex((step) => !step.complete)
-  )
+  const currentIndex = steps.findIndex((step) => step.status === 'current')
+  const failedIndex = steps.findIndex((step) => step.status === 'failed')
+  const pendingIndex = steps.findIndex((step) => step.status === 'pending')
+  const current =
+    currentIndex >= 0
+      ? currentIndex
+      : failedIndex >= 0
+        ? failedIndex
+        : pendingIndex >= 0
+          ? pendingIndex
+          : Math.max(0, steps.length - 1)
   const currentStep = steps[current] ?? steps[0]
 
   return (
@@ -1863,7 +1889,12 @@ function SetupStepRail({
           </div>
         </div>
         <span className="shrink-0 text-xs text-fg-tertiary">
-          {steps.filter((step) => step.complete).length} complete
+          {
+            steps.filter(
+              (step) => step.status === 'complete' || step.status === 'skipped'
+            ).length
+          }{' '}
+          complete
         </span>
       </div>
       <ol className="hidden grid-cols-5 gap-px border border-stroke bg-stroke lg:grid">
@@ -1878,14 +1909,14 @@ function SetupStepRail({
             <span
               className={cn(
                 'grid size-5 shrink-0 place-items-center border text-[11px]',
-                step.complete
+                step.status === 'complete' || step.status === 'skipped'
                   ? 'border-accent-success-highlight/40 bg-accent-success-highlight/10 text-accent-success-highlight'
                   : index === current
                     ? 'border-accent-main-highlight text-accent-main-highlight'
                     : 'border-stroke text-fg-tertiary'
               )}
             >
-              {step.complete ? (
+              {step.status === 'complete' || step.status === 'skipped' ? (
                 <CheckCircleIcon className="size-3.5" />
               ) : (
                 index + 1
@@ -2186,6 +2217,7 @@ function SetupServiceAccount({
 }
 
 function SetupConfiguration({
+  actionLabel,
   canCreateDeployment,
   canDeploy,
   createDeploymentPending,
@@ -2198,6 +2230,7 @@ function SetupConfiguration({
   topology,
   updateTopology,
 }: {
+  actionLabel?: string
   canCreateDeployment: boolean
   canDeploy: boolean
   createDeploymentPending: boolean
@@ -2271,7 +2304,7 @@ function SetupConfiguration({
               loading={createDeploymentPending ? 'Deploying' : undefined}
               onClick={onCreateDeployment}
             >
-              Deploy initial configuration
+              {actionLabel ?? 'Deploy initial configuration'}
               <ArrowRightIcon />
             </Button>
           ) : (
@@ -2279,7 +2312,7 @@ function SetupConfiguration({
               disabled={!canDeploy || operationPending}
               onClick={onDeploy}
             >
-              Deploy initial configuration
+              {actionLabel ?? 'Deploy initial configuration'}
               <ArrowRightIcon />
             </Button>
           )}
@@ -2306,83 +2339,48 @@ function SetupConfiguration({
 }
 
 function SetupDeploymentProgress({
-  checks,
-  completedChecks,
-  deployment,
+  completedSteps,
   events,
   onRetry,
-  operation,
   operationPending,
+  retryAction,
+  steps,
+  view,
 }: {
-  checks: ReturnType<typeof buildDeploymentChecks>
-  completedChecks: number
-  deployment?: Deployment
+  completedSteps: number
   events: DeploymentEvent[]
   onRetry: () => void
-  operation?: ByocOperation
   operationPending: boolean
+  retryAction?: { id: string; label: string; enabled: boolean }
+  steps: TRPCRouterOutputs['byoc']['view']['steps']
+  view?: TRPCRouterOutputs['byoc']['view']
 }) {
-  const failed =
-    deployment?.status === 'failed' || operation?.status.startsWith('failed')
-  const canRetryDeploy = failed && operation?.kind !== 'destroy'
+  const failed = view?.status.includes('failed') ?? false
+  const canRetryDeploy = Boolean(retryAction?.enabled)
   return (
     <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
       <Card variant="layer" className="rounded-lg">
         <CardHeader className="flex-row items-start justify-between gap-4">
           <div>
-            <CardTitle>
-              {operation?.kind === 'validate'
-                ? 'Validating your BYOC region'
-                : 'Deploying your BYOC region'}
-            </CardTitle>
+            <CardTitle>{view?.title ?? 'Deployment state'}</CardTitle>
             <p className="mt-1 text-sm text-fg-secondary">
-              {completedChecks} of {checks.length} checks complete
+              {completedSteps} of {steps.length} steps complete
             </p>
           </div>
           {canRetryDeploy ? (
             <Button disabled={operationPending} onClick={onRetry}>
-              {deployment?.cluster_id && operation?.status !== 'failed_terminal'
-                ? 'Retry validation'
-                : 'Retry deployment'}
+              {retryAction?.label ?? 'Retry'}
             </Button>
           ) : failed ? (
             <WarningIcon className="size-5 text-accent-error-highlight" />
-          ) : (
+          ) : view?.status === 'in_progress' ? (
             <SpinnerIcon className="size-5 animate-spin text-accent-main-highlight" />
+          ) : (
+            <CheckCircleIcon className="size-5 text-accent-success-highlight" />
           )}
         </CardHeader>
         <CardContent className="grid gap-5">
-          {operation?.kind === 'validate' ? (
-            <SetupPhase
-              title="Validation"
-              description="Live health, base-template, and sandbox checks without infrastructure changes."
-              checks={checks}
-            />
-          ) : (
-            <>
-              <SetupPhase
-                title="Cloud infrastructure"
-                description="Project access, Redis, network, compute, storage, and DNS."
-                checks={checks.filter(
-                  (check) => check.group === 'infrastructure'
-                )}
-              />
-              <SetupPhase
-                title="Applications"
-                description="E2B services and final infrastructure convergence."
-                checks={checks.filter(
-                  (check) => check.group === 'applications'
-                )}
-              />
-              <SetupPhase
-                title="Verification"
-                description="A real sandbox is started and checked before traffic is attached."
-                checks={checks.filter(
-                  (check) => check.group === 'verification'
-                )}
-              />
-            </>
-          )}
+          <SetupBackendSteps steps={steps} />
         </CardContent>
       </Card>
       <Card variant="layer" className="h-fit rounded-lg">
@@ -2397,83 +2395,49 @@ function SetupDeploymentProgress({
   )
 }
 
-function SetupPhase({
-  checks,
-  description,
-  title,
+function SetupBackendSteps({
+  steps,
 }: {
-  checks: ReturnType<typeof buildDeploymentChecks>
-  description: string
-  title: string
+  steps: TRPCRouterOutputs['byoc']['view']['steps']
 }) {
   return (
-    <div className="border border-stroke bg-bg">
-      <div className="border-b border-stroke px-4 py-3">
-        <h3 className="text-sm font-medium text-fg">{title}</h3>
-        <p className="mt-0.5 text-xs text-fg-secondary">{description}</p>
-      </div>
-      <ol className="divide-y divide-stroke">
-        {checks.map((check) => (
-          <li
-            className="grid grid-cols-[20px_minmax(0,1fr)] gap-2 px-4 py-3"
-            key={check.label}
-          >
-            <CheckStatusIcon status={check.status} />
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-fg">{check.label}</p>
-              <p className="mt-0.5 text-xs text-fg-secondary">
-                {check.message}
-              </p>
-            </div>
-          </li>
-        ))}
-      </ol>
-    </div>
-  )
-}
-
-function DeploymentChecklist({
-  events,
-  operation,
-}: {
-  events: DeploymentEvent[]
-  operation?: ByocOperation
-}) {
-  const checks = buildDeploymentChecks(events, operation)
-
-  return (
-    <ol aria-live="polite" className="grid gap-1">
-      {checks.map((check) => (
+    <ol className="divide-y divide-stroke border border-stroke bg-bg">
+      {steps.map((step) => (
         <li
-          className="grid grid-cols-[20px_minmax(0,1fr)] items-start gap-2 rounded-md px-2 py-2 sm:grid-cols-[20px_minmax(0,1fr)_auto]"
-          key={check.label}
+          className="grid grid-cols-[20px_minmax(0,1fr)] gap-2 px-4 py-3"
+          key={step.id}
         >
-          <CheckStatusIcon status={check.status} />
+          <CheckStatusIcon status={teamViewStepStatus(step.status)} />
           <div className="min-w-0">
-            <p className="prose-body font-medium text-fg">
-              {check.label}
-              <span className="sr-only">: {check.status}</span>
-            </p>
-            <p className="prose-caption break-words text-fg-secondary">
-              {check.message}
-            </p>
+            <p className="text-sm font-medium text-fg">{step.label}</p>
+            {step.description ? (
+              <p className="mt-0.5 text-xs text-fg-secondary">
+                {step.description}
+              </p>
+            ) : null}
           </div>
-          {check.timestamp ? (
-            <time
-              className="prose-caption col-start-2 text-fg-tertiary sm:col-start-auto"
-              dateTime={check.timestamp}
-            >
-              {new Date(check.timestamp).toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit',
-                timeZone: 'UTC',
-              })}
-            </time>
-          ) : null}
         </li>
       ))}
     </ol>
   )
+}
+
+function teamViewStepStatus(
+  status: TRPCRouterOutputs['byoc']['view']['steps'][number]['status']
+): DeploymentCheckStatus {
+  if (status === 'complete') return 'passed'
+  if (status === 'skipped') return 'skipped'
+  if (status === 'current') return 'running'
+  if (status === 'failed') return 'failed'
+  return 'pending'
+}
+
+function DeploymentChecklist({
+  steps,
+}: {
+  steps: TRPCRouterOutputs['byoc']['view']['steps']
+}) {
+  return <SetupBackendSteps steps={steps} />
 }
 
 function CheckStatusIcon({ status }: { status: DeploymentCheckStatus }) {
@@ -2494,10 +2458,6 @@ function CheckStatusIcon({ status }: { status: DeploymentCheckStatus }) {
     return <WarningIcon className="mt-0.5 size-4 text-accent-error-highlight" />
   }
   return <span className="mt-0.5 size-4 rounded border border-stroke" />
-}
-
-function isCompletedCheck(status?: DeploymentCheckStatus) {
-  return status === 'passed' || status === 'skipped'
 }
 
 function BootstrapArtifacts({
@@ -2736,13 +2696,6 @@ function cloudConnectionLocation(
       }
 }
 
-function isExpectedDeployerIdentity(identity: string, target: ByocTarget) {
-  return target.provider === 'gcp'
-    ? identity.startsWith(`${target.deployerAccountId}@`)
-    : identity.startsWith('arn:aws:iam::') &&
-        identity.split('/').at(-1) === target.deployerAccountId
-}
-
 function sameLocation(left: ByocLocation, right: ByocLocation) {
   return (
     left.provider === right.provider &&
@@ -2802,13 +2755,14 @@ function topologiesEqual(left: TopologyDraft, right: TopologyDraft) {
 
 function StatusBadge({ status }: { status?: string }) {
   const tone =
-    status === 'attached'
+    status === 'attached' || status === 'ready' || status === 'complete'
       ? 'border-accent-success-highlight/40 bg-accent-success-highlight/10 text-accent-success-highlight'
-      : status === 'failed'
+      : status?.includes('failed')
         ? 'border-accent-error-highlight/40 bg-accent-error-highlight/10 text-accent-error-highlight'
-        : status &&
-            (isActiveStatus(status as Deployment['status']) ||
-              isActiveOperation(status))
+        : status === 'in_progress' ||
+            (status &&
+              (isActiveStatus(status as Deployment['status']) ||
+                isActiveOperation(status)))
           ? 'border-accent-main-highlight/40 bg-accent-main-highlight/10 text-accent-main-highlight'
           : 'border-stroke bg-bg-1 text-fg-secondary'
 
@@ -2828,10 +2782,12 @@ function OperationSummary({
   deployment,
   events,
   operation,
+  view,
 }: {
   deployment?: Deployment
   events: DeploymentEvent[]
   operation?: ByocOperation
+  view?: TRPCRouterOutputs['byoc']['view']
 }) {
   const latest = eventsForOperation(events, operation).at(-1)
   const waitingMessage = operation ? operationDispatchMessage(operation) : null
@@ -2839,11 +2795,12 @@ function OperationSummary({
     <div className="flex min-w-0 flex-col gap-2 rounded-md border border-stroke bg-bg p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="font-medium text-fg">
-          {operation
-            ? `${operation.kind} · ${operation.status.replaceAll('_', ' ')}`
-            : deployment
-              ? deployment.status.replaceAll('_', ' ')
-              : 'Waiting for setup'}
+          {view?.title ??
+            (operation
+              ? `${operation.kind} · ${operation.status.replaceAll('_', ' ')}`
+              : deployment
+                ? deployment.status.replaceAll('_', ' ')
+                : 'Waiting for setup')}
         </div>
         {latest ? (
           <time
@@ -2859,7 +2816,8 @@ function OperationSummary({
         ) : null}
       </div>
       <p className="prose-body text-fg-secondary">
-        {waitingMessage ??
+        {view?.description ??
+          waitingMessage ??
           latest?.message ??
           (deployment
             ? `Deployment is ${deployment.status.replaceAll('_', ' ')}.`
@@ -2901,6 +2859,16 @@ function OperationSummary({
             }
           />
         </div>
+      ) : null}
+      {view?.facts?.length ? (
+        <dl className="grid gap-x-4 gap-y-2 border-t border-stroke pt-3 text-xs sm:grid-cols-2 lg:grid-cols-4">
+          {view.facts.map((fact) => (
+            <div className="min-w-0" key={fact.label}>
+              <dt className="text-fg-tertiary">{fact.label}</dt>
+              <dd className="mt-0.5 truncate text-fg">{fact.value}</dd>
+            </div>
+          ))}
+        </dl>
       ) : null}
     </div>
   )

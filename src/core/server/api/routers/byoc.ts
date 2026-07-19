@@ -111,6 +111,16 @@ export async function createInitialDeployment(
 }
 
 export const byocRouter = createTRPCRouter({
+  view: protectedTeamProcedure
+    .input(
+      z.object({ expectedTargetKey: z.string().regex(/^[a-z][a-z0-9]{11}$/) })
+    )
+    .query(({ ctx, input }) =>
+      createByocDeploymentsRepository({ teamId: ctx.teamId }).teamView(
+        input.expectedTargetKey
+      )
+    ),
+
   locations: protectedTeamProcedure.query(({ ctx }) =>
     createByocDeploymentsRepository({ teamId: ctx.teamId }).locations()
   ),
