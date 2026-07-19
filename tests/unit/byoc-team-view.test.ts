@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  canExecuteRetryTeamViewAction,
   findRetryTeamViewAction,
   findTeamViewAction,
 } from '@/features/dashboard/byoc/team-view'
@@ -35,5 +36,38 @@ describe('backend-owned BYOC actions', () => {
 
   it('does not invent actions omitted by the backend', () => {
     expect(findTeamViewAction({ actions: [] }, 'retry')).toBeUndefined()
+  })
+
+  it('keeps legacy v1 retries executable during a mixed rollout', () => {
+    expect(
+      canExecuteRetryTeamViewAction({
+        version: 1,
+        actions: [
+          { id: 'retry_destroy', label: 'Retry destroy', enabled: true },
+        ],
+      })
+    ).toBe(true)
+  })
+
+  it('requires an exact operation ID for v2 retries', () => {
+    expect(
+      canExecuteRetryTeamViewAction({
+        version: 2,
+        actions: [{ id: 'retry_operation', label: 'Retry', enabled: true }],
+      })
+    ).toBe(false)
+    expect(
+      canExecuteRetryTeamViewAction({
+        version: 2,
+        actions: [
+          {
+            id: 'retry_operation',
+            label: 'Retry',
+            enabled: true,
+            operation_id: '55555555-5555-4555-8555-555555555555',
+          },
+        ],
+      })
+    ).toBe(true)
   })
 })

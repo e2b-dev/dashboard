@@ -74,7 +74,11 @@ import {
   resolvedTargetLocation,
   targetLocationChangeLocked,
 } from './target-location'
-import { findRetryTeamViewAction, findTeamViewAction } from './team-view'
+import {
+  canExecuteRetryTeamViewAction,
+  findRetryTeamViewAction,
+  findTeamViewAction,
+} from './team-view'
 import { useByocRequestIntents } from './use-byoc-request-intents'
 
 type Deployment = TRPCRouterOutputs['byoc']['listDeployments'][number]
@@ -593,6 +597,20 @@ export function ByocDeploymentPanel({
     })
   )
 
+  const retryOperation = useMutation(
+    trpc.byoc.retryOperation.mutationOptions({
+      onSuccess: replaceOptimisticOperation,
+      onSettled: () => refresh(),
+    })
+  )
+
+  const cancelOperation = useMutation(
+    trpc.byoc.cancelOperation.mutationOptions({
+      onSuccess: replaceOptimisticOperation,
+      onSettled: () => refresh(),
+    })
+  )
+
   const selectedProject =
     projectsQuery.data?.find(
       (project) => project.id === deploymentCloudAccountId(deployment)
@@ -628,6 +646,8 @@ export function ByocDeploymentPanel({
     deploy.isPending ||
     validate.isPending ||
     destroy.isPending ||
+    retryOperation.isPending ||
+    cancelOperation.isPending ||
     !!activeOperation ||
     (!!deployment?.id && operationsQuery.isPending) ||
     (operationsQuery.isError && !operationsQuery.data)
@@ -691,6 +711,8 @@ export function ByocDeploymentPanel({
     deployError ??
     validateError ??
     destroyError ??
+    mutationError(retryOperation.error) ??
+    mutationError(cancelOperation.error) ??
     mutationError(allocateTarget.error) ??
     mutationError(updateTargetLocation.error) ??
     mutationError(resetTarget.error) ??
@@ -806,7 +828,7 @@ export function ByocDeploymentPanel({
       !['ready', 'destroyed'].includes(teamViewQuery.data.phase)
   )
 
-  if (setupInProgress && view === 'configuration') {
+  if ((!target || setupInProgress) && view === 'configuration') {
     return (
       <>
         <ByocSetupFlow
@@ -827,13 +849,6 @@ export function ByocDeploymentPanel({
           error={error}
           locations={locationsQuery.data ?? []}
           location={location}
-          locationLocked={
-            locationChangeLocked ||
-            allocateTarget.isPending ||
-            updateTargetLocation.isPending ||
-            allocateTarget.isError ||
-            allocatedTargetQuery.isFetching
-          }
           onGenerateIdentity={() => {
             if (!location) return
             allocateTarget.mutate({ teamSlug, ...location })
@@ -890,10 +905,19 @@ export function ByocDeploymentPanel({
           onProviderChange={handleProviderChange}
           onDeploy={runDeploy}
           onDestroy={runDestroy}
+          onCancelOperation={(operationId) =>
+            cancelOperation.mutate({ teamSlug, operationId })
+          }
+          onRetryOperation={(operationId) =>
+            retryOperation.mutate({ teamSlug, operationId })
+          }
           onValidate={runValidate}
           onRefresh={() => void refresh()}
           onSetupStart={() => setSetupStarted(true)}
           operationPending={operationPending}
+          operationControlPending={
+            retryOperation.isPending || cancelOperation.isPending
+          }
           targetPending={
             allocateTarget.isPending ||
             updateTargetLocation.isPending ||
@@ -1614,7 +1638,7 @@ function DestroyByocCard({
   )
 }
 
-function ByocSetupFlow({
+export function ByocSetupFlow({
   bootstrapBundle,
   bootstrapError,
   bootstrapPending,
@@ -1632,13 +1656,14 @@ function ByocSetupFlow({
   error,
   locations,
   location,
-  locationLocked,
   onConnect,
   onCreateDeployment,
   onDeploy,
   onDestroy,
+  onCancelOperation,
   onGenerateIdentity,
   onResetTarget,
+  onRetryOperation,
   onValidate,
   onRefresh,
   onLocationChange,
@@ -1646,6 +1671,7 @@ function ByocSetupFlow({
   onSetupStart,
   onSetupProjectIdChange,
   operationPending,
+  operationControlPending,
   projectId,
   provider,
   setupStarted,
@@ -1673,13 +1699,14 @@ function ByocSetupFlow({
   error?: string
   locations: ByocLocation[]
   location?: ByocLocation
-  locationLocked: boolean
   onConnect: () => void
   onCreateDeployment: () => void
   onDeploy: () => void
   onDestroy: () => void
+  onCancelOperation: (operationId: string) => void
   onGenerateIdentity: () => void
   onResetTarget: () => void
+  onRetryOperation: (operationId: string) => void
   onValidate: () => void
   onRefresh: () => void
   onLocationChange: (location: ByocLocation) => void
@@ -1687,6 +1714,7 @@ function ByocSetupFlow({
   onSetupStart: () => void
   onSetupProjectIdChange: (value: string) => void
   operationPending: boolean
+  operationControlPending: boolean
   projectId: string
   provider?: ByocProvider
   setupStarted: boolean
@@ -1744,16 +1772,14 @@ function ByocSetupFlow({
 
   const cloudAccessRequired = view?.phase === 'cloud_access'
   const configuring = view?.phase === 'configuration'
+  const choosingLocation = setupStarted && !target
+  const cloudAccessAction = findTeamViewAction(view, 'connect_cloud')
   const configurationAction =
     findTeamViewAction(view, 'create_deployment') ??
     findTeamViewAction(view, 'deploy')
   const retryAction = findRetryTeamViewAction(view)
-  const retry =
-    retryAction?.id === 'retry_destroy'
-      ? onDestroy
-      : retryAction?.id === 'retry_validate'
-        ? onValidate
-        : onDeploy
+  const cancelAction = findTeamViewAction(view, 'cancel_operation')
+  const retryEnabled = canExecuteRetryTeamViewAction(view)
   const steps = view?.steps ?? []
   const completedSteps = steps.filter(
     (step) => step.status === 'complete' || step.status === 'skipped'
@@ -1789,8 +1815,19 @@ function ByocSetupFlow({
         </div>
       ) : null}
 
-      {cloudAccessRequired ? (
+      {choosingLocation ? (
+        <SetupCloudLocation
+          isPending={targetPending}
+          locations={locations}
+          location={location}
+          onContinue={onGenerateIdentity}
+          onLocationChange={onLocationChange}
+          onProviderChange={onProviderChange}
+          provider={provider}
+        />
+      ) : cloudAccessRequired ? (
         <SetupServiceAccount
+          action={cloudAccessAction}
           bootstrapBundle={bootstrapBundle}
           bootstrapError={bootstrapError}
           bootstrapPending={bootstrapPending}
@@ -1800,14 +1837,9 @@ function ByocSetupFlow({
           error={createConnectionError}
           failureCount={createConnectionFailureCount}
           isPending={createConnectionPending || operationPending}
-          locations={locations}
           location={location}
-          locationLocked={locationLocked}
           onConnect={onConnect}
-          onGenerateIdentity={onGenerateIdentity}
           onResetTarget={onResetTarget}
-          onLocationChange={onLocationChange}
-          onProviderChange={onProviderChange}
           onProjectIdChange={onSetupProjectIdChange}
           projectId={projectId}
           provider={provider}
@@ -1834,14 +1866,147 @@ function ByocSetupFlow({
         <SetupDeploymentProgress
           completedSteps={completedSteps}
           events={deploymentEvents}
-          onRetry={retry}
-          operationPending={operationPending}
+          onCancel={() => {
+            if (cancelAction?.operation_id) {
+              onCancelOperation(cancelAction.operation_id)
+            }
+          }}
+          onRetry={() => {
+            if (retryAction?.operation_id) {
+              onRetryOperation(retryAction.operation_id)
+            } else if (view?.version === 1) {
+              if (retryAction?.id === 'retry_destroy') onDestroy()
+              else if (retryAction?.id === 'retry_validate') onValidate()
+              else if (retryAction?.id === 'retry_deploy') onDeploy()
+            }
+          }}
+          operationPending={operationControlPending}
+          cancelAction={cancelAction}
           retryAction={retryAction}
+          retryEnabled={retryEnabled}
           steps={steps}
           view={view}
         />
       )}
     </main>
+  )
+}
+
+function SetupCloudLocation({
+  isPending,
+  locations,
+  location,
+  onContinue,
+  onLocationChange,
+  onProviderChange,
+  provider,
+}: {
+  isPending: boolean
+  locations: ByocLocation[]
+  location?: ByocLocation
+  onContinue: () => void
+  onLocationChange: (location: ByocLocation) => void
+  onProviderChange: (provider: ByocProvider) => void
+  provider?: ByocProvider
+}) {
+  const availableProviders = [
+    ...new Set(locations.map((candidate) => candidate.provider)),
+  ]
+  const providerLocations = provider
+    ? locations.filter((candidate) => candidate.provider === provider)
+    : []
+
+  return (
+    <section className="mx-auto w-full max-w-3xl min-w-0">
+      <Card variant="layer" className="min-w-0 overflow-hidden rounded-lg">
+        <CardHeader>
+          <CardTitle>1. Choose cloud and region</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-5">
+          <p className="prose-body max-w-2xl text-fg-secondary">
+            Choose where this team&apos;s E2B region will run. You will connect
+            the cloud account in the next step.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label
+              className="grid min-w-0 gap-2 text-sm font-medium"
+              htmlFor="byoc-setup-provider"
+            >
+              Cloud
+              <Select
+                disabled={isPending}
+                onValueChange={(value) =>
+                  onProviderChange(value as ByocProvider)
+                }
+                value={provider}
+              >
+                <SelectTrigger
+                  className="h-10 min-w-0 bg-bg"
+                  id="byoc-setup-provider"
+                >
+                  <SelectValue placeholder="Select a cloud" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableProviders.map((candidate) => (
+                    <SelectItem key={candidate} value={candidate}>
+                      {providerLabel(candidate)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+            <label
+              className="grid min-w-0 gap-2 text-sm font-medium"
+              htmlFor="byoc-setup-location"
+            >
+              Region
+              <Select
+                disabled={!provider || isPending}
+                onValueChange={(value) => {
+                  const nextLocation = providerLocations.find(
+                    (candidate) => locationKey(candidate) === value
+                  )
+                  if (nextLocation) onLocationChange(nextLocation)
+                }}
+                value={location ? locationKey(location) : undefined}
+              >
+                <SelectTrigger
+                  className="h-10 min-w-0 bg-bg"
+                  id="byoc-setup-location"
+                >
+                  <SelectValue placeholder="Select a region" />
+                </SelectTrigger>
+                <SelectContent>
+                  {providerLocations.map((candidate) => (
+                    <SelectItem
+                      key={locationKey(candidate)}
+                      value={locationKey(candidate)}
+                    >
+                      {candidate.region}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+          </div>
+          {location?.provider === 'gcp' ? (
+            <p className="text-xs text-fg-secondary">
+              E2B will place the initial resources in {location.zone}.
+            </p>
+          ) : null}
+        </CardContent>
+        <CardFooter className="mt-0 justify-end border-stroke py-4">
+          <Button
+            disabled={!location || isPending}
+            loading={isPending ? 'Saving' : undefined}
+            onClick={onContinue}
+          >
+            Continue
+            <ArrowRightIcon />
+          </Button>
+        </CardFooter>
+      </Card>
+    </section>
   )
 }
 
@@ -1897,7 +2062,7 @@ function SetupStepRail({
           complete
         </span>
       </div>
-      <ol className="hidden grid-cols-5 gap-px border border-stroke bg-stroke lg:grid">
+      <ol className="hidden grid-flow-col auto-cols-fr gap-px border border-stroke bg-stroke lg:grid">
         {steps.map((step, index) => (
           <li
             className={cn(
@@ -1938,6 +2103,7 @@ function SetupStepRail({
 }
 
 function SetupServiceAccount({
+  action,
   bootstrapBundle,
   bootstrapError,
   bootstrapPending,
@@ -1947,14 +2113,9 @@ function SetupServiceAccount({
   error,
   failureCount,
   isPending,
-  locations,
   location,
-  locationLocked,
   onConnect,
-  onGenerateIdentity,
   onResetTarget,
-  onLocationChange,
-  onProviderChange,
   onProjectIdChange,
   projectId,
   provider,
@@ -1962,6 +2123,11 @@ function SetupServiceAccount({
   targetPending,
   targetResetLocked,
 }: {
+  action?: {
+    id: string
+    label: string
+    enabled: boolean
+  }
   bootstrapBundle?: BootstrapBundle
   bootstrapError?: string
   bootstrapPending: boolean
@@ -1971,14 +2137,9 @@ function SetupServiceAccount({
   error?: string
   failureCount: number
   isPending: boolean
-  locations: ByocLocation[]
   location?: ByocLocation
-  locationLocked: boolean
   onConnect: () => void
-  onGenerateIdentity: () => void
   onResetTarget: () => void
-  onLocationChange: (location: ByocLocation) => void
-  onProviderChange: (provider: ByocProvider) => void
   onProjectIdChange: (value: string) => void
   projectId: string
   provider?: ByocProvider
@@ -1990,100 +2151,27 @@ function SetupServiceAccount({
     provider === 'aws'
       ? /^[0-9]{12}$/.test(projectId)
       : /^[a-z][a-z0-9-]{4,28}[a-z0-9]$/.test(projectId)
-  const availableProviders = [
-    ...new Set(locations.map((candidate) => candidate.provider)),
-  ]
-  const providerLocations = provider
-    ? locations.filter((candidate) => candidate.provider === provider)
-    : []
-  const providerLocked = !!target || locationLocked
-
   return (
     <section className="mx-auto w-full max-w-5xl min-w-0">
       <Card variant="layer" className="min-w-0 overflow-hidden rounded-lg">
         <CardHeader>
-          <CardTitle>Choose cloud and location</CardTitle>
+          <CardTitle>2. Connect your cloud account</CardTitle>
         </CardHeader>
         <CardContent className="grid min-w-0 gap-5">
           <p className="prose-body max-w-2xl text-fg-secondary">
-            Choose the cloud first, then a region available for that provider.
-            Generating this team's target reserves its provider and stable
-            identity.
+            Create the scoped deployer identity in your account, then let E2B
+            verify short-lived access.
           </p>
 
-          <div className="grid gap-4 md:grid-cols-3">
-            <label
-              className="grid min-w-0 gap-2 text-sm font-medium"
-              htmlFor="byoc-setup-provider"
-            >
-              Cloud
-              <Select
-                disabled={isPending || targetPending || providerLocked}
-                onValueChange={(value) =>
-                  onProviderChange(value as ByocProvider)
-                }
-                value={provider}
-              >
-                <SelectTrigger
-                  className="h-10 min-w-0 bg-bg"
-                  id="byoc-setup-provider"
-                >
-                  <SelectValue placeholder="Select a cloud" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableProviders.map((candidate) => (
-                    <SelectItem key={candidate} value={candidate}>
-                      {providerLabel(candidate)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </label>
-            <label
-              className="grid min-w-0 gap-2 text-sm font-medium"
-              htmlFor="byoc-setup-location"
-            >
-              Region
-              <Select
-                disabled={
-                  !provider || isPending || targetPending || locationLocked
-                }
-                onValueChange={(value) => {
-                  const nextLocation = providerLocations.find(
-                    (candidate) => locationKey(candidate) === value
-                  )
-                  if (nextLocation) onLocationChange(nextLocation)
-                }}
-                value={location ? locationKey(location) : undefined}
-              >
-                <SelectTrigger
-                  className="h-10 min-w-0 bg-bg"
-                  id="byoc-setup-location"
-                >
-                  <SelectValue placeholder="Select a region" />
-                </SelectTrigger>
-                <SelectContent>
-                  {providerLocations.map((candidate) => (
-                    <SelectItem
-                      key={locationKey(candidate)}
-                      value={locationKey(candidate)}
-                    >
-                      {candidate.region}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </label>
-            {provider === 'gcp' ? (
-              <div className="grid min-w-0 gap-2 text-sm font-medium">
-                Zone
-                <div className="flex h-10 min-w-0 items-center rounded-md border border-stroke bg-bg-1 px-3 font-mono text-sm font-normal text-fg-secondary">
-                  {location?.provider === 'gcp'
-                    ? location.zone
-                    : 'Select a region'}
-                </div>
-              </div>
-            ) : null}
+          <div className="grid gap-px border border-stroke bg-stroke sm:grid-cols-2">
+            <TargetCell
+              label="Cloud"
+              value={provider && providerLabel(provider)}
+            />
+            <TargetCell
+              label="Region"
+              value={location ? formatLocation(location) : undefined}
+            />
           </div>
 
           {provider ? (
@@ -2136,15 +2224,10 @@ function SetupServiceAccount({
               <div className="flex min-w-0 gap-2">
                 <InfoIcon className="mt-0.5 size-4 shrink-0" />
                 <span>
-                  {providerLocked
-                    ? `This team has reserved ${providerLabel(provider)}.`
-                    : 'Changing the cloud clears the selected region and project before target allocation.'}{' '}
-                  {locationLocked
-                    ? 'The region cannot change after a cloud connection or deployment exists.'
-                    : target
-                      ? 'You can change the region or reset the cloud selection until a connection or deployment exists.'
-                      : 'The region can change until a cloud connection or deployment exists.'}{' '}
-                  E2B uses short-lived{' '}
+                  This team has reserved {providerLabel(provider)} in{' '}
+                  {location?.region}. Reset the selection to choose a different
+                  cloud or region before connecting the account. E2B uses
+                  short-lived{' '}
                   {provider === 'gcp' ? 'impersonation' : 'web identity'}{' '}
                   credentials and never receives a long-lived cloud credential.
                 </span>
@@ -2183,33 +2266,22 @@ function SetupServiceAccount({
                 ? `Create the ${provider === 'gcp' ? 'service account' : 'IAM role'}, then verify that E2B can assume it.`
                 : "Review the location, then generate this team's permanent deployer identity."}
           </p>
-          {target ? (
-            <Button
-              className="shrink-0"
-              disabled={
-                !location ||
-                !validProjectId ||
-                !bootstrapBundle ||
-                (provider === 'gcp' && e2bPrincipals.length === 0) ||
-                isPending
-              }
-              loading={isPending ? 'Verifying' : undefined}
-              onClick={onConnect}
-            >
-              Verify and continue
-              <ArrowRightIcon />
-            </Button>
-          ) : (
-            <Button
-              className="shrink-0"
-              disabled={!location || targetPending}
-              loading={targetPending ? 'Generating' : undefined}
-              onClick={onGenerateIdentity}
-            >
-              Generate deployer identity
-              <ArrowRightIcon />
-            </Button>
-          )}
+          <Button
+            className="shrink-0"
+            disabled={
+              action?.enabled !== true ||
+              !location ||
+              !validProjectId ||
+              !bootstrapBundle ||
+              (provider === 'gcp' && e2bPrincipals.length === 0) ||
+              isPending
+            }
+            loading={isPending ? 'Verifying' : undefined}
+            onClick={onConnect}
+          >
+            {action?.label ?? 'Verify and continue'}
+            <ArrowRightIcon />
+          </Button>
         </CardFooter>
       </Card>
     </section>
@@ -2247,7 +2319,7 @@ function SetupConfiguration({
     <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
       <Card variant="layer" className="rounded-lg">
         <CardHeader>
-          <CardTitle>2. Choose the initial configuration</CardTitle>
+          <CardTitle>3. Choose the initial configuration</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-5 md:grid-cols-3">
           <TopologyControl
@@ -2339,24 +2411,40 @@ function SetupConfiguration({
 }
 
 function SetupDeploymentProgress({
+  cancelAction,
   completedSteps,
   events,
+  onCancel,
   onRetry,
   operationPending,
   retryAction,
+  retryEnabled,
   steps,
   view,
 }: {
+  cancelAction?: {
+    id: string
+    label: string
+    enabled: boolean
+    operation_id?: string
+  }
   completedSteps: number
   events: DeploymentEvent[]
+  onCancel: () => void
   onRetry: () => void
   operationPending: boolean
-  retryAction?: { id: string; label: string; enabled: boolean }
+  retryAction?: {
+    id: string
+    label: string
+    enabled: boolean
+    operation_id?: string
+  }
+  retryEnabled: boolean
   steps: TRPCRouterOutputs['byoc']['view']['steps']
   view?: TRPCRouterOutputs['byoc']['view']
 }) {
   const failed = view?.status.includes('failed') ?? false
-  const canRetryDeploy = Boolean(retryAction?.enabled)
+  const canRetryDeploy = retryEnabled
   return (
     <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
       <Card variant="layer" className="rounded-lg">
@@ -2367,10 +2455,23 @@ function SetupDeploymentProgress({
               {completedSteps} of {steps.length} steps complete
             </p>
           </div>
-          {canRetryDeploy ? (
-            <Button disabled={operationPending} onClick={onRetry}>
-              {retryAction?.label ?? 'Retry'}
-            </Button>
+          {canRetryDeploy || cancelAction?.enabled ? (
+            <div className="flex items-center gap-2">
+              {cancelAction?.enabled ? (
+                <Button
+                  variant="secondary"
+                  disabled={operationPending || !cancelAction.operation_id}
+                  onClick={onCancel}
+                >
+                  {cancelAction.label}
+                </Button>
+              ) : null}
+              {canRetryDeploy ? (
+                <Button disabled={operationPending} onClick={onRetry}>
+                  {retryAction?.label ?? 'Retry'}
+                </Button>
+              ) : null}
+            </div>
           ) : failed ? (
             <WarningIcon className="size-5 text-accent-error-highlight" />
           ) : view?.status === 'in_progress' ? (

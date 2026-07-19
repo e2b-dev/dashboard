@@ -267,10 +267,11 @@ export interface ByocTeamViewAction {
   label: string
   kind: 'primary' | 'secondary' | 'danger'
   enabled: boolean
+  operation_id?: string
 }
 
 export interface ByocTeamView {
-  version: 1
+  version: 1 | 2
   phase: string
   status: string
   title: string
@@ -285,7 +286,7 @@ export interface ByocTeamView {
 }
 
 const byocTeamViewSchema = z.object({
-  version: z.literal(1),
+  version: z.union([z.literal(1), z.literal(2)]),
   phase: z.string().min(1).max(128),
   status: z.string().min(1).max(128),
   title: z.string().min(1).max(256),
@@ -318,6 +319,7 @@ const byocTeamViewSchema = z.object({
         label: z.string().min(1).max(256),
         kind: z.enum(['primary', 'secondary', 'danger']),
         enabled: z.boolean(),
+        operation_id: z.uuid().optional(),
       })
     )
     .max(20)
@@ -929,6 +931,48 @@ export function createByocDeploymentsRepository({
       return request<ByocOperation[]>(`/deployments/${deploymentId}/operations`)
     },
 
+    async retryOperation(operationId: string) {
+      const operation = await request<ByocOperation>(
+        `/operations/${operationId}`
+      )
+      await getOwnedDeployment(operation.deployment_id)
+      const retried = await request<ByocOperation>(
+        `/operations/${operationId}/retry`,
+        { method: 'POST' }
+      )
+      if (
+        retried.id !== operationId ||
+        retried.deployment_id !== operation.deployment_id
+      ) {
+        throw new TRPCError({
+          code: 'BAD_GATEWAY',
+          message: 'BYOC deployments runner returned another operation.',
+        })
+      }
+      return retried
+    },
+
+    async cancelOperation(operationId: string) {
+      const operation = await request<ByocOperation>(
+        `/operations/${operationId}`
+      )
+      await getOwnedDeployment(operation.deployment_id)
+      const cancelled = await request<ByocOperation>(
+        `/operations/${operationId}/cancel`,
+        { method: 'POST' }
+      )
+      if (
+        cancelled.id !== operationId ||
+        cancelled.deployment_id !== operation.deployment_id
+      ) {
+        throw new TRPCError({
+          code: 'BAD_GATEWAY',
+          message: 'BYOC deployments runner returned another operation.',
+        })
+      }
+      return cancelled
+    },
+
     async deploy(
       deploymentId: string,
       settings: TerraformSettings,
@@ -1192,6 +1236,12 @@ function getPublicRunnerError(
   }
   if (errorCode === 'invalid_operation_state') {
     return "This BYOC action is not valid from the deployment's current state. Refresh to see the available action."
+  }
+  if (errorCode === 'operation_not_retryable') {
+    return 'This operation can no longer be retried. Refresh to see the current deployment action.'
+  }
+  if (errorCode === 'operation_not_cancellable') {
+    return 'This operation has already started or is recovering durable work and cannot be cancelled.'
   }
   if (status === 401 || status === 403) {
     return 'BYOC deployments runner authentication failed.'

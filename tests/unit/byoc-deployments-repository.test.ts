@@ -25,6 +25,7 @@ const targetStem = `t${targetKey}`
 const connectionId = '22222222-2222-4222-8222-222222222222'
 const deploymentId = '11111111-1111-4111-8111-111111111111'
 const clientRequestId = '33333333-3333-4333-8333-333333333333'
+const operationId = '55555555-5555-4555-8555-555555555555'
 const projectId = 'test-project'
 const deployerEmail = `${targetStem}@${projectId}.iam.gserviceaccount.com`
 const awsAccountId = '899188253580'
@@ -479,7 +480,7 @@ describe('BYOC deployments repository', () => {
       routes: {
         [`GET /teams/${teamId}/view`]: () =>
           Response.json({
-            version: 1,
+            version: 2,
             phase: 'cloud_access',
             status: 'action_required',
             title: 'Connect your cloud account',
@@ -491,10 +492,11 @@ describe('BYOC deployments repository', () => {
             ],
             actions: [
               {
-                id: 'connect_cloud',
-                label: 'Verify and continue',
+                id: 'retry_operation',
+                label: 'Retry deployment',
                 kind: 'primary',
                 enabled: true,
+                operation_id: operationId,
               },
             ],
             updated_at: '2026-07-11T00:00:00Z',
@@ -505,10 +507,11 @@ describe('BYOC deployments repository', () => {
     await expect(
       createByocDeploymentsRepository({ teamId }).teamView(targetKey)
     ).resolves.toMatchObject({
-      version: 1,
+      version: 2,
       phase: 'cloud_access',
       deployment_id: deploymentId,
       target: { team_id: teamId },
+      actions: [{ id: 'retry_operation', operation_id: operationId }],
     })
   })
 
@@ -1951,6 +1954,90 @@ describe('BYOC deployments repository', () => {
         .mocked(fetch)
         .mock.calls.map(([input, init]) => requestKey(input, init).key)
     ).toContain(`POST /deployments/${deploymentId}/operations/validate`)
+  })
+
+  it('controls only an operation owned by the current team', async () => {
+    const operation = {
+      id: operationId,
+      deployment_id: deploymentId,
+      kind: 'deploy',
+      status: 'failed_retryable',
+      client_request_id: clientRequestId,
+      dispatch_attempts: 1,
+      created_at: '2026-07-11T00:00:00Z',
+      updated_at: '2026-07-11T00:00:00Z',
+    }
+    mockRunner({
+      routes: {
+        [`GET /operations/${operationId}`]: () => Response.json(operation),
+        [`GET /deployments/${deploymentId}`]: () => Response.json(deployment()),
+        [`POST /operations/${operationId}/retry`]: () =>
+          Response.json({ ...operation, status: 'queued' }),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).retryOperation(operationId)
+    ).resolves.toMatchObject({ id: operationId, status: 'queued' })
+    expect(
+      vi
+        .mocked(fetch)
+        .mock.calls.map(([input, init]) => requestKey(input, init).key)
+    ).toEqual([
+      `GET /operations/${operationId}`,
+      `GET /deployments/${deploymentId}`,
+      `POST /operations/${operationId}/retry`,
+    ])
+  })
+
+  it('rejects a cross-team operation before mutating it', async () => {
+    mockRunner({
+      routes: {
+        [`GET /operations/${operationId}`]: () =>
+          Response.json({ id: operationId, deployment_id: deploymentId }),
+        [`GET /deployments/${deploymentId}`]: () =>
+          Response.json(deployment({ team_id: 'team-b' })),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).cancelOperation(operationId)
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' })
+    expect(
+      vi
+        .mocked(fetch)
+        .mock.calls.some(
+          ([input, init]) =>
+            requestKey(input, init).key ===
+            `POST /operations/${operationId}/cancel`
+        )
+    ).toBe(false)
+  })
+
+  it('explains when an exact operation cannot be cancelled', async () => {
+    mockRunner({
+      routes: {
+        [`GET /operations/${operationId}`]: () =>
+          Response.json({ id: operationId, deployment_id: deploymentId }),
+        [`GET /deployments/${deploymentId}`]: () => Response.json(deployment()),
+        [`POST /operations/${operationId}/cancel`]: () =>
+          Response.json(
+            {
+              code: 'operation_not_cancellable',
+              error: 'internal state is not exposed',
+            },
+            { status: 409 }
+          ),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).cancelOperation(operationId)
+    ).rejects.toMatchObject({
+      code: 'CONFLICT',
+      message:
+        'This operation has already started or is recovering durable work and cannot be cancelled.',
+    })
   })
 
   it('sends only connection-owned metadata when creating a deployment', async () => {

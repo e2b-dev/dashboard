@@ -280,6 +280,22 @@ export const byocRouter = createTRPCRouter({
       }).listOperations(input.deploymentId)
     }),
 
+  retryOperation: protectedTeamProcedure
+    .input(z.object({ operationId: z.uuid() }))
+    .mutation(({ ctx, input }) => {
+      return createByocDeploymentsRepository({
+        teamId: ctx.teamId,
+      }).retryOperation(input.operationId)
+    }),
+
+  cancelOperation: protectedTeamProcedure
+    .input(z.object({ operationId: z.uuid() }))
+    .mutation(({ ctx, input }) => {
+      return createByocDeploymentsRepository({
+        teamId: ctx.teamId,
+      }).cancelOperation(input.operationId)
+    }),
+
   deploy: protectedTeamProcedure
     .input(
       deploymentIdInput.extend({
