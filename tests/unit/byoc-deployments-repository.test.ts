@@ -1912,6 +1912,7 @@ describe('BYOC deployments repository', () => {
           expect(JSON.parse(String(init.body))).toMatchObject({
             client_request_id: clientRequestId,
             target_release_id: targetReleaseId,
+            scope: 'orchestrator',
             client_node_count: 3,
           })
           return Response.json({ id: planId })
@@ -1924,7 +1925,7 @@ describe('BYOC deployments repository', () => {
             client_request_id: clientRequestId,
             target_release_id: targetReleaseId,
             expected_plan_id: planId,
-            scope: 'all',
+            scope: 'orchestrator',
           })
           return Response.json({ id: 'operation-upgrade' })
         },

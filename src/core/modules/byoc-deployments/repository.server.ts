@@ -1072,6 +1072,7 @@ export function createByocDeploymentsRepository({
           body: JSON.stringify({
             client_request_id: clientRequestId,
             target_release_id: targetReleaseId,
+            scope: 'orchestrator',
             api_node_count: settings.api_node_count,
             api_machine_type: settings.api_machine_type,
             client_node_count: settings.client_node_count,
@@ -1100,7 +1101,7 @@ export function createByocDeploymentsRepository({
             client_request_id: clientRequestId,
             target_release_id: targetReleaseId,
             expected_plan_id: expectedPlanId,
-            scope: 'all',
+            scope: 'orchestrator',
             api_node_count: settings.api_node_count,
             api_machine_type: settings.api_machine_type,
             client_node_count: settings.client_node_count,
