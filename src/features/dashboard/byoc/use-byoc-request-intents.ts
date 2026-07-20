@@ -11,6 +11,8 @@ export function useByocRequestIntents() {
   const connection = useRef<ConnectionIntent>(undefined)
   const createDeployment = useRef<string>(undefined)
   const deploy = useRef<string>(undefined)
+  const planUpgrade = useRef<string>(undefined)
+  const upgrade = useRef<string>(undefined)
   const validate = useRef<string>(undefined)
   const destroy = useRef<string>(undefined)
 
@@ -57,6 +59,18 @@ export function useByocRequestIntents() {
       get: useCallback(() => getRequestId(deploy), [getRequestId]),
       clear: useCallback(() => {
         deploy.current = undefined
+      }, []),
+    },
+    planUpgrade: {
+      get: useCallback(() => getRequestId(planUpgrade), [getRequestId]),
+      clear: useCallback(() => {
+        planUpgrade.current = undefined
+      }, []),
+    },
+    upgrade: {
+      get: useCallback(() => getRequestId(upgrade), [getRequestId]),
+      clear: useCallback(() => {
+        upgrade.current = undefined
       }, []),
     },
     validate: {

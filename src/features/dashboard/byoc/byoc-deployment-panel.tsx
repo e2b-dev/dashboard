@@ -96,6 +96,38 @@ type TopologyDraft = {
   clickHouseMachineType: string
 }
 
+export function shouldShowByocSetupFlow({
+  hasTarget,
+  hasAttachedRoute,
+  phase,
+}: {
+  hasTarget: boolean
+  hasAttachedRoute: boolean
+  phase?: string
+}) {
+  return (
+    !hasTarget ||
+    (!hasAttachedRoute && !!phase && !['ready', 'destroyed'].includes(phase))
+  )
+}
+
+export function reviewedPlanMatchesRelease(
+  deployment: Pick<
+    Deployment,
+    | 'terraform_plan_operation_id'
+    | 'terraform_plan_release_id'
+    | 'terraform_plan_manifest_digest'
+  > | null,
+  release?: { id: string; manifest_digest: string }
+) {
+  return Boolean(
+    deployment?.terraform_plan_operation_id &&
+      release &&
+      deployment.terraform_plan_release_id === release.id &&
+      deployment.terraform_plan_manifest_digest === release.manifest_digest
+  )
+}
+
 export function ByocDeploymentPanel({
   view,
 }: {
@@ -117,6 +149,7 @@ export function ByocDeploymentPanel({
     useState('')
   const [createdApiKey, setCreatedApiKey] = useState<string>()
   const [selectedDeploymentId, setSelectedDeploymentId] = useState<string>()
+  const [selectedReleaseId, setSelectedReleaseId] = useState<string>()
   const [runningDeploymentId, setRunningDeploymentId] = useState<string>()
   const [operationBaseline, setOperationBaseline] = useState<{
     kind: ByocOperation['kind']
@@ -301,6 +334,17 @@ export function ByocDeploymentPanel({
       ? topologyDraft.value
       : savedTopology
   const topologyDirty = !topologiesEqual(topology, savedTopology)
+  const availableReleases = teamViewQuery.data?.available_releases ?? []
+  const appliedReleaseId = teamViewQuery.data?.state?.applied?.release?.id
+  const plannedReleaseId = teamViewQuery.data?.state?.planned?.release?.id
+  const upgradeReleaseId =
+    selectedReleaseId ??
+    plannedReleaseId ??
+    appliedReleaseId ??
+    availableReleases[0]?.id
+  const upgradeRelease = availableReleases.find(
+    (release) => release.id === upgradeReleaseId
+  )
   const updateTopology = (patch: Partial<TopologyDraft>) => {
     requestIntents.deploy.clear()
     setTopologyDraft({
@@ -548,6 +592,52 @@ export function ByocDeploymentPanel({
     })
   )
 
+  const planUpgrade = useMutation(
+    trpc.byoc.planUpgrade.mutationOptions({
+      onMutate: async (variables) => {
+        setRunningDeploymentId(variables.deploymentId)
+        setOperationBaseline({
+          kind: 'plan',
+          clientRequestId: variables.clientRequestId,
+        })
+        await queueOptimisticOperation('plan', variables)
+      },
+      onSuccess: (data) => {
+        replaceOptimisticOperation(data)
+        requestIntents.planUpgrade.clear()
+      },
+      onError: (_error, variables) =>
+        removeOptimisticOperationFromCache(variables),
+      onSettled: () =>
+        refresh().finally(() => {
+          setRunningDeploymentId(undefined)
+        }),
+    })
+  )
+
+  const upgrade = useMutation(
+    trpc.byoc.upgrade.mutationOptions({
+      onMutate: async (variables) => {
+        setRunningDeploymentId(variables.deploymentId)
+        setOperationBaseline({
+          kind: 'upgrade',
+          clientRequestId: variables.clientRequestId,
+        })
+        await queueOptimisticOperation('upgrade', variables)
+      },
+      onSuccess: (data) => {
+        replaceOptimisticOperation(data)
+        requestIntents.upgrade.clear()
+      },
+      onError: (_error, variables) =>
+        removeOptimisticOperationFromCache(variables),
+      onSettled: () =>
+        refresh().finally(() => {
+          setRunningDeploymentId(undefined)
+        }),
+    })
+  )
+
   const validate = useMutation(
     trpc.byoc.validate.mutationOptions({
       onMutate: async (variables) => {
@@ -644,6 +734,8 @@ export function ByocDeploymentPanel({
     createDeployment.isPending ||
     createInitialDeployment.isPending ||
     deploy.isPending ||
+    planUpgrade.isPending ||
+    upgrade.isPending ||
     validate.isPending ||
     destroy.isPending ||
     retryOperation.isPending ||
@@ -674,6 +766,15 @@ export function ByocDeploymentPanel({
     canRunDeploy(deployment) &&
     (updateAction?.enabled === true || deployAction?.enabled === true) &&
     !operationPending
+  const canReviewUpgrade =
+    !!deployment?.id &&
+    !!upgradeReleaseId &&
+    upgradeReleaseId !== appliedReleaseId &&
+    !topologyDirty &&
+    !operationPending
+  const canApplyUpgrade =
+    canReviewUpgrade &&
+    reviewedPlanMatchesRelease(deployment ?? null, upgradeRelease)
   const canDestroy =
     !!deployment?.id &&
     !selectedDeploymentActive &&
@@ -689,6 +790,8 @@ export function ByocDeploymentPanel({
   useEffect(() => {
     if (!discoveredSubmittedOperation || !operationBaseline) return
     if (operationBaseline.kind === 'deploy') requestIntents.deploy.clear()
+    if (operationBaseline.kind === 'plan') requestIntents.planUpgrade.clear()
+    if (operationBaseline.kind === 'upgrade') requestIntents.upgrade.clear()
     if (operationBaseline.kind === 'validate') requestIntents.validate.clear()
     if (operationBaseline.kind === 'destroy') requestIntents.destroy.clear()
   }, [discoveredSubmittedOperation, operationBaseline, requestIntents])
@@ -704,11 +807,21 @@ export function ByocDeploymentPanel({
     operationBaseline?.kind === 'validate' && discoveredSubmittedOperation
       ? undefined
       : mutationError(validate.error)
+  const planUpgradeError =
+    operationBaseline?.kind === 'plan' && discoveredSubmittedOperation
+      ? undefined
+      : mutationError(planUpgrade.error)
+  const upgradeError =
+    operationBaseline?.kind === 'upgrade' && discoveredSubmittedOperation
+      ? undefined
+      : mutationError(upgrade.error)
   const error =
     mutationError(createConnection.error) ??
     mutationError(createDeployment.error) ??
     mutationError(createInitialDeployment.error) ??
     deployError ??
+    planUpgradeError ??
+    upgradeError ??
     validateError ??
     destroyError ??
     mutationError(retryOperation.error) ??
@@ -761,6 +874,37 @@ export function ByocDeploymentPanel({
       teamSlug,
       deploymentId: deployment.id,
       clientRequestId,
+      topology,
+    })
+  }
+  const runPlanUpgrade = () => {
+    if (!deployment || !upgradeReleaseId) return
+    const clientRequestId = requestIntents.planUpgrade.get()
+    planUpgrade.mutate({
+      teamSlug,
+      deploymentId: deployment.id,
+      clientRequestId,
+      targetReleaseId: upgradeReleaseId,
+      topology,
+    })
+  }
+  const runUpgrade = () => {
+    const expectedPlanId = deployment?.terraform_plan_operation_id
+    if (
+      !deployment ||
+      !expectedPlanId ||
+      !upgradeReleaseId ||
+      !reviewedPlanMatchesRelease(deployment, upgradeRelease)
+    ) {
+      return
+    }
+    const clientRequestId = requestIntents.upgrade.get()
+    upgrade.mutate({
+      teamSlug,
+      deploymentId: deployment.id,
+      clientRequestId,
+      expectedPlanId,
+      targetReleaseId: upgradeReleaseId,
       topology,
     })
   }
@@ -822,13 +966,13 @@ export function ByocDeploymentPanel({
   const durableRouteAttached = Boolean(
     deployment?.cluster_id && deployment.cluster_endpoint
   )
-  const setupInProgress = Boolean(
-    target &&
-      teamViewQuery.data &&
-      !['ready', 'destroyed'].includes(teamViewQuery.data.phase)
-  )
+  const showSetupFlow = shouldShowByocSetupFlow({
+    hasTarget: !!target,
+    hasAttachedRoute: durableRouteAttached,
+    phase: teamViewQuery.data?.phase,
+  })
 
-  if ((!target || setupInProgress) && view === 'configuration') {
+  if (showSetupFlow && view === 'configuration') {
     return (
       <>
         <ByocSetupFlow
@@ -1273,6 +1417,73 @@ export function ByocDeploymentPanel({
 
         <TabsContent value="configuration" className="mt-0 min-w-0">
           <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+            {deployment && availableReleases.length > 0 ? (
+              <Card
+                variant="layer"
+                className="min-w-0 rounded-lg xl:col-span-2"
+              >
+                <CardHeader>
+                  <CardTitle>Orchestrator release</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+                  <div className="min-w-0">
+                    <label
+                      className="mb-2 block text-sm font-medium"
+                      htmlFor="byoc-orchestrator-release"
+                    >
+                      Release
+                    </label>
+                    <Select
+                      disabled={operationPending}
+                      onValueChange={(value) => {
+                        requestIntents.planUpgrade.clear()
+                        requestIntents.upgrade.clear()
+                        setSelectedReleaseId(value)
+                      }}
+                      value={upgradeReleaseId}
+                    >
+                      <SelectTrigger id="byoc-orchestrator-release">
+                        <SelectValue placeholder="Choose a release" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableReleases.map((release) => (
+                          <SelectItem key={release.id} value={release.id}>
+                            {release.id}
+                            {release.id === appliedReleaseId
+                              ? ' (current)'
+                              : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <Button
+                      disabled={!canReviewUpgrade}
+                      loading={planUpgrade.isPending ? 'Reviewing' : undefined}
+                      onClick={runPlanUpgrade}
+                      variant="secondary"
+                    >
+                      Review upgrade
+                    </Button>
+                    <Button
+                      disabled={!canApplyUpgrade}
+                      loading={upgrade.isPending ? 'Starting' : undefined}
+                      onClick={runUpgrade}
+                    >
+                      Apply upgrade
+                    </Button>
+                  </div>
+                </CardContent>
+                <CardFooter className="mt-0 border-stroke py-4">
+                  <p className="prose-caption text-fg-secondary">
+                    {canApplyUpgrade
+                      ? 'The reviewed plan is ready to apply.'
+                      : 'Review the release plan before applying the upgrade.'}
+                  </p>
+                </CardFooter>
+              </Card>
+            ) : null}
             <Card
               variant="layer"
               className="min-w-0 overflow-hidden rounded-lg"

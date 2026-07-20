@@ -77,6 +77,29 @@ const topologyInput = z.object({
     .max(64),
 })
 
+function requesterFromContext(ctx: {
+  session: {
+    user: { id: string; name: string | null; email: string | null }
+  }
+}) {
+  return {
+    id: ctx.session.user.id,
+    name: ctx.session.user.name,
+    email: ctx.session.user.email,
+  }
+}
+
+function terraformSettings(topology: z.infer<typeof topologyInput>) {
+  return {
+    api_node_count: topology.apiNodeCount,
+    api_machine_type: topology.apiMachineType,
+    client_node_count: topology.clientNodeCount,
+    client_machine_type: topology.clientMachineType,
+    clickhouse_node_count: topology.clickHouseNodeCount,
+    clickhouse_machine_type: topology.clickHouseMachineType,
+  }
+}
+
 type ByocRepository = ReturnType<typeof createByocDeploymentsRepository>
 type InitialDeploymentInput = {
   connectionId: string
@@ -246,6 +269,7 @@ export const byocRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const repository = createByocDeploymentsRepository({
         teamId: ctx.teamId,
+        requester: requesterFromContext(ctx),
       })
       return createInitialDeployment(repository, input)
     }),
@@ -306,19 +330,55 @@ export const byocRouter = createTRPCRouter({
     .mutation(({ ctx, input }) => {
       return createByocDeploymentsRepository({
         teamId: ctx.teamId,
+        requester: requesterFromContext(ctx),
       }).deploy(
         input.deploymentId,
-        {
-          api_node_count: input.topology.apiNodeCount,
-          api_machine_type: input.topology.apiMachineType,
-          client_node_count: input.topology.clientNodeCount,
-          client_machine_type: input.topology.clientMachineType,
-          clickhouse_node_count: input.topology.clickHouseNodeCount,
-          clickhouse_machine_type: input.topology.clickHouseMachineType,
-        },
+        terraformSettings(input.topology),
         input.clientRequestId
       )
     }),
+
+  planUpgrade: protectedTeamProcedure
+    .input(
+      deploymentIdInput.extend({
+        clientRequestId: z.string().uuid(),
+        targetReleaseId: z.string().min(1).max(256),
+        topology: topologyInput,
+      })
+    )
+    .mutation(({ ctx, input }) =>
+      createByocDeploymentsRepository({
+        teamId: ctx.teamId,
+        requester: requesterFromContext(ctx),
+      }).planUpgrade(
+        input.deploymentId,
+        terraformSettings(input.topology),
+        input.targetReleaseId,
+        input.clientRequestId
+      )
+    ),
+
+  upgrade: protectedTeamProcedure
+    .input(
+      deploymentIdInput.extend({
+        clientRequestId: z.string().uuid(),
+        expectedPlanId: z.string().uuid(),
+        targetReleaseId: z.string().min(1).max(256),
+        topology: topologyInput,
+      })
+    )
+    .mutation(({ ctx, input }) =>
+      createByocDeploymentsRepository({
+        teamId: ctx.teamId,
+        requester: requesterFromContext(ctx),
+      }).upgrade(
+        input.deploymentId,
+        terraformSettings(input.topology),
+        input.targetReleaseId,
+        input.expectedPlanId,
+        input.clientRequestId
+      )
+    ),
 
   validate: protectedTeamProcedure
     .input(deploymentIdInput.extend({ clientRequestId: z.string().uuid() }))

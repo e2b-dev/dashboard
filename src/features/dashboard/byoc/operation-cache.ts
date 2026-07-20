@@ -20,6 +20,7 @@ export function createOptimisticOperation(
     kind,
     status: 'queued',
     client_request_id: input.clientRequestId,
+    dispatch_attempts: 0,
     created_at: timestamp,
     updated_at: timestamp,
   }

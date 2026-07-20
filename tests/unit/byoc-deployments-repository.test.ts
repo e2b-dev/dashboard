@@ -1889,6 +1889,133 @@ describe('BYOC deployments repository', () => {
     ).resolves.toMatchObject({ id: 'operation-aws' })
   })
 
+  it('plans and applies an upgrade with the authenticated requester', async () => {
+    const targetReleaseId = 'release-next'
+    const planId = '77777777-7777-4777-8777-777777777777'
+    const settings = {
+      api_node_count: 2,
+      api_machine_type: 'n2-standard-8',
+      client_node_count: 3,
+      client_machine_type: 'n2-standard-8',
+      clickhouse_node_count: 1,
+      clickhouse_machine_type: 'e2-standard-4',
+    }
+    mockRunner({
+      routes: {
+        [`GET /deployments/${deploymentId}`]: () => Response.json(deployment()),
+        [`POST /deployments/${deploymentId}/operations/plan`]: (_url, init) => {
+          expect(init.headers).toMatchObject({
+            'X-E2B-Requester-ID': 'user%2F123',
+            'X-E2B-Requester-Name': 'Matt%20Brockman',
+            'X-E2B-Requester-Email': 'matt.brockman%40e2b.dev',
+          })
+          expect(JSON.parse(String(init.body))).toMatchObject({
+            client_request_id: clientRequestId,
+            target_release_id: targetReleaseId,
+            client_node_count: 3,
+          })
+          return Response.json({ id: planId })
+        },
+        [`POST /deployments/${deploymentId}/operations/upgrade`]: (
+          _url,
+          init
+        ) => {
+          expect(JSON.parse(String(init.body))).toMatchObject({
+            client_request_id: clientRequestId,
+            target_release_id: targetReleaseId,
+            expected_plan_id: planId,
+            scope: 'all',
+          })
+          return Response.json({ id: 'operation-upgrade' })
+        },
+      },
+    })
+
+    const repository = createByocDeploymentsRepository({
+      teamId,
+      requester: {
+        id: 'user/123',
+        name: 'Matt Brockman',
+        email: 'matt.brockman@e2b.dev',
+      },
+    })
+    await expect(
+      repository.planUpgrade(
+        deploymentId,
+        settings,
+        targetReleaseId,
+        clientRequestId
+      )
+    ).resolves.toEqual({ id: planId })
+    await expect(
+      repository.upgrade(
+        deploymentId,
+        settings,
+        targetReleaseId,
+        planId,
+        clientRequestId
+      )
+    ).resolves.toEqual({ id: 'operation-upgrade' })
+  })
+
+  it('preserves the reviewed plan operation identity from the controller', async () => {
+    const planOperationId = '77777777-7777-4777-8777-777777777777'
+    mockRunner({
+      routes: {
+        [`GET /deployments/${deploymentId}`]: () =>
+          Response.json(
+            deployment({
+              terraform_plan_operation_id: planOperationId,
+              terraform_plan_release_id: 'release-next',
+              terraform_plan_manifest_digest: 'sha256:release-next',
+            })
+          ),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).getDeployment(deploymentId)
+    ).resolves.toMatchObject({
+      terraform_plan_operation_id: planOperationId,
+      terraform_plan_release_id: 'release-next',
+      terraform_plan_manifest_digest: 'sha256:release-next',
+    })
+  })
+
+  it('asks the user to review again when the plan changed', async () => {
+    mockRunner({
+      routes: {
+        [`GET /deployments/${deploymentId}`]: () => Response.json(deployment()),
+        [`POST /deployments/${deploymentId}/operations/upgrade`]: () =>
+          Response.json(
+            { code: 'reviewed_plan_changed', error: 'internal details' },
+            { status: 409 }
+          ),
+      },
+    })
+
+    await expect(
+      createByocDeploymentsRepository({ teamId }).upgrade(
+        deploymentId,
+        {
+          api_node_count: 2,
+          api_machine_type: 'n2-standard-8',
+          client_node_count: 3,
+          client_machine_type: 'n2-standard-8',
+          clickhouse_node_count: 1,
+          clickhouse_machine_type: 'e2-standard-4',
+        },
+        'release-next',
+        '77777777-7777-4777-8777-777777777777',
+        clientRequestId
+      )
+    ).rejects.toMatchObject({
+      code: 'CONFLICT',
+      message:
+        'The reviewed plan is no longer current. Review the upgrade again before applying it.',
+    })
+  })
+
   it('blocks destruction when persisted target metadata does not match', async () => {
     mockRunner({
       routes: {

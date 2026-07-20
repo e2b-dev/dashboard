@@ -201,6 +201,9 @@ export interface Deployment {
   }
   terraform_settings?: TerraformSettings
   terraform_plan_text?: string
+  terraform_plan_operation_id?: string
+  terraform_plan_release_id?: string
+  terraform_plan_manifest_digest?: string
   terraform_backend?: {
     bucket?: string
     prefix?: string
@@ -271,7 +274,7 @@ export interface ByocTeamViewAction {
 }
 
 export interface ByocTeamView {
-  version: 1 | 2
+  version: 1 | 2 | 3
   phase: string
   status: string
   title: string
@@ -281,12 +284,22 @@ export interface ByocTeamView {
   steps: ByocTeamViewStep[]
   facts?: ByocTeamViewFact[]
   actions?: ByocTeamViewAction[]
+  available_releases?: ByocRelease[]
+  state?: {
+    applied?: { release?: ByocRelease }
+    planned?: { release?: ByocRelease }
+  }
   activity?: DeploymentEvent[]
   updated_at: string
 }
 
+export interface ByocRelease {
+  id: string
+  manifest_digest: string
+}
+
 const byocTeamViewSchema = z.object({
-  version: z.union([z.literal(1), z.literal(2)]),
+  version: z.union([z.literal(1), z.literal(2), z.literal(3)]),
   phase: z.string().min(1).max(128),
   status: z.string().min(1).max(128),
   title: z.string().min(1).max(256),
@@ -323,6 +336,42 @@ const byocTeamViewSchema = z.object({
       })
     )
     .max(20)
+    .optional(),
+  available_releases: z
+    .array(
+      z.object({
+        id: z.string().min(1).max(256),
+        manifest_digest: z.string().min(1).max(256),
+      })
+    )
+    .max(100)
+    .optional(),
+  state: z
+    .object({
+      applied: z
+        .object({
+          release: z
+            .object({
+              id: z.string().min(1).max(256),
+              manifest_digest: z.string().min(1).max(256),
+            })
+            .optional(),
+        })
+        .passthrough()
+        .optional(),
+      planned: z
+        .object({
+          release: z
+            .object({
+              id: z.string().min(1).max(256),
+              manifest_digest: z.string().min(1).max(256),
+            })
+            .optional(),
+        })
+        .passthrough()
+        .optional(),
+    })
+    .passthrough()
     .optional(),
   activity: z
     .array(
@@ -372,8 +421,10 @@ const runnerRequestTimeoutMs = 30_000
 
 export function createByocDeploymentsRepository({
   teamId,
+  requester,
 }: {
   teamId: string
+  requester?: { id: string; name?: string | null; email?: string | null }
 }) {
   const sdkDomain = requiredEnv('NEXT_PUBLIC_E2B_DOMAIN')
   const baseUrl = getRunnerBaseUrl()
@@ -400,6 +451,15 @@ export function createByocDeploymentsRepository({
           'Content-Type': 'application/json',
           'X-Admin-Token': token,
           ...init.headers,
+          ...(requester?.id && {
+            'X-E2B-Requester-ID': encodeURIComponent(requester.id),
+          }),
+          ...(requester?.name && {
+            'X-E2B-Requester-Name': encodeURIComponent(requester.name),
+          }),
+          ...(requester?.email && {
+            'X-E2B-Requester-Email': encodeURIComponent(requester.email),
+          }),
         },
         cache: 'no-store',
         signal: init.signal
@@ -997,6 +1057,61 @@ export function createByocDeploymentsRepository({
       )
     },
 
+    async planUpgrade(
+      deploymentId: string,
+      settings: TerraformSettings,
+      targetReleaseId: string,
+      clientRequestId: string
+    ) {
+      const deployment = await getOwnedDeployment(deploymentId)
+      assertTopologyForProvider(deployment.provider, settings)
+      return request<ByocOperation>(
+        `/deployments/${deploymentId}/operations/plan`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            client_request_id: clientRequestId,
+            target_release_id: targetReleaseId,
+            api_node_count: settings.api_node_count,
+            api_machine_type: settings.api_machine_type,
+            client_node_count: settings.client_node_count,
+            client_machine_type: settings.client_machine_type,
+            clickhouse_node_count: settings.clickhouse_node_count,
+            clickhouse_machine_type: settings.clickhouse_machine_type,
+          }),
+        }
+      )
+    },
+
+    async upgrade(
+      deploymentId: string,
+      settings: TerraformSettings,
+      targetReleaseId: string,
+      expectedPlanId: string,
+      clientRequestId: string
+    ) {
+      const deployment = await getOwnedDeployment(deploymentId)
+      assertTopologyForProvider(deployment.provider, settings)
+      return request<ByocOperation>(
+        `/deployments/${deploymentId}/operations/upgrade`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            client_request_id: clientRequestId,
+            target_release_id: targetReleaseId,
+            expected_plan_id: expectedPlanId,
+            scope: 'all',
+            api_node_count: settings.api_node_count,
+            api_machine_type: settings.api_machine_type,
+            client_node_count: settings.client_node_count,
+            client_machine_type: settings.client_machine_type,
+            clickhouse_node_count: settings.clickhouse_node_count,
+            clickhouse_machine_type: settings.clickhouse_machine_type,
+          }),
+        }
+      )
+    },
+
     async validate(deploymentId: string, clientRequestId: string) {
       await getOwnedDeployment(deploymentId)
       return request<ByocOperation>(
@@ -1233,6 +1348,9 @@ function getPublicRunnerError(
   }
   if (errorCode === 'deployment_changed') {
     return 'The BYOC deployment changed since this page loaded. Refresh before retrying.'
+  }
+  if (errorCode === 'reviewed_plan_changed') {
+    return 'The reviewed plan is no longer current. Review the upgrade again before applying it.'
   }
   if (errorCode === 'invalid_operation_state') {
     return "This BYOC action is not valid from the deployment's current state. Refresh to see the available action."
@@ -1760,6 +1878,9 @@ function sanitizeDeployment(deployment: RunnerDeployment): Deployment {
         }
       : undefined,
     terraform_plan_text: deployment.terraform_plan_text,
+    terraform_plan_operation_id: deployment.terraform_plan_operation_id,
+    terraform_plan_release_id: deployment.terraform_plan_release_id,
+    terraform_plan_manifest_digest: deployment.terraform_plan_manifest_digest,
     ...(terraformBackend && { terraform_backend: terraformBackend }),
     cluster_id: deployment.cluster_id,
     cluster_endpoint: deployment.cluster_endpoint,

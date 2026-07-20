@@ -1,6 +1,10 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
-import { ByocSetupFlow } from '@/features/dashboard/byoc/byoc-deployment-panel'
+import {
+  ByocSetupFlow,
+  reviewedPlanMatchesRelease,
+  shouldShowByocSetupFlow,
+} from '@/features/dashboard/byoc/byoc-deployment-panel'
 
 type SetupFlowProps = Parameters<typeof ByocSetupFlow>[0]
 
@@ -59,6 +63,44 @@ function setupFlowProps(
 }
 
 describe('BYOC setup flow boundaries', () => {
+  it('keeps attached deployments on the main view while an upgrade plan runs', () => {
+    expect(
+      shouldShowByocSetupFlow({
+        hasTarget: true,
+        hasAttachedRoute: true,
+        phase: 'configuration',
+      })
+    ).toBe(false)
+    expect(
+      shouldShowByocSetupFlow({
+        hasTarget: true,
+        hasAttachedRoute: true,
+        phase: 'terraform_plan',
+      })
+    ).toBe(false)
+  })
+
+  it('requires the reviewed plan to match the release manifest', () => {
+    const deployment = {
+      terraform_plan_operation_id: 'plan-1',
+      terraform_plan_release_id: 'release-1',
+      terraform_plan_manifest_digest: 'sha256:old',
+    }
+
+    expect(
+      reviewedPlanMatchesRelease(deployment, {
+        id: 'release-1',
+        manifest_digest: 'sha256:old',
+      })
+    ).toBe(true)
+    expect(
+      reviewedPlanMatchesRelease(deployment, {
+        id: 'release-1',
+        manifest_digest: 'sha256:new',
+      })
+    ).toBe(false)
+  })
+
   it('asks only for cloud and region before target allocation', () => {
     const html = renderToStaticMarkup(<ByocSetupFlow {...setupFlowProps()} />)
 
