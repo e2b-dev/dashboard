@@ -81,9 +81,7 @@ test.describe('teams → projects rename', () => {
     const slug = await gotoDashboard(page)
     await page.goto(`/dashboard/${slug}/members`)
 
-    await expect(
-      page.getByRole('heading', { name: 'MEMBERS' })
-    ).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'MEMBERS' })).toBeVisible()
     // Specific strings the rename covered — checked as literals so member
     // names/emails containing "team" can't false-positive the test.
     await expect(page.getByText('No team members found.')).toHaveCount(0)
