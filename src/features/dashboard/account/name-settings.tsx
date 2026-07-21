@@ -96,7 +96,7 @@ export function NameSettings({ className }: NameSettingsProps) {
           <CardHeader>
             <CardTitle>Name</CardTitle>
             <CardDescription>
-              Update your account name, which will be visible to your team
+              Update your account name, which will be visible to your project
               members.
             </CardDescription>
           </CardHeader>

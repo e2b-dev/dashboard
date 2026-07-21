@@ -174,8 +174,8 @@ const MissingPaymentMethodDialogContent = ({
       <DialogHeader>
         <DialogTitle>Add payment method</DialogTitle>
         <DialogDescription>
-          This team is blocked because there is no payment method on file. Add a
-          card to continue using E2B.
+          This project is blocked because there is no payment method on file.
+          Add a card to continue using E2B.
         </DialogDescription>
       </DialogHeader>
 
@@ -199,7 +199,8 @@ const MissingPaymentMethodDialogContent = ({
             <Alert variant="warning">
               <CardIcon className="size-4" />
               <AlertDescription className="prose-label">
-                Your payment method will be saved to your team billing account.
+                Your payment method will be saved to your project billing
+                account.
               </AlertDescription>
             </Alert>
           }
@@ -209,13 +210,13 @@ const MissingPaymentMethodDialogContent = ({
           submittedToast={{
             title: 'Payment method added',
             description:
-              'We are checking whether your team has been unblocked.',
+              'We are checking whether your project has been unblocked.',
           }}
           successToast={{
             variant: 'success',
-            title: 'Team unblocked',
+            title: 'Project unblocked',
             description:
-              'Your payment method was added and your team has been unblocked.',
+              'Your payment method was added and your project has been unblocked.',
           }}
           onSuccess={() => {
             posthog.capture(PAYMENT_METHOD_ADDED_EVENT)
@@ -225,9 +226,9 @@ const MissingPaymentMethodDialogContent = ({
             ready: 'Payment form is still loading.',
             confirm: 'Failed to save payment method. Please try again.',
             stillBlocked:
-              'Payment method added, but your team is still blocked. Please wait a moment and try again.',
+              'Payment method added, but your project is still blocked. Please wait a moment and try again.',
             statusCheck:
-              'Payment method added, but we could not check your team status. Please refresh or try again in a moment.',
+              'Payment method added, but we could not check your project status. Please refresh or try again in a moment.',
             load: 'Failed to load payment details. Please refresh and try again.',
           }}
         />

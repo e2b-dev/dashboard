@@ -2,6 +2,7 @@ import 'server-only'
 
 import { AttachmentType, PlainClient } from '@team-plain/typescript-sdk'
 import { createUserTeamsRepository } from '@/core/modules/teams/user-teams-repository.server'
+import { getTeamDisplayName } from '@/core/modules/teams/utils'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import type { TeamRequestScope } from '@/core/shared/repository-scope'
@@ -149,13 +150,17 @@ export function createSupportRepository(
 
       if (!team) {
         return err(
-          repoErrorFromHttp(403, 'Team not found or access denied', {
+          repoErrorFromHttp(403, 'Project not found or access denied', {
             teamId: scope.teamId,
           })
         )
       }
 
-      return ok({ name: team.name, email: team.email, tier: team.tier })
+      return ok({
+        name: getTeamDisplayName(team),
+        email: team.email,
+        tier: team.tier,
+      })
     },
     async createSupportThread(input) {
       if (!process.env.PLAIN_API_KEY) {

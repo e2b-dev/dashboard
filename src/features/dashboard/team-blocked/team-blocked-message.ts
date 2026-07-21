@@ -20,7 +20,7 @@ export function getBlockedReasonText(blockedReason: string | null): string {
     return 'Verification required.'
   }
 
-  return blockedReason ?? 'Team suspended.'
+  return blockedReason ?? 'Project suspended.'
 }
 
 export function getBlockedMessage(

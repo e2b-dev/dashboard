@@ -12,6 +12,7 @@ import { featureFlags } from '@/core/modules/feature-flags/feature-flags.server'
 import { getAuthContext } from '@/core/server/auth'
 import DashboardLayoutView from '@/features/dashboard/layouts/layout'
 import { DashboardPostHogErrorBoundary } from '@/features/dashboard/posthog-error-boundary'
+import { ProjectsAnnouncementBanner } from '@/features/dashboard/projects-announcement/banner'
 import Sidebar from '@/features/dashboard/sidebar/sidebar'
 import {
   getQueryClient,
@@ -95,8 +96,11 @@ export default async function DashboardLayout({
             }
           >
             <div className="fixed inset-0 flex max-h-full min-h-0 w-full flex-col overflow-hidden">
-              <div className="flex h-full max-h-full min-h-0 w-full flex-1 overflow-hidden">
-                <Sidebar />
+              <ProjectsAnnouncementBanner />
+              <div className="relative flex h-full max-h-full min-h-0 w-full flex-1 overflow-hidden">
+                {/* Anchored to this row instead of the viewport so the
+                    announcement banner above stays fully visible. */}
+                <Sidebar anchor="container" />
                 <SidebarInset>
                   <DashboardPostHogErrorBoundary>
                     <DashboardLayoutView params={params}>

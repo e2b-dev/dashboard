@@ -167,12 +167,19 @@ export interface SidebarProps extends React.ComponentProps<'div'> {
   side?: 'left' | 'right'
   variant?: 'sidebar' | 'floating' | 'inset'
   collapsible?: 'offcanvas' | 'icon' | 'none'
+  /**
+   * 'viewport' pins the desktop panel to the viewport (full height).
+   * 'container' anchors it to the nearest positioned ancestor instead, so
+   * content above that ancestor (e.g. an announcement banner) stays visible.
+   */
+  anchor?: 'viewport' | 'container'
 }
 
 function Sidebar({
   side = 'left',
   variant = 'sidebar',
   collapsible = 'offcanvas',
+  anchor = 'viewport',
   className,
   children,
   ...props
@@ -244,7 +251,8 @@ function Sidebar({
       <div
         data-slot="sidebar-container"
         className={cn(
-          'fixed inset-y-0 z-20 hidden h-svh w-(--sidebar-width) transition-[left,right,width] md:flex',
+          'inset-y-0 z-20 hidden w-(--sidebar-width) transition-[left,right,width] md:flex',
+          anchor === 'container' ? 'absolute h-full' : 'fixed h-svh',
           SIDEBAR_TRANSITION_CLASSNAMES,
           side === 'left'
             ? 'left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]'

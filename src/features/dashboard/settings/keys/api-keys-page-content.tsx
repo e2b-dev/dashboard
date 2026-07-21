@@ -108,7 +108,7 @@ export const ApiKeysPageContent = () => {
       <CatchErrorBoundary classNames={{ wrapper: 'w-full' }}>
         <div className="text-fg-tertiary flex flex-col gap-1 text-sm lg:flex-row lg:items-start lg:justify-between">
           <p className="max-w-[520px] leading-[17px] tracking-[-0.16px]">
-            These keys authenticate API requests from your team&apos;s
+            These keys authenticate API requests from your project&apos;s
             applications.
           </p>
           <Suspense fallback={<Skeleton className="h-4 w-24 border-0" />}>

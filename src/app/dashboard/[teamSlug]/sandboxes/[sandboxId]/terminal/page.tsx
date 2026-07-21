@@ -29,7 +29,7 @@ export default async function SandboxTerminalPage({
 
   const teamId = await getTeamIdFromSlug(teamSlug, authContext.accessToken)
   if (!teamId.ok) {
-    throw new Error('Failed to resolve team for sandbox terminal')
+    throw new Error('Failed to resolve project for sandbox terminal')
   }
   if (!teamId.data) {
     redirect(PROTECTED_URLS.DASHBOARD)

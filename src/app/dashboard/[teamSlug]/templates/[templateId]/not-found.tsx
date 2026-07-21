@@ -19,7 +19,7 @@ export default function TemplateNotFound() {
           <CardDescription>Template not found</CardDescription>
         </CardHeader>
         <CardContent className="text-center text-fg-secondary">
-          <p>We couldn’t find this template in your team.</p>
+          <p>We couldn’t find this template in your project.</p>
         </CardContent>
         <CardFooter>
           <Button

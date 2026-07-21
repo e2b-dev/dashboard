@@ -150,7 +150,7 @@ const VerificationRequiredDialogContent = ({
       toast({
         title: 'Verification payment submitted',
         description:
-          'We are checking whether your team has been verified and unblocked.',
+          'We are checking whether your project has been verified and unblocked.',
       })
 
       try {
@@ -159,7 +159,7 @@ const VerificationRequiredDialogContent = ({
         if (!isTeamUnblocked) {
           toast(
             defaultErrorToast(
-              'Verification payment submitted, but your team is still blocked. Please wait a moment and try again.'
+              'Verification payment submitted, but your project is still blocked. Please wait a moment and try again.'
             )
           )
           router.refresh()
@@ -169,8 +169,8 @@ const VerificationRequiredDialogContent = ({
 
         toast({
           variant: 'success',
-          title: 'Team unblocked',
-          description: 'Your team has been verified and unblocked.',
+          title: 'Project unblocked',
+          description: 'Your project has been verified and unblocked.',
         })
         posthog.capture(VERIFICATION_PAYMENT_SUBMITTED_EVENT)
         removeDismissedDialog()
@@ -180,7 +180,7 @@ const VerificationRequiredDialogContent = ({
       } catch {
         toast(
           defaultErrorToast(
-            'Verification payment submitted, but we could not check your team status. Please refresh or try again in a moment.'
+            'Verification payment submitted, but we could not check your project status. Please refresh or try again in a moment.'
           )
         )
       }
@@ -210,9 +210,9 @@ const VerificationRequiredDialogContent = ({
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Verify team</DialogTitle>
+        <DialogTitle>Verify project</DialogTitle>
         <DialogDescription>
-          This team is blocked because verification is required. Make a
+          This project is blocked because verification is required. Make a
           verification payment to continue using E2B.
         </DialogDescription>
       </DialogHeader>
@@ -237,7 +237,7 @@ const VerificationRequiredDialogContent = ({
               <CardIcon className="size-4" />
               <AlertDescription className="prose-label">
                 A {paymentAmountLabel} card payment will be charged and added
-                back to your team as credits.
+                back to your project as credits.
               </AlertDescription>
             </Alert>
           }
@@ -247,12 +247,12 @@ const VerificationRequiredDialogContent = ({
           submittedToast={{
             title: 'Verification payment submitted',
             description:
-              'We are checking whether your team has been verified and unblocked.',
+              'We are checking whether your project has been verified and unblocked.',
           }}
           successToast={{
             variant: 'success',
-            title: 'Team unblocked',
-            description: 'Your team has been verified and unblocked.',
+            title: 'Project unblocked',
+            description: 'Your project has been verified and unblocked.',
           }}
           onSuccess={() => {
             posthog.capture(VERIFICATION_PAYMENT_SUBMITTED_EVENT)
@@ -263,9 +263,9 @@ const VerificationRequiredDialogContent = ({
             confirm:
               'Failed to process verification payment. Please try again.',
             stillBlocked:
-              'Verification payment submitted, but your team is still blocked. Please wait a moment and try again.',
+              'Verification payment submitted, but your project is still blocked. Please wait a moment and try again.',
             statusCheck:
-              'Verification payment submitted, but we could not check your team status. Please refresh or try again in a moment.',
+              'Verification payment submitted, but we could not check your project status. Please refresh or try again in a moment.',
             load: 'Failed to load payment details. Please refresh and try again.',
           }}
         />

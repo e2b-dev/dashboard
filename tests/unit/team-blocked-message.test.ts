@@ -65,6 +65,6 @@ describe('getBlockedReasonText', () => {
   })
 
   it('returns a generic fallback for null reason', () => {
-    expect(getBlockedReasonText(null)).toBe('Team suspended.')
+    expect(getBlockedReasonText(null)).toBe('Project suspended.')
   })
 })

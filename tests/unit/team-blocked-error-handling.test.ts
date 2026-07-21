@@ -126,10 +126,10 @@ describe('getPublicErrorMessage with team-blocked translation', () => {
     ).toBe('blocked by support')
   })
 
-  it('returns generic "Team suspended." for the bare prefix', () => {
+  it('returns generic "Project suspended." for the bare prefix', () => {
     expect(
       getPublicErrorMessage({ status: 403, message: 'team is blocked' })
-    ).toBe('Team suspended.')
+    ).toBe('Project suspended.')
   })
 
   it('falls through to generic forbidden when message is missing', () => {

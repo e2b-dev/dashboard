@@ -9,10 +9,10 @@ export function getTransformedDefaultTeamName(
 
   const [username] = team.email.split('@')
   if (!username) {
-    return null
+    return 'Personal Project'
   }
 
-  return `${username.charAt(0).toUpperCase()}${username.slice(1)}'s Team`
+  return `${username.charAt(0).toUpperCase()}${username.slice(1)}'s Project`
 }
 
 export function getTeamDisplayName(

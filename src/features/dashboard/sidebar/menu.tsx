@@ -66,7 +66,7 @@ export default function DashboardSidebarMenu() {
               />
               <div className="grid flex-1 text-left  leading-tight">
                 <span className="text-fg-tertiary truncate prose-label">
-                  TEAM
+                  PROJECT
                 </span>
                 <span className="text-fg truncate prose-body-highlight normal-case">
                   {getTeamDisplayName(team)}
@@ -88,7 +88,7 @@ export default function DashboardSidebarMenu() {
                 className="h-9 gap-2.5 [&_svg]:size-5 font-sans prose-body-highlight"
                 onSelect={() => setCreateTeamOpen(true)}
               >
-                <AddIcon className="ml-0.5" /> Create new team
+                <AddIcon className="ml-0.5" /> Create new project
               </DropdownMenuItem>
             )}
 

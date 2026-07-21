@@ -32,8 +32,8 @@ export default function Unauthorized() {
         </CardHeader>
         <CardContent className="text-center text-fg-secondary">
           <p>
-            You don't have permission to access this team. Please contact the
-            team owner or administrator to request access.
+            You don't have permission to access this project. Please contact the
+            project owner or administrator to request access.
           </p>
         </CardContent>
         <CardFooter className="flex flex-col gap-1">
@@ -47,7 +47,7 @@ export default function Unauthorized() {
             <Button variant="secondary" asChild className="flex-1">
               <Link href={PROTECTED_URLS.DASHBOARD}>
                 <PersonsIcon />
-                My Teams
+                My Projects
               </Link>
             </Button>
           </div>

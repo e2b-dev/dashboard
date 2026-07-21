@@ -204,8 +204,9 @@ export default function TemplatesTable() {
                     {header.id === 'public' ? (
                       <HelpTooltip>
                         Public templates can be used by all users to start
-                        Sandboxes, but can only be edited by your team. Internal
-                        templates can only be used and edited by your team.
+                        Sandboxes, but can only be edited by your project.
+                        Internal templates can only be used and edited by your
+                        project.
                       </HelpTooltip>
                     ) : null}
                     <span>

@@ -12,7 +12,7 @@ export const USER_MESSAGES = {
     message: 'Password updated.',
   },
   teamNameUpdated: {
-    message: 'Team name updated.',
+    message: 'Project name updated.',
   },
   failedUpdateName: {
     message: 'Failed to update name.',
@@ -21,6 +21,6 @@ export const USER_MESSAGES = {
     message: 'Failed to update password.',
   },
   failedUpdateTeamName: {
-    message: 'Failed to update team name.',
+    message: 'Failed to update project name.',
   },
 }
