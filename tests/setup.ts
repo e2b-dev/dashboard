@@ -5,13 +5,7 @@ const projectDir = process.cwd()
 loadEnvConfig(projectDir)
 
 // fall back to placeholder values for env-coupled clients that initialize at module load
-process.env.E2B_SESSION_SECRET ??= 'test-session-secret'
-process.env.ORY_SDK_URL ??= 'https://test-ory.projects.oryapis.com'
-process.env.ORY_OAUTH2_CLIENT_ID ??= 'test-ory-client-id'
-process.env.ORY_OAUTH2_CLIENT_SECRET ??= 'test-ory-client-secret'
-process.env.ORY_OAUTH2_CLI_CLIENT_ID ??= 'test-ory-cli-client-id'
-process.env.ORY_OAUTH2_AUDIENCE ??= 'https://api.e2b-test.dev'
-process.env.ORY_PROJECT_API_TOKEN ??= 'test-ory-project-api-token'
+process.env.NEXT_PUBLIC_E2B_DOMAIN ??= 'e2b-test.dev'
 
 // mock server-only to prevent vitest errors
 vi.mock('server-only', () => ({}))

@@ -1,6 +1,6 @@
 # E2B Dashboard
 
-A web application for managing and monitoring E2B services — sandboxes, API keys, and usage analytics. Built with Next.js, React, and TypeScript.
+Open-source dashboard for self-hosted E2B infrastructure — sandboxes and templates, authenticated with a single team API key (httpOnly `e2b_api_key` cookie or `E2B_API_KEY` env). Built with Next.js, React, and TypeScript.
 
 ## Comments
 
