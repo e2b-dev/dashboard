@@ -1,8 +1,5 @@
-// NOTE: related to src/configs/rewrites.ts
 import path from 'node:path'
-import { withPostHogConfig } from '@posthog/nextjs-config'
 import type { NextConfig } from 'next'
-import { DOCUMENTATION_DOMAIN } from './src/configs/documentation'
 
 const browserStub = (file: string) => path.resolve(process.cwd(), 'stubs', file)
 
@@ -78,77 +75,7 @@ const config: NextConfig = {
       ],
     },
   ],
-  rewrites: async () => ({
-    beforeFiles: [
-      {
-        source: '/ph-proxy/static/:path*',
-        destination: 'https://us-assets.i.posthog.com/static/:path*',
-      },
-      {
-        source: '/ph-proxy/:path*',
-        destination: 'https://us.i.posthog.com/:path*',
-      },
-
-      // Asset rewrites for Mintlify
-      {
-        source: '/mintlify-assets/:path*',
-        destination: `https://${DOCUMENTATION_DOMAIN}/mintlify-assets/:path*`,
-      },
-      {
-        source: '/_mintlify/:path*',
-        destination: `https://${DOCUMENTATION_DOMAIN}/_mintlify/:path*`,
-      },
-      // LLMs.txt
-      {
-        source: '/llms.txt',
-        destination: `https://${DOCUMENTATION_DOMAIN}/llms.txt`,
-      },
-      {
-        source: '/llms-full.txt',
-        destination: `https://${DOCUMENTATION_DOMAIN}/llms-full.txt`,
-      },
-    ],
-  }),
-  redirects: async () => [
-    {
-      source: '/docs/api/cli',
-      destination: '/auth/cli',
-      permanent: true,
-    },
-    {
-      source: '/auth/sign-in',
-      destination: '/sign-in',
-      permanent: true,
-    },
-    {
-      source: '/auth/sign-up',
-      destination: '/sign-up',
-      permanent: true,
-    },
-    // SEO Redirects
-    {
-      source: '/ai-agents/:path*',
-      destination: '/',
-      permanent: true,
-    },
-    {
-      source:
-        '/blog/how-perplexity-implemented-advanced-data-analysis-for-pro-users-in-1-week',
-      destination: '/blog/category/case-studies',
-      permanent: true,
-    },
-  ],
   skipTrailingSlashRedirect: true,
 }
 
-export default withPostHogConfig(config, {
-  personalApiKey: process.env.POSTHOG_API_KEY ?? '',
-  projectId: process.env.POSTHOG_PROJECT_ID,
-  host: 'https://us.posthog.com',
-  sourcemaps: {
-    enabled: Boolean(process.env.POSTHOG_API_KEY),
-    releaseName: 'dashboard',
-    releaseVersion: process.env.VERCEL_GIT_COMMIT_SHA,
-    deleteAfterUpload: true,
-  },
-})
+export default config

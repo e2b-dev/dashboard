@@ -11,7 +11,6 @@ import { FeatureFlagsProvider } from '@/core/modules/feature-flags/feature-flags
 import { featureFlags } from '@/core/modules/feature-flags/feature-flags.server'
 import { getAuthContext } from '@/core/server/auth'
 import DashboardLayoutView from '@/features/dashboard/layouts/layout'
-import { DashboardPostHogErrorBoundary } from '@/features/dashboard/posthog-error-boundary'
 import { ProjectsAnnouncementBanner } from '@/features/dashboard/projects-announcement/banner'
 import Sidebar from '@/features/dashboard/sidebar/sidebar'
 import {
@@ -20,6 +19,7 @@ import {
   prefetchAsync,
   trpc,
 } from '@/trpc/server'
+import { CatchErrorBoundary } from '@/ui/error'
 import { SidebarInset, SidebarProvider } from '@/ui/primitives/sidebar'
 
 export const metadata: Metadata = {
@@ -102,11 +102,11 @@ export default async function DashboardLayout({
                     announcement banner above stays fully visible. */}
                 <Sidebar anchor="container" />
                 <SidebarInset>
-                  <DashboardPostHogErrorBoundary>
+                  <CatchErrorBoundary>
                     <DashboardLayoutView params={params}>
                       {children}
                     </DashboardLayoutView>
-                  </DashboardPostHogErrorBoundary>
+                  </CatchErrorBoundary>
                 </SidebarInset>
               </div>
             </div>

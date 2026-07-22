@@ -5,7 +5,6 @@ import { useDebounceCallback } from 'usehooks-ts'
 import { COOKIE_KEYS } from '@/configs/cookies'
 import type { AuthUser } from '@/core/modules/auth/models'
 import type { TeamModel } from '@/core/modules/teams/models'
-import { OryPostHogIdentityBridge } from '@/features/ory-posthog-identity-bridge'
 import { setBrowserCookie } from '@/lib/utils/browser-cookies'
 
 interface DashboardContextValue {
@@ -48,7 +47,6 @@ export function DashboardContextProvider({
 
   return (
     <DashboardContext.Provider value={value}>
-      <OryPostHogIdentityBridge user={initialUser} team={initialTeam} />
       {children}
     </DashboardContext.Provider>
   )

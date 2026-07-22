@@ -5,7 +5,6 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query'
-import posthog from 'posthog-js'
 import type { ListTeamTemplatesResult } from '@/core/modules/templates/models'
 import {
   defaultErrorToast,
@@ -53,11 +52,6 @@ export function TemplateVisibilityDropdown({
             </>
           )
         )
-
-        posthog.capture('template visibility changed from header', {
-          templateId,
-          public: variables.public,
-        })
 
         const listKey = trpc.templates.getTemplates.pathKey()
         const detailKey = trpc.templates.getTemplate.queryKey({

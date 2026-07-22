@@ -1,8 +1,6 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import posthog from 'posthog-js'
-import { useEffect, useRef } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { DashboardTabsList } from '@/ui/dashboard-tabs'
 import { BuildIcon, TagIcon, TrendIcon } from '@/ui/primitives/icons'
@@ -30,23 +28,6 @@ export default function TemplateDetailTabs({
 }: TemplateDetailTabsProps) {
   const pathname = usePathname()
   const activeTab = tabFromPath(pathname, templateId)
-  const prevTabRef = useRef<DetailTabId | null>(null)
-
-  useEffect(() => {
-    if (prevTabRef.current === null) {
-      posthog.capture('template detail opened', {
-        templateId,
-        tab: activeTab,
-      })
-    } else if (prevTabRef.current !== activeTab) {
-      posthog.capture('template detail tab switched', {
-        templateId,
-        fromTab: prevTabRef.current,
-        toTab: activeTab,
-      })
-    }
-    prevTabRef.current = activeTab
-  }, [activeTab, templateId])
 
   return (
     <DashboardTabsList

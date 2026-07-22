@@ -29,12 +29,7 @@ import {
   type ProxyPlan,
   planNeedsAuthGate,
 } from './classifier'
-import {
-  handleAuthGate,
-  handleMiddlewareRedirect,
-  handleMiddlewareRewrite,
-  handleRouteRewritePassthrough,
-} from './handlers'
+import { handleAuthGate } from './handlers'
 
 type RunProxyOptions = {
   isAuthenticated?: boolean
@@ -191,17 +186,6 @@ async function runProxyConcerns(
   options: RunProxyOptions = {}
 ): Promise<Response> {
   try {
-    if (plan.kind !== 'bypass' && plan.kind !== 'trpc') {
-      const redirect = handleMiddlewareRedirect(request)
-      if (redirect) return redirect
-
-      const routeRewrite = handleRouteRewritePassthrough(request)
-      if (routeRewrite) return routeRewrite
-
-      const middlewareRewrite = handleMiddlewareRewrite(request)
-      if (middlewareRewrite) return middlewareRewrite
-    }
-
     if (plan.kind === 'auth-page' || plan.kind === 'dashboard-page') {
       return handleAuthGate(request, options.isAuthenticated ?? false)
     }

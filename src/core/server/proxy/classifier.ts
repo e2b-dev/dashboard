@@ -1,15 +1,12 @@
 import 'server-cli-only'
 
 import { AUTH_URLS, PROTECTED_URLS } from '@/configs/urls'
-import { getMiddlewareRedirectFromPath } from '@/lib/utils/redirects'
-import { getRewriteForPath } from '@/lib/utils/rewrites'
 
 export type ProxyPlan =
   | { kind: 'bypass' }
   | { kind: 'trpc' }
   | { kind: 'auth-page' }
   | { kind: 'dashboard-page' }
-  | { kind: 'rewrite' }
   | { kind: 'public' }
 
 const TRPC_API_PREFIXES = ['/api/trpc'] as const
@@ -36,15 +33,7 @@ export function classifyProxyRequest(pathname: string): ProxyPlan {
     return { kind: 'dashboard-page' }
   }
 
-  const hasRedirect = Boolean(getMiddlewareRedirectFromPath(pathname))
-  const hasRouteRewrite = Boolean(getRewriteForPath(pathname, 'route').config)
-  const hasMiddlewareRewrite = Boolean(
-    getRewriteForPath(pathname, 'middleware').config
-  )
-
-  return hasRedirect || hasRouteRewrite || hasMiddlewareRewrite
-    ? { kind: 'rewrite' }
-    : { kind: 'public' }
+  return { kind: 'public' }
 }
 
 export function planNeedsAuthGate(plan: ProxyPlan): boolean {
