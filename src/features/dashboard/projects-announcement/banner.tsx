@@ -26,7 +26,7 @@ export function ProjectsAnnouncementBanner() {
   const dismiss = () => setDismissed(true)
 
   return (
-    <div className="bg-bg-inverted text-fg-inverted animate-announcement-in motion-reduce:animate-none relative flex w-full shrink-0 items-center justify-center gap-2 overflow-hidden px-10 py-1.5">
+    <div className="bg-bg-inverted text-fg-inverted relative flex w-full shrink-0 items-center justify-center gap-2 overflow-hidden px-10 py-1.5">
       <a
         href={PROJECTS_ANNOUNCEMENT_URL}
         target="_blank"

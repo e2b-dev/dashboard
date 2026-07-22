@@ -432,17 +432,6 @@
     }
   }
 
-  @keyframes announcement-in {
-    from {
-      max-height: 0;
-      opacity: 0;
-    }
-    to {
-      max-height: 3rem;
-      opacity: 1;
-    }
-  }
-
   @keyframes shiny-text {
     0% {
       background-position: calc(-100% - var(--shiny-width)) 0;
@@ -490,7 +479,6 @@
 
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
-  --animate-announcement-in: announcement-in 0.2s ease-out;
   --animate-shimmer: shimmer 1s ease-in-out infinite;
   --animate-grid: grid 30s linear infinite;
   --animate-wave: wave 2s linear linear infinite;
