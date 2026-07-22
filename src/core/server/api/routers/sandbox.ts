@@ -4,7 +4,6 @@ import { Sandbox, TimeoutError } from 'e2b'
 import { z } from 'zod'
 import { authHeaders } from '@/configs/api'
 import {
-  deriveSandboxLifecycleFromEvents,
   mapApiSandboxRecordToModel,
   mapInfraSandboxDetailsToModel,
   mapInfraSandboxLogToModel,
@@ -55,14 +54,9 @@ export const sandboxRouter = createTRPCRouter({
           ? mapInfraSandboxDetailsToModel(detailsResult.data.details)
           : mapApiSandboxRecordToModel(detailsResult.data.details)
 
-      const lifecycleEventsResult =
-        await ctx.sandboxesRepository.getSandboxLifecycleEvents(sandboxId)
-      if (!lifecycleEventsResult.ok) {
-        throwTRPCErrorFromRepoError(lifecycleEventsResult.error)
-      }
-      const derivedLifecycle = deriveSandboxLifecycleFromEvents(
-        lifecycleEventsResult.data
-      )
+      // OSS: lifecycle events (argus) are unavailable; derive the lifecycle
+      // timeline from the sandbox details alone. Kept shape-identical to
+      // console so downstream chart code stays unchanged.
       const fallbackPausedAt =
         mappedDetails.state === 'paused' ? mappedDetails.endAt : null
       const fallbackEndedAt =
@@ -73,10 +67,10 @@ export const sandboxRouter = createTRPCRouter({
       return {
         ...mappedDetails,
         lifecycle: {
-          createdAt: derivedLifecycle.createdAt ?? mappedDetails.startedAt,
-          pausedAt: derivedLifecycle.pausedAt ?? fallbackPausedAt,
-          endedAt: derivedLifecycle.endedAt ?? fallbackEndedAt,
-          events: derivedLifecycle.events,
+          createdAt: mappedDetails.startedAt,
+          pausedAt: fallbackPausedAt,
+          endedAt: fallbackEndedAt,
+          events: [],
         },
       }
     }),

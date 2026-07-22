@@ -5,20 +5,11 @@ import { DashboardTeamGate } from '@/app/dashboard/[teamSlug]/team-gate'
 import { COOKIE_KEYS } from '@/configs/cookies'
 import { METADATA } from '@/configs/metadata'
 import { AUTH_URLS } from '@/configs/urls'
-import { DASHBOARD_TEAMS_LIST_QUERY_OPTIONS } from '@/core/application/teams/queries'
 import { DASHBOARD_USER_PROFILE_QUERY_OPTIONS } from '@/core/application/user/queries'
-import { FeatureFlagsProvider } from '@/core/modules/feature-flags/feature-flags.client'
-import { featureFlags } from '@/core/modules/feature-flags/feature-flags.server'
 import { getAuthContext } from '@/core/server/auth'
 import DashboardLayoutView from '@/features/dashboard/layouts/layout'
-import { ProjectsAnnouncementBanner } from '@/features/dashboard/projects-announcement/banner'
 import Sidebar from '@/features/dashboard/sidebar/sidebar'
-import {
-  getQueryClient,
-  HydrateClient,
-  prefetchAsync,
-  trpc,
-} from '@/trpc/server'
+import { HydrateClient, prefetchAsync, trpc } from '@/trpc/server'
 import { CatchErrorBoundary } from '@/ui/error'
 import { SidebarInset, SidebarProvider } from '@/ui/primitives/sidebar'
 
@@ -52,67 +43,33 @@ export default async function DashboardLayout({
     throw redirect(AUTH_URLS.SIGN_IN)
   }
 
-  const teamsQueryOptions = trpc.teams.list.queryOptions(
-    undefined,
-    DASHBOARD_TEAMS_LIST_QUERY_OPTIONS
-  )
   const userProfileQueryOptions = trpc.user.profile.queryOptions(
     undefined,
     DASHBOARD_USER_PROFILE_QUERY_OPTIONS
   )
 
-  const queryClient = getQueryClient()
-  const teams = await queryClient
-    .fetchQuery(teamsQueryOptions)
-    .catch(() => null)
-  const team = teams?.find((candidate) => candidate.slug === teamSlug)
-  const dashboardTeam = team
-    ? {
-        id: team.id,
-        name: team.name,
-        slug: teamSlug,
-      }
-    : undefined
-
-  const featureFlagContext = {
-    user: {
-      id: authContext.user.id,
-      email: authContext.user.email ?? undefined,
-    },
-    team: dashboardTeam,
-  }
-  const [evaluatedFeatureFlags] = await Promise.all([
-    featureFlags.evaluateAll(featureFlagContext),
-    prefetchAsync(userProfileQueryOptions),
-  ])
+  await prefetchAsync(userProfileQueryOptions)
 
   return (
     <HydrateClient>
-      <FeatureFlagsProvider initialFlags={evaluatedFeatureFlags}>
-        <DashboardTeamGate teamSlug={teamSlug} fallbackUser={authContext.user}>
-          <SidebarProvider
-            defaultOpen={
-              typeof sidebarState === 'undefined' ? true : defaultOpen
-            }
-          >
-            <div className="fixed inset-0 flex max-h-full min-h-0 w-full flex-col overflow-hidden">
-              <ProjectsAnnouncementBanner />
-              <div className="relative flex h-full max-h-full min-h-0 w-full flex-1 overflow-hidden">
-                {/* Anchored to this row instead of the viewport so the
-                    announcement banner above stays fully visible. */}
-                <Sidebar anchor="container" />
-                <SidebarInset>
-                  <CatchErrorBoundary>
-                    <DashboardLayoutView params={params}>
-                      {children}
-                    </DashboardLayoutView>
-                  </CatchErrorBoundary>
-                </SidebarInset>
-              </div>
+      <DashboardTeamGate teamSlug={teamSlug} fallbackUser={authContext.user}>
+        <SidebarProvider
+          defaultOpen={typeof sidebarState === 'undefined' ? true : defaultOpen}
+        >
+          <div className="fixed inset-0 flex max-h-full min-h-0 w-full flex-col overflow-hidden">
+            <div className="relative flex h-full max-h-full min-h-0 w-full flex-1 overflow-hidden">
+              <Sidebar anchor="container" />
+              <SidebarInset>
+                <CatchErrorBoundary>
+                  <DashboardLayoutView params={params}>
+                    {children}
+                  </DashboardLayoutView>
+                </CatchErrorBoundary>
+              </SidebarInset>
             </div>
-          </SidebarProvider>
-        </DashboardTeamGate>
-      </FeatureFlagsProvider>
+          </div>
+        </SidebarProvider>
+      </DashboardTeamGate>
     </HydrateClient>
   )
 }

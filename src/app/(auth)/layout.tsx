@@ -1,9 +1,8 @@
-import { ALLOW_SEO_INDEXING } from '@/configs/env-flags'
 import { METADATA } from '@/configs/metadata'
 import { cn } from '@/lib/utils'
 import { GridPattern } from '@/ui/grid-pattern'
 
-const robots = ALLOW_SEO_INDEXING ? 'index, follow' : 'noindex, nofollow'
+const robots = 'noindex, nofollow'
 
 export const metadata = {
   title: METADATA.title,

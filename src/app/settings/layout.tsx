@@ -1,4 +1,3 @@
-import { ALLOW_SEO_INDEXING } from '@/configs/env-flags'
 import { METADATA } from '@/configs/metadata'
 import { AUTH_URLS } from '@/configs/urls'
 import { buttonVariants } from '@/ui/primitives/button'
@@ -6,7 +5,7 @@ import { buttonVariants } from '@/ui/primitives/button'
 export const metadata = {
   title: METADATA.title,
   description: METADATA.description,
-  robots: ALLOW_SEO_INDEXING ? 'index, follow' : 'noindex, nofollow',
+  robots: 'noindex, nofollow',
 }
 
 // Shell-less: no sidebar/team chrome, so the page renders with only a Kratos

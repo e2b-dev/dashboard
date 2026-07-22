@@ -1,4 +1,3 @@
-import type { components as ArgusComponents } from '@/contracts/argus-api'
 import type { components as DashboardComponents } from '@/contracts/dashboard-api'
 import type { components as InfraComponents } from '@/contracts/infra-api'
 
@@ -8,7 +7,6 @@ export type Sandboxes = InfraComponents['schemas']['ListedSandbox'][]
 export type SandboxState = InfraComponents['schemas']['SandboxState']
 export type SandboxesMetricsRecord =
   InfraComponents['schemas']['SandboxesWithMetrics']['sandboxes']
-export type TeamMetric = InfraComponents['schemas']['TeamMetric']
 export type SandboxInfo = InfraComponents['schemas']['SandboxDetail']
 
 interface SandboxDetailsBaseModel {
@@ -53,91 +51,20 @@ export interface SandboxLogsModel {
 }
 
 export type SandboxMetric = InfraComponents['schemas']['SandboxMetric']
-export type SandboxEventModel = ArgusComponents['schemas']['SandboxEvent']
+
+// OSS: sandbox lifecycle events (argus) are not available; the shape is kept
+// for parity with console. `lifecycle.events` is always empty here.
+export interface SandboxEventModel {
+  id: string
+  timestamp: string
+  type: string
+}
 
 export interface SandboxLifecycleModel {
   createdAt: string | null
   pausedAt: string | null
   endedAt: string | null
   events: SandboxEventModel[]
-}
-
-const SANDBOX_LIFECYCLE_EVENT_PREFIX = 'sandbox.lifecycle.'
-const SANDBOX_LIFECYCLE_CREATED_EVENT = 'sandbox.lifecycle.created'
-const SANDBOX_LIFECYCLE_PAUSED_EVENT = 'sandbox.lifecycle.paused'
-const SANDBOX_LIFECYCLE_RESUMED_EVENT = 'sandbox.lifecycle.resumed'
-const SANDBOX_LIFECYCLE_KILLED_EVENT = 'sandbox.lifecycle.killed'
-
-function parseEventTimestampMs(value: string): number | null {
-  if (!value) {
-    return null
-  }
-
-  const timestampMs = new Date(value).getTime()
-  if (!Number.isFinite(timestampMs)) {
-    return null
-  }
-
-  return timestampMs
-}
-
-function sortEventsByTimestamp(
-  events: SandboxEventModel[]
-): SandboxEventModel[] {
-  return [...events].sort((a, b) => {
-    const timestampA =
-      parseEventTimestampMs(a.timestamp) ?? Number.MAX_SAFE_INTEGER
-    const timestampB =
-      parseEventTimestampMs(b.timestamp) ?? Number.MAX_SAFE_INTEGER
-    if (timestampA !== timestampB) {
-      return timestampA - timestampB
-    }
-
-    return a.id.localeCompare(b.id)
-  })
-}
-
-export function deriveSandboxLifecycleFromEvents(
-  events: SandboxEventModel[]
-): SandboxLifecycleModel {
-  const lifecycleEvents = sortEventsByTimestamp(
-    events.filter((event) =>
-      event.type.startsWith(SANDBOX_LIFECYCLE_EVENT_PREFIX)
-    )
-  )
-
-  let createdAt: string | null = null
-  let pausedAt: string | null = null
-  let endedAt: string | null = null
-  let lastEvent: SandboxEventModel | null = null
-
-  for (const event of lifecycleEvents) {
-    const timestampMs = parseEventTimestampMs(event.timestamp)
-    if (timestampMs === null) {
-      continue
-    }
-
-    if (event.type === SANDBOX_LIFECYCLE_CREATED_EVENT && createdAt === null) {
-      createdAt = event.timestamp
-    }
-
-    lastEvent = event
-  }
-
-  if (lastEvent?.type === SANDBOX_LIFECYCLE_PAUSED_EVENT) {
-    pausedAt = lastEvent.timestamp
-  }
-
-  if (lastEvent?.type === SANDBOX_LIFECYCLE_KILLED_EVENT) {
-    endedAt = lastEvent.timestamp
-  }
-
-  return {
-    createdAt,
-    pausedAt,
-    endedAt,
-    events: lifecycleEvents,
-  }
 }
 
 // mappings

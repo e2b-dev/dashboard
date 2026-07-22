@@ -3,7 +3,6 @@
 import {
   keepPreviousData,
   useSuspenseInfiniteQuery,
-  useSuspenseQuery,
 } from '@tanstack/react-query'
 import {
   type ColumnDef,
@@ -37,11 +36,7 @@ import type { SandboxStartedAtFilter } from './stores/table-store'
 import { getSandboxListEffectiveSorting } from './stores/table-store'
 import { SandboxesTableBody } from './table-body'
 import type { SandboxListRow } from './table-config'
-import {
-  sandboxIdFuzzyFilter,
-  sandboxListColumns,
-  useLegacySandboxListColumns,
-} from './table-config'
+import { sandboxIdFuzzyFilter, sandboxListColumns } from './table-config'
 
 const STARTED_AT_FILTER_HOURS: Record<
   Exclude<SandboxStartedAtFilter, undefined>,
@@ -295,31 +290,3 @@ export function NewSandboxesTable() {
     />
   )
 }
-
-export function LegacySandboxesTable() {
-  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/sandboxes'>()
-  const trpc = useTRPC()
-  const legacySandboxListColumns = useLegacySandboxListColumns()
-
-  const { data, refetch, isFetching } = useSuspenseQuery(
-    trpc.sandboxes.getSandboxes.queryOptions(
-      { teamSlug },
-      {
-        refetchOnMount: 'always',
-        refetchOnWindowFocus: true,
-        placeholderData: keepPreviousData,
-      }
-    )
-  )
-
-  return (
-    <SandboxesTableView
-      sandboxes={data.sandboxes}
-      columns={legacySandboxListColumns}
-      refetch={refetch}
-      isFetching={isFetching}
-    />
-  )
-}
-
-export default LegacySandboxesTable

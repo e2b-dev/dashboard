@@ -2,7 +2,7 @@
 
 import { DashboardRouteError } from '@/features/dashboard/shared/route-error'
 
-export default function BillingPlanSelectPageError({
+export default function SandboxesError({
   error,
   reset,
 }: {

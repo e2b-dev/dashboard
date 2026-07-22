@@ -3,7 +3,6 @@
 import { usePathname } from 'next/navigation'
 import { getDashboardLayoutConfig } from '@/configs/layout'
 import { useDashboard } from '@/features/dashboard/context'
-import TeamBlockedIndicator from './team-blocked-indicator'
 
 interface DashboardLayoutFooterProps {
   statusBanner: React.ReactNode
@@ -27,8 +26,6 @@ export default function DashboardLayoutFooter({
         {user.email ?? 'ANONYMOUS@UNKNOWN.COM'}
         {`:${footerTitle}`}
       </span>
-
-      <TeamBlockedIndicator />
 
       {statusBanner ? (
         <div className="flex flex-1 justify-end">{statusBanner}</div>

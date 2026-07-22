@@ -19,7 +19,6 @@ import {
   useSidebar,
 } from '@/ui/primitives/sidebar'
 import { useDashboard } from '../context'
-import { useVisibleSidebarLinks } from './use-visible-links'
 
 type GroupedLinks = {
   [key: string]: SidebarNavItem[]
@@ -43,7 +42,7 @@ export default function DashboardSidebarContent() {
   const pathname = usePathname()
   const isMobile = useIsMobile()
   const { setOpenMobile } = useSidebar()
-  const visibleLinks = useVisibleSidebarLinks(SIDEBAR_MAIN_LINKS)
+  const visibleLinks = SIDEBAR_MAIN_LINKS
 
   const groupedNavLinks = useMemo(
     () => createGroupedLinks(visibleLinks),

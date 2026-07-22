@@ -4,11 +4,9 @@ import { authHeaders } from '@/configs/api'
 import type { components as DashboardComponents } from '@/contracts/dashboard-api'
 import type { components as InfraComponents } from '@/contracts/infra-api'
 import type {
-  SandboxEventModel,
   Sandboxes,
   SandboxesMetricsRecord,
   SandboxState,
-  TeamMetric,
 } from '@/core/modules/sandboxes/models'
 import { api, infra } from '@/core/shared/clients/api'
 import { l } from '@/core/shared/clients/logger/logger'
@@ -67,36 +65,20 @@ export interface SandboxesRepository {
         }
     >
   >
-  getSandboxLifecycleEvents(
-    sandboxId: string
-  ): Promise<RepoResult<SandboxEventModel[]>>
   getSandboxMetrics(
     sandboxId: string,
     options: GetSandboxMetricsOptions
   ): Promise<RepoResult<InfraComponents['schemas']['SandboxMetric'][]>>
-  listSandboxes(): Promise<RepoResult<Sandboxes>>
   listSandboxesPaginated(
     options: ListSandboxesOptions
   ): Promise<RepoResult<ListSandboxesResult>>
   getSandboxesMetrics(
     sandboxIds: string[]
   ): Promise<RepoResult<SandboxesMetricsRecord>>
-  getTeamMetricsRange(
-    startUnixSeconds: number,
-    endUnixSeconds: number
-  ): Promise<RepoResult<TeamMetric[]>>
-  getTeamMetricsMax(
-    startUnixSeconds: number,
-    endUnixSeconds: number,
-    metric: 'concurrent_sandboxes' | 'sandbox_start_rate'
-  ): Promise<RepoResult<InfraComponents['schemas']['MaxTeamMetric']>>
 }
 
 const SANDBOX_NOT_FOUND_MESSAGE =
   "Sandbox not found or you don't have access to it"
-const SANDBOX_EVENTS_PAGE_SIZE = 100
-const SANDBOX_EVENTS_MAX_PAGES = 50
-const SANDBOX_LIFECYCLE_EVENT_PREFIX = 'sandbox.lifecycle.'
 
 export function createSandboxesRepository(
   scope: SandboxesRequestScope,
@@ -248,79 +230,6 @@ export function createSandboxesRepository(
         )
       )
     },
-    async getSandboxLifecycleEvents(sandboxId) {
-      const lifecycleEvents: SandboxEventModel[] = []
-
-      for (
-        let pageIndex = 0, offset = 0;
-        pageIndex < SANDBOX_EVENTS_MAX_PAGES;
-        pageIndex += 1, offset += SANDBOX_EVENTS_PAGE_SIZE
-      ) {
-        try {
-          const result = await deps.infraClient.GET(
-            '/events/sandboxes/{sandboxID}',
-            {
-              params: {
-                path: {
-                  sandboxID: sandboxId,
-                },
-                query: {
-                  offset,
-                  limit: SANDBOX_EVENTS_PAGE_SIZE,
-                  orderAsc: true,
-                },
-              },
-              headers: {
-                ...deps.authHeaders(scope.accessToken, scope.teamId),
-              },
-              cache: 'no-store',
-            }
-          )
-
-          if (!result.response.ok || result.error) {
-            l.warn({
-              key: 'repositories:sandboxes:get_sandbox_lifecycle_events:infra_error',
-              error: result.error,
-              team_id: scope.teamId,
-              context: {
-                status: result.response.status,
-                path: '/events/sandboxes/{sandboxID}',
-                sandbox_id: sandboxId,
-                offset,
-                limit: SANDBOX_EVENTS_PAGE_SIZE,
-              },
-            })
-            break
-          }
-
-          const page = result.data ?? []
-          lifecycleEvents.push(
-            ...page.filter((event) =>
-              event.type.startsWith(SANDBOX_LIFECYCLE_EVENT_PREFIX)
-            )
-          )
-
-          if (page.length < SANDBOX_EVENTS_PAGE_SIZE) {
-            break
-          }
-        } catch (error) {
-          l.warn({
-            key: 'repositories:sandboxes:get_sandbox_lifecycle_events:infra_exception',
-            error,
-            team_id: scope.teamId,
-            context: {
-              path: '/events/sandboxes/{sandboxID}',
-              sandbox_id: sandboxId,
-              offset,
-              limit: SANDBOX_EVENTS_PAGE_SIZE,
-            },
-          })
-          break
-        }
-      }
-
-      return ok(lifecycleEvents)
-    },
     async getSandboxMetrics(sandboxId, options) {
       const startUnixSeconds = Math.floor(options.startUnixMs / 1000)
       const endUnixSeconds = Math.floor(options.endUnixMs / 1000)
@@ -372,35 +281,6 @@ export function createSandboxesRepository(
       }
 
       return ok(result.data)
-    },
-    async listSandboxes() {
-      const result = await deps.infraClient.GET('/sandboxes', {
-        headers: {
-          ...deps.authHeaders(scope.accessToken, scope.teamId),
-        },
-        cache: 'no-store',
-      })
-
-      if (!result.response.ok || result.error) {
-        l.error({
-          key: 'repositories:sandboxes:list_sandboxes:infra_error',
-          error: result.error,
-          team_id: scope.teamId,
-          context: {
-            status: result.response.status,
-            path: '/sandboxes',
-          },
-        })
-        return err(
-          repoErrorFromHttp(
-            result.response.status,
-            result.error?.message ?? 'Failed to list sandboxes',
-            result.error
-          )
-        )
-      }
-
-      return ok(result.data ?? [])
     },
     async listSandboxesPaginated(options) {
       const result = await deps.infraClient.GET('/v2/sandboxes', {
@@ -475,88 +355,6 @@ export function createSandboxesRepository(
       }
 
       return ok(result.data.sandboxes)
-    },
-    async getTeamMetricsRange(startUnixSeconds, endUnixSeconds) {
-      const result = await deps.infraClient.GET('/teams/{teamID}/metrics', {
-        params: {
-          path: {
-            teamID: scope.teamId,
-          },
-          query: {
-            start: startUnixSeconds,
-            end: endUnixSeconds,
-          },
-        },
-        headers: {
-          ...deps.authHeaders(scope.accessToken, scope.teamId),
-        },
-        cache: 'no-store',
-      })
-
-      if (!result.response.ok || result.error) {
-        l.error({
-          key: 'repositories:sandboxes:get_team_metrics:infra_error',
-          error: result.error,
-          team_id: scope.teamId,
-          context: {
-            status: result.response.status,
-            path: '/teams/{teamID}/metrics',
-            start_unix_seconds: startUnixSeconds,
-            end_unix_seconds: endUnixSeconds,
-          },
-        })
-        return err(
-          repoErrorFromHttp(
-            result.response.status,
-            result.error?.message ?? 'Failed to fetch project metrics',
-            result.error
-          )
-        )
-      }
-
-      return ok(result.data)
-    },
-    async getTeamMetricsMax(startUnixSeconds, endUnixSeconds, metric) {
-      const result = await deps.infraClient.GET('/teams/{teamID}/metrics/max', {
-        params: {
-          path: {
-            teamID: scope.teamId,
-          },
-          query: {
-            start: startUnixSeconds,
-            end: endUnixSeconds,
-            metric,
-          },
-        },
-        headers: {
-          ...deps.authHeaders(scope.accessToken, scope.teamId),
-        },
-        cache: 'no-store',
-      })
-
-      if (!result.response.ok || result.error) {
-        l.error({
-          key: 'repositories:sandboxes:get_team_metrics_max:infra_error',
-          error: result.error,
-          team_id: scope.teamId,
-          context: {
-            status: result.response.status,
-            path: '/teams/{teamID}/metrics/max',
-            start_unix_seconds: startUnixSeconds,
-            end_unix_seconds: endUnixSeconds,
-            metric,
-          },
-        })
-        return err(
-          repoErrorFromHttp(
-            result.response.status,
-            result.error?.message ?? 'Failed to fetch project metrics max',
-            result.error
-          )
-        )
-      }
-
-      return ok(result.data)
     },
   }
 }

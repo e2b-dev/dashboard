@@ -1,5 +1,4 @@
 import type { SandboxDetailsModel } from '@/core/modules/sandboxes/models'
-import { calculateStepForDuration } from '@/features/dashboard/sandboxes/monitoring/utils'
 import {
   SANDBOX_MONITORING_DEFAULT_RANGE_MS,
   SANDBOX_MONITORING_LIFECYCLE_PADDING_STEPS,
@@ -8,6 +7,7 @@ import {
   SANDBOX_MONITORING_MIN_RANGE_MS,
   SANDBOX_MONITORING_MIN_TIMESTAMP_MS,
 } from './constants'
+import { calculateStepForDuration } from './step'
 
 export interface NormalizedMonitoringTimeframe {
   start: number

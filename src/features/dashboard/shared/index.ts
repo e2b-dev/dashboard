@@ -1,6 +1,3 @@
-export { EventTypeBadge } from './event-type-badge'
-export { EventTypeFilter } from './event-type-filter'
-export { eventTypeFilterParams } from './event-type-filter-params'
 export { IdBadge } from './id-badge'
 export { Timestamp } from './timestamp'
 export { UserAvatar } from './user-avatar'

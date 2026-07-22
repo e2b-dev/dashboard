@@ -20,7 +20,6 @@ import {
   useSidebar,
 } from '@/ui/primitives/sidebar'
 import { useDashboard } from '../context'
-import { useVisibleSidebarLinks } from './use-visible-links'
 
 interface DashboardSidebarCommandProps {
   className?: string
@@ -32,7 +31,7 @@ export default function DashboardSidebarCommand({
   const [open, setOpen] = useState(false)
   const { team } = useDashboard()
   const router = useRouter()
-  const visibleLinks = useVisibleSidebarLinks(SIDEBAR_ALL_LINKS)
+  const visibleLinks = SIDEBAR_ALL_LINKS
 
   const { open: sidebarOpen, openMobile: sidebarOpenMobile } = useSidebar()
   const isSidebarOpen = sidebarOpen || sidebarOpenMobile

@@ -1,4 +1,3 @@
-import { ALLOW_SEO_INDEXING } from '@/configs/env-flags'
 import { METADATA } from '@/configs/metadata'
 import { cn } from '@/lib/utils'
 import { GridPattern } from '@/ui/grid-pattern'
@@ -10,7 +9,7 @@ export const metadata = {
   description: METADATA.description,
   openGraph: METADATA.openGraph,
   twitter: METADATA.twitter,
-  robots: ALLOW_SEO_INDEXING ? 'index, follow' : 'noindex, nofollow',
+  robots: 'noindex, nofollow',
 }
 
 export default function OryLoginLayout({
