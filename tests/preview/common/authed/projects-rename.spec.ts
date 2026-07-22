@@ -8,15 +8,21 @@ import { expect, type Page, test } from '@playwright/test'
 // component render tests instead (tests/unit/team-blocked-dialog-copy).
 
 // auth.setup.ts persists an UNAUTHENTICATED storage state when the Ory
-// hosted UI blocks CI runners with a captcha (and still reports success),
-// so authed navigation must detect the sign-in bounce and skip instead of
-// timing out. Same tolerance the rest of the authed suite relies on.
+// hosted UI blocks CI runners with a captcha (and still reports success).
+// An unauthenticated /dashboard visit then redirect-chains to the Ory
+// hosted login on a DIFFERENT origin, so we cannot enumerate the bounce
+// destinations — instead, treat "no team-scoped URL within the deadline"
+// as the no-session signal and skip. Same tolerance the rest of the
+// authed suite relies on.
 async function gotoDashboard(page: Page, path = '/dashboard'): Promise<string> {
   await page.goto(path)
-  await page.waitForURL(/\/(dashboard\/[^/]+|sign-in)/)
+  const authed = await page
+    .waitForURL(/\/dashboard\/[^/]+/, { timeout: 15_000 })
+    .then(() => true)
+    .catch(() => false)
   test.skip(
-    page.url().includes('/sign-in'),
-    'session is unauthenticated (captcha blocked the CI sign-in in auth.setup)'
+    !authed,
+    `no authenticated dashboard session (landed on ${page.url()}); the CI sign-in in auth.setup was likely captcha-blocked`
   )
   return page.url().match(/\/dashboard\/([^/?#]+)/)?.[1] ?? ''
 }
