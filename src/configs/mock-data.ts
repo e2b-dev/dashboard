@@ -949,8 +949,6 @@ function generateMockMetrics(sandboxes: Sandbox[]): {
  * This function replicates the back-end step calculation logic from e2b-dev/infra.
  * https://github.com/e2b-dev/infra/blob/19778a715e8df3adea83858c798582d289bd7159/packages/api/internal/handlers/sandbox_metrics.go#L90
  */
-export const MOCK_METRICS_DATA = (sandboxes: Sandbox[]) =>
-  generateMockMetrics(sandboxes)
 export const MOCK_SANDBOXES_DATA = () => generateMockSandboxes(120)
 export const MOCK_TEMPLATES_DATA = TEMPLATES
 export const MOCK_DEFAULT_TEMPLATES_DATA = DEFAULT_TEMPLATES
