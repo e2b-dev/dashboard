@@ -9,7 +9,6 @@ import { BuildLink } from '../build-link'
 interface TagHistoryRowProps {
   assignment: TemplateTagAssignment
   primaryAssignment: TemplateTagAssignment
-  teamSlug: string
   templateId: string
   onRequestRollback: (target: TemplateTagAssignment) => void
 }
@@ -17,7 +16,6 @@ interface TagHistoryRowProps {
 export function TagHistoryRow({
   assignment,
   primaryAssignment,
-  teamSlug,
   templateId,
   onRequestRollback,
 }: TagHistoryRowProps) {
@@ -27,7 +25,6 @@ export function TagHistoryRow({
     <div className="flex items-center gap-2 prose-body text-fg-tertiary">
       <span>Assigned to</span>
       <BuildLink
-        teamSlug={teamSlug}
         templateId={templateId}
         buildId={assignment.buildId}
         assignedAt={assignment.assignedAt}

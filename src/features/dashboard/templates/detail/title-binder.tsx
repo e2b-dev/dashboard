@@ -10,12 +10,10 @@ import { usePageTitle } from '@/lib/hooks/use-page-title'
 import { useTRPC } from '@/trpc/client'
 
 interface TemplateTitleBinderProps {
-  teamSlug: string
   templateId: string
 }
 
 export default function TemplateTitleBinder({
-  teamSlug,
   templateId,
 }: TemplateTitleBinderProps) {
   const trpc = useTRPC()
@@ -24,7 +22,7 @@ export default function TemplateTitleBinder({
   const tag = rawTag ? decodeURIComponent(rawTag) : undefined
 
   const { data } = useSuspenseQuery(
-    trpc.templates.getTemplate.queryOptions({ teamSlug, templateId })
+    trpc.templates.getTemplate.queryOptions({ templateId })
   )
 
   const template = data.template
@@ -38,13 +36,13 @@ export default function TemplateTitleBinder({
     const segments: TitleSegment[] = [
       {
         label: 'Templates',
-        href: PROTECTED_URLS.TEMPLATES_LIST(teamSlug),
+        href: PROTECTED_URLS.TEMPLATES_LIST,
       },
       { label: displayName },
     ]
     if (tag) segments.push({ label: tag })
     return segments
-  }, [teamSlug, displayName, tag])
+  }, [displayName, tag])
 
   usePageTitle(titleSegments, tag ? undefined : displayName)
 

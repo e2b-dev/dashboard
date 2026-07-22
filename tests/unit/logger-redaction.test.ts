@@ -1,6 +1,9 @@
 import pino from 'pino'
 import { describe, expect, it } from 'vitest'
-import { AUTHORIZATION_HEADER, BEARER_TOKEN_PREFIX } from '@/configs/api'
+
+const AUTHORIZATION_HEADER = 'Authorization'
+const BEARER_TOKEN_PREFIX = 'Bearer '
+
 import {
   REDACTION_CENSOR,
   REDACTION_PATHS,

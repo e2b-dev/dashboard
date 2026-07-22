@@ -2,15 +2,14 @@ import { TERMINAL_SESSION_STORAGE_PREFIX } from './constants'
 import { normalizeTerminalTemplate } from './template'
 import type { StoredTerminalSession } from './types'
 
-function getTerminalSessionStorageKey(userId: string) {
-  return `${TERMINAL_SESSION_STORAGE_PREFIX}:${userId}`
+// OSS: single-key deployment; sessions are keyed per browser, not per user.
+function getTerminalSessionStorageKey() {
+  return TERMINAL_SESSION_STORAGE_PREFIX
 }
 
-export function readStoredTerminalSession(userId: string) {
+export function readStoredTerminalSession() {
   try {
-    const value = window.localStorage.getItem(
-      getTerminalSessionStorageKey(userId)
-    )
+    const value = window.localStorage.getItem(getTerminalSessionStorageKey())
     if (!value) return null
 
     const session = JSON.parse(value) as Partial<StoredTerminalSession>
@@ -36,13 +35,10 @@ export function readStoredTerminalSession(userId: string) {
   }
 }
 
-export function writeStoredTerminalSession(
-  userId: string,
-  session: StoredTerminalSession
-) {
+export function writeStoredTerminalSession(session: StoredTerminalSession) {
   try {
     window.localStorage.setItem(
-      getTerminalSessionStorageKey(userId),
+      getTerminalSessionStorageKey(),
       JSON.stringify(session)
     )
   } catch {
@@ -50,9 +46,9 @@ export function writeStoredTerminalSession(
   }
 }
 
-export function clearStoredTerminalSession(userId: string) {
+export function clearStoredTerminalSession() {
   try {
-    window.localStorage.removeItem(getTerminalSessionStorageKey(userId))
+    window.localStorage.removeItem(getTerminalSessionStorageKey())
   } catch {
     // Best-effort cleanup for unavailable or blocked browser storage.
   }

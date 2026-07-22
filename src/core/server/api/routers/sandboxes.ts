@@ -3,13 +3,13 @@ import { USE_MOCK_DATA } from '@/configs/env-flags'
 import { MOCK_SANDBOXES_DATA } from '@/configs/mock-data'
 import { createSandboxesRepository } from '@/core/modules/sandboxes/repository.server'
 import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/errors'
-import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
+import { withAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
 import { transformMetricsToClientMetrics } from '@/core/server/functions/sandboxes/utils'
 import { createTRPCRouter } from '@/core/server/trpc/init'
-import { protectedTeamProcedure } from '@/core/server/trpc/procedures'
+import { protectedProcedure } from '@/core/server/trpc/procedures'
 
-const sandboxesRepositoryProcedure = protectedTeamProcedure.use(
-  withTeamAuthedRequestRepository(
+const sandboxesRepositoryProcedure = protectedProcedure.use(
+  withAuthedRequestRepository(
     createSandboxesRepository,
     (sandboxesRepository) => ({
       sandboxesRepository,

@@ -20,17 +20,13 @@ import { TemplateSpecs } from './template-specs'
 
 interface LatestBuildSectionProps {
   templateId: string
-  teamSlug: string
 }
 
-export function LatestBuildSection({
-  templateId,
-  teamSlug,
-}: LatestBuildSectionProps) {
+export function LatestBuildSection({ templateId }: LatestBuildSectionProps) {
   const trpc = useTRPC()
 
   const { data } = useSuspenseQuery(
-    trpc.templates.getTemplate.queryOptions({ teamSlug, templateId })
+    trpc.templates.getTemplate.queryOptions({ templateId })
   )
 
   const template = data.template
@@ -56,11 +52,7 @@ export function LatestBuildSection({
           <BuildAgo timestamp={new Date(template.updatedAt).getTime()} />
           <BuildStatusBadge status="success" />
         </div>
-        <BuildIdLink
-          teamSlug={teamSlug}
-          templateId={templateId}
-          buildId={template.buildID}
-        />
+        <BuildIdLink templateId={templateId} buildId={template.buildID} />
       </div>
       <TemplateSpecs build={template} className="mt-2" />
     </OverviewSection>
@@ -120,11 +112,9 @@ function BuildStatusBadge({ status }: { status: BuildStatus }) {
 }
 
 function BuildIdLink({
-  teamSlug,
   templateId,
   buildId,
 }: {
-  teamSlug: string
   templateId: string
   buildId: string
 }) {
@@ -132,7 +122,7 @@ function BuildIdLink({
 
   return (
     <HoverPrefetchLink
-      href={PROTECTED_URLS.TEMPLATE_BUILD(teamSlug, templateId, buildId)}
+      href={PROTECTED_URLS.TEMPLATE_BUILD(templateId, buildId)}
       aria-label="Open build"
       className="group/build inline-flex items-center gap-1 text-fg-secondary font-mono prose-body-numeric hover:text-fg transition-colors"
     >

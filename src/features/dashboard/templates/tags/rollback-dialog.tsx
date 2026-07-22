@@ -26,7 +26,6 @@ interface RollbackTagDialogProps {
   tag: string
   currentBuildId: string
   targetBuildId: string
-  teamSlug: string
   templateId: string
   templateName: string
   surface: RollbackSurface
@@ -77,7 +76,6 @@ function RollbackTagDialogBody({
   tag,
   currentBuildId,
   targetBuildId,
-  teamSlug,
   templateId,
   templateName,
   surface,
@@ -86,7 +84,6 @@ function RollbackTagDialogBody({
   onPendingChange,
 }: RollbackTagDialogBodyProps) {
   const { mutation, stage } = useTagAssignmentMutation({
-    teamSlug,
     templateId,
     operation: 'rollback',
     analyticsContext: { surface, tag },
@@ -104,7 +101,6 @@ function RollbackTagDialogBody({
   const submit = () => {
     trackTagTableInteraction('rollback submitted', { surface, tag })
     mutation.mutate({
-      teamSlug,
       templateId,
       templateName,
       buildId: targetBuildId,

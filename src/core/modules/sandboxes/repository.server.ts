@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { authHeaders } from '@/configs/api'
+import { apiKeyHeaders } from '@/configs/api'
 import type { components as DashboardComponents } from '@/contracts/dashboard-api'
 import type { components as InfraComponents } from '@/contracts/infra-api'
 import type {
@@ -11,16 +11,16 @@ import type {
 import { api, infra } from '@/core/shared/clients/api'
 import { l } from '@/core/shared/clients/logger/logger'
 import { repoErrorFromHttp } from '@/core/shared/errors'
-import type { TeamRequestScope } from '@/core/shared/repository-scope'
+import type { RequestScope } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
 
 type SandboxesRepositoryDeps = {
   apiClient: typeof api
   infraClient: typeof infra
-  authHeaders: typeof authHeaders
+  apiKeyHeaders: typeof apiKeyHeaders
 }
 
-export type SandboxesRequestScope = TeamRequestScope
+export type SandboxesRequestScope = RequestScope
 
 export interface GetSandboxLogsOptions {
   cursor?: number
@@ -85,7 +85,7 @@ export function createSandboxesRepository(
   deps: SandboxesRepositoryDeps = {
     apiClient: api,
     infraClient: infra,
-    authHeaders: authHeaders,
+    apiKeyHeaders: apiKeyHeaders,
   }
 ): SandboxesRepository {
   return {
@@ -106,7 +106,7 @@ export function createSandboxesRepository(
             },
           },
           headers: {
-            ...deps.authHeaders(scope.accessToken, scope.teamId),
+            ...deps.apiKeyHeaders(scope.apiKey),
           },
         }
       )
@@ -118,7 +118,6 @@ export function createSandboxesRepository(
           {
             key: 'repositories:sandboxes:get_sandbox_logs:infra_error',
             error: result.error,
-            team_id: scope.teamId,
             context: {
               status,
               path: '/v2/sandboxes/{sandboxID}/logs',
@@ -149,7 +148,7 @@ export function createSandboxesRepository(
           },
         },
         headers: {
-          ...deps.authHeaders(scope.accessToken, scope.teamId),
+          ...deps.apiKeyHeaders(scope.apiKey),
         },
         cache: 'no-store',
       })
@@ -167,7 +166,6 @@ export function createSandboxesRepository(
         l.error({
           key: 'repositories:sandboxes:get_sandbox_details:infra_error',
           error: infraResult.error,
-          team_id: scope.teamId,
           context: {
             status: infraStatus,
             path: '/sandboxes/{sandboxID}',
@@ -183,52 +181,11 @@ export function createSandboxesRepository(
         )
       }
 
-      const dashboardResult = await deps.apiClient.GET(
-        '/sandboxes/{sandboxID}/record',
-        {
-          params: {
-            path: {
-              sandboxID: sandboxId,
-            },
-          },
-          headers: {
-            ...deps.authHeaders(scope.accessToken, scope.teamId),
-          },
-          cache: 'no-store',
-        }
-      )
-
-      if (dashboardResult.response.ok && dashboardResult.data) {
-        return ok({
-          source: 'database-record' as const,
-          details: dashboardResult.data,
-        })
-      }
-
-      const dashboardStatus = dashboardResult.response.status
-
-      if (dashboardStatus === 404) {
-        return err(repoErrorFromHttp(404, SANDBOX_NOT_FOUND_MESSAGE))
-      }
-
-      l.error({
-        key: 'repositories:sandboxes:get_sandbox_details:fallback_error',
-        error: dashboardResult.error,
-        team_id: scope.teamId,
-        context: {
-          status: dashboardStatus,
-          path: '/sandboxes/{sandboxID}/record',
-          infra_status: infraStatus,
-          sandbox_id: sandboxId,
-        },
-      })
-      return err(
-        repoErrorFromHttp(
-          dashboardStatus,
-          dashboardResult.error?.message ?? 'Failed to fetch sandbox details',
-          dashboardResult.error
-        )
-      )
+      // OSS: the dashboard-api killed-sandbox archival record endpoint
+      // (`GET /sandboxes/{sandboxID}/record`) is not available; we assume a
+      // 404 without calling it. The `database-record` source and its models
+      // are kept for parity with console.
+      return err(repoErrorFromHttp(404, SANDBOX_NOT_FOUND_MESSAGE))
     },
     async getSandboxMetrics(sandboxId, options) {
       const startUnixSeconds = Math.floor(options.startUnixMs / 1000)
@@ -247,7 +204,7 @@ export function createSandboxesRepository(
             },
           },
           headers: {
-            ...deps.authHeaders(scope.accessToken, scope.teamId),
+            ...deps.apiKeyHeaders(scope.apiKey),
           },
         }
       )
@@ -259,7 +216,6 @@ export function createSandboxesRepository(
           {
             key: 'repositories:sandboxes:get_sandbox_metrics:infra_error',
             error: result.error,
-            team_id: scope.teamId,
             context: {
               status,
               path: '/sandboxes/{sandboxID}/metrics',
@@ -292,7 +248,7 @@ export function createSandboxesRepository(
           },
         },
         headers: {
-          ...deps.authHeaders(scope.accessToken, scope.teamId),
+          ...deps.apiKeyHeaders(scope.apiKey),
         },
         cache: 'no-store',
       })
@@ -301,7 +257,6 @@ export function createSandboxesRepository(
         l.error({
           key: 'repositories:sandboxes:list_sandboxes_paginated:infra_error',
           error: result.error,
-          team_id: scope.teamId,
           context: {
             status: result.response.status,
             path: '/v2/sandboxes',
@@ -329,7 +284,7 @@ export function createSandboxesRepository(
           },
         },
         headers: {
-          ...deps.authHeaders(scope.accessToken, scope.teamId),
+          ...deps.apiKeyHeaders(scope.apiKey),
         },
         cache: 'no-store',
       })
@@ -338,7 +293,6 @@ export function createSandboxesRepository(
         l.error({
           key: 'repositories:sandboxes:get_sandboxes_metrics:infra_error',
           error: result.error,
-          team_id: scope.teamId,
           context: {
             status: result.response.status,
             path: '/sandboxes/metrics',

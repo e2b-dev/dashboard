@@ -1,6 +1,6 @@
 'use client'
 
-import { useParams, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState, useTransition } from 'react'
 import { COOKIE_KEYS } from '@/configs/cookies'
 import { PROTECTED_URLS } from '@/configs/urls'
@@ -36,8 +36,6 @@ export default function SandboxInspectNotFound({
 }: SandboxInspectNotFoundProps) {
   const router = useRouter()
   const { isRunning, sandboxInfo } = useSandboxContext()
-
-  const { teamSlug } = useParams()
 
   const [pendingPath, setPendingPath] = useState<string | undefined>(undefined)
   const [isPending, startTransition] = useTransition()
@@ -167,9 +165,7 @@ export default function SandboxInspectNotFound({
     ) : (
       <Button
         variant="secondary"
-        onClick={() =>
-          router.push(PROTECTED_URLS.SANDBOXES(teamSlug as string))
-        }
+        onClick={() => router.push(PROTECTED_URLS.SANDBOXES)}
         className="w-full gap-2"
       >
         <ArrowLeftIcon className="text-fg-tertiary h-4 w-4" />

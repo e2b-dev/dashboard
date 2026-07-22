@@ -21,7 +21,6 @@ import ReassignTagDialog from '../reassign-dialog'
 
 interface TagHistoryHeaderProps {
   tag: string
-  teamSlug: string
   templateId: string
   templateName: string
   primaryAssignment: TemplateTagAssignment
@@ -32,7 +31,6 @@ interface TagHistoryHeaderProps {
 
 export function TagHistoryHeader({
   tag,
-  teamSlug,
   templateId,
   templateName,
   primaryAssignment,
@@ -66,7 +64,6 @@ export function TagHistoryHeader({
 
       <div className="w-[178px] shrink-0">
         <BuildLink
-          teamSlug={teamSlug}
           templateId={templateId}
           buildId={primaryAssignment.buildId}
           assignedAt={primaryAssignment.assignedAt}
@@ -131,7 +128,6 @@ export function TagHistoryHeader({
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         tag={tag}
-        teamSlug={teamSlug}
         templateId={templateId}
         templateName={templateName}
         onDeleted={onTagDeleted}
@@ -142,7 +138,6 @@ export function TagHistoryHeader({
         onOpenChange={setReassignOpen}
         tag={tag}
         currentBuildId={primaryAssignment.buildId}
-        teamSlug={teamSlug}
         templateId={templateId}
         templateName={templateName}
         surface="history-header"

@@ -22,7 +22,6 @@ import { TagHistoryHeader } from './tag-history-header'
 import { TagHistoryRow } from './tag-history-row'
 
 interface TagHistoryViewProps {
-  teamSlug: string
   templateId: string
   tag: string
 }
@@ -33,7 +32,6 @@ const PREFETCH_THRESHOLD = 8
 const HEADER_SCROLL_MARGIN_PX = 44
 
 export default function TagHistoryView({
-  teamSlug,
   templateId,
   tag,
 }: TagHistoryViewProps) {
@@ -54,7 +52,7 @@ export default function TagHistoryView({
 
   const { data: templateData } = useSuspenseQuery(
     trpc.templates.getTemplate.queryOptions(
-      { teamSlug, templateId },
+      { templateId },
       {
         refetchOnMount: false,
         refetchOnWindowFocus: true,
@@ -71,7 +69,7 @@ export default function TagHistoryView({
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isPending } =
     useInfiniteQuery(
       trpc.templates.getTagAssignments.infiniteQueryOptions(
-        { teamSlug, templateId, tag, limit: TAG_HISTORY_PAGE_LIMIT },
+        { templateId, tag, limit: TAG_HISTORY_PAGE_LIMIT },
         {
           getNextPageParam: (page) => page.nextCursor ?? undefined,
           initialCursor: undefined,
@@ -119,14 +117,13 @@ export default function TagHistoryView({
 
   const tagAssignmentsQueryKey =
     trpc.templates.getTagAssignments.infiniteQueryOptions({
-      teamSlug,
       templateId,
       tag,
     }).queryKey
 
   const handleTagDeleted = async () => {
     await queryClient.invalidateQueries({ queryKey: tagAssignmentsQueryKey })
-    router.push(PROTECTED_URLS.TEMPLATE_TAGS(teamSlug, templateId))
+    router.push(PROTECTED_URLS.TEMPLATE_TAGS(templateId))
   }
 
   const handleRolledBack = useCallback(async () => {
@@ -179,7 +176,6 @@ export default function TagHistoryView({
     >
       <TagHistoryHeader
         tag={tag}
-        teamSlug={teamSlug}
         templateId={templateId}
         templateName={templateName}
         primaryAssignment={primary}
@@ -211,7 +207,6 @@ export default function TagHistoryView({
                 <TagHistoryRow
                   assignment={assignment}
                   primaryAssignment={primary}
-                  teamSlug={teamSlug}
                   templateId={templateId}
                   onRequestRollback={handleRequestRowRollback}
                 />
@@ -238,7 +233,6 @@ export default function TagHistoryView({
         tag={tag}
         currentBuildId={rollbackRequest?.currentBuildId ?? ''}
         targetBuildId={rollbackRequest?.target.buildId ?? ''}
-        teamSlug={teamSlug}
         templateId={templateId}
         templateName={templateName}
         surface={rollbackRequest?.surface ?? 'history-row'}

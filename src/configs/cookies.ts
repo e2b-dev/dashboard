@@ -5,8 +5,8 @@ import type { ResponseCookie } from 'next/dist/compiled/@edge-runtime/cookies'
  * Organized by functionality for better maintainability.
  */
 export const COOKIE_KEYS = {
-  SELECTED_TEAM_ID: 'e2b-selected-team-id',
-  SELECTED_TEAM_SLUG: 'e2b-selected-team-slug',
+  // httpOnly; holds the team API key used against infra-api / dashboard-api.
+  API_KEY: 'e2b_api_key',
 
   SIDEBAR_STATE: 'e2b-sidebar-state',
 
@@ -29,11 +29,9 @@ const BASE_COOKIE_OPTIONS: Partial<ResponseCookie> = {
  * Uses BASE_COOKIE_OPTIONS as default and spreads custom overrides.
  */
 export const COOKIE_OPTIONS = {
-  [COOKIE_KEYS.SELECTED_TEAM_ID]: {
+  [COOKIE_KEYS.API_KEY]: {
     ...BASE_COOKIE_OPTIONS,
-  },
-  [COOKIE_KEYS.SELECTED_TEAM_SLUG]: {
-    ...BASE_COOKIE_OPTIONS,
+    httpOnly: true,
   },
   [COOKIE_KEYS.SIDEBAR_STATE]: {
     ...BASE_COOKIE_OPTIONS,

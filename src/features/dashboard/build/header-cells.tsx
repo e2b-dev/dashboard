@@ -21,8 +21,6 @@ export function Template({
   templateId: string
   className?: string
 }) {
-  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
-
   return (
     <Button
       asChild
@@ -31,7 +29,7 @@ export function Template({
       className={cn('max-w-full', className)}
     >
       <Link
-        href={PROTECTED_URLS.TEMPLATE_OVERVIEW(teamSlug, templateId)}
+        href={PROTECTED_URLS.TEMPLATE_OVERVIEW(templateId)}
         onClick={(e) => e.stopPropagation()}
       >
         <p className="truncate">{template}</p>

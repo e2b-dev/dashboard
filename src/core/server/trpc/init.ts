@@ -1,19 +1,13 @@
 import { initTRPC } from '@trpc/server'
 import superjson from 'superjson'
 import { flattenError, ZodError } from 'zod'
-import type { AuthUser } from '@/core/server/auth'
 import type { RequestObservabilityContext } from '@/core/shared/clients/logger/request-observability'
-
-type AuthenticatedSession = {
-  access_token: string
-  user: AuthUser
-}
 
 /**
  * TRPC Context Factory
  *
- * Auth is resolved per-procedure by the auth middleware (Kratos whoami +
- * e2b_session), not threaded through the context.
+ * Auth is resolved per-procedure by the auth middleware (api key cookie / env),
+ * not threaded through the context.
  */
 export const createTRPCContext = async (opts: {
   headers: Headers
@@ -23,9 +17,7 @@ export const createTRPCContext = async (opts: {
   return {
     ...opts,
     requestOrigin: getRequestOrigin(opts.requestUrl),
-    session: undefined as AuthenticatedSession | undefined,
-    user: undefined as AuthUser | undefined,
-    teamId: undefined as string | undefined,
+    apiKey: undefined as string | undefined,
   }
 }
 

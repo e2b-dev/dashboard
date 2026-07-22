@@ -19,7 +19,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/ui/primitives/sidebar'
-import { useDashboard } from '../context'
 
 interface DashboardSidebarCommandProps {
   className?: string
@@ -29,7 +28,6 @@ export default function DashboardSidebarCommand({
   className,
 }: DashboardSidebarCommandProps) {
   const [open, setOpen] = useState(false)
-  const { team } = useDashboard()
   const router = useRouter()
   const visibleLinks = SIDEBAR_ALL_LINKS
 
@@ -79,11 +77,7 @@ export default function DashboardSidebarCommand({
               <CommandItem
                 key={link.label}
                 onSelect={() => {
-                  router.push(
-                    link.href({
-                      teamSlug: team.slug,
-                    })
-                  )
+                  router.push(link.href)
                   setOpen(false)
                 }}
                 className="group"

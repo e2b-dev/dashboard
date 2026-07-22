@@ -2,7 +2,6 @@ import { TRPCError } from '@trpc/server'
 import { millisecondsInDay } from 'date-fns/constants'
 import { Sandbox, TimeoutError } from 'e2b'
 import { z } from 'zod'
-import { authHeaders } from '@/configs/api'
 import {
   mapApiSandboxRecordToModel,
   mapInfraSandboxDetailsToModel,
@@ -13,17 +12,17 @@ import {
 } from '@/core/modules/sandboxes/models'
 import { createSandboxesRepository } from '@/core/modules/sandboxes/repository.server'
 import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/errors'
-import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
+import { withAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
 import { createTRPCRouter } from '@/core/server/trpc/init'
-import { protectedTeamProcedure } from '@/core/server/trpc/procedures'
+import { protectedProcedure } from '@/core/server/trpc/procedures'
 import { SandboxIdSchema } from '@/core/shared/schemas/api'
 import { SANDBOX_RESUME_TIMEOUT_MS } from '@/features/dashboard/sandbox/inspect/constants'
 import { SANDBOX_MONITORING_METRICS_RETENTION_MS } from '@/features/dashboard/sandbox/monitoring/utils/constants'
 import { TERMINAL_SANDBOX_TIMEOUT_MS } from '@/features/dashboard/terminal/constants'
 import { normalizeTerminalTemplate } from '@/features/dashboard/terminal/template'
 
-const sandboxRepositoryProcedure = protectedTeamProcedure.use(
-  withTeamAuthedRequestRepository(
+const sandboxRepositoryProcedure = protectedProcedure.use(
+  withAuthedRequestRepository(
     createSandboxesRepository,
     (sandboxesRepository) => ({
       sandboxesRepository,
@@ -209,7 +208,7 @@ export const sandboxRouter = createTRPCRouter({
   // Runs the control-plane create/connect server-side so the user's
   // account-level access token never reaches the browser. Returns only the
   // sandbox-scoped envd credentials the client needs for PTY access.
-  openTerminal: protectedTeamProcedure
+  openTerminal: protectedProcedure
     .input(
       z.object({
         template: z.string().min(1, 'Template is required'),
@@ -219,7 +218,7 @@ export const sandboxRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { sandboxId, template, requestTimeoutMs } = input
-      const { session, teamId } = ctx
+      const { apiKey } = ctx
 
       const normalizedTemplate = normalizeTerminalTemplate(template)
       if (!normalizedTemplate) {
@@ -233,7 +232,7 @@ export const sandboxRouter = createTRPCRouter({
         apiUrl: process.env.NEXT_PUBLIC_INFRA_API_URL,
         domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
         sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
-        headers: authHeaders(session.access_token, teamId),
+        apiKey,
       }
 
       try {
@@ -257,7 +256,6 @@ export const sandboxRouter = createTRPCRouter({
             metadata: {
               source: 'dashboard-terminal',
               template: normalizedTemplate,
-              userId: session.user.id,
             },
           })
           resolvedSandboxId = sandbox.sandboxId
@@ -307,7 +305,7 @@ export const sandboxRouter = createTRPCRouter({
   // The control-plane connect (which resumes + sets TTL) runs server-side so
   // the account token never reaches the browser; returns the sandbox-scoped
   // envd credentials the client uses to rebuild its envd-only client.
-  resume: protectedTeamProcedure
+  resume: protectedProcedure
     .input(
       z.object({
         sandboxId: SandboxIdSchema,
@@ -316,13 +314,13 @@ export const sandboxRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { sandboxId, requestTimeoutMs } = input
-      const { session, teamId } = ctx
+      const { apiKey } = ctx
 
       const connectionOpts = {
         apiUrl: process.env.NEXT_PUBLIC_INFRA_API_URL,
         domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
         sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
-        headers: authHeaders(session.access_token, teamId),
+        apiKey,
       }
 
       try {
@@ -363,7 +361,7 @@ export const sandboxRouter = createTRPCRouter({
   // Explicit, user-triggered pause of a running sandbox. Uses the SDK's
   // control-plane pause (which snapshots and pauses) server-side so the
   // account token never reaches the browser.
-  pause: protectedTeamProcedure
+  pause: protectedProcedure
     .input(
       z.object({
         sandboxId: SandboxIdSchema,
@@ -372,13 +370,13 @@ export const sandboxRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const { sandboxId, requestTimeoutMs } = input
-      const { session, teamId } = ctx
+      const { apiKey } = ctx
 
       const connectionOpts = {
         apiUrl: process.env.NEXT_PUBLIC_INFRA_API_URL,
         domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
         sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
-        headers: authHeaders(session.access_token, teamId),
+        apiKey,
       }
 
       try {
@@ -405,7 +403,7 @@ export const sandboxRouter = createTRPCRouter({
       }
     }),
 
-  killTerminalPty: protectedTeamProcedure
+  killTerminalPty: protectedProcedure
     .input(
       z.object({
         sandboxId: SandboxIdSchema,
@@ -418,7 +416,7 @@ export const sandboxRouter = createTRPCRouter({
         domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
         sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
         timeoutMs: TERMINAL_SANDBOX_TIMEOUT_MS,
-        headers: authHeaders(ctx.session.access_token, ctx.teamId),
+        apiKey: ctx.apiKey,
       })
 
       return sandbox.pty.kill(input.pid)

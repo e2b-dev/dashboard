@@ -4,7 +4,6 @@ import DashboardLayoutWrapper from './wrapper'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
-  params: Promise<{ teamSlug: string }>
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {

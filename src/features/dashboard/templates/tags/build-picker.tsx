@@ -26,7 +26,6 @@ const DEFAULT_LIMIT = 5
 
 interface BuildPickerProps {
   open: boolean
-  teamSlug: string
   templateId: string
   currentBuildId?: string
   selectedBuildId: string | null
@@ -36,7 +35,6 @@ interface BuildPickerProps {
 
 export default function BuildPicker({
   open,
-  teamSlug,
   templateId,
   currentBuildId,
   selectedBuildId,
@@ -53,7 +51,6 @@ export default function BuildPicker({
   const defaultQuery = useQuery(
     trpc.builds.list.queryOptions(
       {
-        teamSlug,
         buildIdOrTemplate: templateId,
         statuses: ['success'],
         limit: DEFAULT_LIMIT + 1,
@@ -69,7 +66,6 @@ export default function BuildPicker({
   const searchQuery = useQuery(
     trpc.builds.list.queryOptions(
       {
-        teamSlug,
         buildIdOrTemplate: debouncedSearch,
         statuses: ['success'],
         limit: 1,

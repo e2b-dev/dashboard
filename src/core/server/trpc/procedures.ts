@@ -1,17 +1,8 @@
-import { context, SpanStatusCode, trace } from '@opentelemetry/api'
-import z from 'zod'
-import {
-  forbiddenTeamAccessError,
-  throwTRPCErrorFromRepoError,
-} from '@/core/server/adapters/errors'
 import { authMiddleware } from '@/core/server/api/middlewares/auth'
 import {
   endTelemetryMiddleware,
   startTelemetryMiddleware,
 } from '@/core/server/api/middlewares/telemetry'
-import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
-import { getTracer } from '@/core/shared/clients/tracer'
-import { TeamSlugSchema } from '@/core/shared/schemas/team'
 import { t } from './init'
 
 /**
@@ -19,7 +10,7 @@ import { t } from './init'
  *
  * When using telemetry middlewares, ALWAYS use BOTH start and end together:
  * - startTelemetryMiddleware: Must be FIRST in the chain
- * - endTelemetryMiddleware: Must be placed AFTER domain middlewares (auth, team, etc)
+ * - endTelemetryMiddleware: Must be placed AFTER domain middlewares (auth, etc)
  *
  * Never use only one of them - they work as a pair to capture full timing
  * and collect enriched context from downstream middlewares.
@@ -46,71 +37,10 @@ export const publicProcedure = t.procedure
 /**
  * Protected Procedure
  *
- * Used to create protected routes that require authentication.
- * Includes telemetry for observability.
- *
+ * Used to create protected routes that require the team API key (cookie or
+ * E2B_API_KEY env). Includes telemetry for observability.
  */
 export const protectedProcedure = t.procedure
   .use(startTelemetryMiddleware)
   .use(authMiddleware)
-  .use(endTelemetryMiddleware)
-
-/**
- * Protected Team Procedure
- *
- * Used to create protected routes that require authentication and a team authorization, via teamSlug.
- *
- */
-export const protectedTeamProcedure = t.procedure
-  .use(startTelemetryMiddleware)
-  .use(authMiddleware)
-  .input(
-    z.object({
-      teamSlug: TeamSlugSchema,
-    })
-  )
-  .use(async ({ ctx, next, input }) => {
-    const tracer = getTracer()
-    const span = tracer.startSpan('trpc.middleware.teamAuth')
-    span.setAttribute('trpc.middleware.name', 'teamAuth')
-
-    try {
-      const teamIdResult = await context.with(
-        trace.setSpan(context.active(), span),
-        async () => {
-          return await getTeamIdFromSlug(
-            input.teamSlug,
-            ctx.session.access_token
-          )
-        }
-      )
-
-      if (!teamIdResult.ok) {
-        throwTRPCErrorFromRepoError(teamIdResult.error)
-      }
-
-      const teamId = teamIdResult.data
-
-      if (!teamId) {
-        span.setStatus({
-          code: SpanStatusCode.ERROR,
-          message: `teamId not found for teamSlug (${input.teamSlug})`,
-        })
-
-        throw forbiddenTeamAccessError()
-      }
-
-      span.setStatus({ code: SpanStatusCode.OK })
-
-      // add teamId to context - endTelemetryMiddleware will pick it up for logging
-      return next({
-        ctx: {
-          ...ctx,
-          teamId,
-        },
-      })
-    } finally {
-      span.end()
-    }
-  })
   .use(endTelemetryMiddleware)

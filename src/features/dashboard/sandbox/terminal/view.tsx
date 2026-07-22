@@ -4,26 +4,21 @@ import { type ReactNode, useMemo, useState } from 'react'
 import LoadingLayout from '@/features/dashboard/loading-layout'
 import DashboardTerminal from '@/features/dashboard/terminal/dashboard-terminal'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
-import { useDashboard } from '../../context'
 import { useSandboxContext } from '../context'
 import SandboxInspectNotFound from '../inspect/not-found'
 
 interface SandboxTerminalViewProps {
   command?: string
-  userId: string
 }
 
 const SANDBOX_TERMINAL_RESUME_TIMEOUT_MS = 70_000
 
 export default function SandboxTerminalView({
   command,
-  userId,
 }: SandboxTerminalViewProps) {
   const [shouldResumeSandbox, setShouldResumeSandbox] = useState(false)
   const [terminalResumeError, setTerminalResumeError] = useState<string>()
-  const { team } = useDashboard()
-  const { sandboxId } =
-    useRouteParams<'/dashboard/[teamSlug]/sandboxes/[sandboxId]'>()
+  const { sandboxId } = useRouteParams<'/sandboxes/[sandboxId]'>()
   const {
     sandboxInfo,
     isSandboxInfoLoading,
@@ -96,8 +91,6 @@ export default function SandboxTerminalView({
           shouldResumeSandbox ? SANDBOX_TERMINAL_RESUME_TIMEOUT_MS : undefined
         }
         sandboxScoped
-        teamSlug={team.slug}
-        userId={userId}
       />
     </div>
   )

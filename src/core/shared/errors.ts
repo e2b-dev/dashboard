@@ -64,7 +64,7 @@ export function getPublicErrorMessage(input: {
   status?: number
   message?: string
 }): string {
-  const { code, status, message } = input
+  const { code, status } = input
 
   if (code === 'unauthorized' || status === 401)
     return PUBLIC_ERROR_MESSAGE_UNAUTHORIZED

@@ -18,7 +18,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/ui/primitives/sidebar'
-import { useDashboard } from '../context'
 
 type GroupedLinks = {
   [key: string]: SidebarNavItem[]
@@ -36,9 +35,6 @@ const createGroupedLinks = (links: SidebarNavItem[]): GroupedLinks => {
 }
 
 export default function DashboardSidebarContent() {
-  const { team } = useDashboard()
-  const selectedTeamSlug = team.slug
-
   const pathname = usePathname()
   const isMobile = useIsMobile()
   const { setOpenMobile } = useSidebar()
@@ -64,9 +60,7 @@ export default function DashboardSidebarContent() {
           )}
           <SidebarMenu>
             {links.map((item) => {
-              const href = item.href({
-                teamSlug: selectedTeamSlug,
-              })
+              const href = item.href
 
               return (
                 <SidebarMenuItem key={item.label}>

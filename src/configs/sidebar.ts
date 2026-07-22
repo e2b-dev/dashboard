@@ -1,13 +1,9 @@
 import { type Icon, SandboxIcon, TemplateIcon } from '@/ui/primitives/icons'
 import { PROTECTED_URLS } from './urls'
 
-type SidebarNavArgs = {
-  teamSlug?: string
-}
-
 export type SidebarNavItem = {
   label: string
-  href: (args: SidebarNavArgs) => string
+  href: string
   icon: Icon
   group?: string
   activeMatch?: string
@@ -16,15 +12,15 @@ export type SidebarNavItem = {
 export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
   {
     label: 'Sandboxes',
-    href: (args) => PROTECTED_URLS.SANDBOXES(args.teamSlug!),
+    href: PROTECTED_URLS.SANDBOXES,
     icon: SandboxIcon,
-    activeMatch: `/dashboard/*/sandboxes/**`,
+    activeMatch: `/sandboxes/**`,
   },
   {
     label: 'Templates',
-    href: (args) => PROTECTED_URLS.TEMPLATES(args.teamSlug!),
+    href: PROTECTED_URLS.TEMPLATES,
     icon: TemplateIcon,
-    activeMatch: `/dashboard/*/templates/**`,
+    activeMatch: `/templates/**`,
   },
 ]
 

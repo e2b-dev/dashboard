@@ -24,8 +24,7 @@ export default function SandboxLayout({
   header,
   tabsHeaderAccessory,
 }: SandboxLayoutProps) {
-  const { teamSlug, sandboxId } =
-    useRouteParams<'/dashboard/[teamSlug]/sandboxes/[sandboxId]'>()
+  const { sandboxId } = useRouteParams<'/sandboxes/[sandboxId]'>()
   const { sandboxInfo, isSandboxInfoLoading, isSandboxNotFound } =
     useSandboxContext()
 
@@ -54,31 +53,25 @@ export default function SandboxLayout({
               {
                 id: 'monitoring',
                 label: 'Monitoring',
-                href: PROTECTED_URLS.SANDBOX_MONITORING(teamSlug, sandboxId),
+                href: PROTECTED_URLS.SANDBOX_MONITORING(sandboxId),
                 icon: <TrendIcon className="size-4" />,
-              },
-              {
-                id: 'events',
-                label: 'Events',
-                href: PROTECTED_URLS.SANDBOX_EVENTS(teamSlug, sandboxId),
-                icon: <HistoryIcon className="size-4" />,
               },
               {
                 id: 'logs',
                 label: 'Logs',
-                href: PROTECTED_URLS.SANDBOX_LOGS(teamSlug, sandboxId),
+                href: PROTECTED_URLS.SANDBOX_LOGS(sandboxId),
                 icon: <ListIcon className="size-4" />,
               },
               {
                 id: 'terminal',
                 label: 'Terminal',
-                href: PROTECTED_URLS.SANDBOX_TERMINAL(teamSlug, sandboxId),
+                href: PROTECTED_URLS.SANDBOX_TERMINAL(sandboxId),
                 icon: <TerminalIcon className="size-4" />,
               },
               {
                 id: 'filesystem',
                 label: 'Filesystem',
-                href: PROTECTED_URLS.SANDBOX_FILESYSTEM(teamSlug, sandboxId),
+                href: PROTECTED_URLS.SANDBOX_FILESYSTEM(sandboxId),
                 icon: <StorageIcon className="size-4" />,
               },
             ]}

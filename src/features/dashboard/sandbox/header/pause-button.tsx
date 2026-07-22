@@ -17,13 +17,12 @@ interface PauseButtonProps {
 export default function PauseButton({ className }: PauseButtonProps) {
   const [open, setOpen] = useState(false)
   const { sandboxInfo, refetchSandboxInfo } = useSandboxContext()
-  const { teamSlug, sandboxId } =
-    useRouteParams<'/dashboard/[teamSlug]/sandboxes/[sandboxId]'>()
+  const { sandboxId } = useRouteParams<'/sandboxes/[sandboxId]'>()
   const trpc = useTRPC()
   const queryClient = useQueryClient()
 
   const canPause = sandboxInfo?.state === 'running'
-  const detailsKey = trpc.sandbox.details.queryKey({ teamSlug, sandboxId })
+  const detailsKey = trpc.sandbox.details.queryKey({ sandboxId })
 
   const { mutate: pause, isPending } = useMutation(
     trpc.sandbox.pause.mutationOptions({
@@ -55,7 +54,7 @@ export default function PauseButton({ className }: PauseButtonProps) {
   const handlePause = () => {
     if (!canPause || !sandboxInfo?.sandboxID) return
 
-    pause({ teamSlug, sandboxId: sandboxInfo.sandboxID })
+    pause({ sandboxId: sandboxInfo.sandboxID })
   }
 
   if (!canPause) return null

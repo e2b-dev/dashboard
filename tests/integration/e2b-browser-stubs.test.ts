@@ -1,5 +1,3 @@
-import type { NextConfig } from 'next'
-import { PHASE_PRODUCTION_BUILD } from 'next/constants'
 import { describe, expect, it } from 'vitest'
 import nextConfig from '../../next.config'
 
@@ -16,16 +14,7 @@ class MockNormalModuleReplacementPlugin {
   }
 }
 
-// withPostHogConfig wraps the config as a function; resolve it to the object form.
-type NextConfigFn = (
-  phase: string,
-  ctx: { defaultConfig: NextConfig }
-) => Promise<NextConfig>
-
-const resolveNextConfig = () =>
-  (nextConfig as unknown as NextConfigFn)(PHASE_PRODUCTION_BUILD, {
-    defaultConfig: {},
-  })
+const resolveNextConfig = async () => nextConfig
 
 describe('E2B browser module stubs', () => {
   it('aliases node built-ins after webpack strips node: scheme requests', async () => {

@@ -14,7 +14,6 @@ import { createEnvdSandbox } from '@/core/shared/create-envd-sandbox'
 import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
 import { getParentPath, normalizePath } from '@/lib/utils/filesystem'
 import { useTRPCClient } from '@/trpc/client'
-import { useDashboard } from '../../context'
 import { useSandboxContext } from '../context'
 import { SANDBOX_RESUME_TIMEOUT_MS } from './constants'
 import { createFilesystemStore, type FilesystemStore } from './filesystem/store'
@@ -63,8 +62,6 @@ export default function SandboxInspectProvider({
   children,
   rootPath,
 }: SandboxInspectProviderProps) {
-  const { team } = useDashboard()
-  const teamId = team.id
   const trpcClient = useTRPCClient()
 
   const { sandboxInfo, isRunning, refetchSandboxInfo } = useSandboxContext()
@@ -80,8 +77,8 @@ export default function SandboxInspectProvider({
   const { trackInteraction } = useSandboxInspectAnalytics()
   const normalizedRootPath = normalizePath(rootPath)
   const expectedConnectionKey =
-    sandboxId && teamId && sandboxState
-      ? `${teamId}:${sandboxId}:${normalizedRootPath}:${sandboxState}`
+    sandboxId && sandboxState
+      ? `${sandboxId}:${normalizedRootPath}:${sandboxState}`
       : undefined
 
   // ---------- filesystem operations exposed via context ----------
@@ -202,7 +199,7 @@ export default function SandboxInspectProvider({
   const connectSandbox = async (options?: {
     connectionKey?: string | null
   }) => {
-    if (!sandboxInfo || !sandboxId || !teamId) return false
+    if (!sandboxInfo || !sandboxId) return false
     if (sandboxInfo.state === 'killed') return false
 
     const didConnect = await buildManagerFromCreds({
@@ -219,7 +216,6 @@ export default function SandboxInspectProvider({
 
     trackInteraction('started_watching', {
       sandbox_id: sandboxId,
-      team_id: teamId,
       root_path: rootPath,
     })
     return true
@@ -254,12 +250,11 @@ export default function SandboxInspectProvider({
   // happens server-side via the `sandbox.resume` mutation; we then rebuild the
   // envd-only client from the returned sandbox-scoped credentials.
   const resumeSandbox = async () => {
-    if (!sandboxId || !teamId) return
+    if (!sandboxId) return
     setSandboxResumeError(undefined)
     setIsSandboxResumePending(true)
     try {
       const creds = await trpcClient.sandbox.resume.mutate({
-        teamSlug: team.slug,
         sandboxId,
         requestTimeoutMs: SANDBOX_RESUME_TIMEOUT_MS,
       })
@@ -274,7 +269,7 @@ export default function SandboxInspectProvider({
       const nextSandboxInfo = await refetchSandboxInfo()
       if (nextSandboxInfo?.state === 'running') {
         setConnectionKey(
-          `${teamId}:${nextSandboxInfo.sandboxID}:${normalizedRootPath}:${nextSandboxInfo.state}`
+          `${nextSandboxInfo.sandboxID}:${normalizedRootPath}:${nextSandboxInfo.state}`
         )
       }
       setIsSandboxResumePending(false)

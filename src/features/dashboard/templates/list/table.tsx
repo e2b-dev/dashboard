@@ -50,7 +50,6 @@ export default function TemplatesTable() {
   'use no memo'
 
   const trpc = useTRPC()
-  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
 
   const { sorting, setSorting, globalFilter, setGlobalFilter } =
     useTemplateTableStore()
@@ -82,7 +81,6 @@ export default function TemplatesTable() {
   } = useSuspenseInfiniteQuery(
     trpc.templates.getTemplates.infiniteQueryOptions(
       {
-        teamSlug,
         limit: TEMPLATES_PAGE_SIZE,
         public: isPublic,
         search: globalFilter || undefined,

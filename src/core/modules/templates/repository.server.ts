@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { authHeaders } from '@/configs/api'
+import { apiKeyHeaders } from '@/configs/api'
 import { CACHE_TAGS } from '@/configs/cache'
 import { USE_MOCK_DATA } from '@/configs/env-flags'
 import {
@@ -17,24 +17,15 @@ import type {
   TemplateTagExistsResult,
   TemplateTagGroup,
 } from '@/core/modules/templates/models'
-import {
-  type AuthUserEmailResolver,
-  getAuthUserEmailsById,
-  resolveCreatorEmails,
-} from '@/core/modules/users/auth-user-emails.server'
 import { api, infra } from '@/core/shared/clients/api'
 import { repoErrorFromHttp } from '@/core/shared/errors'
-import type {
-  RequestScope,
-  TeamRequestScope,
-} from '@/core/shared/repository-scope'
+import type { RequestScope } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
 
 type TemplatesRepositoryDeps = {
   apiClient: typeof api
   infraClient: typeof infra
-  authHeaders: typeof authHeaders
-  resolveAuthUserEmailsById: AuthUserEmailResolver
+  apiKeyHeaders: typeof apiKeyHeaders
 }
 
 export interface TeamTemplatesRepository {
@@ -95,12 +86,11 @@ export interface DefaultTemplatesRepository {
 }
 
 export function createTemplatesRepository(
-  scope: TeamRequestScope,
+  scope: RequestScope,
   deps: TemplatesRepositoryDeps = {
     apiClient: api,
     infraClient: infra,
-    authHeaders: authHeaders,
-    resolveAuthUserEmailsById: getAuthUserEmailsById,
+    apiKeyHeaders: apiKeyHeaders,
   }
 ): TeamTemplatesRepository {
   return {
@@ -129,7 +119,7 @@ export function createTemplatesRepository(
           },
         },
         headers: {
-          ...deps.authHeaders(scope.accessToken, scope.teamId),
+          ...deps.apiKeyHeaders(scope.apiKey),
         },
       })
 
@@ -176,7 +166,7 @@ export function createTemplatesRepository(
             },
           },
           headers: {
-            ...deps.authHeaders(scope.accessToken, scope.teamId),
+            ...deps.apiKeyHeaders(scope.apiKey),
           },
         }
       )
@@ -210,7 +200,7 @@ export function createTemplatesRepository(
             },
           },
           headers: {
-            ...deps.authHeaders(scope.accessToken, scope.teamId),
+            ...deps.apiKeyHeaders(scope.apiKey),
           },
         }
       )
@@ -246,7 +236,7 @@ export function createTemplatesRepository(
             },
           },
           headers: {
-            ...deps.authHeaders(scope.accessToken, scope.teamId),
+            ...deps.apiKeyHeaders(scope.apiKey),
           },
         }
       )
@@ -283,7 +273,7 @@ export function createTemplatesRepository(
             },
           },
           headers: {
-            ...deps.authHeaders(scope.accessToken, scope.teamId),
+            ...deps.apiKeyHeaders(scope.apiKey),
           },
         }
       )
@@ -310,13 +300,8 @@ export function createTemplatesRepository(
         })
       }
       const res = await deps.infraClient.GET('/templates', {
-        params: {
-          query: {
-            teamID: scope.teamId,
-          },
-        },
         headers: {
-          ...deps.authHeaders(scope.accessToken, scope.teamId),
+          ...deps.apiKeyHeaders(scope.apiKey),
         },
       })
 
@@ -331,10 +316,7 @@ export function createTemplatesRepository(
       }
 
       return ok({
-        templates: await resolveCreatorEmails(
-          res.data ?? [],
-          deps.resolveAuthUserEmailsById
-        ),
+        templates: res.data ?? [],
       })
     },
     async listTeamTemplates(options) {
@@ -347,7 +329,7 @@ export function createTemplatesRepository(
           query: options,
         },
         headers: {
-          ...deps.authHeaders(scope.accessToken, scope.teamId),
+          ...deps.apiKeyHeaders(scope.apiKey),
         },
       })
 
@@ -395,7 +377,7 @@ export function createTemplatesRepository(
           tags: [tag],
         },
         headers: {
-          ...deps.authHeaders(scope.accessToken, scope.teamId),
+          ...deps.apiKeyHeaders(scope.apiKey),
         },
       })
 
@@ -421,7 +403,7 @@ export function createTemplatesRepository(
           tags,
         },
         headers: {
-          ...deps.authHeaders(scope.accessToken, scope.teamId),
+          ...deps.apiKeyHeaders(scope.apiKey),
         },
       })
 
@@ -445,7 +427,7 @@ export function createTemplatesRepository(
           },
         },
         headers: {
-          ...deps.authHeaders(scope.accessToken, scope.teamId),
+          ...deps.apiKeyHeaders(scope.apiKey),
         },
       })
 
@@ -472,7 +454,7 @@ export function createTemplatesRepository(
           },
         },
         headers: {
-          ...deps.authHeaders(scope.accessToken, scope.teamId),
+          ...deps.apiKeyHeaders(scope.apiKey),
         },
       })
 
@@ -493,9 +475,9 @@ export function createTemplatesRepository(
 
 export function createDefaultTemplatesRepository(
   scope: RequestScope,
-  deps: Pick<TemplatesRepositoryDeps, 'apiClient' | 'authHeaders'> = {
+  deps: Pick<TemplatesRepositoryDeps, 'apiClient' | 'apiKeyHeaders'> = {
     apiClient: api,
-    authHeaders: authHeaders,
+    apiKeyHeaders: apiKeyHeaders,
   }
 ): DefaultTemplatesRepository {
   return {
@@ -509,7 +491,7 @@ export function createDefaultTemplatesRepository(
       const { data, error, response } = await deps.apiClient.GET(
         '/templates/defaults',
         {
-          headers: deps.authHeaders(scope.accessToken),
+          headers: deps.apiKeyHeaders(scope.apiKey),
           next: { tags: [CACHE_TAGS.DEFAULT_TEMPLATES] },
         }
       )

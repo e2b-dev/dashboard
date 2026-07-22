@@ -40,7 +40,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/ui/primitives/tooltip'
-import { useDashboard } from '../../context'
 
 function E2BTemplateBadge() {
   return (
@@ -61,7 +60,6 @@ export function ActionsCell({
   row,
 }: CellContext<Template | DefaultTemplate, unknown>) {
   const template = row.original
-  const { team } = useDashboard()
 
   const { toast } = useToast()
   const trpc = useTRPC()
@@ -134,7 +132,6 @@ export function ActionsCell({
 
   const togglePublish = () => {
     updateTemplateMutation.mutate({
-      teamSlug: team.slug,
       templateId: template.templateID,
       public: !template.public,
     })
@@ -142,7 +139,6 @@ export function ActionsCell({
 
   const deleteTemplate = () => {
     deleteTemplateMutation.mutate({
-      teamSlug: team.slug,
       templateId: template.templateID,
     })
   }

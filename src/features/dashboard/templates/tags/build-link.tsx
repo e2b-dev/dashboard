@@ -8,18 +8,12 @@ import { HoverPrefetchLink } from '@/ui/hover-prefetch-link'
 import { NULL_BUILD_ID } from './constants'
 
 interface BuildLinkProps {
-  teamSlug: string
   templateId: string
   buildId: string
   assignedAt: string
 }
 
-export function BuildLink({
-  teamSlug,
-  templateId,
-  buildId,
-  assignedAt,
-}: BuildLinkProps) {
+export function BuildLink({ templateId, buildId, assignedAt }: BuildLinkProps) {
   const shortId = useMemo(() => {
     if (buildId === NULL_BUILD_ID) return '--'
     if (buildId.length <= 12) return buildId
@@ -49,7 +43,7 @@ export function BuildLink({
     <div className="flex items-center gap-2 min-w-0">
       {isLinkable ? (
         <HoverPrefetchLink
-          href={PROTECTED_URLS.TEMPLATE_BUILD(teamSlug, templateId, buildId)}
+          href={PROTECTED_URLS.TEMPLATE_BUILD(templateId, buildId)}
           className="group/build text-fg hover:text-fg"
         >
           {inner}

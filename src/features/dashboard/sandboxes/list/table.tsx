@@ -20,7 +20,6 @@ import { useLocalStorage } from 'usehooks-ts'
 import type { Sandboxes } from '@/core/modules/sandboxes/models'
 import { useSandboxListTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
 import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
-import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils'
 import { useTRPC } from '@/trpc/client'
 import ClientOnly from '@/ui/client-only'
@@ -246,7 +245,6 @@ function SandboxesTableView({
 }
 
 export function NewSandboxesTable() {
-  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/sandboxes'>()
   const trpc = useTRPC()
   const pollingInterval = useSandboxListTableStore(
     (state) => state.pollingInterval
@@ -261,7 +259,7 @@ export function NewSandboxesTable() {
     isFetchingNextPage,
   } = useSuspenseInfiniteQuery(
     trpc.sandboxes.listSandboxesPaginated.infiniteQueryOptions(
-      { teamSlug, limit: SANDBOXES_PAGE_SIZE },
+      { limit: SANDBOXES_PAGE_SIZE },
       {
         getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
         initialCursor: undefined,

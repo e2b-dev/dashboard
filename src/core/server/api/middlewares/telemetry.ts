@@ -15,7 +15,6 @@ import {
   internalServerError,
   isExpectedTRPCError,
 } from '@/core/server/adapters/errors'
-import type { AuthUser } from '@/core/server/auth'
 import { t } from '@/core/server/trpc/init'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import { withRequestObservabilityContext } from '@/core/shared/clients/logger/request-observability'
@@ -200,16 +199,6 @@ export const endTelemetryMiddleware = t.middleware(
       if (!v || typeof v !== 'string') continue
 
       span.setAttribute(k, v)
-    }
-
-    // set span and context attributs for procedure ctx inferred parameters
-    if ('user' in ctx && ctx.user && (ctx.user as AuthUser).id) {
-      span.setAttribute('user_id', (ctx.user as AuthUser).id)
-      contextAttrs.user_id = (ctx.user as AuthUser).id
-    }
-    if ('teamId' in ctx && typeof ctx.teamId === 'string') {
-      span.setAttribute('team_id', ctx.teamId)
-      contextAttrs.team_id = ctx.teamId
     }
 
     try {

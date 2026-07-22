@@ -24,14 +24,12 @@ import { EditIcon, PrivateIcon, UnlockIcon } from '@/ui/primitives/icons'
 import { Loader } from '@/ui/primitives/loader'
 
 interface TemplateVisibilityDropdownProps {
-  teamSlug: string
   templateId: string
   isPublic: boolean
   displayName: string
 }
 
 export function TemplateVisibilityDropdown({
-  teamSlug,
   templateId,
   isPublic,
   displayName,
@@ -55,7 +53,6 @@ export function TemplateVisibilityDropdown({
 
         const listKey = trpc.templates.getTemplates.pathKey()
         const detailKey = trpc.templates.getTemplate.queryKey({
-          teamSlug,
           templateId,
         })
 
@@ -103,7 +100,6 @@ export function TemplateVisibilityDropdown({
         })
         queryClient.invalidateQueries({
           queryKey: trpc.templates.getTemplate.queryKey({
-            teamSlug,
             templateId,
           }),
         })
@@ -115,7 +111,6 @@ export function TemplateVisibilityDropdown({
 
   const togglePublish = () => {
     updateTemplate.mutate({
-      teamSlug,
       templateId,
       public: !isPublic,
     })

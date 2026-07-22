@@ -39,8 +39,6 @@ export function TemplatesTableBody({
   isRefetching,
 }: TemplatesTableBodyProps) {
   'use no memo'
-
-  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
   const { resetFilters, globalFilter, isPublic } = useTemplateTableStore()
 
   const centerRows = table.getCenterRows()
@@ -144,10 +142,7 @@ export function TemplatesTableBody({
             >
               {!isDefault && (
                 <Link
-                  href={PROTECTED_URLS.TEMPLATE_OVERVIEW(
-                    teamSlug,
-                    template.templateID
-                  )}
+                  href={PROTECTED_URLS.TEMPLATE_OVERVIEW(template.templateID)}
                   prefetch={false}
                   aria-label={`Open template ${primaryName ?? template.templateID}`}
                   className="absolute inset-0 z-1"
