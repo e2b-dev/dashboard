@@ -111,7 +111,11 @@ export function createTemplatesRepository(
         )
         if (!template) {
           return err(
-            repoErrorFromHttp(404, 'Template not found in this team', undefined)
+            repoErrorFromHttp(
+              404,
+              'Template not found in this project',
+              undefined
+            )
           )
         }
 
@@ -141,7 +145,11 @@ export function createTemplatesRepository(
 
       if (!res.data) {
         return err(
-          repoErrorFromHttp(404, 'Template not found in this team', undefined)
+          repoErrorFromHttp(
+            404,
+            'Template not found in this project',
+            undefined
+          )
         )
       }
 

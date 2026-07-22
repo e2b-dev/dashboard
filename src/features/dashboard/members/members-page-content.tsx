@@ -53,7 +53,7 @@ const MembersTableRows = ({ query }: { query: string }) => {
       <TableEmptyState colSpan={3}>
         <p className="prose-body-highlight text-fg-tertiary">
           {members.length === 0
-            ? 'No team members found.'
+            ? 'No project members found.'
             : 'No members match your search.'}
         </p>
       </TableEmptyState>

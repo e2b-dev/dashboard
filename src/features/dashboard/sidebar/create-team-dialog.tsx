@@ -54,13 +54,13 @@ export const CreateTeamDialog = ({
   const createTeamMutation = useMutation(
     trpc.teams.create.mutationOptions({
       onError: async (error) => {
-        toast(defaultErrorToast(error.message || 'Failed to create team'))
+        toast(defaultErrorToast(error.message || 'Failed to create project'))
       },
       onSuccess: async (team) => {
         await queryClient.invalidateQueries({
           queryKey: trpc.teams.list.queryKey(),
         })
-        toast(defaultSuccessToast('Team was created'))
+        toast(defaultSuccessToast('Project was created'))
         handleDialogChange(false)
 
         if (!team.slug) return
@@ -87,9 +87,9 @@ export const CreateTeamDialog = ({
     <Dialog open={open} onOpenChange={handleDialogChange}>
       <DialogContent className="max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Create Team</DialogTitle>
+          <DialogTitle>Create Project</DialogTitle>
           <DialogDescription>
-            Create a new team to collaborate with others.
+            Create a new project to collaborate with others.
           </DialogDescription>
         </DialogHeader>
 
@@ -101,10 +101,10 @@ export const CreateTeamDialog = ({
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Team Name</FormLabel>
+                    <FormLabel>Project Name</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Enter team name"
+                        placeholder="Enter project name"
                         disabled={createTeamMutation.isPending}
                         {...field}
                       />
@@ -128,11 +128,13 @@ export const CreateTeamDialog = ({
                 type="submit"
                 disabled={createTeamMutation.isPending}
                 loading={
-                  createTeamMutation.isPending ? 'Creating Team...' : undefined
+                  createTeamMutation.isPending
+                    ? 'Creating Project...'
+                    : undefined
                 }
                 variant="primary"
               >
-                Create Team
+                Create Project
               </Button>
             </DialogFooter>
           </form>

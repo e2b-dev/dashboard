@@ -58,7 +58,7 @@ export function createUserTeamsRepository(
       return err(
         repoErrorFromHttp(
           response.status,
-          error?.message ?? 'Failed to fetch user teams',
+          error?.message ?? 'Failed to fetch user projects',
           error
         )
       )
@@ -89,7 +89,7 @@ export function createUserTeamsRepository(
             createRepoError({
               code: 'validation',
               status: response.status,
-              message: error?.message ?? 'Failed to create team',
+              message: error?.message ?? 'Failed to create project',
               cause: error,
             })
           )
@@ -98,7 +98,7 @@ export function createUserTeamsRepository(
         return err(
           repoErrorFromHttp(
             response.status,
-            error?.message ?? 'Failed to create team',
+            error?.message ?? 'Failed to create project',
             error
           )
         )
@@ -126,7 +126,7 @@ export function createUserTeamsRepository(
         return err(
           repoErrorFromHttp(
             response.status,
-            error?.message ?? 'Failed to resolve team',
+            error?.message ?? 'Failed to resolve project',
             error
           )
         )

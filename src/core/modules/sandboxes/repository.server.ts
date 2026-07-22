@@ -508,7 +508,7 @@ export function createSandboxesRepository(
         return err(
           repoErrorFromHttp(
             result.response.status,
-            result.error?.message ?? 'Failed to fetch team metrics',
+            result.error?.message ?? 'Failed to fetch project metrics',
             result.error
           )
         )
@@ -550,7 +550,7 @@ export function createSandboxesRepository(
         return err(
           repoErrorFromHttp(
             result.response.status,
-            result.error?.message ?? 'Failed to fetch team metrics max',
+            result.error?.message ?? 'Failed to fetch project metrics max',
             result.error
           )
         )

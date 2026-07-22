@@ -86,26 +86,26 @@ export const SIDEBAR_MAIN_LINKS: SidebarNavItem[] = [
       ]
     : []),
 
-  // Team
+  // Project
   {
     label: 'General',
     href: (args) => PROTECTED_URLS.GENERAL(args.teamSlug!),
     icon: SettingsIcon,
-    group: 'team',
+    group: 'project',
     activeMatch: `/dashboard/*/general`,
   },
   {
     label: 'API Keys',
     href: (args) => PROTECTED_URLS.KEYS(args.teamSlug!),
     icon: KeyIcon,
-    group: 'team',
+    group: 'project',
     activeMatch: `/dashboard/*/keys`,
   },
   {
     label: 'Members',
     href: (args) => PROTECTED_URLS.MEMBERS(args.teamSlug!),
     icon: PersonsIcon,
-    group: 'team',
+    group: 'project',
     activeMatch: `/dashboard/*/members`,
   },
 

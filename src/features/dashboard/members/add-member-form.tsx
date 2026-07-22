@@ -57,7 +57,7 @@ export const AddMemberForm = ({ className, onSuccess }: AddMemberFormProps) => {
         await queryClient.invalidateQueries({
           queryKey: trpc.teams.members.queryKey({ teamSlug: team.slug }),
         })
-        toast(defaultSuccessToast('The member has been added to the team.'))
+        toast(defaultSuccessToast('The member has been added to the project.'))
         form.reset()
         onSuccess?.()
       },

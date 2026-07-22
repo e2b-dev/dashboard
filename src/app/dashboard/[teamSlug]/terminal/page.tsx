@@ -198,7 +198,7 @@ function TerminalSignIn({
 }
 
 function TerminalUnavailable({
-  message = 'We could not resolve a dashboard team for this account.',
+  message = 'We could not resolve a dashboard project for this account.',
 }: {
   message?: string
 }) {

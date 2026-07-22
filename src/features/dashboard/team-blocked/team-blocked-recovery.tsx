@@ -436,7 +436,7 @@ export const TeamBlockedRecoveryPaymentElement = ({
         loadingMessage={loadingMessage}
         submitLabel={submitLabel}
         processingLabel={
-          isCheckingTeamStatus ? 'Checking team status...' : processingLabel
+          isCheckingTeamStatus ? 'Checking project status...' : processingLabel
         }
         readyErrorMessage={errorMessages.ready}
         isProcessing={isCheckingTeamStatus}

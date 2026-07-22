@@ -135,7 +135,7 @@ export const TeamName = (): ReactElement => {
                   Cancel
                 </Button>
                 <IconButton
-                  aria-label="Save team name"
+                  aria-label="Save project name"
                   type="submit"
                   variant="secondary"
                   disabled={isSaveDisabled}
@@ -149,7 +149,7 @@ export const TeamName = (): ReactElement => {
               </>
             ) : (
               <IconButton
-                aria-label="Edit team name"
+                aria-label="Edit project name"
                 type="button"
                 variant="secondary"
                 onClick={handleStartEditing}

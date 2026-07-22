@@ -74,7 +74,7 @@ export default async function ConnectionsPage({
         <header className="flex flex-col gap-1">
           <h1 className="prose-title text-fg">Connections</h1>
           <p className="prose-body text-fg-tertiary max-w-2xl">
-            Connect services that run workloads in your E2B team.
+            Connect services that run workloads in your E2B project.
           </p>
         </header>
 

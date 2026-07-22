@@ -36,7 +36,7 @@ export const RemoveMemberDialog = ({
 }: RemoveMemberDialogProps) => {
   const shortMemberName = memberName?.trim().split(/\s+/)[0] || memberEmail
   const fullMemberName = memberName ?? memberEmail
-  const teamLabel = teamName || 'this team'
+  const teamLabel = teamName || 'this project'
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

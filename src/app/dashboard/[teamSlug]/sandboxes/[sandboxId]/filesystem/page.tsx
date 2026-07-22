@@ -30,7 +30,7 @@ export default async function SandboxInspectPage({
 
   const teamId = await getTeamIdFromSlug(teamSlug, authContext.accessToken)
   if (!teamId.ok) {
-    throw new Error('Failed to resolve team for sandbox filesystem')
+    throw new Error('Failed to resolve project for sandbox filesystem')
   }
   if (!teamId.data) {
     redirect(PROTECTED_URLS.DASHBOARD)

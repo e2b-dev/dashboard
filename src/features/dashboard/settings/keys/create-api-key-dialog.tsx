@@ -123,7 +123,7 @@ export const CreateApiKeyDialog: FC<CreateApiKeyDialogProps> = ({
             <DialogHeader>
               <DialogTitle>Create new key</DialogTitle>
               <DialogDescription className="sr-only">
-                Enter a name and create a new API key for this team.
+                Enter a name and create a new API key for this project.
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>

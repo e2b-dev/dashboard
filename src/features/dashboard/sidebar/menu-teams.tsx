@@ -83,7 +83,7 @@ export default function DashboardSidebarMenuTeams() {
           </Link>
         ))
       ) : (
-        <DropdownMenuItem disabled>No teams available</DropdownMenuItem>
+        <DropdownMenuItem disabled>No projects available</DropdownMenuItem>
       )}
     </DropdownMenuRadioGroup>
   )

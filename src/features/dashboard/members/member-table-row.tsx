@@ -80,13 +80,13 @@ export const MemberTableRow = ({ member, addedByMember }: TableRowProps) => {
 
           router.push(PROTECTED_URLS.DASHBOARD)
 
-          toast(defaultSuccessToast('You have left the team.'))
+          toast(defaultSuccessToast('You have left the project.'))
         } else {
           await queryClient.invalidateQueries({
             queryKey: trpc.teams.members.queryKey({ teamSlug: team.slug }),
           })
           toast(
-            defaultSuccessToast('The member has been removed from the team.')
+            defaultSuccessToast('The member has been removed from the project.')
           )
         }
       },

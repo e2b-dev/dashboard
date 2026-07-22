@@ -66,7 +66,7 @@ export function createTeamsRepository(
         return err(
           repoErrorFromHttp(
             response.status,
-            error?.message ?? 'Failed to fetch team members',
+            error?.message ?? 'Failed to fetch project members',
             error
           )
         )
@@ -112,7 +112,7 @@ export function createTeamsRepository(
         return err(
           repoErrorFromHttp(
             response.status,
-            error?.message ?? 'Failed to update team name',
+            error?.message ?? 'Failed to update project name',
             error
           )
         )
@@ -139,7 +139,7 @@ export function createTeamsRepository(
         return err(
           repoErrorFromHttp(
             response.status,
-            error?.message ?? 'Failed to add team member',
+            error?.message ?? 'Failed to add project member',
             error
           )
         )
@@ -165,7 +165,7 @@ export function createTeamsRepository(
         return err(
           repoErrorFromHttp(
             response.status,
-            error?.message ?? 'Failed to remove team member',
+            error?.message ?? 'Failed to remove project member',
             error
           )
         )

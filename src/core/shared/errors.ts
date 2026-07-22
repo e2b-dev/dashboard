@@ -13,7 +13,7 @@ export const PUBLIC_ERROR_MESSAGE_UNAUTHORIZED = 'Unauthorized'
 export const PUBLIC_ERROR_MESSAGE_FORBIDDEN =
   'You are not authorized to access this resource'
 export const PUBLIC_ERROR_MESSAGE_FORBIDDEN_TEAM =
-  'You are not authorized to access this team'
+  'You are not authorized to access this project'
 export const PUBLIC_ERROR_MESSAGE_UNAUTHENTICATED = 'User not authenticated'
 export const PUBLIC_ERROR_MESSAGE_INTERNAL =
   'An Unexpected Error Occurred, please try again. If the problem persists, please contact support.'

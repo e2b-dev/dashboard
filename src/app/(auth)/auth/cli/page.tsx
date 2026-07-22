@@ -65,7 +65,7 @@ async function handleLegacyCLIAuth(
   }).listUserTeams()
 
   if (!teamsResult.ok) {
-    throw new Error('Failed to resolve default team')
+    throw new Error('Failed to resolve default project')
   }
 
   const defaultTeam =
@@ -73,7 +73,7 @@ async function handleLegacyCLIAuth(
     teamsResult.data.find((team) => team.slug)
 
   if (!defaultTeam) {
-    throw new Error('Failed to resolve default team')
+    throw new Error('Failed to resolve default project')
   }
 
   const e2bAccessToken = await generateE2BUserAccessToken(
