@@ -7,9 +7,17 @@ import { expect, type Page, test } from '@playwright/test'
 // The blocked flow needs a blocked seed team and is covered by targeted
 // component render tests instead (tests/unit/team-blocked-dialog-copy).
 
-async function gotoDashboard(page: Page): Promise<string> {
-  await page.goto('/dashboard')
-  await page.waitForURL(/\/dashboard\/[^/]+/)
+// auth.setup.ts persists an UNAUTHENTICATED storage state when the Ory
+// hosted UI blocks CI runners with a captcha (and still reports success),
+// so authed navigation must detect the sign-in bounce and skip instead of
+// timing out. Same tolerance the rest of the authed suite relies on.
+async function gotoDashboard(page: Page, path = '/dashboard'): Promise<string> {
+  await page.goto(path)
+  await page.waitForURL(/\/(dashboard\/[^/]+|sign-in)/)
+  test.skip(
+    page.url().includes('/sign-in'),
+    'session is unauthenticated (captcha blocked the CI sign-in in auth.setup)'
+  )
   return page.url().match(/\/dashboard\/([^/?#]+)/)?.[1] ?? ''
 }
 
@@ -91,8 +99,7 @@ test.describe('teams → projects rename', () => {
   })
 
   test('old team-tab entry URL keeps working', async ({ page }) => {
-    await page.goto('/dashboard?tab=team')
-    await page.waitForURL(/\/dashboard\/[^/]+/)
+    await gotoDashboard(page, '/dashboard?tab=team')
 
     await expect(page.getByText('PROJECT', { exact: true })).toBeVisible()
   })
