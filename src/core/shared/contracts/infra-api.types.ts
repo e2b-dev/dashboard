@@ -676,6 +676,55 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/sandboxes/{sandboxID}/fork': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Fork sandbox
+     * @description Fork the sandbox: checkpoint the running sandbox in place (it is briefly paused, snapshotted with its full memory state, and resumed on its node, keeping its ID and expiration untouched) and create count new sandboxes from that snapshot. Returns one result per requested fork, each carrying either the created sandbox or the error that prevented it from starting. A non-201 status means the request failed before any fork was attempted.
+     */
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          sandboxID: components['parameters']['sandboxID']
+        }
+        cookie?: never
+      }
+      requestBody?: {
+        content: {
+          'application/json': components['schemas']['SandboxForkRequest']
+        }
+      }
+      responses: {
+        /** @description The sandbox was snapshotted and the forks were attempted; each entry reports one fork's outcome */
+        201: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['SandboxForkResult'][]
+          }
+        }
+        401: components['responses']['401']
+        404: components['responses']['404']
+        409: components['responses']['409']
+        500: components['responses']['500']
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/sandboxes/{sandboxID}/connect': {
     parameters: {
       query?: never
@@ -936,6 +985,8 @@ export interface paths {
       parameters: {
         query?: {
           sandboxID?: string
+          /** @description Filter snapshots by name or ID, optionally tag-qualified (e.g. "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1"). */
+          name?: string
           /** @description Maximum number of items to return per page */
           limit?: components['parameters']['paginationLimit']
           /** @description Cursor to start the list from */
@@ -1874,6 +1925,7 @@ export interface paths {
         }
         401: components['responses']['401']
         404: components['responses']['404']
+        409: components['responses']['409']
         500: components['responses']['500']
       }
     }
@@ -2798,7 +2850,22 @@ export interface components {
       metadata?: components['schemas']['SandboxMetadata']
       envVars?: components['schemas']['EnvVars']
       mcp?: components['schemas']['Mcp']
+      iam?: components['schemas']['SandboxIam']
       volumeMounts?: components['schemas']['SandboxVolumeMount'][]
+    }
+    /** @description Sandbox workload identity configuration. A non-empty, valid tokens map enables workload identity for the sandbox. */
+    SandboxIam: {
+      tokens?: components['schemas']['SandboxIamTokens']
+    }
+    /** @description Named workload-token definitions, keyed by a caller-chosen token name. */
+    SandboxIamTokens: {
+      [key: string]: components['schemas']['SandboxIamToken']
+    }
+    SandboxIamToken: {
+      /** @description Audience of the workload token, stored exactly as provided. */
+      audience: string
+      /** @description Workload token type. */
+      tokenType: string
     }
     ResumedSandbox: {
       /**
@@ -2841,6 +2908,25 @@ export interface components {
        * @default true
        */
       memory: boolean
+    }
+    SandboxForkRequest: {
+      /**
+       * Format: int32
+       * @description Time to live for the new forked sandboxes in seconds.
+       * @default 15
+       */
+      timeout: number
+      /**
+       * Format: int32
+       * @description Number of forked sandboxes to create. All forks boot from the same snapshot, so the snapshot is captured once regardless of count. Each fork succeeds or fails independently; the outcome of each is reported in its entry of the response list.
+       * @default 1
+       */
+      count: number
+    }
+    /** @description Result of one requested fork. Exactly one of sandbox or error is set: sandbox when the fork started successfully, error when it failed to start. */
+    SandboxForkResult: {
+      sandbox?: components['schemas']['Sandbox']
+      error?: components['schemas']['Error']
     }
     /** @description Team metric with timestamp */
     TeamMetric: {
@@ -3325,6 +3411,26 @@ export interface components {
        * @description Total node memory in bytes
        */
       memoryTotalBytes: number
+      /**
+       * Format: uint64
+       * @description Total number of preallocated hugepages on the node
+       */
+      hugePagesTotal: number
+      /**
+       * Format: uint64
+       * @description Number of hugepages in use (total - free)
+       */
+      hugePagesUsed: number
+      /**
+       * Format: uint64
+       * @description Number of reserved hugepages (committed but not yet faulted)
+       */
+      hugePagesReserved: number
+      /**
+       * Format: uint64
+       * @description Size of a single hugepage in bytes
+       */
+      hugePageSizeBytes: number
       /** @description Detailed metrics for each disk/mount point */
       disks: components['schemas']['DiskMetrics'][]
     }

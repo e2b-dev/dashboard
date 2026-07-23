@@ -1106,6 +1106,90 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/admin/v1/projects/{teamID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the team. */
+        teamID: components['parameters']['teamID']
+      }
+      cookie?: never
+    }
+    get?: never
+    /** Create or reconcile a project. */
+    put: operations['upsertProject']
+    post?: never
+    /** Delete a project and its control-plane state. */
+    delete: operations['deleteProject']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/admin/v1/projects/{teamID}/members/{userId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the team. */
+        teamID: components['parameters']['teamID']
+        /** @description Identifier of the user. */
+        userId: components['parameters']['userId']
+      }
+      cookie?: never
+    }
+    get?: never
+    /** Reconcile an opaque user UUID as a project member. */
+    put: operations['upsertProjectMember']
+    post?: never
+    /** Remove a project member. */
+    delete: operations['deleteProjectMember']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/admin/v1/projects/{teamID}/limits': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the team. */
+        teamID: components['parameters']['teamID']
+      }
+      cookie?: never
+    }
+    get?: never
+    /** Reconcile effective limits for a project. */
+    put: operations['upsertProjectLimits']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/admin/v1/users/{userId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the user. */
+        userId: components['parameters']['userId']
+      }
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /** Purge shard-local membership and access-token state for an opaque user UUID. */
+    delete: operations['purgeUser']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -1280,8 +1364,10 @@ export interface components {
       cpuCount: components['schemas']['CPUCount']
       memoryMB: components['schemas']['MemoryMB']
       diskSizeMB: components['schemas']['DiskSizeMB']
-      /** @description Whether the sandbox ended more than the retention window ago, so its monitoring, events, and logs data is no longer available */
+      /** @description Whether the sandbox ended more than the fixed retention window ago, so its monitoring and logs data is no longer available */
       retentionExpired: boolean
+      /** @description Whether the sandbox ended more than the team's events retention window ago, so its events data is no longer available */
+      eventsRetentionExpired: boolean
     }
     HealthResponse: {
       /** @description Human-readable health check result. */
@@ -1300,6 +1386,8 @@ export interface components {
       maxRamMb: number
       /** Format: int32 */
       diskMb: number
+      /** Format: int32 */
+      eventsTtlDays: number
     }
     UserTeam: {
       /** Format: uuid */
@@ -1531,6 +1619,37 @@ export interface components {
       id: string
       slug: string
     }
+    /** @enum {string} */
+    AdminControlPlaneProjectType: 'development' | 'staging' | 'production'
+    AdminControlPlaneProjectUpsertRequest: {
+      name: string
+      slug: string
+      project_type: components['schemas']['AdminControlPlaneProjectType']
+    }
+    AdminControlPlaneProject: components['schemas']['AdminControlPlaneProjectUpsertRequest'] & {
+      /** Format: uuid */
+      id: string
+    }
+    AdminControlPlaneMemberUpsertRequest: {
+      /** Format: uuid */
+      added_by?: string
+    }
+    AdminControlPlaneProjectLimits: {
+      /** Format: int32 */
+      concurrent_sandboxes: number
+      /** Format: int32 */
+      max_sandbox_length_hours: number
+      /** Format: int32 */
+      max_vcpu: number
+      /** Format: int64 */
+      max_ram_mb: number
+      /** Format: int64 */
+      disk_mb: number
+      /** Format: int32 */
+      concurrent_template_builds: number
+      /** Format: int32 */
+      events_ttl_days: number
+    }
   }
   responses: {
     /** @description Bad request */
@@ -1580,6 +1699,15 @@ export interface components {
     }
     /** @description Server error */
     500: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['Error']
+      }
+    }
+    /** @description Operation is not implemented */
+    501: {
       headers: {
         [name: string]: unknown
       }
@@ -1658,4 +1786,186 @@ export interface components {
   pathItems: never
 }
 export type $defs = Record<string, never>
-export type operations = Record<string, never>
+export interface operations {
+  upsertProject: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the team. */
+        teamID: components['parameters']['teamID']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AdminControlPlaneProjectUpsertRequest']
+      }
+    }
+    responses: {
+      /** @description Existing project reconciled. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AdminControlPlaneProject']
+        }
+      }
+      /** @description Project created. */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AdminControlPlaneProject']
+        }
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      409: components['responses']['409']
+      500: components['responses']['500']
+      501: components['responses']['501']
+    }
+  }
+  deleteProject: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the team. */
+        teamID: components['parameters']['teamID']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Project state is absent. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      500: components['responses']['500']
+      501: components['responses']['501']
+    }
+  }
+  upsertProjectMember: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the team. */
+        teamID: components['parameters']['teamID']
+        /** @description Identifier of the user. */
+        userId: components['parameters']['userId']
+      }
+      cookie?: never
+    }
+    requestBody?: {
+      content: {
+        'application/json': components['schemas']['AdminControlPlaneMemberUpsertRequest']
+      }
+    }
+    responses: {
+      /** @description Membership is present. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      404: components['responses']['404']
+      500: components['responses']['500']
+      501: components['responses']['501']
+    }
+  }
+  deleteProjectMember: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the team. */
+        teamID: components['parameters']['teamID']
+        /** @description Identifier of the user. */
+        userId: components['parameters']['userId']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Membership is absent. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      404: components['responses']['404']
+      500: components['responses']['500']
+      501: components['responses']['501']
+    }
+  }
+  upsertProjectLimits: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the team. */
+        teamID: components['parameters']['teamID']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AdminControlPlaneProjectLimits']
+      }
+    }
+    responses: {
+      /** @description Effective limits are synchronized. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      404: components['responses']['404']
+      500: components['responses']['500']
+      501: components['responses']['501']
+    }
+  }
+  purgeUser: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the user. */
+        userId: components['parameters']['userId']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description User-owned shard state is absent. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      500: components['responses']['500']
+      501: components['responses']['501']
+    }
+  }
+}
