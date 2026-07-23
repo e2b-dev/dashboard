@@ -83,7 +83,6 @@ bun run start
 | `bun run build` | Production build |
 | `bun run test:unit` | Unit tests |
 | `bun run test:integration` | Integration tests |
-| `bun run e2e:test:dev` | Playwright end-to-end tests (requires `TEST_API_KEY`) |
 | `bun run lint` / `bun run format` | Biome lint / format |
 | `bun run generate:infra` | Regenerate infra-api contract types from `spec/` |
 | `bun run generate:dashboard-api` | Regenerate dashboard-api contract types from `spec/` |
