@@ -1,6 +1,4 @@
 import { z } from 'zod'
-import { USE_MOCK_DATA } from '@/configs/env-flags'
-import { MOCK_SANDBOXES_DATA } from '@/configs/mock-data'
 import { createSandboxesRepository } from '@/core/modules/sandboxes/repository.server'
 import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/errors'
 import { withAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
@@ -28,19 +26,6 @@ export const sandboxesRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      if (USE_MOCK_DATA) {
-        await new Promise((resolve) => setTimeout(resolve, 200))
-
-        return {
-          sandboxes: input.states
-            ? MOCK_SANDBOXES_DATA().filter((sandbox) =>
-                input.states?.includes(sandbox.state)
-              )
-            : MOCK_SANDBOXES_DATA(),
-          nextCursor: null,
-        }
-      }
-
       const sandboxesResult =
         await ctx.sandboxesRepository.listSandboxesPaginated({
           cursor: input.cursor,
@@ -66,7 +51,7 @@ export const sandboxesRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { sandboxIds } = input
 
-      if (sandboxIds.length === 0 || USE_MOCK_DATA) {
+      if (sandboxIds.length === 0) {
         return {
           metrics: {},
         }

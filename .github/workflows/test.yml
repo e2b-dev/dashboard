@@ -46,8 +46,6 @@ jobs:
     needs: unit-tests
     env:
       NEXT_PUBLIC_E2B_DOMAIN: e2b-test.dev
-      NEXT_PUBLIC_SCAN: 0
-      NEXT_PUBLIC_MOCK_DATA: 1
 
     steps:
       - name: Checkout code

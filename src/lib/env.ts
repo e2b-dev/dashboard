@@ -38,9 +38,6 @@ export const clientSchema = z.object({
     .enum(['production', 'preview', 'development'])
     .optional(),
 
-  NEXT_PUBLIC_SCAN: z.string().optional(),
-  NEXT_PUBLIC_MOCK_DATA: z.string().optional(),
-  NEXT_PUBLIC_VERBOSE: z.string().optional(),
   NEXT_PUBLIC_INFRA_API_URL: z.url().optional(),
   NEXT_PUBLIC_E2B_SANDBOX_URL: z.url().optional(),
   NEXT_PUBLIC_DASHBOARD_API_URL: z.url().optional(),

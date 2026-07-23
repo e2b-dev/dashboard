@@ -2,11 +2,6 @@ import 'server-only'
 
 import { apiKeyHeaders } from '@/configs/api'
 import { CACHE_TAGS } from '@/configs/cache'
-import { USE_MOCK_DATA } from '@/configs/env-flags'
-import {
-  MOCK_DEFAULT_TEMPLATES_DATA,
-  MOCK_TEMPLATES_DATA,
-} from '@/configs/mock-data'
 import type {
   DefaultTemplate,
   ListTeamTemplatesOptions,
@@ -95,23 +90,6 @@ export function createTemplatesRepository(
 ): TeamTemplatesRepository {
   return {
     async getTemplate(templateId) {
-      if (USE_MOCK_DATA) {
-        const template = MOCK_TEMPLATES_DATA.find(
-          (t) => t.templateID === templateId
-        )
-        if (!template) {
-          return err(
-            repoErrorFromHttp(
-              404,
-              'Template not found in this project',
-              undefined
-            )
-          )
-        }
-
-        return ok({ template })
-      }
-
       const res = await deps.apiClient.GET('/templates/{templateID}', {
         params: {
           path: {
@@ -146,10 +124,6 @@ export function createTemplatesRepository(
       return ok({ template: res.data })
     },
     async getTagGroups(templateId, options) {
-      if (USE_MOCK_DATA) {
-        return ok({ tags: [], nextCursor: null })
-      }
-
       const res = await deps.apiClient.GET(
         '/templates/{templateID}/tags/groups',
         {
@@ -187,10 +161,6 @@ export function createTemplatesRepository(
       })
     },
     async getTagCount(templateId) {
-      if (USE_MOCK_DATA) {
-        return ok({ total: 0 })
-      }
-
       const res = await deps.apiClient.GET(
         '/templates/{templateID}/tags/count',
         {
@@ -218,10 +188,6 @@ export function createTemplatesRepository(
       return ok({ total: res.data?.total ?? 0 })
     },
     async getTagAssignments(templateId, tag, options) {
-      if (USE_MOCK_DATA) {
-        return ok({ data: [], nextCursor: null })
-      }
-
       const res = await deps.apiClient.GET(
         '/templates/{templateID}/tags/{tag}/assignments',
         {
@@ -257,10 +223,6 @@ export function createTemplatesRepository(
       })
     },
     async checkTagExists(templateId, tag) {
-      if (USE_MOCK_DATA) {
-        return ok({ exists: false, normalizedTag: tag })
-      }
-
       const res = await deps.apiClient.GET(
         '/templates/{templateID}/tags/exists',
         {
@@ -294,11 +256,6 @@ export function createTemplatesRepository(
       })
     },
     async getTeamTemplates() {
-      if (USE_MOCK_DATA) {
-        return ok({
-          templates: MOCK_TEMPLATES_DATA,
-        })
-      }
       const res = await deps.infraClient.GET('/templates', {
         headers: {
           ...deps.apiKeyHeaders(scope.apiKey),
@@ -320,10 +277,6 @@ export function createTemplatesRepository(
       })
     },
     async listTeamTemplates(options) {
-      if (USE_MOCK_DATA) {
-        return ok({ data: MOCK_TEMPLATES_DATA, nextCursor: null })
-      }
-
       const res = await deps.apiClient.GET('/templates', {
         params: {
           query: options,
@@ -482,12 +435,6 @@ export function createDefaultTemplatesRepository(
 ): DefaultTemplatesRepository {
   return {
     async getDefaultTemplatesCached() {
-      if (USE_MOCK_DATA) {
-        return ok({
-          templates: MOCK_DEFAULT_TEMPLATES_DATA,
-        })
-      }
-
       const { data, error, response } = await deps.apiClient.GET(
         '/templates/defaults',
         {
