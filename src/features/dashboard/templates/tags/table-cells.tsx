@@ -21,7 +21,6 @@ import { useTagDialog } from './tag-dialog-provider'
 import type { TagGroup } from './types'
 
 export interface TagTableMeta {
-  teamSlug: string
   templateId: string
   templateName: string
 }
@@ -43,11 +42,10 @@ export function TagPillCell({ row }: CellContext<TagGroup, unknown>) {
 }
 
 export function BuildLinkCell(ctx: CellContext<TagGroup, unknown>) {
-  const { teamSlug, templateId } = getMeta(ctx)
+  const { templateId } = getMeta(ctx)
   const { primaryAssignment } = ctx.row.original
   return (
     <BuildLink
-      teamSlug={teamSlug}
       templateId={templateId}
       buildId={primaryAssignment.buildId}
       assignedAt={primaryAssignment.assignedAt}
@@ -57,7 +55,7 @@ export function BuildLinkCell(ctx: CellContext<TagGroup, unknown>) {
 
 export function ActionsCell(ctx: CellContext<TagGroup, unknown>) {
   const { row } = ctx
-  const { teamSlug, templateId, templateName } = getMeta(ctx)
+  const { templateId, templateName } = getMeta(ctx)
   const { actions } = useTagDialog()
   const [menuOpen, setMenuOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -140,7 +138,6 @@ export function ActionsCell(ctx: CellContext<TagGroup, unknown>) {
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         tag={group.tag}
-        teamSlug={teamSlug}
         templateId={templateId}
         templateName={templateName}
       />

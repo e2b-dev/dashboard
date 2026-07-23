@@ -31,14 +31,9 @@ vi.mock('e2b', () => ({
   TimeoutError: class TimeoutError extends Error {},
 }))
 
-const authMock = vi.hoisted(() => ({ getAuthContext: vi.fn() }))
+const authMock = vi.hoisted(() => ({ getApiKey: vi.fn() }))
 vi.mock('@/core/server/auth', () => ({
-  getAuthContext: authMock.getAuthContext,
-}))
-
-const teamMock = vi.hoisted(() => ({ getTeamIdFromSlug: vi.fn() }))
-vi.mock('@/core/server/functions/team/get-team-id-from-slug', () => ({
-  getTeamIdFromSlug: teamMock.getTeamIdFromSlug,
+  getApiKey: authMock.getApiKey,
 }))
 
 const { createCallerFactory } = await import('@/core/server/trpc/init')
@@ -54,11 +49,7 @@ async function caller() {
 describe('sandbox lifecycle side effects', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    authMock.getAuthContext.mockResolvedValue({
-      user: { id: 'user-1' },
-      accessToken: 'access-token',
-    })
-    teamMock.getTeamIdFromSlug.mockResolvedValue({ ok: true, data: 'team-1' })
+    authMock.getApiKey.mockResolvedValue('e2b_test_api_key')
     sdkMock.connect.mockResolvedValue({ sandboxId: 'sbx_existing' })
     sdkMock.create.mockResolvedValue({ sandboxId: 'sbx_new' })
     sdkMock.getFullInfo.mockResolvedValue({
@@ -72,7 +63,6 @@ describe('sandbox lifecycle side effects', () => {
     it('resumes via the control plane with the bounded resume TTL only', async () => {
       const c = await caller()
       const result = await c.resume({
-        teamSlug: 'team-slug',
         sandboxId: 'sbxexisting',
       })
 
@@ -92,7 +82,6 @@ describe('sandbox lifecycle side effects', () => {
     it('connects to an existing sandbox with the explicit terminal TTL', async () => {
       const c = await caller()
       await c.openTerminal({
-        teamSlug: 'team-slug',
         template: 'base',
         sandboxId: 'sbxexisting',
       })
@@ -107,7 +96,7 @@ describe('sandbox lifecycle side effects', () => {
 
     it('creates a new sandbox (never connect) when no sandbox id is given', async () => {
       const c = await caller()
-      await c.openTerminal({ teamSlug: 'team-slug', template: 'base' })
+      await c.openTerminal({ template: 'base' })
 
       expect(sdkMock.create).toHaveBeenCalledTimes(1)
       expect(sdkMock.connect).not.toHaveBeenCalled()

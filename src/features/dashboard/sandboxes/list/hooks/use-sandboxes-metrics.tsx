@@ -6,7 +6,6 @@ import { SANDBOXES_METRICS_POLLING_MS } from '@/configs/intervals'
 import type { Sandboxes } from '@/core/modules/sandboxes/models'
 import { areStringArraysEqual } from '@/lib/utils/array'
 import { useTRPC } from '@/trpc/client'
-import { useDashboard } from '../../../context'
 import { useSandboxMetricsStore } from '../stores/metrics-store'
 
 interface UseSandboxesMetricsProps {
@@ -36,7 +35,6 @@ export function useSandboxesMetrics({
   pollingIntervalMs = SANDBOXES_METRICS_POLLING_MS,
   isListScrolling = false,
 }: UseSandboxesMetricsProps) {
-  const { team } = useDashboard()
   const trpc = useTRPC()
 
   const sandboxIds = useMemo(
@@ -56,10 +54,9 @@ export function useSandboxesMetrics({
 
   const metricsQueryInput = useMemo(
     () => ({
-      teamSlug: team.slug,
       sandboxIds: activeSandboxIds,
     }),
-    [activeSandboxIds, team.slug]
+    [activeSandboxIds]
   )
 
   const { data } = useQuery(

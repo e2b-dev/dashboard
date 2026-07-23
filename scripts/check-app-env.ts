@@ -4,35 +4,4 @@ import { appEnvSchema, validateEnv } from '../src/lib/env'
 const projectDir = process.cwd()
 loadEnvConfig(projectDir)
 
-const schema = appEnvSchema
-  .refine(
-    (data) => {
-      if (data.NEXT_PUBLIC_INCLUDE_BILLING === '1') {
-        return (
-          !!data.BILLING_API_URL && !!data.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-        )
-      }
-
-      return true
-    },
-    {
-      message:
-        'NEXT_PUBLIC_INCLUDE_BILLING is enabled, but BILLING_API_URL or NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is missing',
-      path: ['BILLING_API_URL', 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY'],
-    }
-  )
-  .refine(
-    (data) => {
-      if (data.NEXT_PUBLIC_INCLUDE_REPORT_ISSUE === '1') {
-        return !!data.PLAIN_API_KEY
-      }
-      return true
-    },
-    {
-      message:
-        'NEXT_PUBLIC_INCLUDE_REPORT_ISSUE is enabled, but PLAIN_API_KEY is missing',
-      path: ['PLAIN_API_KEY'],
-    }
-  )
-
-validateEnv(schema)
+validateEnv(appEnvSchema)

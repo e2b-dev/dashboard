@@ -13,7 +13,6 @@ import {
 import type { LogLevelFilter } from './logs-filter-params'
 
 interface SandboxLogsParams {
-  teamSlug: string
   sandboxId: string
 }
 
@@ -100,9 +99,7 @@ export const createSandboxLogsStore = () =>
         const state = get()
 
         // reset if params changed
-        const paramsChanged =
-          state._params?.sandboxId !== params.sandboxId ||
-          state._params?.teamSlug !== params.teamSlug
+        const paramsChanged = state._params?.sandboxId !== params.sandboxId
         const filterChanged = state.level !== level || state.search !== search
 
         if (paramsChanged || filterChanged || !state.isInitialized) {
@@ -126,7 +123,6 @@ export const createSandboxLogsStore = () =>
           const initCursor = Date.now()
 
           const result = await trpcClient.sandbox.logsBackwardsReversed.query({
-            teamSlug: params.teamSlug,
             sandboxId: params.sandboxId,
             cursor: initCursor,
             level: level ?? undefined,
@@ -208,7 +204,6 @@ export const createSandboxLogsStore = () =>
 
           const result =
             await state._trpcClient.sandbox.logsBackwardsReversed.query({
-              teamSlug: state._params.teamSlug,
               sandboxId: state._params.sandboxId,
               cursor,
               level: state.level ?? undefined,
@@ -268,7 +263,6 @@ export const createSandboxLogsStore = () =>
           const seenAtCursor = state.forwardSeenAtCursor
 
           const result = await state._trpcClient.sandbox.logsForward.query({
-            teamSlug: state._params.teamSlug,
             sandboxId: state._params.sandboxId,
             cursor,
             level: state.level ?? undefined,

@@ -16,8 +16,6 @@ interface SandboxInspectViewProps {
 export default function SandboxInspectView({
   rootPath,
 }: SandboxInspectViewProps) {
-  const { teamSlug } =
-    useRouteParams<'/dashboard/[teamSlug]/sandboxes/[sandboxId]'>()
   const { sandboxInfo } = useSandboxContext()
 
   const shouldShowInspectIncompatible = Boolean(
@@ -33,7 +31,6 @@ export default function SandboxInspectView({
     return (
       <SandboxInspectIncompatible
         templateNameOrId={sandboxInfo.alias || sandboxInfo.templateID}
-        teamSlug={teamSlug}
       />
     )
   }

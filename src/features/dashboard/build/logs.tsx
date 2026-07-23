@@ -42,17 +42,11 @@ const SCROLL_LOAD_THRESHOLD_PX = 200
 
 interface LogsProps {
   buildDetails: BuildDetailsModel | undefined
-  teamSlug: string
   templateId: string
   buildId: string
 }
 
-export default function Logs({
-  buildDetails,
-  teamSlug,
-  templateId,
-  buildId,
-}: LogsProps) {
+export default function Logs({ buildDetails, templateId, buildId }: LogsProps) {
   'use no memo'
 
   const { level, setLevel } = useLogFilters()
@@ -82,7 +76,6 @@ export default function Logs({
   return (
     <LogsContent
       buildDetails={buildDetails}
-      teamSlug={teamSlug}
       templateId={templateId}
       buildId={buildId}
       level={level}
@@ -93,7 +86,6 @@ export default function Logs({
 
 interface LogsContentProps {
   buildDetails: BuildDetailsModel
-  teamSlug: string
   templateId: string
   buildId: string
   level: BuildLogLevelFilter | null
@@ -102,7 +94,6 @@ interface LogsContentProps {
 
 function LogsContent({
   buildDetails,
-  teamSlug,
   templateId,
   buildId,
   level,
@@ -122,7 +113,6 @@ function LogsContent({
     isFetching,
     fetchNextPage,
   } = useBuildLogs({
-    teamSlug,
     templateId,
     buildId,
     level,

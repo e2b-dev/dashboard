@@ -3,7 +3,6 @@
 import {
   keepPreviousData,
   useSuspenseInfiniteQuery,
-  useSuspenseQuery,
 } from '@tanstack/react-query'
 import {
   type ColumnDef,
@@ -21,7 +20,6 @@ import { useLocalStorage } from 'usehooks-ts'
 import type { Sandboxes } from '@/core/modules/sandboxes/models'
 import { useSandboxListTableStore } from '@/features/dashboard/sandboxes/list/stores/table-store'
 import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
-import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { cn } from '@/lib/utils'
 import { useTRPC } from '@/trpc/client'
 import ClientOnly from '@/ui/client-only'
@@ -37,11 +35,7 @@ import type { SandboxStartedAtFilter } from './stores/table-store'
 import { getSandboxListEffectiveSorting } from './stores/table-store'
 import { SandboxesTableBody } from './table-body'
 import type { SandboxListRow } from './table-config'
-import {
-  sandboxIdFuzzyFilter,
-  sandboxListColumns,
-  useLegacySandboxListColumns,
-} from './table-config'
+import { sandboxIdFuzzyFilter, sandboxListColumns } from './table-config'
 
 const STARTED_AT_FILTER_HOURS: Record<
   Exclude<SandboxStartedAtFilter, undefined>,
@@ -251,7 +245,6 @@ function SandboxesTableView({
 }
 
 export function NewSandboxesTable() {
-  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/sandboxes'>()
   const trpc = useTRPC()
   const pollingInterval = useSandboxListTableStore(
     (state) => state.pollingInterval
@@ -266,7 +259,7 @@ export function NewSandboxesTable() {
     isFetchingNextPage,
   } = useSuspenseInfiniteQuery(
     trpc.sandboxes.listSandboxesPaginated.infiniteQueryOptions(
-      { teamSlug, limit: SANDBOXES_PAGE_SIZE },
+      { limit: SANDBOXES_PAGE_SIZE },
       {
         getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
         initialCursor: undefined,
@@ -295,31 +288,3 @@ export function NewSandboxesTable() {
     />
   )
 }
-
-export function LegacySandboxesTable() {
-  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/sandboxes'>()
-  const trpc = useTRPC()
-  const legacySandboxListColumns = useLegacySandboxListColumns()
-
-  const { data, refetch, isFetching } = useSuspenseQuery(
-    trpc.sandboxes.getSandboxes.queryOptions(
-      { teamSlug },
-      {
-        refetchOnMount: 'always',
-        refetchOnWindowFocus: true,
-        placeholderData: keepPreviousData,
-      }
-    )
-  )
-
-  return (
-    <SandboxesTableView
-      sandboxes={data.sandboxes}
-      columns={legacySandboxListColumns}
-      refetch={refetch}
-      isFetching={isFetching}
-    />
-  )
-}
-
-export default LegacySandboxesTable

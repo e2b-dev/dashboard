@@ -1,13 +1,7 @@
 'use client'
 
-import posthog from 'posthog-js'
-
+// OSS: analytics removed; no-op kept so call sites stay identical to console.
 export const trackSandboxListInteraction = (
-  action: string,
-  properties: Record<string, unknown> = {}
-) => {
-  posthog.capture('sandboxes list interacted', {
-    action,
-    ...properties,
-  })
-}
+  _action: string,
+  _properties: Record<string, unknown> = {}
+) => {}

@@ -1,6 +1,6 @@
 import { context, SpanStatusCode, trace } from '@opentelemetry/api'
 import { unauthorizedUserError } from '@/core/server/adapters/errors'
-import { getAuthContext } from '@/core/server/auth'
+import { getApiKey } from '@/core/server/auth'
 import { t } from '@/core/server/trpc/init'
 import { l } from '@/core/shared/clients/logger/logger'
 import { getTracer } from '@/core/shared/clients/tracer'
@@ -12,24 +12,24 @@ export const authMiddleware = t.middleware(async ({ ctx, next }) => {
   span.setAttribute('trpc.middleware.name', 'auth')
 
   try {
-    const authContext = await context.with(
+    const apiKey = await context.with(
       trace.setSpan(context.active(), span),
       async () => {
-        return await getAuthContext()
+        return await getApiKey()
       }
     )
 
-    if (!authContext) {
+    if (!apiKey) {
       span.setStatus({
         code: SpanStatusCode.ERROR,
-        message: 'session not found',
+        message: 'api key not found',
       })
 
       l.warn(
         {
-          key: 'trpc_auth_middleware:no_session',
+          key: 'trpc_auth_middleware:no_api_key',
         },
-        'tRPC auth middleware: no auth context'
+        'tRPC auth middleware: no api key'
       )
 
       throw unauthorizedUserError()
@@ -40,11 +40,7 @@ export const authMiddleware = t.middleware(async ({ ctx, next }) => {
     return next({
       ctx: {
         ...ctx,
-        session: {
-          access_token: authContext.accessToken,
-          user: authContext.user,
-        },
-        user: authContext.user,
+        apiKey,
       },
     })
   } finally {

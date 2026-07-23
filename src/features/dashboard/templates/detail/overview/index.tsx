@@ -7,26 +7,24 @@ import { SandboxesStartedSection } from './sandboxes-started-section'
 import { TemplateSection } from './template-section'
 
 interface TemplateOverviewProps {
-  teamSlug: string
   templateId: string
 }
 
 export default function TemplateOverview({
-  teamSlug,
   templateId,
 }: TemplateOverviewProps) {
   const trpc = useTRPC()
 
   const { data } = useSuspenseQuery(
-    trpc.templates.getTemplate.queryOptions({ teamSlug, templateId })
+    trpc.templates.getTemplate.queryOptions({ templateId })
   )
 
   const template = data.template
 
   return (
     <div className="flex flex-col gap-8">
-      <TemplateSection template={template} teamSlug={teamSlug} />
-      <LatestBuildSection templateId={templateId} teamSlug={teamSlug} />
+      <TemplateSection template={template} />
+      <LatestBuildSection templateId={templateId} />
       <SandboxesStartedSection spawnCount={template.spawnCount} />
     </div>
   )

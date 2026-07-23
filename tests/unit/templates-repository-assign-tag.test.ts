@@ -32,12 +32,12 @@ function createDeps(infraPost: ReturnType<typeof vi.fn>) {
     } as unknown as Parameters<
       typeof createTemplatesRepository
     >[1]['infraClient'],
-    authHeaders: vi.fn(() => ({ 'X-Supabase-Token': 'token' })),
+    apiKeyHeaders: vi.fn(() => ({ 'X-API-Key': 'e2b_test_api_key' })),
     resolveAuthUserEmailsById: vi.fn(async () => new Map<string, string>()),
   }
 }
 
-const scope = { accessToken: 'token', teamId: 'team-id' }
+const scope = { apiKey: 'e2b_test_api_key' }
 
 describe('createTemplatesRepository.assignTag', () => {
   it('builds the infra target as "<templateName>:<buildId>" and forwards the tag', async () => {

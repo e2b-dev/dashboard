@@ -46,8 +46,6 @@ export const flattenClientInputValue = (
 }
 
 const SAFE_INPUT_KEYS = new Set<string>([
-  'teamSlug',
-  'teamId',
   'templateId',
   'sandboxId',
   'userId',

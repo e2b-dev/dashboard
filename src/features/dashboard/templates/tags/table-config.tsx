@@ -7,7 +7,6 @@ import {
   type SortingState,
   type TableOptions,
 } from '@tanstack/react-table'
-import posthog from 'posthog-js'
 import { useMemo } from 'react'
 import { ActionsCell, BuildLinkCell, TagPillCell } from './table-cells'
 import type { TagGroup } from './types'
@@ -68,15 +67,11 @@ export function serverSortToSorting(sort: TagGroupsServerSort): SortingState {
 
 export const fallbackData: TagGroup[] = []
 
+// OSS: analytics removed; no-op kept so call sites stay identical to console.
 export const trackTagTableInteraction = (
-  action: string,
-  properties: Record<string, unknown> = {}
-) => {
-  posthog.capture('tag table interacted', {
-    action,
-    ...properties,
-  })
-}
+  _action: string,
+  _properties: Record<string, unknown> = {}
+) => {}
 
 export const useTagColumns = () =>
   useMemo<ColumnDef<TagGroup>[]>(

@@ -5,7 +5,6 @@ import {
   getCoreRowModel,
   type TableOptions,
 } from '@tanstack/react-table'
-import posthog from 'posthog-js'
 import { useMemo } from 'react'
 import type { DefaultTemplate, Template } from '@/core/modules/templates/models'
 import { getTimestampColumnSize } from '@/features/dashboard/common/timestamp-column'
@@ -22,15 +21,11 @@ import {
 // TABLE CONFIG
 export const fallbackData: (Template | DefaultTemplate)[] = []
 
+// OSS: analytics removed; no-op kept so call sites stay identical to console.
 export const trackTemplateTableInteraction = (
-  action: string,
-  properties: Record<string, unknown> = {}
-) => {
-  posthog.capture('template table interacted', {
-    action,
-    ...properties,
-  })
-}
+  _action: string,
+  _properties: Record<string, unknown> = {}
+) => {}
 
 const TIMESTAMP_COLUMN_BASE_SIZE = 172
 

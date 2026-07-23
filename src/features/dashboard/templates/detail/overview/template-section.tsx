@@ -14,10 +14,9 @@ import { OverviewSection } from './section'
 
 interface TemplateSectionProps {
   template: TemplateDetail
-  teamSlug: string
 }
 
-export function TemplateSection({ template, teamSlug }: TemplateSectionProps) {
+export function TemplateSection({ template }: TemplateSectionProps) {
   const { timezone } = useTimezone()
   const displayName = getTemplateDisplayName(template)
 
@@ -60,7 +59,6 @@ export function TemplateSection({ template, teamSlug }: TemplateSectionProps) {
         </MetaCell>
         <MetaCell label="Visibility" className="ml-auto items-end">
           <TemplateVisibilityDropdown
-            teamSlug={teamSlug}
             templateId={template.templateID}
             isPublic={template.public}
             displayName={displayName}

@@ -33,7 +33,6 @@ import { useTagAssignmentMutation } from './use-tag-assignment-mutation'
 const NAME_DEBOUNCE_MS = 350
 
 interface AssignTagDialogProps {
-  teamSlug: string
   templateId: string
   templateName: string
 }
@@ -87,7 +86,6 @@ interface AssignTagDialogBodyProps extends AssignTagDialogProps {
 
 function AssignTagDialogBody({
   open,
-  teamSlug,
   templateId,
   templateName,
   onClose,
@@ -107,7 +105,7 @@ function AssignTagDialogBody({
 
   const existsQuery = useQuery(
     trpc.templates.checkTagExists.queryOptions(
-      { teamSlug, templateId, tag: normalizedDebouncedName },
+      { templateId, tag: normalizedDebouncedName },
       {
         enabled: open && hasValidShape,
         staleTime: 0,
@@ -117,7 +115,6 @@ function AssignTagDialogBody({
   )
 
   const { mutation, stage } = useTagAssignmentMutation({
-    teamSlug,
     templateId,
     operation: 'assign',
   })
@@ -183,7 +180,6 @@ function AssignTagDialogBody({
       via_search: selectionSource === 'search',
     })
     mutation.mutate({
-      teamSlug,
       templateId,
       templateName,
       buildId: selectedBuildId,
@@ -238,7 +234,6 @@ function AssignTagDialogBody({
 
           <BuildPicker
             open={open}
-            teamSlug={teamSlug}
             templateId={templateId}
             selectedBuildId={selectedBuildId}
             onSelect={handleSetSelectedBuildId}

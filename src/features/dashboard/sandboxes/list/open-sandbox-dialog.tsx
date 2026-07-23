@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { type FormEvent, useState } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import { SandboxIdSchema } from '@/core/shared/schemas/api'
-import { useRouteParams } from '@/lib/hooks/use-route-params'
 import { isNotFoundError } from '@/lib/utils/trpc-errors'
 import { useTRPC } from '@/trpc/client'
 import { Button } from '@/ui/primitives/button'
@@ -25,8 +24,6 @@ type LookupState = 'idle' | 'not-found' | 'error'
 
 export function OpenSandboxDialog() {
   'use no memo'
-
-  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/sandboxes'>()
 
   const router = useRouter()
   const trpc = useTRPC()
@@ -71,13 +68,13 @@ export function OpenSandboxDialog() {
     try {
       await queryClient.fetchQuery(
         trpc.sandbox.details.queryOptions(
-          { teamSlug, sandboxId },
+          { sandboxId },
           {
             retry: false,
           }
         )
       )
-      router.push(PROTECTED_URLS.SANDBOX(teamSlug, sandboxId))
+      router.push(PROTECTED_URLS.SANDBOX(sandboxId))
       setOpen(false)
       resetState()
     } catch (error) {

@@ -9,7 +9,6 @@ import { trackTagTableInteraction } from './table-config'
 export type TagOperation = 'assign' | 'reassign' | 'rollback'
 
 interface UseTagAssignmentMutationOptions {
-  teamSlug: string
   templateId: string
   operation: TagOperation
   analyticsContext?: Record<string, unknown>
@@ -17,7 +16,6 @@ interface UseTagAssignmentMutationOptions {
 }
 
 export function useTagAssignmentMutation({
-  teamSlug,
   templateId,
   operation,
   analyticsContext,
@@ -29,17 +27,15 @@ export function useTagAssignmentMutation({
   const invalidate = useCallback(() => {
     queryClient.invalidateQueries({
       queryKey: trpc.templates.getTagGroups.infiniteQueryOptions({
-        teamSlug,
         templateId,
       }).queryKey,
     })
     queryClient.invalidateQueries({
       queryKey: trpc.templates.getTagCount.queryOptions({
-        teamSlug,
         templateId,
       }).queryKey,
     })
-  }, [queryClient, trpc, teamSlug, templateId])
+  }, [queryClient, trpc, templateId])
 
   const mutation = useMutation(
     trpc.templates.assignTag.mutationOptions({

@@ -99,44 +99,43 @@ describe('dashboard terminal helpers', () => {
   })
 
   describe('stored terminal session', () => {
-    it('round-trips session data by user and ignores invalid stored values', () => {
-      writeStoredTerminalSession('user-123', {
+    it('round-trips session data and ignores invalid stored values', () => {
+      writeStoredTerminalSession({
         sandboxId: 'sandbox-123',
         template: 'base',
       })
 
-      expect(readStoredTerminalSession('user-123')).toEqual({
+      expect(readStoredTerminalSession()).toEqual({
         sandboxId: 'sandbox-123',
         template: 'base',
       })
-      expect(readStoredTerminalSession('user-456')).toBeNull()
 
       window.localStorage.setItem(
-        `${TERMINAL_SESSION_STORAGE_PREFIX}:user-123`,
+        TERMINAL_SESSION_STORAGE_PREFIX,
         JSON.stringify({ template: 'base' })
       )
-      expect(readStoredTerminalSession('user-123')).toBeNull()
+      expect(readStoredTerminalSession()).toBeNull()
 
       window.localStorage.setItem(
-        `${TERMINAL_SESSION_STORAGE_PREFIX}:user-123`,
+        TERMINAL_SESSION_STORAGE_PREFIX,
         JSON.stringify({ sandboxId: 123, template: 'base' })
       )
-      expect(readStoredTerminalSession('user-123')).toBeNull()
+      expect(readStoredTerminalSession()).toBeNull()
 
       window.localStorage.setItem(
-        `${TERMINAL_SESSION_STORAGE_PREFIX}:user-123`,
+        TERMINAL_SESSION_STORAGE_PREFIX,
         JSON.stringify({ sandboxId: 'sandbox-123', template: 123 })
       )
-      expect(readStoredTerminalSession('user-123')).toBeNull()
+      expect(readStoredTerminalSession()).toBeNull()
 
       window.localStorage.setItem(
-        `${TERMINAL_SESSION_STORAGE_PREFIX}:user-123`,
+        TERMINAL_SESSION_STORAGE_PREFIX,
         JSON.stringify({ sandboxId: 'sandbox-123', template: '../base' })
       )
-      expect(readStoredTerminalSession('user-123')).toBeNull()
+      expect(readStoredTerminalSession()).toBeNull()
 
-      clearStoredTerminalSession('user-123')
-      expect(readStoredTerminalSession('user-123')).toBeNull()
+      clearStoredTerminalSession()
+      expect(readStoredTerminalSession()).toBeNull()
     })
 
     it('treats storage writes and removals as best-effort', () => {
@@ -148,12 +147,12 @@ describe('dashboard terminal helpers', () => {
       })
 
       expect(() =>
-        writeStoredTerminalSession('user-123', {
+        writeStoredTerminalSession({
           sandboxId: 'sandbox-123',
           template: 'base',
         })
       ).not.toThrow()
-      expect(() => clearStoredTerminalSession('user-123')).not.toThrow()
+      expect(() => clearStoredTerminalSession()).not.toThrow()
     })
   })
 
@@ -268,14 +267,11 @@ describe('dashboard terminal helpers', () => {
       await openTerminalSandbox({
         onStatus: (message) => statuses.push(message),
         openTerminal: mockOpenTerminal,
-        teamSlug: 'team-slug',
-        userId: 'user-123',
         sandboxId: 'sandbox-from-url',
         template: 'base',
       })
 
       expect(mockOpenTerminal).toHaveBeenCalledWith({
-        teamSlug: 'team-slug',
         template: 'base',
         sandboxId: 'sandbox-from-url',
         requestTimeoutMs: undefined,
@@ -288,7 +284,7 @@ describe('dashboard terminal helpers', () => {
         domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
         sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
       })
-      expect(readStoredTerminalSession('user-123')).toBeNull()
+      expect(readStoredTerminalSession()).toBeNull()
       expect(statuses).toEqual([
         'Connecting to terminal sandbox sandbox-from-url...\r\n',
       ])
@@ -305,8 +301,6 @@ describe('dashboard terminal helpers', () => {
       await openTerminalSandbox({
         onStatus: vi.fn(),
         openTerminal: mockOpenTerminal,
-        teamSlug: 'team-slug',
-        userId: 'user-123',
         sandboxId: 'insecure-sandbox',
         template: 'base',
       })
@@ -325,23 +319,20 @@ describe('dashboard terminal helpers', () => {
       await openTerminalSandbox({
         onStatus: vi.fn(),
         openTerminal: mockOpenTerminal,
-        teamSlug: 'team-slug',
-        userId: 'user-123',
         template: 'base',
       })
 
       expect(mockOpenTerminal).toHaveBeenCalledWith({
-        teamSlug: 'team-slug',
         template: 'base',
       })
-      expect(readStoredTerminalSession('user-123')).toEqual({
+      expect(readStoredTerminalSession()).toEqual({
         sandboxId: 'created-sandbox',
         template: 'base',
       })
     })
 
     it('reuses a stored sandbox only when its template matches', async () => {
-      writeStoredTerminalSession('user-123', {
+      writeStoredTerminalSession({
         sandboxId: 'stored-sandbox',
         template: 'base',
       })
@@ -349,13 +340,10 @@ describe('dashboard terminal helpers', () => {
       await openTerminalSandbox({
         onStatus: vi.fn(),
         openTerminal: mockOpenTerminal,
-        teamSlug: 'team-slug',
-        userId: 'user-123',
         template: 'base',
       })
 
       expect(mockOpenTerminal).toHaveBeenCalledWith({
-        teamSlug: 'team-slug',
         template: 'base',
         sandboxId: 'stored-sandbox',
         requestTimeoutMs: undefined,
@@ -363,7 +351,7 @@ describe('dashboard terminal helpers', () => {
     })
 
     it('creates a new sandbox when reuse is disabled for a matching stored template', async () => {
-      writeStoredTerminalSession('user-123', {
+      writeStoredTerminalSession({
         sandboxId: 'stored-sandbox',
         template: 'base',
       })
@@ -372,23 +360,20 @@ describe('dashboard terminal helpers', () => {
         forceNewSandbox: true,
         onStatus: vi.fn(),
         openTerminal: mockOpenTerminal,
-        teamSlug: 'team-slug',
-        userId: 'user-123',
         template: 'base',
       })
 
       expect(mockOpenTerminal).toHaveBeenCalledWith({
-        teamSlug: 'team-slug',
         template: 'base',
       })
-      expect(readStoredTerminalSession('user-123')).toEqual({
+      expect(readStoredTerminalSession()).toEqual({
         sandboxId: 'created-sandbox',
         template: 'base',
       })
     })
 
     it('falls back to creating a new sandbox when reconnecting fails', async () => {
-      writeStoredTerminalSession('user-123', {
+      writeStoredTerminalSession({
         sandboxId: 'stored-sandbox',
         template: 'base',
       })
@@ -400,23 +385,19 @@ describe('dashboard terminal helpers', () => {
       await openTerminalSandbox({
         onStatus: vi.fn(),
         openTerminal: mockOpenTerminal,
-        teamSlug: 'team-slug',
-        userId: 'user-123',
         template: 'base',
       })
 
       // First call attempts the stored sandbox, second call creates a new one.
       expect(mockOpenTerminal).toHaveBeenNthCalledWith(1, {
-        teamSlug: 'team-slug',
         template: 'base',
         sandboxId: 'stored-sandbox',
         requestTimeoutMs: undefined,
       })
       expect(mockOpenTerminal).toHaveBeenNthCalledWith(2, {
-        teamSlug: 'team-slug',
         template: 'base',
       })
-      expect(readStoredTerminalSession('user-123')).toEqual({
+      expect(readStoredTerminalSession()).toEqual({
         sandboxId: 'created-sandbox',
         template: 'base',
       })

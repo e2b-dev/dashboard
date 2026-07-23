@@ -64,11 +64,10 @@ const VIRTUAL_OVERSCAN = 8
 const HEADER_SCROLL_MARGIN_PX = 21
 
 interface TagsTableProps {
-  teamSlug: string
   templateId: string
 }
 
-export default function TagsTable({ teamSlug, templateId }: TagsTableProps) {
+export default function TagsTable({ templateId }: TagsTableProps) {
   'use no memo'
 
   const trpc = useTRPC()
@@ -111,7 +110,6 @@ export default function TagsTable({ teamSlug, templateId }: TagsTableProps) {
   } = useInfiniteQuery(
     trpc.templates.getTagGroups.infiniteQueryOptions(
       {
-        teamSlug,
         templateId,
         limit: TAGS_PAGE_LIMIT,
         search: activeSearch,
@@ -128,7 +126,7 @@ export default function TagsTable({ teamSlug, templateId }: TagsTableProps) {
 
   const { data: countData } = useQuery(
     trpc.templates.getTagCount.queryOptions(
-      { teamSlug, templateId },
+      { templateId },
       { staleTime: 30_000, refetchOnWindowFocus: false }
     )
   )
@@ -142,7 +140,7 @@ export default function TagsTable({ teamSlug, templateId }: TagsTableProps) {
 
   const { data: templateData } = useSuspenseQuery(
     trpc.templates.getTemplate.queryOptions(
-      { teamSlug, templateId },
+      { templateId },
       {
         refetchOnMount: false,
         refetchOnWindowFocus: true,
@@ -185,7 +183,7 @@ export default function TagsTable({ teamSlug, templateId }: TagsTableProps) {
     onExpandedChange: setExpanded,
     getRowCanExpand: (row) =>
       row.original.assignments.length > 1 || row.original.hasMore,
-    meta: { teamSlug, templateId, templateName },
+    meta: { templateId, templateName },
   } as TableOptions<TagGroup>)
 
   const rows = table.getRowModel().rows
@@ -218,14 +216,9 @@ export default function TagsTable({ teamSlug, templateId }: TagsTableProps) {
   }, [fetchNextPage, activeSearch, serverSort])
 
   return (
-    <TagDialogProvider
-      teamSlug={teamSlug}
-      templateId={templateId}
-      templateName={templateName}
-    >
+    <TagDialogProvider templateId={templateId} templateName={templateName}>
       <div className="flex flex-col gap-6 h-full min-h-0">
         <TagsHeader
-          teamSlug={teamSlug}
           templateId={templateId}
           templateName={templateName}
           total={countData?.total}
@@ -310,11 +303,7 @@ export default function TagsTable({ teamSlug, templateId }: TagsTableProps) {
                         }px)`,
                       }}
                     >
-                      <GroupSection
-                        row={row}
-                        teamSlug={teamSlug}
-                        templateId={templateId}
-                      />
+                      <GroupSection row={row} templateId={templateId} />
                     </div>
                   )
                 })}
@@ -338,11 +327,10 @@ export default function TagsTable({ teamSlug, templateId }: TagsTableProps) {
 
 interface GroupSectionProps {
   row: Row<TagGroup>
-  teamSlug: string
   templateId: string
 }
 
-function GroupSection({ row, teamSlug, templateId }: GroupSectionProps) {
+function GroupSection({ row, templateId }: GroupSectionProps) {
   'use no memo'
 
   const canExpand = row.getCanExpand()
@@ -473,7 +461,6 @@ function GroupSection({ row, teamSlug, templateId }: GroupSectionProps) {
                 key={assignment.assignmentId}
                 assignment={assignment}
                 primaryAssignment={row.original.primaryAssignment}
-                teamSlug={teamSlug}
                 templateId={templateId}
                 onRequestRollback={handleRequestRowRollback}
               />
@@ -481,7 +468,6 @@ function GroupSection({ row, teamSlug, templateId }: GroupSectionProps) {
             {row.original.hasMore && (
               <ShowFullHistoryRow
                 tag={row.original.tag}
-                teamSlug={teamSlug}
                 templateId={templateId}
               />
             )}
@@ -494,18 +480,13 @@ function GroupSection({ row, teamSlug, templateId }: GroupSectionProps) {
 
 interface ShowFullHistoryRowProps {
   tag: string
-  teamSlug: string
   templateId: string
 }
 
-function ShowFullHistoryRow({
-  tag,
-  teamSlug,
-  templateId,
-}: ShowFullHistoryRowProps) {
+function ShowFullHistoryRow({ tag, templateId }: ShowFullHistoryRowProps) {
   return (
     <HoverPrefetchLink
-      href={PROTECTED_URLS.TEMPLATE_TAG_HISTORY(teamSlug, templateId, tag)}
+      href={PROTECTED_URLS.TEMPLATE_TAG_HISTORY(templateId, tag)}
       onClick={() =>
         trackTagTableInteraction('show_full_history_clicked', { tag })
       }

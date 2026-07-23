@@ -11,7 +11,6 @@ import { JsonPopover } from '@/ui/json-popover'
 import { Badge } from '@/ui/primitives/badge'
 import { Button } from '@/ui/primitives/button'
 import { DotIcon, ExternalLinkIcon, PausedIcon } from '@/ui/primitives/icons'
-import { useDashboard } from '../../context'
 import { useSandboxMetricsStore } from './stores/metrics-store'
 import type { SandboxListRow } from './table-config'
 
@@ -180,7 +179,6 @@ export function TemplateCell({
   getValue,
 }: CellContext<SandboxListRow, unknown>) {
   const templateIdentifier = (getValue() as string | undefined) ?? '--'
-  const { team } = useDashboard()
   const templateId = row.original.templateID
 
   if (!templateId) {
@@ -194,7 +192,7 @@ export function TemplateCell({
   return (
     <Button asChild variant="link-table" size="none">
       <Link
-        href={PROTECTED_URLS.TEMPLATE_OVERVIEW(team.slug, templateId)}
+        href={PROTECTED_URLS.TEMPLATE_OVERVIEW(templateId)}
         onClick={(e) => e.stopPropagation()}
       >
         <span className="min-w-0 truncate">{templateIdentifier}</span>
@@ -243,32 +241,6 @@ export function StartedAtCell({
 
   return (
     <div className={`h-full ${TIMESTAMP_TEXT_CLASSNAME}`}>
-      <span className="text-fg-tertiary">
-        {formattedTimestamp?.datePart ?? '--'}
-      </span>{' '}
-      {formattedTimestamp?.timePart ?? '--'}{' '}
-      <span className="text-fg-tertiary">
-        {formattedTimestamp?.timezonePart ?? ''}
-      </span>
-    </div>
-  )
-}
-
-export function LegacyStartedAtCell({
-  getValue,
-}: CellContext<SandboxListRow, unknown>) {
-  const { timezone } = useTimezone()
-  const dateValue = (getValue() as string | undefined) ?? ''
-
-  const formattedTimestamp = useMemo(() => {
-    return formatDateParts(dateValue, {
-      timezone,
-      format: 'date-time-no-seconds',
-    })
-  }, [dateValue, timezone])
-
-  return (
-    <div className="h-full overflow-x-hidden whitespace-nowrap font-mono prose-table-numeric">
       <span className="text-fg-tertiary">
         {formattedTimestamp?.datePart ?? '--'}
       </span>{' '}

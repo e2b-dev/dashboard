@@ -1,15 +1,9 @@
 import 'server-only'
 
-export type { AuthUser } from '@/core/modules/auth/models'
 export {
-  getAuthContext,
-  getSettingsProfile,
-  getUserProfile,
-  handleCredentialChangeSuccess,
-  handleInSessionPasswordChange,
-  isCurrentSessionFresh,
-  revokeCurrentSession,
-  signOut,
-  startReauthForAccountSettings,
-  updateUser,
-} from './ory/session'
+  clearApiKeyCookie,
+  getApiKey,
+  isUsingEnvApiKey,
+  setApiKeyCookie,
+  validateApiKey,
+} from './api-key'

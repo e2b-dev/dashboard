@@ -7,18 +7,15 @@ import {
 } from '@/core/modules/builds/models'
 import { createBuildsRepository } from '@/core/modules/builds/repository.server'
 import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/errors'
-import { withTeamAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
+import { withAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
 import { createTRPCRouter } from '@/core/server/trpc/init'
-import { protectedTeamProcedure } from '@/core/server/trpc/procedures'
+import { protectedProcedure } from '@/core/server/trpc/procedures'
 import { LOG_RETENTION_MS } from '@/features/dashboard/templates/builds/constants'
 
-const buildsRepositoryProcedure = protectedTeamProcedure.use(
-  withTeamAuthedRequestRepository(
-    createBuildsRepository,
-    (buildsRepository) => ({
-      buildsRepository,
-    })
-  )
+const buildsRepositoryProcedure = protectedProcedure.use(
+  withAuthedRequestRepository(createBuildsRepository, (buildsRepository) => ({
+    buildsRepository,
+  }))
 )
 
 export const buildsRouter = createTRPCRouter({

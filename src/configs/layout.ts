@@ -23,33 +23,20 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
   string,
   (pathname: string) => DashboardLayoutConfig
 > = {
-  // base
-  '/dashboard/*/sandboxes': () => ({
+  // sandboxes
+  '/sandboxes': () => ({
     title: 'Sandboxes',
     type: 'custom',
   }),
-  '/dashboard/*/sandboxes/monitoring': () => ({
-    title: 'Sandboxes',
-    type: 'custom',
-  }),
-  '/dashboard/*/sandboxes/list': () => ({
-    title: 'Sandboxes',
-    type: 'custom',
-  }),
-  '/dashboard/*/sandboxes/list2': () => ({
-    title: 'Sandboxes',
-    type: 'custom',
-  }),
-  '/dashboard/*/sandboxes/*/*': (pathname) => {
+  '/sandboxes/*/*': (pathname) => {
     const parts = pathname.split('/')
-    const teamSlug = parts[2]!
-    const sandboxId = parts[4]!
+    const sandboxId = parts[2]!
 
     return {
       title: [
         {
           label: 'Sandboxes',
-          href: PROTECTED_URLS.SANDBOXES_LIST(teamSlug),
+          href: PROTECTED_URLS.SANDBOXES,
         },
         { label: sandboxId },
       ],
@@ -60,21 +47,22 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
       },
     }
   },
-  '/dashboard/*/templates': () => ({
+
+  // templates
+  '/templates': () => ({
     title: 'Templates',
     type: 'custom',
   }),
-  '/dashboard/*/templates/list': () => ({
+  '/templates/list': () => ({
     title: 'Templates',
     type: 'custom',
   }),
-  '/dashboard/*/templates/builds': () => ({
+  '/templates/builds': () => ({
     title: 'Templates',
     type: 'custom',
   }),
-  '/dashboard/*/templates/*/builds/*': (pathname) => {
+  '/templates/*/builds/*': (pathname) => {
     const parts = pathname.split('/')
-    const teamSlug = parts[2]!
     const buildId = parts.pop()!
     const buildIdSliced = `${buildId.slice(0, 6)}...${buildId.slice(-6)}`
 
@@ -82,7 +70,7 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
       title: [
         {
           label: 'Templates',
-          href: PROTECTED_URLS.TEMPLATES_BUILDS(teamSlug),
+          href: PROTECTED_URLS.TEMPLATES_BUILDS,
         },
         { label: `Build ${buildIdSliced}` },
       ],
@@ -93,114 +81,17 @@ const DASHBOARD_LAYOUT_CONFIGS: Record<
       },
     }
   },
-  '/dashboard/*/templates/*/overview': (pathname) =>
-    templateDetailLayoutConfig(pathname),
-  '/dashboard/*/templates/*/tags': (pathname) =>
-    templateDetailLayoutConfig(pathname),
-  '/dashboard/*/templates/*/tags/*': (pathname) =>
-    templateDetailLayoutConfig(pathname),
+  '/templates/*/overview': (pathname) => templateDetailLayoutConfig(pathname),
+  '/templates/*/tags': (pathname) => templateDetailLayoutConfig(pathname),
+  '/templates/*/tags/*': (pathname) => templateDetailLayoutConfig(pathname),
   // Keep this more specific glob ahead of /templates/*/builds/* (build detail).
-  '/dashboard/*/templates/*/builds': (pathname) =>
-    templateDetailLayoutConfig(pathname),
-
-  // integration
-  '/dashboard/*/webhooks': () => ({
-    title: 'Webhooks',
-    type: 'default',
-  }),
-  '/dashboard/*/connections': () => ({
-    title: 'Connections',
-    type: 'default',
-  }),
-  '/dashboard/*/byoc': () => ({
-    title: 'BYOC',
-    type: 'default',
-  }),
-  '/dashboard/*/webhooks/*/overview': (pathname) =>
-    webhookDetailLayoutConfig(pathname),
-  '/dashboard/*/webhooks/*/deliveries': (pathname) =>
-    webhookDetailLayoutConfig(pathname),
-
-  // team
-  '/dashboard/*/general': () => ({
-    title: 'General',
-    type: 'default',
-  }),
-  '/dashboard/*/keys': () => ({
-    title: 'API Keys',
-    type: 'default',
-  }),
-  '/dashboard/*/members': () => ({
-    title: 'Members',
-    type: 'default',
-  }),
-  '/dashboard/*/terminal': () => ({
-    title: 'Terminal',
-    type: 'custom',
-  }),
-  '/dashboard/*/agents': () => ({
-    title: 'Agents',
-    type: 'default',
-  }),
-
-  // billing
-  '/dashboard/*/usage': () => ({
-    title: 'Usage',
-    type: 'custom',
-    custom: {
-      includeHeaderBottomStyles: true,
-    },
-  }),
-  '/dashboard/*/limits': () => ({
-    title: 'Limits',
-    type: 'default',
-  }),
-  '/dashboard/*/billing': () => ({
-    title: 'Billing',
-    type: 'default',
-  }),
-  '/dashboard/*/billing/plan': (pathname) => {
-    const parts = pathname.split('/')
-    const teamSlug = parts[2]!
-
-    return {
-      title: [
-        { label: 'Billing', href: PROTECTED_URLS.BILLING(teamSlug) },
-        {
-          label: 'Plan & Add-ons',
-        },
-      ],
-      type: 'default',
-    }
-  },
-  '/dashboard/*/billing/plan/select': (pathname) => {
-    const parts = pathname.split('/')
-    const teamSlug = parts[2]!
-
-    return {
-      title: [
-        { label: 'Billing', href: PROTECTED_URLS.BILLING(teamSlug) },
-        {
-          label: 'Plan & Add-ons',
-          href: PROTECTED_URLS.BILLING_PLAN(teamSlug),
-        },
-        { label: 'Change Plan' },
-      ],
-      type: 'default',
-    }
-  },
-
-  '/dashboard/*/account': () => ({
-    title: 'Account',
-    type: 'default',
-  }),
+  '/templates/*/builds': (pathname) => templateDetailLayoutConfig(pathname),
 }
 
 // Pathname fallback for detail tabs; usePageTitle replaces with the friendly template name once data loads.
 function templateDetailLayoutConfig(pathname: string): DashboardLayoutConfig {
   const parts = pathname.split('/')
-  const teamSlug = parts[2]!
-  const templateId = parts[4]!
+  const templateId = parts[2]!
   const templateIdSliced =
     templateId.length > 14
       ? `${templateId.slice(0, 6)}...${templateId.slice(-6)}`
@@ -210,34 +101,12 @@ function templateDetailLayoutConfig(pathname: string): DashboardLayoutConfig {
     title: [
       {
         label: 'Templates',
-        href: PROTECTED_URLS.TEMPLATES_LIST(teamSlug),
+        href: PROTECTED_URLS.TEMPLATES_LIST,
       },
       { label: templateIdSliced },
     ],
     type: 'custom',
     copyValue: templateId,
-  }
-}
-
-function webhookDetailLayoutConfig(pathname: string): DashboardLayoutConfig {
-  const parts = pathname.split('/')
-  const teamSlug = parts[2] ?? ''
-  const webhookId = parts[4] ?? ''
-  const webhookIdSliced = `${webhookId.slice(0, 6)}...${webhookId.slice(-6)}`
-
-  return {
-    title: [
-      {
-        label: 'Webhooks',
-        href: PROTECTED_URLS.WEBHOOKS(teamSlug),
-      },
-      { label: webhookIdSliced },
-    ],
-    type: 'custom',
-    copyValue: webhookId,
-    custom: {
-      includeHeaderBottomStyles: true,
-    },
   }
 }
 

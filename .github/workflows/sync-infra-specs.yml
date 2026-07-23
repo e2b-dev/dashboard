@@ -73,7 +73,7 @@ jobs:
       - name: Autofix generated type files
         if: steps.check-spec-changes.outputs.has_changes == 'true'
         run: |
-          GENERATED_TYPE_FILES=$(git diff --name-only -- src/types/infra-api.types.ts src/types/dashboard-api.types.ts | tr '\n' ' ')
+          GENERATED_TYPE_FILES=$(git diff --name-only -- src/core/shared/contracts/infra-api.types.ts src/core/shared/contracts/dashboard-api.types.ts | tr '\n' ' ')
 
           if [[ -z "${GENERATED_TYPE_FILES}" ]]; then
             echo "No generated type changes detected; skipping autofix."

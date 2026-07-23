@@ -36,8 +36,6 @@ interface DashboardTerminalProps {
   onSandboxAttachFailed?: (target: TerminalLaunchTarget | undefined) => void
   sandboxConnectRequestTimeoutMs?: number
   sandboxScoped?: boolean
-  teamSlug: string
-  userId: string
 }
 
 export default function DashboardTerminal({
@@ -48,8 +46,6 @@ export default function DashboardTerminal({
   onSandboxAttachFailed,
   sandboxConnectRequestTimeoutMs,
   sandboxScoped = false,
-  teamSlug,
-  userId,
 }: DashboardTerminalProps) {
   const trpcClient = useTRPCClient()
 
@@ -91,14 +87,13 @@ export default function DashboardTerminal({
             json: {
               pid,
               sandboxId,
-              teamSlug,
             },
           },
         }),
         keepalive: true,
       })
     },
-    [teamSlug]
+    []
   )
 
   const clearPendingInput = useCallback(() => {
@@ -318,8 +313,6 @@ export default function DashboardTerminal({
                 TERMINAL_ATTACH_ATTEMPT_TIMEOUT_MS)
               : undefined,
             shouldStoreSession: !sandboxScoped,
-            teamSlug,
-            userId,
             sandboxId: requestedSandboxId,
             template: nextTemplate,
           })
@@ -421,8 +414,6 @@ export default function DashboardTerminal({
       getSandbox,
       runCommand,
       trpcClient,
-      teamSlug,
-      userId,
       sandboxScoped,
       sandboxConnectRequestTimeoutMs,
       template,

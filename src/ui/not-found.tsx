@@ -35,7 +35,7 @@ export default function NotFound() {
               </Link>
             </Button>
             <Button variant="secondary" asChild className="flex-1">
-              <Link href={PROTECTED_URLS.DASHBOARD}>
+              <Link href={PROTECTED_URLS.SANDBOXES}>
                 <GridIcon />
                 Dashboard
               </Link>

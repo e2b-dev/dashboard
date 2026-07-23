@@ -22,7 +22,6 @@ interface TagDeleteDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   tag: string
-  teamSlug: string
   templateId: string
   templateName: string
   onDeleted?: () => void | Promise<void>
@@ -32,7 +31,6 @@ export default function TagDeleteDialog({
   open,
   onOpenChange,
   tag,
-  teamSlug,
   templateId,
   templateName,
   onDeleted,
@@ -42,11 +40,9 @@ export default function TagDeleteDialog({
   const { toast } = useToast()
 
   const tagGroupsQueryKey = trpc.templates.getTagGroups.infiniteQueryOptions({
-    teamSlug,
     templateId,
   }).queryKey
   const tagCountQueryKey = trpc.templates.getTagCount.queryOptions({
-    teamSlug,
     templateId,
   }).queryKey
 
@@ -118,7 +114,6 @@ export default function TagDeleteDialog({
               className="font-sans normal-case min-w-[98px]"
               onClick={() => {
                 deleteTags.mutate({
-                  teamSlug,
                   templateId,
                   templateName,
                   tags: [tag],

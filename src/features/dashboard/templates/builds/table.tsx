@@ -73,8 +73,6 @@ const BuildsTable = ({
   const queryClient = useQueryClient()
   const router = useRouter()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-
-  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
   const [columnSizing, setColumnSizing] = useLocalStorage<ColumnSizingState>(
     'builds:columnSizing:v1',
     {},
@@ -96,7 +94,6 @@ const BuildsTable = ({
   )
 
   const queryInput = {
-    teamSlug,
     statuses,
     buildIdOrTemplate,
   }
@@ -148,7 +145,7 @@ const BuildsTable = ({
 
   const { data: runningStatusesData } = useQuery(
     trpc.builds.runningStatuses.queryOptions(
-      { teamSlug, buildIds: runningBuildIds },
+      { buildIds: runningBuildIds },
       {
         enabled: runningBuildIds.length > 0,
         refetchInterval: (query) => {
@@ -293,11 +290,7 @@ const BuildsTable = ({
               scrollRef={scrollContainerRef}
               onRowClick={(build) =>
                 router.push(
-                  PROTECTED_URLS.TEMPLATE_BUILD(
-                    teamSlug,
-                    build.templateId,
-                    build.id
-                  )
+                  PROTECTED_URLS.TEMPLATE_BUILD(build.templateId, build.id)
                 )
               }
             />

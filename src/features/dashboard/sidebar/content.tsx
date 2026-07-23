@@ -18,8 +18,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/ui/primitives/sidebar'
-import { useDashboard } from '../context'
-import { useVisibleSidebarLinks } from './use-visible-links'
 
 type GroupedLinks = {
   [key: string]: SidebarNavItem[]
@@ -37,13 +35,10 @@ const createGroupedLinks = (links: SidebarNavItem[]): GroupedLinks => {
 }
 
 export default function DashboardSidebarContent() {
-  const { team } = useDashboard()
-  const selectedTeamSlug = team.slug
-
   const pathname = usePathname()
   const isMobile = useIsMobile()
   const { setOpenMobile } = useSidebar()
-  const visibleLinks = useVisibleSidebarLinks(SIDEBAR_MAIN_LINKS)
+  const visibleLinks = SIDEBAR_MAIN_LINKS
 
   const groupedNavLinks = useMemo(
     () => createGroupedLinks(visibleLinks),
@@ -65,9 +60,7 @@ export default function DashboardSidebarContent() {
           )}
           <SidebarMenu>
             {links.map((item) => {
-              const href = item.href({
-                teamSlug: selectedTeamSlug,
-              })
+              const href = item.href
 
               return (
                 <SidebarMenuItem key={item.label}>

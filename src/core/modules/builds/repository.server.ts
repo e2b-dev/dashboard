@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { authHeaders } from '@/configs/api'
+import { apiKeyHeaders } from '@/configs/api'
 import type { components as InfraComponents } from '@/contracts/infra-api'
 import { INITIAL_BUILD_STATUSES } from '@/core/modules/builds/constants'
 import type {
@@ -11,16 +11,16 @@ import type {
 import { api, infra } from '@/core/shared/clients/api'
 import { l } from '@/core/shared/clients/logger/logger'
 import { repoErrorFromHttp } from '@/core/shared/errors'
-import type { TeamRequestScope } from '@/core/shared/repository-scope'
+import type { RequestScope } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
 
 type BuildsRepositoryDeps = {
   apiClient: typeof api
   infraClient: typeof infra
-  authHeaders: typeof authHeaders
+  apiKeyHeaders: typeof apiKeyHeaders
 }
 
-export type BuildsScope = TeamRequestScope
+export type BuildsScope = RequestScope
 
 export interface BuildsRepository {
   listBuilds(
@@ -86,7 +86,7 @@ export function createBuildsRepository(
   deps: BuildsRepositoryDeps = {
     apiClient: api,
     infraClient: infra,
-    authHeaders: authHeaders,
+    apiKeyHeaders: apiKeyHeaders,
   }
 ): BuildsRepository {
   return {
@@ -106,7 +106,7 @@ export function createBuildsRepository(
           },
         },
         headers: {
-          ...deps.authHeaders(scope.accessToken, scope.teamId),
+          ...deps.apiKeyHeaders(scope.apiKey),
         },
       })
 
@@ -114,7 +114,6 @@ export function createBuildsRepository(
         l.error({
           key: 'repositories:builds:list_builds:dashboard_api_error',
           error: result.error,
-          team_id: scope.teamId,
           context: {
             status: result.response.status,
             path: '/builds',
@@ -170,7 +169,7 @@ export function createBuildsRepository(
           },
         },
         headers: {
-          ...deps.authHeaders(scope.accessToken, scope.teamId),
+          ...deps.apiKeyHeaders(scope.apiKey),
         },
       })
 
@@ -178,7 +177,6 @@ export function createBuildsRepository(
         l.error({
           key: 'repositories:builds:get_running_statuses:dashboard_api_error',
           error: result.error,
-          team_id: scope.teamId,
           context: {
             status: result.response.status,
             path: '/builds/statuses',
@@ -212,7 +210,7 @@ export function createBuildsRepository(
           },
         },
         headers: {
-          ...deps.authHeaders(scope.accessToken, scope.teamId),
+          ...deps.apiKeyHeaders(scope.apiKey),
         },
       })
 
@@ -220,7 +218,6 @@ export function createBuildsRepository(
         l.error({
           key: 'repositories:builds:get_build_info:dashboard_api_error',
           error: result.error,
-          team_id: scope.teamId,
           context: {
             status: result.response.status,
             path: '/builds/{build_id}',
@@ -262,7 +259,7 @@ export function createBuildsRepository(
             },
           },
           headers: {
-            ...deps.authHeaders(scope.accessToken, scope.teamId),
+            ...deps.apiKeyHeaders(scope.apiKey),
           },
         }
       )
@@ -271,7 +268,6 @@ export function createBuildsRepository(
         l.error({
           key: 'repositories:builds:get_build_status:infra_error',
           error: result.error,
-          team_id: scope.teamId,
           context: {
             status: result.response.status,
             path: '/templates/{templateID}/builds/{buildID}/status',
@@ -305,7 +301,7 @@ export function createBuildsRepository(
             },
           },
           headers: {
-            ...deps.authHeaders(scope.accessToken, scope.teamId),
+            ...deps.apiKeyHeaders(scope.apiKey),
           },
         }
       )
@@ -314,7 +310,6 @@ export function createBuildsRepository(
         l.error({
           key: 'repositories:builds:get_build_logs:infra_error',
           error: result.error,
-          team_id: scope.teamId,
           context: {
             status: result.response.status,
             path: '/templates/{templateID}/builds/{buildID}/logs',

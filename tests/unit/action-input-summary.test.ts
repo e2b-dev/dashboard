@@ -4,8 +4,6 @@ import { sanitizeClientInput } from '@/core/server/actions/utils'
 describe('sanitizeClientInput', () => {
   it('inlines allowlisted scalar keys verbatim', () => {
     const out = sanitizeClientInput({
-      teamSlug: 'acme',
-      teamId: 't_123',
       templateId: 'tmpl_456',
       sandboxId: 'sbx_789',
       userId: 'user_abc',
@@ -23,8 +21,6 @@ describe('sanitizeClientInput', () => {
     })
 
     expect(out).toEqual({
-      teamSlug: 'acme',
-      teamId: 't_123',
       templateId: 'tmpl_456',
       sandboxId: 'sbx_789',
       userId: 'user_abc',
@@ -67,13 +63,13 @@ describe('sanitizeClientInput', () => {
 
   it('mixes allowlisted and sensitive fields safely', () => {
     const out = sanitizeClientInput({
-      teamSlug: 'acme',
+      sandboxId: 'sbx_acme',
       webhookId: 'wh_123',
       signatureSecret: 'super-secret-value',
     })
 
     expect(out).toEqual({
-      teamSlug: 'acme',
+      sandboxId: 'sbx_acme',
       webhookId: 'wh_123',
       _signatureSecret: 'string(18)',
     })
@@ -81,7 +77,7 @@ describe('sanitizeClientInput', () => {
 
   it('summarizes nested objects as "object" without recursing into values', () => {
     const out = sanitizeClientInput({
-      teamSlug: 'acme',
+      sandboxId: 'sbx_acme',
       payload: {
         nested: {
           secret: 'should-never-appear',
@@ -90,7 +86,7 @@ describe('sanitizeClientInput', () => {
     })
 
     expect(out).toEqual({
-      teamSlug: 'acme',
+      sandboxId: 'sbx_acme',
       _payload: 'object',
     })
     expect(JSON.stringify(out)).not.toContain('should-never-appear')
@@ -120,13 +116,13 @@ describe('sanitizeClientInput', () => {
 
   it('describes null and undefined values inside an object', () => {
     const out = sanitizeClientInput({
-      teamSlug: 'acme',
+      sandboxId: 'sbx_acme',
       maybeNull: null,
       maybeUndefined: undefined,
     })
 
     expect(out).toEqual({
-      teamSlug: 'acme',
+      sandboxId: 'sbx_acme',
       _maybeNull: 'null',
       _maybeUndefined: 'undefined',
     })

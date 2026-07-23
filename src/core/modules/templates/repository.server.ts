@@ -1,12 +1,7 @@
 import 'server-only'
 
-import { authHeaders } from '@/configs/api'
+import { apiKeyHeaders } from '@/configs/api'
 import { CACHE_TAGS } from '@/configs/cache'
-import { USE_MOCK_DATA } from '@/configs/env-flags'
-import {
-  MOCK_DEFAULT_TEMPLATES_DATA,
-  MOCK_TEMPLATES_DATA,
-} from '@/configs/mock-data'
 import type {
   DefaultTemplate,
   ListTeamTemplatesOptions,
@@ -17,24 +12,15 @@ import type {
   TemplateTagExistsResult,
   TemplateTagGroup,
 } from '@/core/modules/templates/models'
-import {
-  type AuthUserEmailResolver,
-  getAuthUserEmailsById,
-  resolveCreatorEmails,
-} from '@/core/modules/users/auth-user-emails.server'
 import { api, infra } from '@/core/shared/clients/api'
 import { repoErrorFromHttp } from '@/core/shared/errors'
-import type {
-  RequestScope,
-  TeamRequestScope,
-} from '@/core/shared/repository-scope'
+import type { RequestScope } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
 
 type TemplatesRepositoryDeps = {
   apiClient: typeof api
   infraClient: typeof infra
-  authHeaders: typeof authHeaders
-  resolveAuthUserEmailsById: AuthUserEmailResolver
+  apiKeyHeaders: typeof apiKeyHeaders
 }
 
 export interface TeamTemplatesRepository {
@@ -95,33 +81,15 @@ export interface DefaultTemplatesRepository {
 }
 
 export function createTemplatesRepository(
-  scope: TeamRequestScope,
+  scope: RequestScope,
   deps: TemplatesRepositoryDeps = {
     apiClient: api,
     infraClient: infra,
-    authHeaders: authHeaders,
-    resolveAuthUserEmailsById: getAuthUserEmailsById,
+    apiKeyHeaders: apiKeyHeaders,
   }
 ): TeamTemplatesRepository {
   return {
     async getTemplate(templateId) {
-      if (USE_MOCK_DATA) {
-        const template = MOCK_TEMPLATES_DATA.find(
-          (t) => t.templateID === templateId
-        )
-        if (!template) {
-          return err(
-            repoErrorFromHttp(
-              404,
-              'Template not found in this project',
-              undefined
-            )
-          )
-        }
-
-        return ok({ template })
-      }
-
       const res = await deps.apiClient.GET('/templates/{templateID}', {
         params: {
           path: {
@@ -129,7 +97,7 @@ export function createTemplatesRepository(
           },
         },
         headers: {
-          ...deps.authHeaders(scope.accessToken, scope.teamId),
+          ...deps.apiKeyHeaders(scope.apiKey),
         },
       })
 
@@ -156,10 +124,6 @@ export function createTemplatesRepository(
       return ok({ template: res.data })
     },
     async getTagGroups(templateId, options) {
-      if (USE_MOCK_DATA) {
-        return ok({ tags: [], nextCursor: null })
-      }
-
       const res = await deps.apiClient.GET(
         '/templates/{templateID}/tags/groups',
         {
@@ -176,7 +140,7 @@ export function createTemplatesRepository(
             },
           },
           headers: {
-            ...deps.authHeaders(scope.accessToken, scope.teamId),
+            ...deps.apiKeyHeaders(scope.apiKey),
           },
         }
       )
@@ -197,10 +161,6 @@ export function createTemplatesRepository(
       })
     },
     async getTagCount(templateId) {
-      if (USE_MOCK_DATA) {
-        return ok({ total: 0 })
-      }
-
       const res = await deps.apiClient.GET(
         '/templates/{templateID}/tags/count',
         {
@@ -210,7 +170,7 @@ export function createTemplatesRepository(
             },
           },
           headers: {
-            ...deps.authHeaders(scope.accessToken, scope.teamId),
+            ...deps.apiKeyHeaders(scope.apiKey),
           },
         }
       )
@@ -228,10 +188,6 @@ export function createTemplatesRepository(
       return ok({ total: res.data?.total ?? 0 })
     },
     async getTagAssignments(templateId, tag, options) {
-      if (USE_MOCK_DATA) {
-        return ok({ data: [], nextCursor: null })
-      }
-
       const res = await deps.apiClient.GET(
         '/templates/{templateID}/tags/{tag}/assignments',
         {
@@ -246,7 +202,7 @@ export function createTemplatesRepository(
             },
           },
           headers: {
-            ...deps.authHeaders(scope.accessToken, scope.teamId),
+            ...deps.apiKeyHeaders(scope.apiKey),
           },
         }
       )
@@ -267,10 +223,6 @@ export function createTemplatesRepository(
       })
     },
     async checkTagExists(templateId, tag) {
-      if (USE_MOCK_DATA) {
-        return ok({ exists: false, normalizedTag: tag })
-      }
-
       const res = await deps.apiClient.GET(
         '/templates/{templateID}/tags/exists',
         {
@@ -283,7 +235,7 @@ export function createTemplatesRepository(
             },
           },
           headers: {
-            ...deps.authHeaders(scope.accessToken, scope.teamId),
+            ...deps.apiKeyHeaders(scope.apiKey),
           },
         }
       )
@@ -304,19 +256,9 @@ export function createTemplatesRepository(
       })
     },
     async getTeamTemplates() {
-      if (USE_MOCK_DATA) {
-        return ok({
-          templates: MOCK_TEMPLATES_DATA,
-        })
-      }
       const res = await deps.infraClient.GET('/templates', {
-        params: {
-          query: {
-            teamID: scope.teamId,
-          },
-        },
         headers: {
-          ...deps.authHeaders(scope.accessToken, scope.teamId),
+          ...deps.apiKeyHeaders(scope.apiKey),
         },
       })
 
@@ -331,23 +273,16 @@ export function createTemplatesRepository(
       }
 
       return ok({
-        templates: await resolveCreatorEmails(
-          res.data ?? [],
-          deps.resolveAuthUserEmailsById
-        ),
+        templates: res.data ?? [],
       })
     },
     async listTeamTemplates(options) {
-      if (USE_MOCK_DATA) {
-        return ok({ data: MOCK_TEMPLATES_DATA, nextCursor: null })
-      }
-
       const res = await deps.apiClient.GET('/templates', {
         params: {
           query: options,
         },
         headers: {
-          ...deps.authHeaders(scope.accessToken, scope.teamId),
+          ...deps.apiKeyHeaders(scope.apiKey),
         },
       })
 
@@ -395,7 +330,7 @@ export function createTemplatesRepository(
           tags: [tag],
         },
         headers: {
-          ...deps.authHeaders(scope.accessToken, scope.teamId),
+          ...deps.apiKeyHeaders(scope.apiKey),
         },
       })
 
@@ -421,7 +356,7 @@ export function createTemplatesRepository(
           tags,
         },
         headers: {
-          ...deps.authHeaders(scope.accessToken, scope.teamId),
+          ...deps.apiKeyHeaders(scope.apiKey),
         },
       })
 
@@ -445,7 +380,7 @@ export function createTemplatesRepository(
           },
         },
         headers: {
-          ...deps.authHeaders(scope.accessToken, scope.teamId),
+          ...deps.apiKeyHeaders(scope.apiKey),
         },
       })
 
@@ -472,7 +407,7 @@ export function createTemplatesRepository(
           },
         },
         headers: {
-          ...deps.authHeaders(scope.accessToken, scope.teamId),
+          ...deps.apiKeyHeaders(scope.apiKey),
         },
       })
 
@@ -493,23 +428,17 @@ export function createTemplatesRepository(
 
 export function createDefaultTemplatesRepository(
   scope: RequestScope,
-  deps: Pick<TemplatesRepositoryDeps, 'apiClient' | 'authHeaders'> = {
+  deps: Pick<TemplatesRepositoryDeps, 'apiClient' | 'apiKeyHeaders'> = {
     apiClient: api,
-    authHeaders: authHeaders,
+    apiKeyHeaders: apiKeyHeaders,
   }
 ): DefaultTemplatesRepository {
   return {
     async getDefaultTemplatesCached() {
-      if (USE_MOCK_DATA) {
-        return ok({
-          templates: MOCK_DEFAULT_TEMPLATES_DATA,
-        })
-      }
-
       const { data, error, response } = await deps.apiClient.GET(
         '/templates/defaults',
         {
-          headers: deps.authHeaders(scope.accessToken),
+          headers: deps.apiKeyHeaders(scope.apiKey),
           next: { tags: [CACHE_TAGS.DEFAULT_TEMPLATES] },
         }
       )

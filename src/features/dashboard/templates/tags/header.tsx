@@ -10,7 +10,6 @@ import { TAG_SEARCH_MAX_LEN, trackTagTableInteraction } from './table-config'
 import TagFormatInvalidTooltip from './tag-format-invalid-tooltip'
 
 interface TagsHeaderProps {
-  teamSlug: string
   templateId: string
   templateName: string
   total: number | undefined
@@ -19,7 +18,6 @@ interface TagsHeaderProps {
 }
 
 export default function TagsHeader({
-  teamSlug,
   templateId,
   templateName,
   total,
@@ -81,11 +79,7 @@ export default function TagsHeader({
             ) : null}
           </label>
         </div>
-        <AssignTagDialog
-          teamSlug={teamSlug}
-          templateId={templateId}
-          templateName={templateName}
-        />
+        <AssignTagDialog templateId={templateId} templateName={templateName} />
       </div>
 
       <div className="flex items-center justify-between gap-4">

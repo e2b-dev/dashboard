@@ -26,7 +26,6 @@ interface ReassignTagDialogProps {
   onOpenChange: (open: boolean) => void
   tag: string
   currentBuildId: string
-  teamSlug: string
   templateId: string
   templateName: string
   surface: ReassignSurface
@@ -81,7 +80,6 @@ function ReassignTagDialogBody({
   open,
   tag,
   currentBuildId,
-  teamSlug,
   templateId,
   templateName,
   surface,
@@ -94,7 +92,6 @@ function ReassignTagDialogBody({
     useState<BuildSelectionSource | null>(null)
 
   const { mutation, stage } = useTagAssignmentMutation({
-    teamSlug,
     templateId,
     operation: 'reassign',
     analyticsContext: { surface, tag },
@@ -127,7 +124,6 @@ function ReassignTagDialogBody({
       via_search: selectionSource === 'search',
     })
     mutation.mutate({
-      teamSlug,
       templateId,
       templateName,
       buildId: selectedBuildId,
@@ -163,7 +159,6 @@ function ReassignTagDialogBody({
           />
           <BuildPicker
             open={open}
-            teamSlug={teamSlug}
             templateId={templateId}
             currentBuildId={currentBuildId}
             selectedBuildId={selectedBuildId}

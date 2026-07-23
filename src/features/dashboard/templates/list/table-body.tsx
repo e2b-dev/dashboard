@@ -1,6 +1,5 @@
 import { flexRender, type Table } from '@tanstack/react-table'
 import Link from 'next/link'
-import posthog from 'posthog-js'
 import { type RefObject, useEffect } from 'react'
 import { PROTECTED_URLS } from '@/configs/urls'
 import type { Template } from '@/core/modules/templates/models'
@@ -40,8 +39,6 @@ export function TemplatesTableBody({
   isRefetching,
 }: TemplatesTableBodyProps) {
   'use no memo'
-
-  const { teamSlug } = useRouteParams<'/dashboard/[teamSlug]/templates'>()
   const { resetFilters, globalFilter, isPublic } = useTemplateTableStore()
 
   const centerRows = table.getCenterRows()
@@ -145,19 +142,10 @@ export function TemplatesTableBody({
             >
               {!isDefault && (
                 <Link
-                  href={PROTECTED_URLS.TEMPLATE_OVERVIEW(
-                    teamSlug,
-                    template.templateID
-                  )}
+                  href={PROTECTED_URLS.TEMPLATE_OVERVIEW(template.templateID)}
                   prefetch={false}
                   aria-label={`Open template ${primaryName ?? template.templateID}`}
                   className="absolute inset-0 z-1"
-                  onClick={() =>
-                    posthog.capture('template detail opened', {
-                      templateId: template.templateID,
-                      fromTab: 'list',
-                    })
-                  }
                 />
               )}
               {row.getVisibleCells().map((cell) => (

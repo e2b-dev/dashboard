@@ -10,7 +10,6 @@ import {
 type TerminalSandboxConnection = TRPCRouterOutputs['sandbox']['openTerminal']
 
 interface OpenTerminalMutationInput {
-  teamSlug: string
   template: string
   sandboxId?: string
   requestTimeoutMs?: number
@@ -31,8 +30,6 @@ interface OpenTerminalSandboxOptions {
   openTerminal: OpenTerminalMutation
   requestTimeoutMs?: number
   shouldStoreSession?: boolean
-  teamSlug: string
-  userId: string
   sandboxId?: string
   template: string
 }
@@ -43,8 +40,6 @@ export async function openTerminalSandbox({
   openTerminal,
   requestTimeoutMs,
   shouldStoreSession,
-  teamSlug,
-  userId,
   sandboxId,
   template,
 }: OpenTerminalSandboxOptions) {
@@ -52,7 +47,7 @@ export async function openTerminalSandbox({
     onStatus(`Connecting to terminal sandbox ${sandboxId}...\r\n`)
     const sandbox = await acquireTerminalSandbox(
       openTerminal,
-      { teamSlug, template, sandboxId, requestTimeoutMs },
+      { template, sandboxId, requestTimeoutMs },
       'Failed to connect to terminal sandbox'
     )
 
@@ -63,7 +58,7 @@ export async function openTerminalSandbox({
 
   const storedTerminalSession = forceNewSandbox
     ? null
-    : readStoredTerminalSession(userId)
+    : readStoredTerminalSession()
 
   let sandbox: Sandbox
 
@@ -76,7 +71,6 @@ export async function openTerminalSandbox({
       sandbox = await acquireTerminalSandbox(
         openTerminal,
         {
-          teamSlug,
           template,
           sandboxId: storedTerminalSession.sandboxId,
           requestTimeoutMs,
@@ -84,12 +78,12 @@ export async function openTerminalSandbox({
         'Failed to connect to terminal sandbox'
       )
     } catch {
-      clearStoredTerminalSession(userId)
+      clearStoredTerminalSession()
       onStatus('Stored terminal sandbox is unavailable.\r\n')
       onStatus(`Starting ${template} terminal sandbox...\r\n`)
       sandbox = await acquireTerminalSandbox(
         openTerminal,
-        { teamSlug, template },
+        { template },
         'Failed to create terminal sandbox'
       )
     }
@@ -97,13 +91,13 @@ export async function openTerminalSandbox({
     onStatus(`Starting ${template} terminal sandbox...\r\n`)
     sandbox = await acquireTerminalSandbox(
       openTerminal,
-      { teamSlug, template },
+      { template },
       'Failed to create terminal sandbox'
     )
   }
 
   if (shouldStoreSession ?? true) {
-    writeStoredTerminalSession(userId, {
+    writeStoredTerminalSession({
       sandboxId: sandbox.sandboxId,
       template,
     })

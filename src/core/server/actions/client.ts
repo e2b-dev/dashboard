@@ -1,17 +1,13 @@
 import { context, SpanStatusCode, trace } from '@opentelemetry/api'
 import { headers } from 'next/headers'
-import { unauthorized } from 'next/navigation'
 import { createMiddleware, createSafeActionClient } from 'next-safe-action'
 import { z } from 'zod'
 import {
   getObservedError,
   getObservedErrorMessage,
   getObservedException,
-  toActionErrorFromRepoError,
 } from '@/core/server/adapters/errors'
-import type { AuthUser } from '@/core/server/auth'
-import { getAuthContext } from '@/core/server/auth'
-import { getTeamIdFromSlug } from '@/core/server/functions/team/get-team-id-from-slug'
+import { getApiKey } from '@/core/server/auth'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 import {
   createRequestObservabilityContextFromHeaders,
@@ -19,28 +15,15 @@ import {
 } from '@/core/shared/clients/logger/request-observability'
 import { getTracer } from '@/core/shared/clients/tracer'
 import { UnauthenticatedError, UnknownError } from '@/core/shared/errors'
-import type {
-  RequestScope,
-  TeamRequestScope,
-} from '@/core/shared/repository-scope'
+import type { RequestScope } from '@/core/shared/repository-scope'
 import {
   ActionError,
   flattenClientInputValue,
   sanitizeClientInput,
 } from './utils'
 
-type ActionSession = {
-  access_token: string
-  user: AuthUser
-}
-
 export interface AuthActionContext {
-  user: AuthUser
-  session: ActionSession
-}
-
-export interface TeamActionContext extends AuthActionContext {
-  teamId: string
+  apiKey: string
 }
 
 export const actionClient = createSafeActionClient({
@@ -143,8 +126,6 @@ export const actionClient = createSafeActionClient({
     server_function_duration_ms: duration.toFixed(3),
     request_url: requestObservabilityContext.request_url,
     request_path: requestObservabilityContext.request_path,
-    team_slug: flattenClientInputValue(clientInput, 'teamSlug'),
-    team_id: flattenClientInputValue(clientInput, 'teamId'),
     template_id: flattenClientInputValue(clientInput, 'templateId'),
     sandbox_id: flattenClientInputValue(clientInput, 'sandboxId'),
     user_id: flattenClientInputValue(clientInput, 'userId'),
@@ -156,12 +137,6 @@ export const actionClient = createSafeActionClient({
     'server_function_duration_ms',
     baseLogPayload.server_function_duration_ms
   )
-  if (baseLogPayload.team_id) {
-    s.setAttribute('team_id', baseLogPayload.team_id)
-  }
-  if (baseLogPayload.team_slug) {
-    s.setAttribute('team_slug', baseLogPayload.team_slug)
-  }
   if (baseLogPayload.template_id) {
     s.setAttribute('template_id', baseLogPayload.template_id)
   }
@@ -216,74 +191,15 @@ export const actionClient = createSafeActionClient({
 })
 
 export const authActionClient = actionClient.use(async ({ next }) => {
-  const authContext = await getAuthContext()
+  const apiKey = await getApiKey()
 
-  if (!authContext) {
+  if (!apiKey) {
     throw UnauthenticatedError()
   }
 
   return next({
     ctx: {
-      user: authContext.user,
-      session: {
-        access_token: authContext.accessToken,
-        user: authContext.user,
-      },
-    },
-  })
-})
-
-export const withTeamSlugResolution = createMiddleware<{
-  ctx: AuthActionContext
-}>().define(async ({ next, clientInput, ctx }) => {
-  if (
-    !clientInput ||
-    typeof clientInput !== 'object' ||
-    !('teamSlug' in clientInput)
-  ) {
-    l.error(
-      {
-        key: 'with_team_slug_resolution:missing_team_slug',
-        context: {
-          teamSlug: (clientInput as { teamSlug?: string })?.teamSlug,
-        },
-      },
-      'Missing teamSlug when using withTeamSlugResolution middleware'
-    )
-
-    throw new Error(
-      'teamSlug is required when using withTeamSlugResolution middleware'
-    )
-  }
-
-  const teamIdResult = await getTeamIdFromSlug(
-    clientInput.teamSlug as string,
-    ctx.session.access_token
-  )
-
-  if (!teamIdResult.ok) {
-    return toActionErrorFromRepoError(teamIdResult.error)
-  }
-
-  const teamId = teamIdResult.data
-
-  if (!teamId) {
-    l.warn(
-      {
-        key: 'with_team_slug_resolution:invalid_team_slug',
-        context: {
-          teamSlug: clientInput.teamSlug,
-        },
-      },
-      `with_team_slug_resolution:invalid_team_slug - invalid team slug provided through withTeamSlugResolution middleware: ${clientInput.teamSlug}`
-    )
-
-    throw unauthorized()
-  }
-
-  return next({
-    ctx: {
-      teamId,
+      apiKey,
     },
   })
 })
@@ -299,30 +215,7 @@ export function withAuthedRequestRepository<
     ctx: AuthActionContext
   }>().define(async ({ next, ctx }) => {
     const repository = createRepository({
-      accessToken: ctx.session.access_token,
-    })
-
-    return next({
-      ctx: {
-        ...extendContext(repository),
-      },
-    })
-  })
-}
-
-export function withTeamAuthedRequestRepository<
-  TRepository,
-  TContextExtension extends object,
->(
-  createRepository: (scope: TeamRequestScope) => TRepository,
-  extendContext: (repository: TRepository) => TContextExtension
-) {
-  return createMiddleware<{
-    ctx: TeamActionContext
-  }>().define(async ({ next, ctx }) => {
-    const repository = createRepository({
-      accessToken: ctx.session.access_token,
-      teamId: ctx.teamId,
+      apiKey: ctx.apiKey,
     })
 
     return next({

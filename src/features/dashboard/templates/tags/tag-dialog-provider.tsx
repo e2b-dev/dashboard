@@ -43,7 +43,6 @@ const TagDialogContext = createContext<TagDialogContextValue | undefined>(
 )
 
 interface TagDialogProviderProps {
-  teamSlug: string
   templateId: string
   templateName: string
   children: ReactNode
@@ -62,7 +61,6 @@ const INITIAL_ROLLBACK_DATA: RollbackData = {
 }
 
 export function TagDialogProvider({
-  teamSlug,
   templateId,
   templateName,
   children,
@@ -115,7 +113,6 @@ export function TagDialogProvider({
         onOpenChange={setReassignOpen}
         tag={reassignData.tag}
         currentBuildId={reassignData.currentBuildId}
-        teamSlug={teamSlug}
         templateId={templateId}
         templateName={templateName}
         surface="tags-tab"
@@ -126,7 +123,6 @@ export function TagDialogProvider({
         tag={rollbackData.tag}
         currentBuildId={rollbackData.currentBuildId}
         targetBuildId={rollbackData.targetBuildId}
-        teamSlug={teamSlug}
         templateId={templateId}
         templateName={templateName}
         surface={rollbackData.surface}

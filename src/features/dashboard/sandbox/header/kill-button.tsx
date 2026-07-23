@@ -7,7 +7,6 @@ import { killSandboxAction } from '@/core/server/actions/sandbox-actions'
 import { AlertPopover } from '@/ui/alert-popover'
 import { Button } from '@/ui/primitives/button'
 import { RemoveIcon } from '@/ui/primitives/icons'
-import { useDashboard } from '../../context'
 import { useSandboxContext } from '../context'
 
 interface KillButtonProps {
@@ -17,7 +16,6 @@ interface KillButtonProps {
 export default function KillButton({ className }: KillButtonProps) {
   const [open, setOpen] = useState(false)
   const { sandboxInfo, refetchSandboxInfo } = useSandboxContext()
-  const { team } = useDashboard()
   const canKill = Boolean(
     sandboxInfo?.sandboxID && sandboxInfo.state !== 'killed'
   )
@@ -39,7 +37,6 @@ export default function KillButton({ className }: KillButtonProps) {
     if (!canKill || !sandboxInfo?.sandboxID) return
 
     execute({
-      teamSlug: team.slug,
       sandboxId: sandboxInfo.sandboxID,
     })
   }
