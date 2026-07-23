@@ -30,7 +30,7 @@ export function ApiKeyForm({ destination }: ApiKeyFormProps) {
         execute({ apiKey, destination })
       }}
     >
-      <E2BLogo className="size-8" />
+      <E2BLogo className="size-12" />
       <div className="flex flex-col gap-1">
         <h1 className="prose-headline">Dashboard</h1>
         <p className="prose-body text-fg-secondary">
