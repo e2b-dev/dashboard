@@ -1106,7 +1106,7 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/admin/v1/projects/{teamID}': {
+  '/v1/management/projects/{teamID}': {
     parameters: {
       query?: never
       header?: never
@@ -1117,17 +1117,17 @@ export interface paths {
       cookie?: never
     }
     get?: never
-    /** Create or reconcile a project. */
+    /** Create or reconcile a project (v1). */
     put: operations['upsertProject']
     post?: never
-    /** Delete a project and its control-plane state. */
+    /** Delete a project and its control-plane state (v1). */
     delete: operations['deleteProject']
     options?: never
     head?: never
     patch?: never
     trace?: never
   }
-  '/admin/v1/projects/{teamID}/members/{userId}': {
+  '/v1/management/projects/{teamID}/members/{userId}': {
     parameters: {
       query?: never
       header?: never
@@ -1140,17 +1140,17 @@ export interface paths {
       cookie?: never
     }
     get?: never
-    /** Reconcile an opaque user UUID as a project member. */
+    /** Reconcile an opaque user UUID as a project member (v1). */
     put: operations['upsertProjectMember']
     post?: never
-    /** Remove a project member. */
+    /** Remove a project member (v1). */
     delete: operations['deleteProjectMember']
     options?: never
     head?: never
     patch?: never
     trace?: never
   }
-  '/admin/v1/projects/{teamID}/limits': {
+  '/v1/management/projects/{teamID}/limits': {
     parameters: {
       query?: never
       header?: never
@@ -1161,7 +1161,7 @@ export interface paths {
       cookie?: never
     }
     get?: never
-    /** Reconcile effective limits for a project. */
+    /** Reconcile effective limits for a project (v1). */
     put: operations['upsertProjectLimits']
     post?: never
     delete?: never
@@ -1170,7 +1170,7 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/admin/v1/users/{userId}': {
+  '/v1/management/users/{userId}': {
     parameters: {
       query?: never
       header?: never
@@ -1183,7 +1183,7 @@ export interface paths {
     get?: never
     put?: never
     post?: never
-    /** Purge shard-local membership and access-token state for an opaque user UUID. */
+    /** Purge shard-local membership and access-token state for an opaque user UUID (v1). */
     delete: operations['purgeUser']
     options?: never
     head?: never

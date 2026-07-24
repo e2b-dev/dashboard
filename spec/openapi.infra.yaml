@@ -298,7 +298,9 @@ components:
           items:
             type: string
         egressProxy:
-          $ref: "#/components/schemas/SandboxEgressProxyConfig"
+          allOf:
+            - $ref: "#/components/schemas/SandboxEgressProxyConfig"
+          x-not-implemented: true
         maskRequestHost:
           type: string
           description: Specify host mask which will be used for all sandbox requests
@@ -328,7 +330,9 @@ components:
           items:
             type: string
         egressProxy:
-          $ref: "#/components/schemas/SandboxEgressProxyConfig"
+          allOf:
+            - $ref: "#/components/schemas/SandboxEgressProxyConfig"
+          x-not-implemented: true
         rules:
           type: object
           description: Per-domain transform rules. Replaces all existing rules when provided.
@@ -365,6 +369,7 @@ components:
     SandboxEgressProxyConfig:
       type: object
       nullable: true
+      x-not-implemented: true
       description: >-
         SOCKS5 proxy for sandbox egress. Outbound TCP is tunneled through the
         proxy after allow/deny filtering; the sandbox is unaware. Domain-matched
