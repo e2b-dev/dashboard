@@ -10,7 +10,6 @@ import {
   normalizeTerminalTemplate,
   resolveTerminalTemplateOverride,
 } from '@/features/dashboard/terminal/template'
-import { calculateTerminalSize } from '@/features/dashboard/terminal/terminal-size'
 
 const { mockCreateEnvdSandbox } = vi.hoisted(() => ({
   mockCreateEnvdSandbox: vi.fn(),
@@ -153,110 +152,6 @@ describe('dashboard terminal helpers', () => {
         })
       ).not.toThrow()
       expect(() => clearStoredTerminalSession()).not.toThrow()
-    })
-  })
-
-  describe('calculateTerminalSize', () => {
-    it('uses fallback dimensions without a rendered terminal', () => {
-      const container = {
-        clientWidth: 900,
-        clientHeight: 500,
-        getBoundingClientRect: () => ({ width: 900, height: 500 }),
-      } as HTMLDivElement
-
-      expect(calculateTerminalSize(container, null)).toEqual({
-        cols: 104,
-        rows: 23,
-      })
-    })
-
-    it('honors measured xterm cell dimensions when available', () => {
-      const container = {
-        clientWidth: 900,
-        clientHeight: 500,
-        getBoundingClientRect: () => ({ width: 900, height: 500 }),
-      } as HTMLDivElement
-      const terminal = {
-        element: {
-          querySelector: (selector: string) => {
-            if (selector === '.xterm-char-measure-element') {
-              return {
-                getBoundingClientRect: () => ({ width: 10, height: 18 }),
-              }
-            }
-            if (selector === '.xterm-rows > div') {
-              return {
-                getBoundingClientRect: () => ({ width: 900, height: 22 }),
-              }
-            }
-            return null
-          },
-        },
-      } as never
-
-      expect(calculateTerminalSize(container, terminal)).toEqual({
-        cols: 83,
-        rows: 21,
-      })
-    })
-
-    it('uses xterm renderer dimensions for canvas renderers', () => {
-      const container = {
-        clientWidth: 900,
-        clientHeight: 500,
-        getBoundingClientRect: () => ({ width: 900, height: 500 }),
-      } as HTMLDivElement
-      const terminal = {
-        _core: {
-          _renderService: {
-            dimensions: {
-              css: {
-                cell: { width: 8, height: 24 },
-              },
-            },
-          },
-        },
-        element: {
-          querySelector: (selector: string) => {
-            if (selector === '.xterm-helper-textarea') {
-              return {
-                getBoundingClientRect: () => ({ width: 20, height: 24 }),
-              }
-            }
-            return null
-          },
-        },
-      } as never
-
-      expect(calculateTerminalSize(container, terminal)).toEqual({
-        cols: 104,
-        rows: 19,
-      })
-    })
-
-    it('does not use helper textarea width for columns', () => {
-      const container = {
-        clientWidth: 900,
-        clientHeight: 500,
-        getBoundingClientRect: () => ({ width: 900, height: 500 }),
-      } as HTMLDivElement
-      const terminal = {
-        element: {
-          querySelector: (selector: string) => {
-            if (selector === '.xterm-helper-textarea') {
-              return {
-                getBoundingClientRect: () => ({ width: 20, height: 24 }),
-              }
-            }
-            return null
-          },
-        },
-      } as never
-
-      expect(calculateTerminalSize(container, terminal)).toEqual({
-        cols: 104,
-        rows: 19,
-      })
     })
   })
 

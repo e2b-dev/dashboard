@@ -1,36 +1,34 @@
-import '@xterm/xterm/css/xterm.css'
-import { Terminal as XTerm } from '@xterm/xterm'
 import { useCallback, useEffect, useRef } from 'react'
+import type { RioTermHandle } from 'rioterm'
 import {
   DEFAULT_COLS,
   DEFAULT_ROWS,
   MAX_TERMINAL_TRANSCRIPT_CHARS,
 } from './constants'
-import { calculateTerminalSize } from './terminal-size'
 
 const INITIAL_TERMINAL_TEXT =
   'Open a terminal to start a persistent E2B sandbox.\r\n'
-const TERMINAL_THEME = {
+const TERMINAL_COLORS = {
   background: '#000000',
   cursor: '#ffffff',
   foreground: '#ffffff',
   selectionBackground: '#ffffff40',
 }
 
+const MIN_TERMINAL_COLS = 40
+const MIN_TERMINAL_ROWS = 8
+const TERMINAL_PADDING_PX = 24
+
 interface UseTerminalInstanceOptions {
   onInput: (data: string) => void
   onResize: (size: { cols: number; rows: number }) => void
-}
-
-type DisposableAddon = {
-  dispose: () => void
 }
 
 export function useTerminalInstance({
   onInput,
   onResize,
 }: UseTerminalInstanceOptions) {
-  const xtermRef = useRef<XTerm | null>(null)
+  const handleRef = useRef<RioTermHandle | null>(null)
   const terminalContainerRef = useRef<HTMLDivElement | null>(null)
   const terminalTranscriptRef = useRef(INITIAL_TERMINAL_TEXT)
   const terminalSizeRef = useRef({ cols: DEFAULT_COLS, rows: DEFAULT_ROWS })
@@ -38,19 +36,39 @@ export function useTerminalInstance({
 
   const resizeTerminal = useCallback(
     (options?: { force?: boolean }) => {
-      const nextSize = calculateTerminalSize(
-        terminalContainerRef.current,
-        xtermRef.current
-      )
+      const container = terminalContainerRef.current
+      const handle = handleRef.current
+      if (!container || !handle) return terminalSizeRef.current
+
+      const rect = container.getBoundingClientRect()
+      if (rect.width && rect.height) {
+        const { cellWidth, cellHeight } = handle.renderer
+        // The renderer knows its cell metrics, so sizing is a floor
+        // division; the floors below keep degenerate panels from
+        // collapsing the PTY under 40x8.
+        handle.renderer.fit(
+          Math.max(
+            rect.width - TERMINAL_PADDING_PX,
+            MIN_TERMINAL_COLS * cellWidth
+          ),
+          Math.max(
+            rect.height - TERMINAL_PADDING_PX,
+            MIN_TERMINAL_ROWS * cellHeight
+          )
+        )
+      }
+
+      const nextSize = {
+        cols: handle.terminal.options.cols,
+        rows: handle.terminal.options.rows,
+      }
       const currentSize = terminalSizeRef.current
       const sizeChanged =
         nextSize.cols !== currentSize.cols || nextSize.rows !== currentSize.rows
-      const shouldResize = sizeChanged || options?.force
 
       terminalSizeRef.current = nextSize
 
-      if (shouldResize) {
-        xtermRef.current?.resize(nextSize.cols, nextSize.rows)
+      if (sizeChanged || options?.force) {
         onResize(nextSize)
       }
 
@@ -59,9 +77,9 @@ export function useTerminalInstance({
     [onResize]
   )
 
-  const scrollTerminalToBottom = useCallback((terminal = xtermRef.current) => {
+  const scrollTerminalToBottom = useCallback((handle = handleRef.current) => {
     try {
-      terminal?.scrollToBottom()
+      handle?.terminal.scrollLines(-handle.terminal.historySize())
     } catch {}
   }, [])
 
@@ -76,10 +94,13 @@ export function useTerminalInstance({
         terminalTranscriptRef.current + text
       ).slice(-MAX_TERMINAL_TRANSCRIPT_CHARS)
 
-      const terminal = xtermRef.current
-      terminal?.write(chunk, () => {
-        scrollTerminalToBottom(terminal)
-      })
+      const handle = handleRef.current
+      if (handle) {
+        // rioterm writes parse synchronously; the buffer is current when
+        // write() returns, so follow-output is just a scroll after it.
+        handle.terminal.write(chunk)
+        scrollTerminalToBottom(handle)
+      }
     },
     [scrollTerminalToBottom]
   )
@@ -87,16 +108,18 @@ export function useTerminalInstance({
   const resetTerminal = useCallback(() => {
     decoderRef.current = new TextDecoder()
     terminalTranscriptRef.current = ''
-    xtermRef.current?.reset()
+    // RIS: full reset of grid, modes, and parser state.
+    handleRef.current?.terminal.write('\x1bc')
   }, [])
 
   const focusTerminal = useCallback(() => {
-    xtermRef.current?.focus()
+    handleRef.current?.focus()
   }, [])
 
   const copyTerminalText = useCallback(async () => {
     const value =
-      xtermRef.current?.getSelection() || terminalTranscriptRef.current
+      handleRef.current?.terminal.getSelection() ||
+      terminalTranscriptRef.current
     if (!value) return
 
     try {
@@ -112,105 +135,59 @@ export function useTerminalInstance({
     const container = terminalContainerRef.current
     if (!container) return
 
-    const terminal = new XTerm({
-      cols: terminalSizeRef.current.cols,
-      rows: terminalSizeRef.current.rows,
-      cursorBlink: true,
-      cursorStyle: 'block',
-      fontFamily:
-        'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-      fontSize: 13,
-      lineHeight: 1.54,
-      scrollback: 10_000,
-      theme: TERMINAL_THEME,
-    })
-
     let disposed = false
-    let rendererAddon: DisposableAddon | undefined
-    let contextLossSubscription: { dispose: () => void } | undefined
-
-    xtermRef.current = terminal
-    terminal.open(container)
 
     void (async () => {
-      try {
-        const { WebglAddon } = await import('@xterm/addon-webgl')
+      // Dynamic import keeps the wasm engine out of the initial bundle.
+      const { open, defaultTheme } = await import('rioterm')
+      if (disposed || !terminalContainerRef.current) return
+
+      const handle = await open(terminalContainerRef.current, {
+        renderer: 'canvas',
+        cols: terminalSizeRef.current.cols,
+        rows: terminalSizeRef.current.rows,
+        // Sizing is managed here (padding + minimum dims), not by
+        // rioterm's own container observer.
+        fit: false,
+        autoFocus: false,
+        cursorStyle: 'block',
+        fontFamily:
+          'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+        fontSize: 13,
+        lineHeight: 1.54,
+        scrollback: 10_000,
+        theme: { ...defaultTheme, ...TERMINAL_COLORS },
+      })
+
+      if (disposed) {
+        handle.dispose()
+        return
+      }
+      handleRef.current = handle
+
+      // Input sequences are complete per event, so a stateless decode is
+      // correct here; decoderRef streams and belongs to output only.
+      const inputDecoder = new TextDecoder()
+      handle.terminal.onData((bytes) => {
+        onInput(inputDecoder.decode(bytes))
+      })
+
+      handle.terminal.write(terminalTranscriptRef.current)
+      scrollTerminalToBottom(handle)
+
+      requestAnimationFrame(() => {
         if (disposed) return
 
-        const webglAddon = new WebglAddon()
-        const webglContextLossSubscription = webglAddon.onContextLoss(() => {
-          webglContextLossSubscription.dispose()
-          webglAddon.dispose()
-          if (rendererAddon === webglAddon) {
-            rendererAddon = undefined
-          }
-          if (contextLossSubscription === webglContextLossSubscription) {
-            contextLossSubscription = undefined
-          }
-        })
-
-        if (disposed) {
-          webglContextLossSubscription.dispose()
-          webglAddon.dispose()
-          return
-        }
-
-        contextLossSubscription = webglContextLossSubscription
-        rendererAddon = webglAddon
-        terminal.loadAddon(webglAddon)
-        resizeTerminal({ force: true })
-        scrollTerminalToBottom(terminal)
-      } catch {
-        contextLossSubscription?.dispose()
-        contextLossSubscription = undefined
-        rendererAddon?.dispose()
-
-        try {
-          const { CanvasAddon } = await import('@xterm/addon-canvas')
-          if (disposed) return
-
-          const canvasAddon = new CanvasAddon()
-          rendererAddon = canvasAddon
-          terminal.loadAddon(canvasAddon)
-          resizeTerminal({ force: true })
-          scrollTerminalToBottom(terminal)
-        } catch {
-          rendererAddon?.dispose()
-          rendererAddon = undefined
-        }
-      }
+        resizeTerminal()
+        handle.focus()
+        scrollTerminalToBottom(handle)
+      })
     })()
-
-    const dataSubscription = terminal.onData(onInput)
-    terminal.write(terminalTranscriptRef.current, () => {
-      scrollTerminalToBottom(terminal)
-    })
-
-    const resizeFrame = requestAnimationFrame(() => {
-      if (disposed) return
-
-      resizeTerminal()
-      terminal.focus()
-      scrollTerminalToBottom(terminal)
-    })
-    const resizeTimer = window.setTimeout(() => {
-      if (disposed) return
-
-      resizeTerminal()
-      scrollTerminalToBottom(terminal)
-    }, 100)
 
     return () => {
       disposed = true
-      cancelAnimationFrame(resizeFrame)
-      window.clearTimeout(resizeTimer)
-      dataSubscription.dispose()
-      contextLossSubscription?.dispose()
-      rendererAddon?.dispose()
-      terminal.dispose()
-      if (xtermRef.current === terminal) {
-        xtermRef.current = null
-      }
+      handleRef.current?.dispose()
+      handleRef.current = null
     }
   }, [onInput, resizeTerminal, scrollTerminalToBottom])
 
