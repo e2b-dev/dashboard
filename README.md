@@ -9,7 +9,7 @@
 Open-source dashboard for self-hosted [E2B infrastructure](https://github.com/e2b-dev/infra). Manage and monitor sandboxes and templates with a team API key — no user accounts, no external auth provider.
 
 ## Quick Links
-- 📚 [Documentation](https://e2b.dev/docs?utm_source=github&utm_medium=referral&utm_campaign=readme&utm_content=dashboard)
+- 📚 [Documentation](https://docs.e2b.dev/?utm_source=github&utm_medium=referral&utm_campaign=readme&utm_content=dashboard)
 - 💬 [Discord Community](https://discord.gg/e2b)
 - 🐛 [Issue Tracker](https://github.com/e2b-dev/dashboard/issues)
 - 🤝 [Contributing Guide](CONTRIBUTING.md)
