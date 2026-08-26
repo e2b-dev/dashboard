@@ -36,7 +36,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
-    "@next/env": "^16.2.7",
+    "@next/env": "^16.3.3",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/auto-instrumentations-node": "^0.77.0",
     "@opentelemetry/exporter-logs-otlp-http": "^0.203.0",
@@ -87,7 +87,7 @@
     "immer": "^10.1.1",
     "micromatch": "^4.0.8",
     "motion": "^12.23.25",
-    "next": "^16.2.7",
+    "next": "^16.3.3",
     "next-safe-action": "^8.0.11",
     "next-themes": "^0.4.6",
     "nuqs": "^2.7.0",
