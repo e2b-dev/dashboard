@@ -35,11 +35,32 @@ Authentication is a single **team API key**:
 | `NEXT_PUBLIC_E2B_DOMAIN` | build | Derives `https://api.<domain>` and `https://dashboard-api.<domain>` |
 | `NEXT_PUBLIC_INFRA_API_URL` / `NEXT_PUBLIC_DASHBOARD_API_URL` | build | Explicit overrides of the derived URLs |
 | `E2B_INFRA_API_URL` / `E2B_DASHBOARD_API_URL` | server start | Explicit URLs for a prebuilt image; take precedence |
+| `NEXT_PUBLIC_E2B_SANDBOX_URL` | build | Base URL the browser uses for sandbox traffic |
+| `E2B_SANDBOX_URL` | per request | Same, for a prebuilt image; takes precedence, and is what the browser is told to use |
 
 Each URL resolves in that order: the runtime variable, then the
 `NEXT_PUBLIC_` override, then the value derived from the domain. Next inlines
 `NEXT_PUBLIC_*` into the bundles at build time, so a prebuilt image is
-configured with the runtime variables.
+configured with the runtime variables. Every explicit URL must carry an
+`http://` or `https://` scheme, and the server rejects anything else naming
+the variable. The infra and dashboard URLs are resolved at module scope, so a
+malformed one fails on server start. The sandbox URL is resolved per request,
+so a malformed one fails on first use, such as opening a terminal.
+
+The browser reads the sandbox URL from `GET /api/config`, which resolves it
+per request. When `E2B_INFRA_API_URL` is set and no sandbox URL is given, it
+defaults to the host the dashboard was reached on, port 3002. That default
+routes only when the dashboard is reached over `localhost` or an IP address,
+which is how the sandbox proxy accepts header-routed traffic. Reach the
+dashboard on a domain name and you must set `E2B_SANDBOX_URL` yourself, to a
+`localhost`, IP, or `sandbox.<domain>` base URL. `curl
+http://<host>:<port>/api/config` shows what a deployment resolved.
+
+`E2B_SANDBOX_URL` is also read by the E2B SDK for its own connection config.
+That is the same setting, so the dashboard deliberately shares the name. It
+is served to the browser as-is, so the value has to be reachable from the
+browser, not only from the server. A runtime-configured install should leave
+it unset unless the port-3002 default is wrong.
 
 ## Features
 

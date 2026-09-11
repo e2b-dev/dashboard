@@ -13,7 +13,10 @@ import {
 import { createSandboxesRepository } from '@/core/modules/sandboxes/repository.server'
 import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/errors'
 import { withAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
-import { resolveInfraApiUrl } from '@/core/server/runtime-config'
+import {
+  resolveInfraApiUrl,
+  resolveSandboxUrl,
+} from '@/core/server/runtime-config'
 import { createTRPCRouter } from '@/core/server/trpc/init'
 import { protectedProcedure } from '@/core/server/trpc/procedures'
 import { SandboxIdSchema } from '@/core/shared/schemas/api'
@@ -232,7 +235,7 @@ export const sandboxRouter = createTRPCRouter({
       const connectionOpts = {
         apiUrl: resolveInfraApiUrl(),
         domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
-        sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
+        sandboxUrl: resolveSandboxUrl(),
         apiKey,
       }
 
@@ -320,7 +323,7 @@ export const sandboxRouter = createTRPCRouter({
       const connectionOpts = {
         apiUrl: resolveInfraApiUrl(),
         domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
-        sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
+        sandboxUrl: resolveSandboxUrl(),
         apiKey,
       }
 
@@ -376,7 +379,7 @@ export const sandboxRouter = createTRPCRouter({
       const connectionOpts = {
         apiUrl: resolveInfraApiUrl(),
         domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
-        sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
+        sandboxUrl: resolveSandboxUrl(),
         apiKey,
       }
 
@@ -415,7 +418,7 @@ export const sandboxRouter = createTRPCRouter({
       const sandbox = await Sandbox.connect(input.sandboxId, {
         apiUrl: resolveInfraApiUrl(),
         domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
-        sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
+        sandboxUrl: resolveSandboxUrl(),
         timeoutMs: TERMINAL_SANDBOX_TIMEOUT_MS,
         apiKey: ctx.apiKey,
       })

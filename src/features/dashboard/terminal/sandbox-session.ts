@@ -1,5 +1,6 @@
 import type { Sandbox } from 'e2b'
 import { createEnvdSandbox } from '@/core/shared/create-envd-sandbox'
+import { fetchRuntimeConfig } from '@/core/shared/runtime-config'
 import type { TRPCRouterOutputs } from '@/trpc/client'
 import {
   clearStoredTerminalSession,
@@ -121,9 +122,11 @@ async function acquireTerminalSandbox(
     throw error instanceof Error ? error : new Error(fallbackMessage)
   }
 
+  const { sandboxUrl } = await fetchRuntimeConfig()
+
   return createEnvdSandbox({
     ...connection,
     domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
-    sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
+    sandboxUrl: sandboxUrl ?? undefined,
   })
 }

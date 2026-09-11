@@ -42,7 +42,12 @@ async function caller() {
 }
 
 const RUNTIME_API_URL = 'http://127.0.0.1:3000'
-const MANAGED_KEYS = ['E2B_INFRA_API_URL', 'NEXT_PUBLIC_INFRA_API_URL'] as const
+const MANAGED_KEYS = [
+  'E2B_INFRA_API_URL',
+  'E2B_SANDBOX_URL',
+  'NEXT_PUBLIC_INFRA_API_URL',
+  'NEXT_PUBLIC_E2B_SANDBOX_URL',
+] as const
 const saved = new Map<string, string | undefined>()
 
 const withRuntimeApiUrl = expect.objectContaining({ apiUrl: RUNTIME_API_URL })
@@ -140,6 +145,66 @@ describe('sandbox router control-plane API URL', () => {
     expect(sdkMock.connect).toHaveBeenCalledWith(
       'sbxexisting',
       expect.objectContaining({ apiUrl: 'https://api.public.example' })
+    )
+  })
+})
+
+/**
+ * The sandbox URL travels in the same connection options, so a prebuilt image
+ * has to read it the same way — otherwise the server talks to one sandbox host
+ * and the browser, which reads `GET /api/config`, talks to another.
+ */
+describe('sandbox router sandbox URL', () => {
+  it('passes the runtime sandbox URL to the control plane', async () => {
+    process.env.E2B_SANDBOX_URL = 'https://sandbox.internal.example'
+
+    const c = await caller()
+    await c.openTerminal({ template: 'base', sandboxId: 'sbxexisting' })
+
+    expect(sdkMock.connect).toHaveBeenCalledWith(
+      'sbxexisting',
+      expect.objectContaining({
+        sandboxUrl: 'https://sandbox.internal.example',
+      })
+    )
+  })
+
+  it('prefers the runtime sandbox URL over the NEXT_PUBLIC one', async () => {
+    process.env.NEXT_PUBLIC_E2B_SANDBOX_URL = 'http://sandbox.lvh.me:3002'
+    process.env.E2B_SANDBOX_URL = 'https://sandbox.internal.example'
+
+    const c = await caller()
+    await c.pause({ sandboxId: 'sbxexisting' })
+
+    expect(sdkMock.pause).toHaveBeenCalledWith(
+      'sbxexisting',
+      expect.objectContaining({
+        sandboxUrl: 'https://sandbox.internal.example',
+      })
+    )
+  })
+
+  it('falls back to the NEXT_PUBLIC sandbox URL', async () => {
+    process.env.NEXT_PUBLIC_E2B_SANDBOX_URL = 'http://sandbox.lvh.me:3002'
+
+    const c = await caller()
+    await c.killTerminalPty({ sandboxId: 'sbxexisting', pid: 42 })
+
+    expect(sdkMock.connect).toHaveBeenCalledWith(
+      'sbxexisting',
+      expect.objectContaining({ sandboxUrl: 'http://sandbox.lvh.me:3002' })
+    )
+  })
+
+  // The request-host default is a browser convenience: the server cannot
+  // assume it can reach its own public host on the sandbox port.
+  it('passes no sandbox URL when none is configured', async () => {
+    const c = await caller()
+    await c.resume({ sandboxId: 'sbxexisting' })
+
+    expect(sdkMock.connect).toHaveBeenCalledWith(
+      'sbxexisting',
+      expect.objectContaining({ sandboxUrl: undefined })
     )
   })
 })

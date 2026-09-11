@@ -10,6 +10,7 @@ export const serverSchema = z.object({
   // variables below, which stay the fallback.
   E2B_INFRA_API_URL: z.url().optional(),
   E2B_DASHBOARD_API_URL: z.url().optional(),
+  E2B_SANDBOX_URL: z.url().optional(),
 
   OTEL_SERVICE_NAME: z.string().optional(),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),

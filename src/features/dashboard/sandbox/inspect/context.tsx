@@ -11,6 +11,7 @@ import {
   useState,
 } from 'react'
 import { createEnvdSandbox } from '@/core/shared/create-envd-sandbox'
+import { fetchRuntimeConfig } from '@/core/shared/runtime-config'
 import { useSandboxInspectAnalytics } from '@/lib/hooks/use-analytics'
 import { getParentPath, normalizePath } from '@/lib/utils/filesystem'
 import { useTRPCClient } from '@/trpc/client'
@@ -179,10 +180,12 @@ export default function SandboxInspectProvider({
       sandboxManagerRef.current.stopWatching()
     }
 
+    const { sandboxUrl } = await fetchRuntimeConfig()
+
     const sandbox = createEnvdSandbox({
       ...creds,
       domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
-      sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
+      sandboxUrl: sandboxUrl ?? undefined,
     })
     const manager = new SandboxManager(store, sandbox, rootPath)
     sandboxManagerRef.current = manager
