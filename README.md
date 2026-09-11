@@ -28,6 +28,19 @@ Authentication is a single **team API key**:
 - Visiting `/` shows a form to enter the key. It is validated against infra-api and stored in an httpOnly `e2b_api_key` cookie. All upstream calls happen server-side with the `X-API-Key` header — the key never reaches client JavaScript.
 - Alternatively, set the `E2B_API_KEY` environment variable to pre-authenticate the whole deployment (single-user mode; the key form and sign-out are hidden).
 
+### Configuration
+
+| Variable | Read | Purpose |
+|---|---|---|
+| `NEXT_PUBLIC_E2B_DOMAIN` | build | Derives `https://api.<domain>` and `https://dashboard-api.<domain>` |
+| `NEXT_PUBLIC_INFRA_API_URL` / `NEXT_PUBLIC_DASHBOARD_API_URL` | build | Explicit overrides of the derived URLs |
+| `E2B_INFRA_API_URL` / `E2B_DASHBOARD_API_URL` | server start | Explicit URLs for a prebuilt image; take precedence |
+
+Each URL resolves in that order: the runtime variable, then the
+`NEXT_PUBLIC_` override, then the value derived from the domain. Next inlines
+`NEXT_PUBLIC_*` into the bundles at build time, so a prebuilt image is
+configured with the runtime variables.
+
 ## Features
 
 - **Sandboxes**: paginated live list, per-sandbox monitoring (CPU/memory/disk), logs, filesystem inspector, and an in-browser terminal
