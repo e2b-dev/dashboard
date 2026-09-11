@@ -182,11 +182,22 @@ describe('resolveBrowserRuntimeConfig', () => {
 
   // A proxy header is attacker-controllable in a misconfigured deployment, and
   // whatever lands here is served to the browser and handed to the SDK.
-  it('ignores a malformed x-forwarded-host', () => {
+  it('ignores a malformed x-forwarded-host and uses the host header', () => {
     process.env.E2B_INFRA_API_URL = 'http://127.0.0.1:3000'
 
     const config = resolveBrowserRuntimeConfig(
       headers({ host: 'other.example:3001', 'x-forwarded-host': 'foo bar' }),
+      requestUrl
+    )
+
+    expect(config.sandboxUrl).toBe('http://other.example:3002')
+  })
+
+  it('falls back to the request url when every host candidate is malformed', () => {
+    process.env.E2B_INFRA_API_URL = 'http://127.0.0.1:3000'
+
+    const config = resolveBrowserRuntimeConfig(
+      headers({ host: 'also bad', 'x-forwarded-host': 'foo bar' }),
       requestUrl
     )
 

@@ -120,11 +120,20 @@ function forwardedProtocol(headers: Headers): string | undefined {
 }
 
 /**
- * The hostname of `protocol://host`, or undefined when the host does not
- * parse. A proxy header can carry anything, and an unparseable one must not
- * take the whole endpoint down.
+ * The hostname of `protocol://host`, or undefined when the host is absent or
+ * does not parse. A proxy header can carry anything, and an unparseable one
+ * must fall through to the next candidate rather than take the endpoint down.
  */
-function hostnameOf(protocol: string, host: string): string | undefined {
+function hostnameOf(
+  protocol: string,
+  host: string | undefined
+): string | undefined {
+  // Without this guard `http://undefined` parses, to the hostname
+  // "undefined".
+  if (!host) {
+    return undefined
+  }
+
   try {
     // Through URL so an IPv6 literal keeps its brackets and any port on the
     // incoming host is dropped before this one is appended.
@@ -147,11 +156,13 @@ function requestOrigin(
 ): string {
   const url = new URL(requestUrl)
   const protocol = forwardedProtocol(headers) ?? url.protocol.replace(/:$/, '')
-  const host =
-    trimmed(headers.get('x-forwarded-host')) ??
-    trimmed(headers.get('host')) ??
-    url.host
-  const hostname = hostnameOf(protocol, host) ?? url.hostname
+
+  // Each candidate is parsed in turn, so a malformed proxy header falls
+  // through to the next one instead of discarding a good host below it.
+  const hostname =
+    hostnameOf(protocol, trimmed(headers.get('x-forwarded-host'))) ??
+    hostnameOf(protocol, trimmed(headers.get('host'))) ??
+    url.hostname
 
   return `${protocol}://${hostname}:${port}`
 }

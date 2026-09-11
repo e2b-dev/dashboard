@@ -49,6 +49,35 @@ describe('api key cookie options', () => {
     })
   })
 
+  it('ignores whitespace around the flag', async () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    vi.stubEnv('DASHBOARD_COOKIE_SECURE', '  false  ')
+
+    await expect(loadApiKeyCookieOptions()).resolves.toMatchObject({
+      secure: false,
+    })
+  })
+
+  // An orchestrator that always passes the variable sends "" when it is
+  // unset, which has to mean "unset" rather than "not false".
+  it('treats an empty flag as unset', async () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    vi.stubEnv('DASHBOARD_COOKIE_SECURE', '')
+
+    await expect(loadApiKeyCookieOptions()).resolves.toMatchObject({
+      secure: true,
+    })
+  })
+
+  it('treats a whitespace-only flag as unset', async () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    vi.stubEnv('DASHBOARD_COOKIE_SECURE', '   ')
+
+    await expect(loadApiKeyCookieOptions()).resolves.toMatchObject({
+      secure: true,
+    })
+  })
+
   it('keeps the Secure flag when DASHBOARD_COOKIE_SECURE is true', async () => {
     vi.stubEnv('NODE_ENV', 'development')
     vi.stubEnv('DASHBOARD_COOKIE_SECURE', 'true')

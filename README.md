@@ -37,7 +37,7 @@ Authentication is a single **team API key**:
 | `E2B_INFRA_API_URL` / `E2B_DASHBOARD_API_URL` | server start | Explicit URLs for a prebuilt image; take precedence |
 | `NEXT_PUBLIC_E2B_SANDBOX_URL` | build | Base URL the browser uses for sandbox traffic |
 | `E2B_SANDBOX_URL` | per request | Same, for a prebuilt image; takes precedence, and is what the browser is told to use |
-| `DASHBOARD_COOKIE_SECURE` | server start | `false` keeps the api key cookie usable over plain http; defaults to secure in production builds |
+| `DASHBOARD_COOKIE_SECURE` | server start | `false` only for a plain-http install; the api key cookie then travels unencrypted. Defaults to secure in production builds |
 
 Each URL resolves in that order: the runtime variable, then the
 `NEXT_PUBLIC_` override, then the value derived from the domain. Next inlines
@@ -56,6 +56,11 @@ which is how the sandbox proxy accepts header-routed traffic. Reach the
 dashboard on a domain name and you must set `E2B_SANDBOX_URL` yourself, to a
 `localhost`, IP, or `sandbox.<domain>` base URL. `curl
 http://<host>:<port>/api/config` shows what a deployment resolved.
+
+`/api/config` is unauthenticated and carries no secret. Behind a reverse
+proxy, that proxy must set `X-Forwarded-Host` and `X-Forwarded-Proto` itself
+rather than pass through whatever a client sent; `GET /api/config` trusts
+them to describe the browser-facing origin.
 
 `E2B_SANDBOX_URL` is also read by the E2B SDK for its own connection config.
 That is the same setting, so the dashboard deliberately shares the name. It

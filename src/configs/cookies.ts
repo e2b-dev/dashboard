@@ -29,7 +29,7 @@ export const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365 // 1 year
  */
 function isSecureCookie(): boolean {
   const configured: string | undefined =
-    process.env.DASHBOARD_COOKIE_SECURE?.toLowerCase()
+    process.env.DASHBOARD_COOKIE_SECURE?.trim().toLowerCase()
 
   if (configured !== undefined && configured !== '') {
     return configured !== 'false'
