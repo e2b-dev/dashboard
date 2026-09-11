@@ -75,6 +75,36 @@ bun run build
 bun run start
 ```
 
+### Run it in a container
+
+The repository builds a self-contained image: Bun resolves the dependencies,
+Node runs the Next build, and Node serves the standalone output; the runtime
+stage carries no dev dependencies.
+
+```bash
+docker build --build-arg NEXT_PUBLIC_E2B_DOMAIN=your-domain.com -t e2b-dashboard .
+docker run --rm -p 3001:3001 e2b-dashboard
+```
+
+- `PORT` (default `3001`) and `HOSTNAME` (default `0.0.0.0`) are read by the
+  server at start. The default keeps the dashboard clear of port 3000, which
+  an E2B API already uses when both share a host network.
+- `NEXT_PUBLIC_E2B_DOMAIN` is a **build** argument, not a runtime variable:
+  Next inlines `NEXT_PUBLIC_*` values into the bundles. It defaults to a
+  domain that resolves nowhere, so an unconfigured container fails loudly
+  instead of talking to a deployment that is not yours.
+- An image built this way resolves both APIs from `NEXT_PUBLIC_E2B_DOMAIN` at
+  build time; pass `NEXT_PUBLIC_INFRA_API_URL`, `NEXT_PUBLIC_E2B_SANDBOX_URL`
+  or `NEXT_PUBLIC_DASHBOARD_API_URL` as extra `--build-arg`s only if you also
+  add matching `ARG` lines, until runtime configuration of those URLs lands in
+  a separate change.
+- The build needs outbound HTTPS for the three Google Fonts families in
+  `src/app/fonts.ts`; an air-gapped build fails there.
+- `GET /api/health` reports dashboard-api's health and answers 503 while
+  dashboard-api is unreachable, so use `GET /` as the container liveness
+  check.
+- `scripts/container-smoke.sh` builds the image and asserts those responses.
+
 ## Scripts
 
 | Command | Description |
