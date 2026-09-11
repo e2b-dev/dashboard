@@ -12,6 +12,10 @@ export const serverSchema = z.object({
   E2B_DASHBOARD_API_URL: z.url().optional(),
   E2B_SANDBOX_URL: z.url().optional(),
 
+  // Overrides the api key cookie's Secure flag. Self-hosted installs served
+  // over plain http need "false", or the browser drops the cookie.
+  DASHBOARD_COOKIE_SECURE: z.enum(['true', 'false']).optional(),
+
   OTEL_SERVICE_NAME: z.string().optional(),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
   OTEL_EXPORTER_OTLP_PROTOCOL: z
