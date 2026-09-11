@@ -1,0 +1,48 @@
+# Keeps a release PR open with the pending changelog and, when it merges, tags
+# the release. The tag is what triggers Publish.
+name: Release Please
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# Two pushes to main in quick succession would otherwise race on the release
+# branch. Queue them instead of cancelling: a cancelled run leaves the release
+# PR describing an older set of commits.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    name: Create / update the release PR
+    runs-on: ubuntu-latest
+
+    steps:
+      # A tag pushed with the default GITHUB_TOKEN does not trigger `on: push`
+      # workflows, and a PR opened with it does not trigger `pull_request`
+      # checks, so a release made that way would be neither reviewed nor
+      # published. The App installation token used by the spec sync opens the
+      # release PR and creates the tag instead. This step is deliberately
+      # ungated: a missing or misconfigured App has to fail here rather than
+      # fall back to a token that produces a silently unpublishable release.
+      # If a release ever does get tagged without it, dispatch Publish by hand
+      # for that tag.
+      - name: Generate GitHub App installation token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.AUTOFIXER_APP_ID }}
+          private-key: ${{ secrets.AUTOFIXER_APP_SECRET }}
+
+      - name: Run release-please
+        uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
