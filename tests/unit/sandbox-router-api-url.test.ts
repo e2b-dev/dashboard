@@ -36,9 +36,25 @@ const { sandboxRouter } = await import('@/core/server/api/routers/sandbox')
 
 const createCaller = createCallerFactory(sandboxRouter)
 
-async function caller() {
-  const ctx = await createTRPCContext({ headers: new Headers() })
+const REQUEST_HOST = 'dash.example:3001'
+const REQUEST_URL = `http://${REQUEST_HOST}/api/trpc/sandbox.killTerminalPty`
+const REQUEST_HOST_SANDBOX_URL = 'http://dash.example:3002'
+
+async function caller(opts: { headers?: Headers; requestUrl?: string } = {}) {
+  const ctx = await createTRPCContext({
+    headers: opts.headers ?? new Headers(),
+    requestUrl: opts.requestUrl,
+  })
   return createCaller(ctx)
+}
+
+// A caller for a mutation that arrived over HTTP from a browser on
+// REQUEST_HOST, which is how every one of these procedures is reached.
+function requestCaller() {
+  return caller({
+    headers: new Headers({ host: REQUEST_HOST }),
+    requestUrl: REQUEST_URL,
+  })
 }
 
 const RUNTIME_API_URL = 'http://127.0.0.1:3000'
@@ -51,6 +67,9 @@ const MANAGED_KEYS = [
 const saved = new Map<string, string | undefined>()
 
 const withRuntimeApiUrl = expect.objectContaining({ apiUrl: RUNTIME_API_URL })
+const withRequestHostSandboxUrl = expect.objectContaining({
+  sandboxUrl: REQUEST_HOST_SANDBOX_URL,
+})
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -196,9 +215,84 @@ describe('sandbox router sandbox URL', () => {
     )
   })
 
-  // The request-host default is a browser convenience: the server cannot
-  // assume it can reach its own public host on the sandbox port.
-  it('passes no sandbox URL when none is configured', async () => {
+  // With no sandbox URL configured, a runtime-configured install falls back to
+  // the host the request arrived on, which is what the browser is told too.
+  // Reading only the environment here left the SDK on the build-time domain,
+  // and every server-side envd call — killing a terminal's pty on leaving the
+  // page, above all — went to a host that does not exist.
+  it('defaults killTerminalPty to the request host on the sandbox port', async () => {
+    const c = await requestCaller()
+    await c.killTerminalPty({ sandboxId: 'sbxexisting', pid: 42 })
+
+    expect(sdkMock.connect).toHaveBeenCalledWith(
+      'sbxexisting',
+      withRequestHostSandboxUrl
+    )
+  })
+
+  it('defaults resume to the request host on the sandbox port', async () => {
+    const c = await requestCaller()
+    await c.resume({ sandboxId: 'sbxexisting' })
+
+    expect(sdkMock.connect).toHaveBeenCalledWith(
+      'sbxexisting',
+      withRequestHostSandboxUrl
+    )
+    expect(sdkMock.getFullInfo).toHaveBeenCalledWith(
+      'sbxexisting',
+      withRequestHostSandboxUrl
+    )
+  })
+
+  it('defaults openTerminal to the request host on the sandbox port', async () => {
+    const c = await requestCaller()
+    await c.openTerminal({ template: 'base' })
+
+    expect(sdkMock.create).toHaveBeenCalledWith(
+      'base',
+      withRequestHostSandboxUrl
+    )
+  })
+
+  it('defaults pause to the request host on the sandbox port', async () => {
+    const c = await requestCaller()
+    await c.pause({ sandboxId: 'sbxexisting' })
+
+    expect(sdkMock.pause).toHaveBeenCalledWith(
+      'sbxexisting',
+      withRequestHostSandboxUrl
+    )
+  })
+
+  it('prefers the explicit sandbox URL over the request host', async () => {
+    process.env.E2B_SANDBOX_URL = 'https://sandbox.internal.example'
+
+    const c = await requestCaller()
+    await c.killTerminalPty({ sandboxId: 'sbxexisting', pid: 42 })
+
+    expect(sdkMock.connect).toHaveBeenCalledWith(
+      'sbxexisting',
+      expect.objectContaining({
+        sandboxUrl: 'https://sandbox.internal.example',
+      })
+    )
+  })
+
+  // Hosted deployments set none of the E2B_* variables and must keep passing
+  // no sandbox URL at all, so the SDK derives the host from the domain.
+  it('passes no sandbox URL when no runtime variable is set', async () => {
+    delete process.env.E2B_INFRA_API_URL
+
+    const c = await requestCaller()
+    await c.killTerminalPty({ sandboxId: 'sbxexisting', pid: 42 })
+
+    expect(sdkMock.connect).toHaveBeenCalledWith(
+      'sbxexisting',
+      expect.objectContaining({ sandboxUrl: undefined })
+    )
+  })
+
+  it('passes no sandbox URL when the call carries no request host', async () => {
     const c = await caller()
     await c.resume({ sandboxId: 'sbxexisting' })
 
