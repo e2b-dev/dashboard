@@ -13,6 +13,10 @@ import {
 import { createSandboxesRepository } from '@/core/modules/sandboxes/repository.server'
 import { throwTRPCErrorFromRepoError } from '@/core/server/adapters/errors'
 import { withAuthedRequestRepository } from '@/core/server/api/middlewares/repository'
+import {
+  resolveInfraApiUrl,
+  resolveServerSandboxUrl,
+} from '@/core/server/runtime-config'
 import { createTRPCRouter } from '@/core/server/trpc/init'
 import { protectedProcedure } from '@/core/server/trpc/procedures'
 import { SandboxIdSchema } from '@/core/shared/schemas/api'
@@ -229,9 +233,9 @@ export const sandboxRouter = createTRPCRouter({
       }
 
       const connectionOpts = {
-        apiUrl: process.env.NEXT_PUBLIC_INFRA_API_URL,
+        apiUrl: resolveInfraApiUrl(),
         domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
-        sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
+        sandboxUrl: resolveServerSandboxUrl(ctx.headers, ctx.requestUrl),
         apiKey,
       }
 
@@ -317,9 +321,9 @@ export const sandboxRouter = createTRPCRouter({
       const { apiKey } = ctx
 
       const connectionOpts = {
-        apiUrl: process.env.NEXT_PUBLIC_INFRA_API_URL,
+        apiUrl: resolveInfraApiUrl(),
         domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
-        sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
+        sandboxUrl: resolveServerSandboxUrl(ctx.headers, ctx.requestUrl),
         apiKey,
       }
 
@@ -373,9 +377,9 @@ export const sandboxRouter = createTRPCRouter({
       const { apiKey } = ctx
 
       const connectionOpts = {
-        apiUrl: process.env.NEXT_PUBLIC_INFRA_API_URL,
+        apiUrl: resolveInfraApiUrl(),
         domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
-        sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
+        sandboxUrl: resolveServerSandboxUrl(ctx.headers, ctx.requestUrl),
         apiKey,
       }
 
@@ -412,9 +416,9 @@ export const sandboxRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const sandbox = await Sandbox.connect(input.sandboxId, {
-        apiUrl: process.env.NEXT_PUBLIC_INFRA_API_URL,
+        apiUrl: resolveInfraApiUrl(),
         domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
-        sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
+        sandboxUrl: resolveServerSandboxUrl(ctx.headers, ctx.requestUrl),
         timeoutMs: TERMINAL_SANDBOX_TIMEOUT_MS,
         apiKey: ctx.apiKey,
       })

@@ -5,6 +5,17 @@ export const serverSchema = z.object({
   // key form on `/` is skipped entirely (single-user self-hosted deployments).
   E2B_API_KEY: z.string().min(1).optional(),
 
+  // Where this deployment reaches its APIs, read at runtime. Self-hosted
+  // installs set these; hosted deployments keep using the NEXT_PUBLIC_*
+  // variables below, which stay the fallback.
+  E2B_INFRA_API_URL: z.url().optional(),
+  E2B_DASHBOARD_API_URL: z.url().optional(),
+  E2B_SANDBOX_URL: z.url().optional(),
+
+  // Overrides the api key cookie's Secure flag. Self-hosted installs served
+  // over plain http need "false", or the browser drops the cookie.
+  DASHBOARD_COOKIE_SECURE: z.enum(['true', 'false']).optional(),
+
   OTEL_SERVICE_NAME: z.string().optional(),
   OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
   OTEL_EXPORTER_OTLP_PROTOCOL: z

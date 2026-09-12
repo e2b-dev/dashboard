@@ -17,11 +17,32 @@ export const COOKIE_KEYS = {
 
 export const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365 // 1 year
 
+/**
+ * Browsers drop a `Secure` cookie on a plain-http origin, so a self-hosted
+ * install served over http on a LAN address turns the key form into a login
+ * loop. DASHBOARD_COOKIE_SECURE overrides the flag; unset keeps the build-mode
+ * default, which is what every existing deployment already gets.
+ *
+ * The value is read case-insensitively rather than trusting the schema's
+ * narrowed type: a prebuilt image starts without the env check, so whatever
+ * the container was handed arrives here unvalidated.
+ */
+function isSecureCookie(): boolean {
+  const configured: string | undefined =
+    process.env.DASHBOARD_COOKIE_SECURE?.trim().toLowerCase()
+
+  if (configured !== undefined && configured !== '') {
+    return configured !== 'false'
+  }
+
+  return process.env.NODE_ENV === 'production'
+}
+
 const BASE_COOKIE_OPTIONS: Partial<ResponseCookie> = {
   path: '/',
   maxAge: COOKIE_MAX_AGE_SECONDS,
   sameSite: 'lax',
-  secure: process.env.NODE_ENV === 'production',
+  secure: isSecureCookie(),
 }
 
 /**

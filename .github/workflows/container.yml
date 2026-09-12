@@ -1,0 +1,54 @@
+# Nothing else in CI builds the image, so a break in the Docker build would
+# otherwise go unnoticed until someone builds it by hand. This job runs on the
+# files that can break it, not on every PR — a full Next build in Docker is
+# minutes, and application changes are already covered by Test / Code Quality.
+name: Container
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - next.config.ts
+      - tsconfig.json
+      - package.json
+      - bun.lock
+      - scripts/check-app-env.ts
+      - scripts/container-smoke.sh
+      - src/lib/env.ts
+      - .github/workflows/container.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - next.config.ts
+      - tsconfig.json
+      - package.json
+      - bun.lock
+      - scripts/check-app-env.ts
+      - scripts/container-smoke.sh
+      - src/lib/env.ts
+      - .github/workflows/container.yml
+  workflow_dispatch:
+
+env:
+  FORCE_COLOR: "1"
+  CLICOLOR_FORCE: "1"
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Build and Smoke-Test the Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build the image and check the responses it serves
+        run: ./scripts/container-smoke.sh

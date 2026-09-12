@@ -17,6 +17,10 @@ const browserNodeModuleStubs = {
 const config: NextConfig = {
   reactStrictMode: true,
   reactCompiler: true,
+  // Emits .next/standalone: a server plus only the traced dependencies, which
+  // is what the container image runs. `next start` still works from .next for
+  // local previews, and platform builds ignore this output.
+  output: 'standalone',
   experimental: {
     useCache: true,
     turbopackFileSystemCacheForDev: true,

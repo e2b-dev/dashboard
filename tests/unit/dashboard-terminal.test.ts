@@ -20,6 +20,13 @@ vi.mock('@/core/shared/create-envd-sandbox', () => ({
   createEnvdSandbox: mockCreateEnvdSandbox,
 }))
 
+vi.mock('@/core/shared/runtime-config', () => ({
+  fetchRuntimeConfig: vi.fn(async () => ({
+    infraApiUrl: 'http://127.0.0.1:3000',
+    sandboxUrl: 'http://host.example:3002',
+  })),
+}))
+
 // The `sandbox.openTerminal` tRPC mutation is injected into
 // openTerminalSandbox, so the test passes this mock directly instead of
 // mocking a module.
@@ -282,12 +289,35 @@ describe('dashboard terminal helpers', () => {
         envdVersion: '0.2.0',
         envdAccessToken: 'envd-token',
         domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
-        sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
+        sandboxUrl: 'http://host.example:3002',
       })
       expect(readStoredTerminalSession()).toBeNull()
       expect(statuses).toEqual([
         'Connecting to terminal sandbox sandbox-from-url...\r\n',
       ])
+    })
+
+    it('prefers the runtime config sandbox url over the build-time one', async () => {
+      const savedSandboxUrl = process.env.NEXT_PUBLIC_E2B_SANDBOX_URL
+      process.env.NEXT_PUBLIC_E2B_SANDBOX_URL = 'http://build-time.example:3002'
+
+      try {
+        await openTerminalSandbox({
+          onStatus: () => {},
+          openTerminal: mockOpenTerminal,
+          template: 'base',
+        })
+
+        expect(mockCreateEnvdSandbox).toHaveBeenCalledWith(
+          expect.objectContaining({ sandboxUrl: 'http://host.example:3002' })
+        )
+      } finally {
+        if (savedSandboxUrl === undefined) {
+          delete process.env.NEXT_PUBLIC_E2B_SANDBOX_URL
+        } else {
+          process.env.NEXT_PUBLIC_E2B_SANDBOX_URL = savedSandboxUrl
+        }
+      }
     })
 
     it('connects to a tokenless (secure: false) sandbox without an envd access token', async () => {
@@ -311,7 +341,7 @@ describe('dashboard terminal helpers', () => {
         envdVersion: '0.2.0',
         envdAccessToken: undefined,
         domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
-        sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
+        sandboxUrl: 'http://host.example:3002',
       })
     })
 
