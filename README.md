@@ -87,6 +87,27 @@ bun run start
 | `bun run generate:infra` | Regenerate infra-api contract types from `spec/` |
 | `bun run generate:dashboard-api` | Regenerate dashboard-api contract types from `spec/` |
 
+## Releases
+
+Versions are managed by [release-please](https://github.com/googleapis/release-please):
+merging the open release PR updates `CHANGELOG.md` and `package.json` and tags
+the release as `vX.Y.Z`.
+
+That tag publishes a container image to
+`us-docker.pkg.dev/e2b-artifacts/dashboard/dashboard:vX.Y.Z` (`linux/amd64`,
+anonymous pulls):
+
+```bash
+docker run --rm -p 3001:3001 us-docker.pkg.dev/e2b-artifacts/dashboard/dashboard:vX.Y.Z
+```
+
+A published image has no deployment baked in; it reaches an E2B deployment only
+once you give it the runtime URL variables.
+
+Image tags are immutable — a publish never moves an existing tag. The Publish
+workflow can also be run by hand (`ref`, `tag`, and a `dry_run` that builds
+without pushing).
+
 ## License
 
 Apache 2.0 — see [LICENSE](LICENSE).

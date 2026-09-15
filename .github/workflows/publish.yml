@@ -1,0 +1,197 @@
+# Publishes the dashboard container image for self-hosted installs.
+#
+# Runs on a v* tag, which release-please creates when a release PR merges, and
+# can be dispatched by hand for the first tag or a rebuild. Tags in this
+# repository are immutable: a tag that already exists fails the run instead of
+# moving, so a published image always means one commit.
+#
+# Nothing here may run on a pull request. The job holds a workload identity
+# that can write to the registry, and a fork's pull request must never reach
+# it.
+name: Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Commit, branch or tag to build from
+        required: true
+        default: main
+        type: string
+      tag:
+        description: Image tag to publish, e.g. v1.2.3 (must not exist yet)
+        required: true
+        type: string
+      dry_run:
+        description: Build everything but push nothing
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: publish-dashboard
+  cancel-in-progress: false
+
+env:
+  IMAGE: us-docker.pkg.dev/e2b-artifacts/dashboard/dashboard
+
+jobs:
+  publish:
+    name: Build and push the image
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check the publishing credentials are configured
+        env:
+          WIF_PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          PUBLISH_SA: ${{ vars.GCP_SERVICE_ACCOUNT }}
+        run: |
+          set -euo pipefail
+          if [ -z "${WIF_PROVIDER}" ] || [ -z "${PUBLISH_SA}" ]; then
+            echo "FIX: set the GCP_WORKLOAD_IDENTITY_PROVIDER and GCP_SERVICE_ACCOUNT repository variables before publishing" >&2
+            exit 1
+          fi
+
+      - name: Checkout code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Resolve the tag and the commit
+        id: meta
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_TAG: ${{ inputs.tag }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [ "${EVENT_NAME}" = workflow_dispatch ]; then
+            tag="${INPUT_TAG}"
+          else
+            tag="${REF_NAME}"
+          fi
+          if ! printf '%s' "${tag}" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "FIX: the tag must look like v1.2.3 (got '${tag}')" >&2
+            exit 1
+          fi
+          {
+            echo "tag=${tag}"
+            echo "sha=$(git rev-parse HEAD)"
+          } >> "$GITHUB_OUTPUT"
+
+      # A push run cannot disagree with itself: the ref being built is the tag.
+      # A dispatched run takes the two as separate inputs, so an image could
+      # otherwise be published as v1.2.3 from a commit that v1.2.3 does not
+      # name. A dry run publishes nothing, so it may rehearse with any tag.
+      - name: Check the tag names the commit being built
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run != true }}
+        env:
+          TAG: ${{ steps.meta.outputs.tag }}
+          HEAD_SHA: ${{ steps.meta.outputs.sha }}
+        run: |
+          set -euo pipefail
+          # The checkout is shallow and brings down no tags, so the tag ref has
+          # to be fetched; a tag that does not exist fails here.
+          if ! git fetch --no-tags --depth=1 origin "refs/tags/${TAG}"; then
+            echo "FIX: this repository has no tag ${TAG}; create the release tag first, or dispatch with a tag that exists" >&2
+            exit 1
+          fi
+          tag_sha="$(git rev-parse "FETCH_HEAD^{commit}")"
+          if [ "${tag_sha}" != "${HEAD_SHA}" ]; then
+            echo "FIX: tag ${TAG} names commit ${tag_sha} but this run checked out ${HEAD_SHA}; dispatch with ref=${TAG} to publish that tag" >&2
+            exit 1
+          fi
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker us-docker.pkg.dev --quiet
+
+      - name: Refuse to overwrite an existing tag
+        env:
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          set -euo pipefail
+          # `value(tag)` prints the whole resource path, so the short name is
+          # what gets compared. The list is drained into a variable and fed to
+          # grep as a here-string: piping into `grep -q` lets grep exit on the
+          # first hit, the producer takes SIGPIPE, and a pipefail pipeline then
+          # reports "no match" for a tag that exists.
+          if ! listing="$(gcloud artifacts docker tags list "${IMAGE}" --format='value(tag.basename())' --quiet 2>&1)"; then
+            # Nothing has been pushed under this name yet, which is where the
+            # first release starts, so no tag is taken. Every other failure
+            # means the list could not be read, and an unreadable list must
+            # never pass as "free": that would publish over a tag this step
+            # exists to protect.
+            if grep -q 'NOT_FOUND' <<<"${listing}"; then
+              echo "no image under ${IMAGE} yet, so ${TAG} is free"
+              exit 0
+            fi
+            echo "${listing}" >&2
+            echo "FIX: the publish identity cannot list ${IMAGE}; check the GCP_WORKLOAD_IDENTITY_PROVIDER and GCP_SERVICE_ACCOUNT repository variables and the registry IAM" >&2
+            exit 1
+          fi
+          if grep -Fxq -- "${TAG}" <<<"${listing}"; then
+            echo "FIX: ${IMAGE}:${TAG} already exists and tags here are immutable; release a new version" >&2
+            exit 1
+          fi
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      - name: Build and push
+        env:
+          TAG: ${{ steps.meta.outputs.tag }}
+          SHA: ${{ steps.meta.outputs.sha }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          output=--push
+          if [ "${DRY_RUN}" = "true" ]; then
+            output=--load
+          fi
+          # Artifact Registry rejects buildx's default provenance/SBOM
+          # attestation manifest lists with HTTP 400.
+          docker buildx build \
+            --platform linux/amd64 \
+            --provenance=false \
+            --sbom=false \
+            --build-arg "BUILD=${TAG}" \
+            --label "org.opencontainers.image.revision=${SHA}" \
+            --label "org.opencontainers.image.version=${TAG}" \
+            --label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
+            --tag "${IMAGE}:${TAG}" \
+            "${output}" .
+
+      - name: Record what was published
+        if: ${{ inputs.dry_run != true }}
+        env:
+          TAG: ${{ steps.meta.outputs.tag }}
+          SHA: ${{ steps.meta.outputs.sha }}
+        run: |
+          set -euo pipefail
+          digest="$(docker buildx imagetools inspect "${IMAGE}:${TAG}" --format '{{json .Manifest.Digest}}' | tr -d '"')"
+          {
+            echo "## ${IMAGE}:${TAG}"
+            echo
+            echo "Built from commit \`${SHA}\`."
+            echo
+            echo '| Image | Digest |'
+            echo '|---|---|'
+            echo "| \`${IMAGE}:${TAG}\` | \`${digest}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
