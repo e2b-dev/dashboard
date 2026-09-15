@@ -32,46 +32,50 @@ Authentication is a single **team API key**:
 
 | Variable | Read | Purpose |
 |---|---|---|
-| `NEXT_PUBLIC_E2B_DOMAIN` | build | Derives `https://api.<domain>` and `https://dashboard-api.<domain>` |
-| `NEXT_PUBLIC_INFRA_API_URL` / `NEXT_PUBLIC_DASHBOARD_API_URL` | build | Explicit overrides of the derived URLs |
-| `E2B_INFRA_API_URL` / `E2B_DASHBOARD_API_URL` | server start | Explicit URLs for a prebuilt image; take precedence |
-| `NEXT_PUBLIC_E2B_SANDBOX_URL` | build | Base URL the browser uses for sandbox traffic |
-| `E2B_SANDBOX_URL` | per request | Same, for a prebuilt image; takes precedence, and is what the browser is told to use |
-| `DASHBOARD_COOKIE_SECURE` | server start | `false` only for a plain-http install; the api key cookie then travels unencrypted. Defaults to secure in production builds |
+| `PUBLIC_E2B_DOMAIN` | runtime | E2B cluster domain; used by the SDK and to derive `https://api.<domain>` and `https://dashboard-api.<domain>` |
+| `PUBLIC_SANDBOX_URL` | per request | Optional sandbox traffic base URL, reachable from both the browser and server |
+| `E2B_INFRA_API_URL` / `E2B_DASHBOARD_API_URL` | server start | Explicit server-side API URLs; override domain-derived URLs |
+| `E2B_SANDBOX_URL` | per request | Legacy alias for `PUBLIC_SANDBOX_URL` |
+| `NEXT_PUBLIC_E2B_DOMAIN` | build | Legacy fallback for `PUBLIC_E2B_DOMAIN` |
+| `NEXT_PUBLIC_INFRA_API_URL` / `NEXT_PUBLIC_DASHBOARD_API_URL` | build | Legacy API overrides, below the corresponding `E2B_*` variables |
+| `NEXT_PUBLIC_E2B_SANDBOX_URL` | build | Legacy sandbox URL, below both runtime names |
+| `DASHBOARD_COOKIE_SECURE` | server start | `false` only for a plain-http install; the API key cookie then travels unencrypted. Defaults to secure in production builds |
 
-Each URL resolves in that order: the runtime variable, then the
-`NEXT_PUBLIC_` override, then the value derived from the domain. Next inlines
-`NEXT_PUBLIC_*` into the bundles at build time, so a prebuilt image is
-configured with the runtime variables. Every explicit URL must carry an
-`http://` or `https://` scheme, and the server rejects anything else naming
-the variable. The infra and dashboard URLs are resolved at module scope, so a
-malformed one fails on server start. The sandbox URL is resolved per request,
-so a malformed one fails on first use, such as opening a terminal.
+Configure a prebuilt image with `PUBLIC_*` and `E2B_*` variables when starting
+the container. Next does not give `PUBLIC_` any special behavior: the server
+explicitly reads these values at runtime. `NEXT_PUBLIC_*` aliases remain
+supported for existing builds, but their values are frozen by `next build`.
+Restart the container and reload open pages after changing its configuration.
 
-The browser reads the sandbox URL from `GET /api/config`, which resolves it
-per request. When `E2B_INFRA_API_URL` is set and no sandbox URL is given, it
+Resolution order (blank values are skipped):
+
+- Domain: `PUBLIC_E2B_DOMAIN` → `NEXT_PUBLIC_E2B_DOMAIN`.
+- Sandbox URL: `PUBLIC_SANDBOX_URL` → `E2B_SANDBOX_URL` → `NEXT_PUBLIC_E2B_SANDBOX_URL` → the fallback below.
+- API URLs: corresponding `E2B_*` override → `NEXT_PUBLIC_*` override → URL derived from the resolved domain.
+
+Every explicit URL must include `http://` or `https://`. The server rejects
+invalid URLs, naming the variable. API URLs resolve when their server modules
+load; sandbox URLs resolve when a dashboard request or SDK call needs them.
+
+The dashboard's Server Component layout resolves **only the domain and
+sandbox URL** and passes them as props to a client `ClientConfigProvider`.
+The terminal and filesystem inspector read this provider on their first
+render, without a separate config request. API endpoints and team credentials
+stay on the server. Both public settings are visible to browser users and
+must contain no secrets.
+
+When `E2B_INFRA_API_URL` is set and no sandbox URL is given, the sandbox URL
 defaults to the host the dashboard was reached on, port 3002. That default
 routes only when the dashboard is reached over `localhost` or an IP address,
-which is how the sandbox proxy accepts header-routed traffic. Reach the
-dashboard on a domain name and you must set `E2B_SANDBOX_URL` yourself, to a
-`localhost`, IP, or `sandbox.<domain>` base URL. `curl
-http://<host>:<port>/api/config` shows what a deployment resolved.
+which is how the sandbox proxy accepts header-routed traffic. For a domain
+name, set `PUBLIC_SANDBOX_URL` to a `localhost`, IP, or `sandbox.<domain>` base
+URL that both the browser and server can reach. Without `E2B_INFRA_API_URL`,
+leaving the sandbox URL unset preserves the SDK's domain-based routing.
 
-The dashboard's own server-side sandbox calls, such as killing a terminal's
-pty when you leave the page, resolve the URL from the same request by the same
-rule, so a self-hosted install needs no `E2B_SANDBOX_URL` unless the request
-host is the wrong one for sandbox traffic.
-
-`/api/config` is unauthenticated and carries no secret. Behind a reverse
-proxy, that proxy must set `X-Forwarded-Host` and `X-Forwarded-Proto` itself
-rather than pass through whatever a client sent; `GET /api/config` trusts
-them to describe the browser-facing origin.
-
-`E2B_SANDBOX_URL` is also read by the E2B SDK for its own connection config.
-That is the same setting, so the dashboard deliberately shares the name. It
-is served to the browser as-is, so the value has to be reachable from the
-browser, not only from the server. A runtime-configured install should leave
-it unset unless the port-3002 default is wrong.
+Server-side sandbox calls, such as terminal PTY cleanup, use the same domain
+and sandbox URL resolution. Behind a reverse proxy, set `X-Forwarded-Host`
+and `X-Forwarded-Proto` at the proxy instead of forwarding client-supplied
+values: the request-host fallback trusts these headers.
 
 ## Features
 
@@ -102,8 +106,8 @@ bun install
 3. Set up environment variables
 ```bash
 cp .env.example .env
-# set NEXT_PUBLIC_E2B_DOMAIN (or explicit NEXT_PUBLIC_INFRA_API_URL /
-# NEXT_PUBLIC_DASHBOARD_API_URL) to point at your infrastructure
+# set PUBLIC_E2B_DOMAIN (and optionally E2B_INFRA_API_URL /
+# E2B_DASHBOARD_API_URL) to point at your infrastructure
 ```
 
 4. Start the development server
@@ -127,21 +131,22 @@ Node runs the Next build, and Node serves the standalone output; the runtime
 stage carries no dev dependencies.
 
 ```bash
-docker build --build-arg NEXT_PUBLIC_E2B_DOMAIN=your-domain.com -t e2b-dashboard .
-docker run --rm -p 3001:3001 e2b-dashboard
+docker build -t e2b-dashboard .
+docker run --rm -p 3001:3001 \
+  -e PUBLIC_E2B_DOMAIN=your-domain.com \
+  e2b-dashboard
 ```
 
 - `PORT` (default `3001`) and `HOSTNAME` (default `0.0.0.0`) are read by the
   server at start. The default keeps the dashboard clear of port 3000, which
   an E2B API already uses when both share a host network.
-- `NEXT_PUBLIC_E2B_DOMAIN` is a **build** argument, not a runtime variable:
-  Next inlines `NEXT_PUBLIC_*` values into the bundles. It defaults to a
-  domain that resolves nowhere, so an unconfigured container fails loudly
-  instead of talking to a deployment that is not yours.
-- An image built this way resolves both APIs from `NEXT_PUBLIC_E2B_DOMAIN` at
-  build time. A container configured through the runtime variables in
-  [Configuration](#configuration) resolves them at runtime instead, so it
-  needs no build-time value beyond the default.
+- `PUBLIC_E2B_DOMAIN` configures the cluster at container start, so the same
+  image can serve different installations. Use `PUBLIC_SANDBOX_URL` when the
+  default SDK routing does not fit your deployment.
+- The legacy `NEXT_PUBLIC_E2B_DOMAIN` build argument is still supported. Its
+  default, `unset.invalid`, resolves nowhere so an unconfigured container
+  cannot accidentally talk to another deployment. Runtime configuration takes
+  precedence over that build-time fallback.
 - The build needs outbound HTTPS for the three Google Fonts families in
   `src/app/fonts.ts`; an air-gapped build fails there.
 - `GET /api/health` reports dashboard-api's health and answers 503 while

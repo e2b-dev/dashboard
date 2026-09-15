@@ -25,11 +25,9 @@ COPY --from=deps /usr/local/bin/bun /usr/local/bin/bun
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Next inlines every NEXT_PUBLIC_* value into the bundles, so the domain is a
-# build input, and the prebuild env check (scripts/check-app-env.ts) exits 1
-# without it. The default resolves nowhere on purpose: a container started
-# with no configuration must fail loudly instead of reaching a deployment that
-# is not yours. Point a container at an install with the runtime variables.
+# Retain the legacy build argument as a fallback. PUBLIC_E2B_DOMAIN overrides
+# it at runtime. The default resolves nowhere so an unconfigured container
+# cannot accidentally reach someone else's deployment.
 ARG NEXT_PUBLIC_E2B_DOMAIN=unset.invalid
 ENV NEXT_PUBLIC_E2B_DOMAIN=${NEXT_PUBLIC_E2B_DOMAIN}
 ENV NEXT_TELEMETRY_DISABLED=1

@@ -12,6 +12,10 @@ export const serverSchema = z.object({
   E2B_DASHBOARD_API_URL: z.url().optional(),
   E2B_SANDBOX_URL: z.url().optional(),
 
+  // Read on the server and explicitly passed to the browser by the layout.
+  PUBLIC_E2B_DOMAIN: z.string().optional(),
+  PUBLIC_SANDBOX_URL: z.url().optional(),
+
   // Overrides the api key cookie's Secure flag. Self-hosted installs served
   // over plain http need "false", or the browser drops the cookie.
   DASHBOARD_COOKIE_SECURE: z.enum(['true', 'false']).optional(),
@@ -43,7 +47,7 @@ export const serverSchema = z.object({
 })
 
 export const clientSchema = z.object({
-  NEXT_PUBLIC_E2B_DOMAIN: z.string(),
+  NEXT_PUBLIC_E2B_DOMAIN: z.string().optional(),
 
   NEXT_PUBLIC_VERCEL_ENV: z
     .enum(['production', 'preview', 'development'])
@@ -56,7 +60,16 @@ export const clientSchema = z.object({
 
 const merged = serverSchema.merge(clientSchema)
 
-export const appEnvSchema = merged
+export const appEnvSchema = merged.refine(
+  (env) =>
+    Boolean(
+      env.PUBLIC_E2B_DOMAIN?.trim() || env.NEXT_PUBLIC_E2B_DOMAIN?.trim()
+    ),
+  {
+    message:
+      'Set PUBLIC_E2B_DOMAIN (or NEXT_PUBLIC_E2B_DOMAIN for legacy builds)',
+  }
+)
 
 export type Env = z.infer<typeof appEnvSchema>
 

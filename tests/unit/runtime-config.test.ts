@@ -2,12 +2,16 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   resolveBrowserRuntimeConfig,
   resolveDashboardApiUrl,
+  resolveE2BDomain,
   resolveInfraApiUrl,
   resolveSandboxUrl,
   resolveServerSandboxUrl,
 } from '@/core/server/runtime-config'
 
 const MANAGED_KEYS = [
+  'PUBLIC_E2B_DOMAIN',
+  'PUBLIC_SANDBOX_URL',
+  'E2B_API_KEY',
   'E2B_INFRA_API_URL',
   'E2B_DASHBOARD_API_URL',
   'E2B_SANDBOX_URL',
@@ -36,6 +40,30 @@ afterEach(() => {
       process.env[key] = value
     }
   }
+})
+
+describe('resolveE2BDomain', () => {
+  it('falls back to the legacy build-time domain', () => {
+    expect(resolveE2BDomain()).toBe('example.dev')
+  })
+
+  it('reads the public domain at runtime for both API defaults', () => {
+    for (const domain of ['first.example', 'second.example']) {
+      process.env.PUBLIC_E2B_DOMAIN = ` ${domain} `
+      expect(resolveE2BDomain()).toBe(domain)
+      expect(resolveInfraApiUrl()).toBe(`https://api.${domain}`)
+      expect(resolveDashboardApiUrl()).toBe(`https://dashboard-api.${domain}`)
+      expect(resolveBrowserRuntimeConfig(new Headers())).toEqual({
+        domain,
+        sandboxUrl: null,
+      })
+    }
+  })
+
+  it('ignores an empty public domain', () => {
+    process.env.PUBLIC_E2B_DOMAIN = '   '
+    expect(resolveE2BDomain()).toBe('example.dev')
+  })
 })
 
 describe('resolveInfraApiUrl', () => {
@@ -104,6 +132,28 @@ describe('resolveDashboardApiUrl', () => {
 })
 
 describe('resolveSandboxUrl', () => {
+  it('prefers the public sandbox URL over both legacy aliases', () => {
+    process.env.PUBLIC_SANDBOX_URL = ' https://sandbox.runtime.example '
+    process.env.E2B_SANDBOX_URL = 'https://sandbox.old.example'
+    process.env.NEXT_PUBLIC_E2B_SANDBOX_URL = 'https://sandbox.build.example'
+
+    expect(resolveSandboxUrl()).toBe('https://sandbox.runtime.example')
+  })
+
+  it('falls back to the runtime alias when the public value is blank', () => {
+    process.env.PUBLIC_SANDBOX_URL = '   '
+    process.env.E2B_SANDBOX_URL = 'https://sandbox.old.example'
+
+    expect(resolveSandboxUrl()).toBe('https://sandbox.old.example')
+  })
+
+  it('rejects an invalid public URL instead of falling back silently', () => {
+    process.env.PUBLIC_SANDBOX_URL = 'sandbox.runtime.example:3002'
+    process.env.E2B_SANDBOX_URL = 'https://sandbox.old.example'
+
+    expect(() => resolveSandboxUrl()).toThrow(/PUBLIC_SANDBOX_URL/)
+  })
+
   it('reports no sandbox url when nothing is set', () => {
     expect(resolveSandboxUrl()).toBeUndefined()
   })
@@ -130,13 +180,39 @@ describe('resolveSandboxUrl', () => {
 })
 
 describe('resolveBrowserRuntimeConfig', () => {
-  const requestUrl = 'http://dash.example:3001/api/config'
+  it('exposes only the domain and sandbox URL, with no server endpoints or credentials', () => {
+    process.env.PUBLIC_E2B_DOMAIN = 'runtime.example'
+    process.env.PUBLIC_SANDBOX_URL = 'https://sandbox.runtime.example'
+    process.env.E2B_INFRA_API_URL = 'http://infra-api.internal:3000'
+    process.env.E2B_DASHBOARD_API_URL = 'http://dashboard-api.internal:3010'
+    process.env.E2B_API_KEY = 'e2b_test_private_key'
+
+    expect(resolveBrowserRuntimeConfig(new Headers())).toEqual({
+      domain: 'runtime.example',
+      sandboxUrl: 'https://sandbox.runtime.example',
+    })
+  })
+
+  it('resolves the sandbox host from layout headers without a request URL', () => {
+    process.env.E2B_INFRA_API_URL = 'http://infra-api.internal:3000'
+    const requestHeaders = new Headers({
+      host: 'dashboard.internal:3001',
+      'x-forwarded-host': '192.0.2.1:8443',
+      'x-forwarded-proto': 'https',
+    })
+
+    expect(resolveBrowserRuntimeConfig(requestHeaders).sandboxUrl).toBe(
+      'https://192.0.2.1:3002'
+    )
+  })
+
+  const requestUrl = 'http://dash.example:3001/sandboxes'
   const headers = (init: Record<string, string> = {}) =>
     new Headers({ host: 'dash.example:3001', ...init })
 
   it('reports no sandbox url for a deployment that sets no runtime variables', () => {
     expect(resolveBrowserRuntimeConfig(headers(), requestUrl)).toEqual({
-      infraApiUrl: 'https://api.example.dev',
+      domain: 'example.dev',
       sandboxUrl: null,
     })
   })
@@ -162,7 +238,7 @@ describe('resolveBrowserRuntimeConfig', () => {
     process.env.E2B_INFRA_API_URL = 'http://127.0.0.1:3000'
 
     expect(resolveBrowserRuntimeConfig(headers(), requestUrl)).toEqual({
-      infraApiUrl: 'http://127.0.0.1:3000',
+      domain: 'example.dev',
       sandboxUrl: 'http://dash.example:3002',
     })
   })
@@ -238,12 +314,10 @@ describe('resolveBrowserRuntimeConfig', () => {
     expect(config.sandboxUrl).toBe('https://dash.example:3002')
   })
 
-  it('falls back to the request host for the infra url with no domain set', () => {
+  it('passes no domain when none is configured', () => {
     delete process.env.NEXT_PUBLIC_E2B_DOMAIN
 
-    expect(resolveBrowserRuntimeConfig(headers(), requestUrl).infraApiUrl).toBe(
-      'http://dash.example:3000'
-    )
+    expect(resolveBrowserRuntimeConfig(headers(), requestUrl).domain).toBeNull()
   })
 
   it('reads the host from the request url when no host header is present', () => {
@@ -405,7 +479,7 @@ describe('URL validation', () => {
     expect(
       resolveBrowserRuntimeConfig(
         new Headers({ host: 'dash.example:3001' }),
-        'http://dash.example:3001/api/config'
+        'http://dash.example:3001/sandboxes'
       ).sandboxUrl
     ).toBe('http://dash.example:3002')
   })

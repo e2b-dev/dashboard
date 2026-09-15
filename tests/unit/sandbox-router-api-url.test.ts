@@ -59,6 +59,8 @@ function requestCaller() {
 
 const RUNTIME_API_URL = 'http://127.0.0.1:3000'
 const MANAGED_KEYS = [
+  'PUBLIC_E2B_DOMAIN',
+  'PUBLIC_SANDBOX_URL',
   'E2B_INFRA_API_URL',
   'E2B_SANDBOX_URL',
   'NEXT_PUBLIC_INFRA_API_URL',
@@ -171,7 +173,7 @@ describe('sandbox router control-plane API URL', () => {
 /**
  * The sandbox URL travels in the same connection options, so a prebuilt image
  * has to read it the same way — otherwise the server talks to one sandbox host
- * and the browser, which reads `GET /api/config`, talks to another.
+ * and the browser, which gets its config from the layout, talks to another.
  */
 describe('sandbox router sandbox URL', () => {
   it('passes the runtime sandbox URL to the control plane', async () => {
@@ -300,5 +302,33 @@ describe('sandbox router sandbox URL', () => {
       'sbxexisting',
       expect.objectContaining({ sandboxUrl: undefined })
     )
+  })
+})
+
+describe('sandbox router public runtime settings', () => {
+  it('uses the same public domain and sandbox URL for all SDK operations', async () => {
+    process.env.PUBLIC_E2B_DOMAIN = 'runtime.example'
+    process.env.PUBLIC_SANDBOX_URL = 'https://sandbox.runtime.example'
+    process.env.E2B_SANDBOX_URL = 'https://sandbox.old.example'
+    delete process.env.E2B_INFRA_API_URL
+
+    const c = await requestCaller()
+    await c.openTerminal({ template: 'base' })
+    await c.resume({ sandboxId: 'sbxexisting' })
+    await c.pause({ sandboxId: 'sbxexisting' })
+    await c.killTerminalPty({ sandboxId: 'sbxexisting', pid: 42 })
+
+    const options = expect.objectContaining({
+      domain: 'runtime.example',
+      sandboxUrl: 'https://sandbox.runtime.example',
+      apiUrl: 'https://api.runtime.example',
+    })
+    expect(sdkMock.create).toHaveBeenCalledWith('base', options)
+    expect(sdkMock.connect).toHaveBeenCalledTimes(2)
+    for (const call of sdkMock.connect.mock.calls) {
+      expect(call).toEqual(['sbxexisting', options])
+    }
+    expect(sdkMock.getFullInfo).toHaveBeenCalledWith('sbxexisting', options)
+    expect(sdkMock.pause).toHaveBeenCalledWith('sbxexisting', options)
   })
 })

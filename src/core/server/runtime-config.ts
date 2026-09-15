@@ -2,9 +2,8 @@
  * Where this deployment's APIs live.
  *
  * Hosted deployments are configured with NEXT_PUBLIC_* variables, which Next
- * inlines into the bundles at build time — a prebuilt container image cannot
- * use them. The E2B_* variables here carry no NEXT_PUBLIC_ prefix, so Node
- * reads them from the environment when the server starts and one image can
+ * inlines into the bundles at build time. PUBLIC_* and E2B_* variables have no
+ * special meaning to Next, so Node reads them at runtime and one image can
  * serve any install. The NEXT_PUBLIC_* values stay as the fallback, so a
  * deployment that sets none of the new variables resolves exactly as before.
  *
@@ -18,7 +17,6 @@
 import 'server-only'
 import type { BrowserRuntimeConfig } from '@/core/shared/runtime-config'
 
-const INFRA_API_DEFAULT_PORT = '3000'
 const SANDBOX_DEFAULT_PORT = '3002'
 
 interface ResolvedValue {
@@ -85,12 +83,19 @@ function configuredInfraApiUrl(): ResolvedValue | undefined {
   )
 }
 
+export function resolveE2BDomain(): string | undefined {
+  return firstSet(
+    ['PUBLIC_E2B_DOMAIN', process.env.PUBLIC_E2B_DOMAIN],
+    ['NEXT_PUBLIC_E2B_DOMAIN', process.env.NEXT_PUBLIC_E2B_DOMAIN]
+  )?.value
+}
+
 export function resolveInfraApiUrl(): string {
   const configured = configuredInfraApiUrl()
 
   return configured
     ? assertHttpUrl(configured)
-    : `https://api.${process.env.NEXT_PUBLIC_E2B_DOMAIN}`
+    : `https://api.${resolveE2BDomain()}`
 }
 
 export function resolveDashboardApiUrl(): string {
@@ -101,16 +106,17 @@ export function resolveDashboardApiUrl(): string {
 
   return configured
     ? assertHttpUrl(configured)
-    : `https://dashboard-api.${process.env.NEXT_PUBLIC_E2B_DOMAIN}`
+    : `https://dashboard-api.${resolveE2BDomain()}`
 }
 
 /**
  * The base URL for sandbox traffic, or undefined to let the SDK derive one
- * from the domain. E2B_SANDBOX_URL is also read by the SDK itself for the same
- * purpose, so the shared name is deliberate.
+ * from the domain. E2B_SANDBOX_URL stays supported as an alias, including for
+ * installs that share the setting with other E2B SDK consumers.
  */
 export function resolveSandboxUrl(): string | undefined {
   const configured = firstSet(
+    ['PUBLIC_SANDBOX_URL', process.env.PUBLIC_SANDBOX_URL],
     ['E2B_SANDBOX_URL', process.env.E2B_SANDBOX_URL],
     ['NEXT_PUBLIC_E2B_SANDBOX_URL', process.env.NEXT_PUBLIC_E2B_SANDBOX_URL]
   )
@@ -192,17 +198,9 @@ function requestOrigin(
  * derives the host from the domain.
  *
  * The request-host default applies only when E2B_INFRA_API_URL is set. Hosted
- * deployments set none of the E2B_* variables and must keep passing no sandbox
- * URL at all; a self-hosted install configured at runtime is the only
- * deployment that wants "the host this request arrived on, on the sandbox
- * port".
- *
- * The browser is told the same thing by `GET /api/config`, and the two have to
- * agree. A self-hosted install leaves E2B_SANDBOX_URL unset precisely so every
- * browser gets the host it reached the dashboard on, remote ones included —
- * resolving the server side from the environment alone left it on the
- * build-time domain, and calls such as killing a terminal's pty went to a host
- * that does not exist.
+ * deployments configured with a domain keep the SDK's domain-based URLs.
+ * The dashboard layout passes this same URL to browser SDK consumers so
+ * terminal connections and server-side PTY cleanup reach the same host.
  */
 export function resolveServerSandboxUrl(
   headers: Headers,
@@ -222,33 +220,15 @@ export function resolveServerSandboxUrl(
 }
 
 /**
- * The URLs a browser needs, resolved per request. The sandbox URL is whatever
- * the server itself would use, so the browser and the server-side SDK calls
- * never talk to different sandbox hosts.
- *
- * A null infra URL means the request carried no host to fall back to, which
- * leaves the browser on its build-time value rather than on a guess.
+ * Explicitly allowlist browser-visible settings; API endpoints and team
+ * credentials stay on the server.
  */
 export function resolveBrowserRuntimeConfig(
   headers: Headers,
-  requestUrl: string
+  requestUrl?: string
 ): BrowserRuntimeConfig {
-  const domain = trimmed(process.env.NEXT_PUBLIC_E2B_DOMAIN)
-  const configured = configuredInfraApiUrl()
-
-  let infraApiUrl: string | null
-
-  if (configured) {
-    infraApiUrl = assertHttpUrl(configured)
-  } else if (domain) {
-    infraApiUrl = `https://api.${domain}`
-  } else {
-    infraApiUrl =
-      requestOrigin(headers, requestUrl, INFRA_API_DEFAULT_PORT) ?? null
-  }
-
   return {
-    infraApiUrl,
+    domain: resolveE2BDomain() ?? null,
     sandboxUrl: resolveServerSandboxUrl(headers, requestUrl) ?? null,
   }
 }
