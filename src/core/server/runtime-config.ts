@@ -44,6 +44,18 @@ function firstSet(
   return undefined
 }
 
+function parsedUrl(value: string | undefined): URL | undefined {
+  if (!value) {
+    return undefined
+  }
+
+  try {
+    return new URL(value)
+  } catch {
+    return undefined
+  }
+}
+
 function isHttpUrl(value: string): boolean {
   try {
     const { protocol } = new URL(value)
@@ -144,62 +156,99 @@ function hostnameOf(
 }
 
 /**
- * The host the browser reached this server on, with `port` substituted. Built
- * from the proxy headers first so a reverse-proxied install advertises the
- * public host rather than its own internal one, falling back to the request
- * URL, which is the one input guaranteed to parse.
+ * The host the client reached this server on, with `port` substituted, or
+ * undefined when the request carries no usable host at all. Built from the
+ * proxy headers first so a reverse-proxied install advertises the public host
+ * rather than its own internal one, falling back to the request URL.
+ *
+ * The request URL is optional because a tRPC procedure called from a server
+ * component is given the request headers but no URL. http is the guess for a
+ * request that carries neither a forwarded protocol nor a URL, which is the
+ * plain self-hosted case; a proxied install sets X-Forwarded-Proto.
  */
 function requestOrigin(
   headers: Headers,
-  requestUrl: string,
+  requestUrl: string | undefined,
   port: string
-): string {
-  const url = new URL(requestUrl)
-  const protocol = forwardedProtocol(headers) ?? url.protocol.replace(/:$/, '')
+): string | undefined {
+  const url = parsedUrl(requestUrl)
+  const protocol =
+    forwardedProtocol(headers) ?? url?.protocol.replace(/:$/, '') ?? 'http'
 
   // Each candidate is parsed in turn, so a malformed proxy header falls
   // through to the next one instead of discarding a good host below it.
   const hostname =
     hostnameOf(protocol, trimmed(headers.get('x-forwarded-host'))) ??
     hostnameOf(protocol, trimmed(headers.get('host'))) ??
-    url.hostname
+    url?.hostname
 
-  return `${protocol}://${hostname}:${port}`
+  return hostname ? `${protocol}://${hostname}:${port}` : undefined
 }
 
 /**
- * The URLs a browser needs, resolved per request.
+ * The base URL for sandbox traffic that a server-side SDK call should use,
+ * resolved per request: the configured value, then the request host on the
+ * sandbox port for a runtime-configured install, then undefined so the SDK
+ * derives the host from the domain.
  *
- * The request-host default for the sandbox URL applies only when
- * E2B_INFRA_API_URL is set. Hosted deployments set none of the E2B_* variables
- * and must keep passing no sandbox URL at all, so the SDK derives the sandbox
- * host from the domain exactly as it does today; a self-hosted install
- * configured at runtime is the only deployment that wants "the host you are
- * reading this page from, on the sandbox port".
+ * The request-host default applies only when E2B_INFRA_API_URL is set. Hosted
+ * deployments set none of the E2B_* variables and must keep passing no sandbox
+ * URL at all; a self-hosted install configured at runtime is the only
+ * deployment that wants "the host this request arrived on, on the sandbox
+ * port".
+ *
+ * The browser is told the same thing by `GET /api/config`, and the two have to
+ * agree. A self-hosted install leaves E2B_SANDBOX_URL unset precisely so every
+ * browser gets the host it reached the dashboard on, remote ones included —
+ * resolving the server side from the environment alone left it on the
+ * build-time domain, and calls such as killing a terminal's pty went to a host
+ * that does not exist.
+ */
+export function resolveServerSandboxUrl(
+  headers: Headers,
+  requestUrl: string | undefined
+): string | undefined {
+  const configured = resolveSandboxUrl()
+
+  if (configured) {
+    return configured
+  }
+
+  if (!trimmed(process.env.E2B_INFRA_API_URL)) {
+    return undefined
+  }
+
+  return requestOrigin(headers, requestUrl, SANDBOX_DEFAULT_PORT)
+}
+
+/**
+ * The URLs a browser needs, resolved per request. The sandbox URL is whatever
+ * the server itself would use, so the browser and the server-side SDK calls
+ * never talk to different sandbox hosts.
+ *
+ * A null infra URL means the request carried no host to fall back to, which
+ * leaves the browser on its build-time value rather than on a guess.
  */
 export function resolveBrowserRuntimeConfig(
   headers: Headers,
   requestUrl: string
 ): BrowserRuntimeConfig {
   const domain = trimmed(process.env.NEXT_PUBLIC_E2B_DOMAIN)
-  const isRuntimeConfigured = Boolean(trimmed(process.env.E2B_INFRA_API_URL))
   const configured = configuredInfraApiUrl()
 
-  let infraApiUrl: string
+  let infraApiUrl: string | null
 
   if (configured) {
     infraApiUrl = assertHttpUrl(configured)
   } else if (domain) {
     infraApiUrl = `https://api.${domain}`
   } else {
-    infraApiUrl = requestOrigin(headers, requestUrl, INFRA_API_DEFAULT_PORT)
+    infraApiUrl =
+      requestOrigin(headers, requestUrl, INFRA_API_DEFAULT_PORT) ?? null
   }
 
-  const sandboxUrl =
-    resolveSandboxUrl() ??
-    (isRuntimeConfigured
-      ? requestOrigin(headers, requestUrl, SANDBOX_DEFAULT_PORT)
-      : null)
-
-  return { infraApiUrl, sandboxUrl }
+  return {
+    infraApiUrl,
+    sandboxUrl: resolveServerSandboxUrl(headers, requestUrl) ?? null,
+  }
 }

@@ -57,6 +57,11 @@ dashboard on a domain name and you must set `E2B_SANDBOX_URL` yourself, to a
 `localhost`, IP, or `sandbox.<domain>` base URL. `curl
 http://<host>:<port>/api/config` shows what a deployment resolved.
 
+The dashboard's own server-side sandbox calls, such as killing a terminal's
+pty when you leave the page, resolve the URL from the same request by the same
+rule, so a self-hosted install needs no `E2B_SANDBOX_URL` unless the request
+host is the wrong one for sandbox traffic.
+
 `/api/config` is unauthenticated and carries no secret. Behind a reverse
 proxy, that proxy must set `X-Forwarded-Host` and `X-Forwarded-Proto` itself
 rather than pass through whatever a client sent; `GET /api/config` trusts
@@ -134,10 +139,9 @@ docker run --rm -p 3001:3001 e2b-dashboard
   domain that resolves nowhere, so an unconfigured container fails loudly
   instead of talking to a deployment that is not yours.
 - An image built this way resolves both APIs from `NEXT_PUBLIC_E2B_DOMAIN` at
-  build time; pass `NEXT_PUBLIC_INFRA_API_URL`, `NEXT_PUBLIC_E2B_SANDBOX_URL`
-  or `NEXT_PUBLIC_DASHBOARD_API_URL` as extra `--build-arg`s only if you also
-  add matching `ARG` lines, until runtime configuration of those URLs lands in
-  a separate change.
+  build time. A container configured through the runtime variables in
+  [Configuration](#configuration) resolves them at runtime instead, so it
+  needs no build-time value beyond the default.
 - The build needs outbound HTTPS for the three Google Fonts families in
   `src/app/fonts.ts`; an air-gapped build fails there.
 - `GET /api/health` reports dashboard-api's health and answers 503 while
