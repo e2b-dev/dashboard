@@ -50,12 +50,14 @@ Restart the container and reload open pages after changing its configuration.
 Resolution order (blank values are skipped):
 
 - Domain: `PUBLIC_E2B_DOMAIN` → `NEXT_PUBLIC_E2B_DOMAIN`.
-- Sandbox URL: `PUBLIC_SANDBOX_URL` → `E2B_SANDBOX_URL` → `NEXT_PUBLIC_E2B_SANDBOX_URL` → the fallback below.
+- Sandbox URL: `PUBLIC_SANDBOX_URL` → `E2B_SANDBOX_URL` → `NEXT_PUBLIC_E2B_SANDBOX_URL` → SDK domain routing.
 - API URLs: corresponding `E2B_*` override → `NEXT_PUBLIC_*` override → URL derived from the resolved domain.
 
-Every explicit URL must include `http://` or `https://`. The server rejects
-invalid URLs, naming the variable. API URLs resolve when their server modules
-load; sandbox URLs resolve when a dashboard request or SDK call needs them.
+Every explicit URL must include `http://` or `https://`. Server initialization
+validates the resolved API and sandbox URLs and `DASHBOARD_COOKIE_SECURE`,
+even when telemetry is disabled. Invalid values stop startup and name the
+variable. The cookie flag accepts `true` or `false` (case-insensitive, with
+surrounding whitespace ignored); an empty value keeps the default.
 
 The dashboard's Server Component layout resolves **only the domain and
 sandbox URL** and passes them as props to a client `ClientConfigProvider`.
@@ -64,18 +66,15 @@ render, without a separate config request. API endpoints and team credentials
 stay on the server. Both public settings are visible to browser users and
 must contain no secrets.
 
-When `E2B_INFRA_API_URL` is set and no sandbox URL is given, the sandbox URL
-defaults to the host the dashboard was reached on, port 3002. That default
-routes only when the dashboard is reached over `localhost` or an IP address,
-which is how the sandbox proxy accepts header-routed traffic. For a domain
-name, set `PUBLIC_SANDBOX_URL` to a `localhost`, IP, or `sandbox.<domain>` base
-URL that both the browser and server can reach. Without `E2B_INFRA_API_URL`,
-leaving the sandbox URL unset preserves the SDK's domain-based routing.
+For a local sandbox proxy, explicitly set `PUBLIC_SANDBOX_URL`, for example
+`http://127.0.0.1:3002` when the browser and server run on the same machine.
+Use an address reachable from both the browser and server. When a sandbox
+URL is unset, the SDK uses domain-based routing, including when
+`E2B_INFRA_API_URL` is set.
 
 Server-side sandbox calls, such as terminal PTY cleanup, use the same domain
-and sandbox URL resolution. Behind a reverse proxy, set `X-Forwarded-Host`
-and `X-Forwarded-Proto` at the proxy instead of forwarding client-supplied
-values: the request-host fallback trusts these headers.
+and sandbox URL resolution. `Host`, `X-Forwarded-Host`, and
+`X-Forwarded-Proto` never determine sandbox destinations.
 
 ## Features
 

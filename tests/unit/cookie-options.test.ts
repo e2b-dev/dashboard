@@ -86,4 +86,19 @@ describe('api key cookie options', () => {
       secure: true,
     })
   })
+
+  it.each([
+    '0',
+    '1',
+    'no',
+    'off',
+    'typo',
+  ])('rejects an unrecognized runtime value: %s', async (value) => {
+    vi.stubEnv('NODE_ENV', 'production')
+    vi.stubEnv('DASHBOARD_COOKIE_SECURE', value)
+
+    await expect(loadApiKeyCookieOptions()).rejects.toThrow(
+      'DASHBOARD_COOKIE_SECURE must be true or false'
+    )
+  })
 })

@@ -7,17 +7,13 @@
  * serve any install. The NEXT_PUBLIC_* values stay as the fallback, so a
  * deployment that sets none of the new variables resolves exactly as before.
  *
- * The chosen value is validated here and not only by the schema in
- * `src/lib/env.ts`, which runs in dev, prebuild and tests but never inside a
- * running container. `api.ts` calls these resolvers at module scope, so a
- * malformed URL fails on the first server import however the process was
- * started, rather than surfacing later as an opaque fetch failure.
+ * Runtime values are checked by the instrumentation hook before the server
+ * is ready, and by these resolvers whenever they are used.
  */
 
 import 'server-only'
+import { isSecureCookie } from '@/configs/cookies'
 import type { BrowserRuntimeConfig } from '@/core/shared/runtime-config'
-
-const SANDBOX_DEFAULT_PORT = '3002'
 
 interface ResolvedValue {
   name: string
@@ -40,18 +36,6 @@ function firstSet(
   }
 
   return undefined
-}
-
-function parsedUrl(value: string | undefined): URL | undefined {
-  if (!value) {
-    return undefined
-  }
-
-  try {
-    return new URL(value)
-  } catch {
-    return undefined
-  }
 }
 
 function isHttpUrl(value: string): boolean {
@@ -124,111 +108,17 @@ export function resolveSandboxUrl(): string | undefined {
   return configured ? assertHttpUrl(configured) : undefined
 }
 
-/**
- * The forwarded protocol, accepted only when it is http or https. The result
- * is served to the browser and handed to the SDK, so an unrecognised scheme
- * from this header has to be dropped rather than echoed.
- */
-function forwardedProtocol(headers: Headers): string | undefined {
-  const value = trimmed(
-    headers.get('x-forwarded-proto')?.split(',')[0]
-  )?.toLowerCase()
-
-  return value === 'http' || value === 'https' ? value : undefined
-}
-
-/**
- * The hostname of `protocol://host`, or undefined when the host is absent or
- * does not parse. A proxy header can carry anything, and an unparseable one
- * must fall through to the next candidate rather than take the endpoint down.
- */
-function hostnameOf(
-  protocol: string,
-  host: string | undefined
-): string | undefined {
-  // Without this guard `http://undefined` parses, to the hostname
-  // "undefined".
-  if (!host) {
-    return undefined
-  }
-
-  try {
-    // Through URL so an IPv6 literal keeps its brackets and any port on the
-    // incoming host is dropped before this one is appended.
-    return new URL(`${protocol}://${host}`).hostname || undefined
-  } catch {
-    return undefined
-  }
-}
-
-/**
- * The host the client reached this server on, with `port` substituted, or
- * undefined when the request carries no usable host at all. Built from the
- * proxy headers first so a reverse-proxied install advertises the public host
- * rather than its own internal one, falling back to the request URL.
- *
- * The request URL is optional because a tRPC procedure called from a server
- * component is given the request headers but no URL. http is the guess for a
- * request that carries neither a forwarded protocol nor a URL, which is the
- * plain self-hosted case; a proxied install sets X-Forwarded-Proto.
- */
-function requestOrigin(
-  headers: Headers,
-  requestUrl: string | undefined,
-  port: string
-): string | undefined {
-  const url = parsedUrl(requestUrl)
-  const protocol =
-    forwardedProtocol(headers) ?? url?.protocol.replace(/:$/, '') ?? 'http'
-
-  // Each candidate is parsed in turn, so a malformed proxy header falls
-  // through to the next one instead of discarding a good host below it.
-  const hostname =
-    hostnameOf(protocol, trimmed(headers.get('x-forwarded-host'))) ??
-    hostnameOf(protocol, trimmed(headers.get('host'))) ??
-    url?.hostname
-
-  return hostname ? `${protocol}://${hostname}:${port}` : undefined
-}
-
-/**
- * The base URL for sandbox traffic that a server-side SDK call should use,
- * resolved per request: the configured value, then the request host on the
- * sandbox port for a runtime-configured install, then undefined so the SDK
- * derives the host from the domain.
- *
- * The request-host default applies only when E2B_INFRA_API_URL is set. Hosted
- * deployments configured with a domain keep the SDK's domain-based URLs.
- * The dashboard layout passes this same URL to browser SDK consumers so
- * terminal connections and server-side PTY cleanup reach the same host.
- */
-export function resolveServerSandboxUrl(
-  headers: Headers,
-  requestUrl: string | undefined
-): string | undefined {
-  const configured = resolveSandboxUrl()
-
-  if (configured) {
-    return configured
-  }
-
-  if (!trimmed(process.env.E2B_INFRA_API_URL)) {
-    return undefined
-  }
-
-  return requestOrigin(headers, requestUrl, SANDBOX_DEFAULT_PORT)
-}
-
-/**
- * Explicitly allowlist browser-visible settings; API endpoints and team
- * credentials stay on the server.
- */
-export function resolveBrowserRuntimeConfig(
-  headers: Headers,
-  requestUrl?: string
-): BrowserRuntimeConfig {
+/** Only operator configuration may select a sandbox destination. */
+export function resolveBrowserRuntimeConfig(): BrowserRuntimeConfig {
   return {
     domain: resolveE2BDomain() ?? null,
-    sandboxUrl: resolveServerSandboxUrl(headers, requestUrl) ?? null,
+    sandboxUrl: resolveSandboxUrl() ?? null,
   }
+}
+
+export function validateRuntimeConfig(): void {
+  resolveInfraApiUrl()
+  resolveDashboardApiUrl()
+  resolveSandboxUrl()
+  isSecureCookie()
 }

@@ -5,7 +5,6 @@ import {
   resolveE2BDomain,
   resolveInfraApiUrl,
   resolveSandboxUrl,
-  resolveServerSandboxUrl,
 } from '@/core/server/runtime-config'
 
 const MANAGED_KEYS = [
@@ -53,7 +52,7 @@ describe('resolveE2BDomain', () => {
       expect(resolveE2BDomain()).toBe(domain)
       expect(resolveInfraApiUrl()).toBe(`https://api.${domain}`)
       expect(resolveDashboardApiUrl()).toBe(`https://dashboard-api.${domain}`)
-      expect(resolveBrowserRuntimeConfig(new Headers())).toEqual({
+      expect(resolveBrowserRuntimeConfig()).toEqual({
         domain,
         sandboxUrl: null,
       })
@@ -187,250 +186,34 @@ describe('resolveBrowserRuntimeConfig', () => {
     process.env.E2B_DASHBOARD_API_URL = 'http://dashboard-api.internal:3010'
     process.env.E2B_API_KEY = 'e2b_test_private_key'
 
-    expect(resolveBrowserRuntimeConfig(new Headers())).toEqual({
+    expect(resolveBrowserRuntimeConfig()).toEqual({
       domain: 'runtime.example',
       sandboxUrl: 'https://sandbox.runtime.example',
     })
   })
 
-  it('resolves the sandbox host from layout headers without a request URL', () => {
-    process.env.E2B_INFRA_API_URL = 'http://infra-api.internal:3000'
-    const requestHeaders = new Headers({
-      host: 'dashboard.internal:3001',
-      'x-forwarded-host': '192.0.2.1:8443',
-      'x-forwarded-proto': 'https',
-    })
+  it('keeps SDK routing when API overrides are set without a sandbox URL', () => {
+    process.env.E2B_INFRA_API_URL = 'http://127.0.0.1:3000'
 
-    expect(resolveBrowserRuntimeConfig(requestHeaders).sandboxUrl).toBe(
-      'https://192.0.2.1:3002'
-    )
-  })
-
-  const requestUrl = 'http://dash.example:3001/sandboxes'
-  const headers = (init: Record<string, string> = {}) =>
-    new Headers({ host: 'dash.example:3001', ...init })
-
-  it('reports no sandbox url for a deployment that sets no runtime variables', () => {
-    expect(resolveBrowserRuntimeConfig(headers(), requestUrl)).toEqual({
+    expect(resolveBrowserRuntimeConfig()).toEqual({
       domain: 'example.dev',
       sandboxUrl: null,
     })
   })
 
-  it('falls back to the NEXT_PUBLIC sandbox url', () => {
-    process.env.NEXT_PUBLIC_E2B_SANDBOX_URL = 'http://sandbox.lvh.me:3002'
+  it('uses the same configured sandbox URL for browser and server consumers', () => {
+    process.env.PUBLIC_SANDBOX_URL = 'https://sandbox.example.dev'
 
-    expect(resolveBrowserRuntimeConfig(headers(), requestUrl).sandboxUrl).toBe(
-      'http://sandbox.lvh.me:3002'
-    )
-  })
-
-  it('prefers the runtime sandbox url over the NEXT_PUBLIC one', () => {
-    process.env.NEXT_PUBLIC_E2B_SANDBOX_URL = 'http://sandbox.lvh.me:3002'
-    process.env.E2B_SANDBOX_URL = 'https://sandbox.internal.example'
-
-    expect(resolveBrowserRuntimeConfig(headers(), requestUrl).sandboxUrl).toBe(
-      'https://sandbox.internal.example'
-    )
-  })
-
-  it('defaults to the request host on 3002 for a runtime-configured install', () => {
-    process.env.E2B_INFRA_API_URL = 'http://127.0.0.1:3000'
-
-    expect(resolveBrowserRuntimeConfig(headers(), requestUrl)).toEqual({
-      domain: 'example.dev',
-      sandboxUrl: 'http://dash.example:3002',
-    })
-  })
-
-  it('honours x-forwarded-host and x-forwarded-proto', () => {
-    process.env.E2B_INFRA_API_URL = 'http://127.0.0.1:3000'
-
-    const config = resolveBrowserRuntimeConfig(
-      headers({
-        'x-forwarded-host': 'public.example:8443',
-        'x-forwarded-proto': 'https,http',
-      }),
-      requestUrl
-    )
-
-    expect(config.sandboxUrl).toBe('https://public.example:3002')
-  })
-
-  // A proxy header is attacker-controllable in a misconfigured deployment, and
-  // whatever lands here is served to the browser and handed to the SDK.
-  it('ignores a malformed x-forwarded-host and uses the host header', () => {
-    process.env.E2B_INFRA_API_URL = 'http://127.0.0.1:3000'
-
-    const config = resolveBrowserRuntimeConfig(
-      headers({ host: 'other.example:3001', 'x-forwarded-host': 'foo bar' }),
-      requestUrl
-    )
-
-    expect(config.sandboxUrl).toBe('http://other.example:3002')
-  })
-
-  it('falls back to the request url when every host candidate is malformed', () => {
-    process.env.E2B_INFRA_API_URL = 'http://127.0.0.1:3000'
-
-    const config = resolveBrowserRuntimeConfig(
-      headers({ host: 'also bad', 'x-forwarded-host': 'foo bar' }),
-      requestUrl
-    )
-
-    expect(config.sandboxUrl).toBe('http://dash.example:3002')
-  })
-
-  it('ignores an x-forwarded-host whose port is out of range', () => {
-    process.env.E2B_INFRA_API_URL = 'http://127.0.0.1:3000'
-
-    const config = resolveBrowserRuntimeConfig(
-      headers({ 'x-forwarded-host': 'h:99999' }),
-      requestUrl
-    )
-
-    expect(config.sandboxUrl).toBe('http://dash.example:3002')
-  })
-
-  it('ignores an x-forwarded-proto that is not http(s)', () => {
-    process.env.E2B_INFRA_API_URL = 'http://127.0.0.1:3000'
-
-    const config = resolveBrowserRuntimeConfig(
-      headers({ 'x-forwarded-proto': 'javascript' }),
-      requestUrl
-    )
-
-    expect(config.sandboxUrl).toBe('http://dash.example:3002')
-  })
-
-  it('accepts an uppercase x-forwarded-proto', () => {
-    process.env.E2B_INFRA_API_URL = 'http://127.0.0.1:3000'
-
-    const config = resolveBrowserRuntimeConfig(
-      headers({ 'x-forwarded-proto': 'HTTPS' }),
-      requestUrl
-    )
-
-    expect(config.sandboxUrl).toBe('https://dash.example:3002')
+    expect(resolveBrowserRuntimeConfig().sandboxUrl).toBe(resolveSandboxUrl())
   })
 
   it('passes no domain when none is configured', () => {
     delete process.env.NEXT_PUBLIC_E2B_DOMAIN
 
-    expect(resolveBrowserRuntimeConfig(headers(), requestUrl).domain).toBeNull()
-  })
-
-  it('reads the host from the request url when no host header is present', () => {
-    process.env.E2B_INFRA_API_URL = 'http://127.0.0.1:3000'
-
-    expect(
-      resolveBrowserRuntimeConfig(new Headers(), requestUrl).sandboxUrl
-    ).toBe('http://dash.example:3002')
+    expect(resolveBrowserRuntimeConfig().domain).toBeNull()
   })
 })
 
-/**
- * The server-side SDK calls resolve the sandbox URL exactly as the browser
- * does. A runtime-configured install leaves E2B_SANDBOX_URL unset so every
- * browser is told the host it reached the dashboard on; a server that read
- * only the environment would fall back to the build-time domain, and its envd
- * calls would go nowhere.
- */
-describe('resolveServerSandboxUrl', () => {
-  const requestUrl = 'http://dash.example:3001/api/trpc/sandbox.killTerminalPty'
-  const headers = (init: Record<string, string> = {}) =>
-    new Headers({ host: 'dash.example:3001', ...init })
-
-  it('reports no sandbox url for a deployment that sets no runtime variables', () => {
-    expect(resolveServerSandboxUrl(headers(), requestUrl)).toBeUndefined()
-  })
-
-  it('uses the explicit runtime value', () => {
-    process.env.E2B_SANDBOX_URL = 'https://sandbox.internal.example'
-
-    expect(resolveServerSandboxUrl(headers(), requestUrl)).toBe(
-      'https://sandbox.internal.example'
-    )
-  })
-
-  it('falls back to the NEXT_PUBLIC sandbox url', () => {
-    process.env.NEXT_PUBLIC_E2B_SANDBOX_URL = 'http://sandbox.lvh.me:3002'
-
-    expect(resolveServerSandboxUrl(headers(), requestUrl)).toBe(
-      'http://sandbox.lvh.me:3002'
-    )
-  })
-
-  it('defaults to the request host on 3002 for a runtime-configured install', () => {
-    process.env.E2B_INFRA_API_URL = 'http://127.0.0.1:3000'
-
-    expect(resolveServerSandboxUrl(headers(), requestUrl)).toBe(
-      'http://dash.example:3002'
-    )
-  })
-
-  it('prefers the explicit value over the request-host default', () => {
-    process.env.E2B_INFRA_API_URL = 'http://127.0.0.1:3000'
-    process.env.E2B_SANDBOX_URL = 'https://sandbox.internal.example'
-
-    expect(resolveServerSandboxUrl(headers(), requestUrl)).toBe(
-      'https://sandbox.internal.example'
-    )
-  })
-
-  it('honours x-forwarded-host and x-forwarded-proto', () => {
-    process.env.E2B_INFRA_API_URL = 'http://127.0.0.1:3000'
-
-    expect(
-      resolveServerSandboxUrl(
-        headers({
-          'x-forwarded-host': 'public.example:8443',
-          'x-forwarded-proto': 'https,http',
-        }),
-        requestUrl
-      )
-    ).toBe('https://public.example:3002')
-  })
-
-  // A procedure called from a server component has the request headers but no
-  // request URL, so the host header has to carry the default on its own.
-  it('resolves the host from the headers when there is no request url', () => {
-    process.env.E2B_INFRA_API_URL = 'http://127.0.0.1:3000'
-
-    expect(resolveServerSandboxUrl(headers(), undefined)).toBe(
-      'http://dash.example:3002'
-    )
-  })
-
-  it('honours x-forwarded-proto when there is no request url', () => {
-    process.env.E2B_INFRA_API_URL = 'http://127.0.0.1:3000'
-
-    expect(
-      resolveServerSandboxUrl(
-        headers({ 'x-forwarded-proto': 'https' }),
-        undefined
-      )
-    ).toBe('https://dash.example:3002')
-  })
-
-  it('reports no sandbox url when the request carries no host at all', () => {
-    process.env.E2B_INFRA_API_URL = 'http://127.0.0.1:3000'
-
-    expect(resolveServerSandboxUrl(new Headers(), undefined)).toBeUndefined()
-  })
-
-  // The whole point of the helper: the two resolutions cannot drift.
-  it('resolves to what the browser is told', () => {
-    process.env.E2B_INFRA_API_URL = 'http://127.0.0.1:3000'
-
-    expect(resolveServerSandboxUrl(headers(), requestUrl)).toBe(
-      resolveBrowserRuntimeConfig(headers(), requestUrl).sandboxUrl
-    )
-  })
-})
-
-// The schema in src/lib/env.ts runs in dev, prebuild and tests but never in a
-// running container, so a malformed URL has to fail here instead.
 describe('URL validation', () => {
   it('rejects a scheme-less runtime variable, naming it and its value', () => {
     process.env.E2B_INFRA_API_URL = '127.0.0.1:3000'
@@ -469,18 +252,5 @@ describe('URL validation', () => {
 
     expect(() => resolveSandboxUrl()).toThrow(/E2B_SANDBOX_URL/)
     expect(() => resolveSandboxUrl()).toThrow(/sandbox\.internal\.example:3002/)
-  })
-
-  // The request-host default is built from a parsed URL, not read from the
-  // environment, so it never reaches the validator.
-  it('leaves the request-host default unvalidated', () => {
-    process.env.E2B_INFRA_API_URL = 'http://127.0.0.1:3000'
-
-    expect(
-      resolveBrowserRuntimeConfig(
-        new Headers({ host: 'dash.example:3001' }),
-        'http://dash.example:3001/sandboxes'
-      ).sandboxUrl
-    ).toBe('http://dash.example:3002')
   })
 })

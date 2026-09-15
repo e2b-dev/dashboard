@@ -16,7 +16,7 @@ import { withAuthedRequestRepository } from '@/core/server/api/middlewares/repos
 import {
   resolveE2BDomain,
   resolveInfraApiUrl,
-  resolveServerSandboxUrl,
+  resolveSandboxUrl,
 } from '@/core/server/runtime-config'
 import { createTRPCRouter } from '@/core/server/trpc/init'
 import { protectedProcedure } from '@/core/server/trpc/procedures'
@@ -236,7 +236,7 @@ export const sandboxRouter = createTRPCRouter({
       const connectionOpts = {
         apiUrl: resolveInfraApiUrl(),
         domain: resolveE2BDomain(),
-        sandboxUrl: resolveServerSandboxUrl(ctx.headers, ctx.requestUrl),
+        sandboxUrl: resolveSandboxUrl(),
         apiKey,
       }
 
@@ -324,7 +324,7 @@ export const sandboxRouter = createTRPCRouter({
       const connectionOpts = {
         apiUrl: resolveInfraApiUrl(),
         domain: resolveE2BDomain(),
-        sandboxUrl: resolveServerSandboxUrl(ctx.headers, ctx.requestUrl),
+        sandboxUrl: resolveSandboxUrl(),
         apiKey,
       }
 
@@ -380,7 +380,7 @@ export const sandboxRouter = createTRPCRouter({
       const connectionOpts = {
         apiUrl: resolveInfraApiUrl(),
         domain: resolveE2BDomain(),
-        sandboxUrl: resolveServerSandboxUrl(ctx.headers, ctx.requestUrl),
+        sandboxUrl: resolveSandboxUrl(),
         apiKey,
       }
 
@@ -419,7 +419,7 @@ export const sandboxRouter = createTRPCRouter({
       const sandbox = await Sandbox.connect(input.sandboxId, {
         apiUrl: resolveInfraApiUrl(),
         domain: resolveE2BDomain(),
-        sandboxUrl: resolveServerSandboxUrl(ctx.headers, ctx.requestUrl),
+        sandboxUrl: resolveSandboxUrl(),
         timeoutMs: TERMINAL_SANDBOX_TIMEOUT_MS,
         apiKey: ctx.apiKey,
       })

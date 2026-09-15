@@ -69,7 +69,7 @@ describe('dashboard layout runtime config', () => {
     expect(fetchSpy).not.toHaveBeenCalled()
   })
 
-  it('keeps host-derived sandbox URLs isolated between requests', async () => {
+  it('does not select a sandbox destination from request headers', async () => {
     vi.stubEnv('PUBLIC_E2B_DOMAIN', 'cluster.example')
     vi.stubEnv('PUBLIC_SANDBOX_URL', '')
     vi.stubEnv('E2B_SANDBOX_URL', '')
@@ -85,7 +85,7 @@ describe('dashboard layout runtime config', () => {
       const layout = await DashboardLayout({ children: <ConfigConsumer /> })
 
       expect(renderToStaticMarkup(layout)).toContain(
-        `<output>cluster.example|https://${host}:3002</output>`
+        '<output>cluster.example|</output>'
       )
     }
   })

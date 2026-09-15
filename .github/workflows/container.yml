@@ -17,6 +17,9 @@ on:
       - scripts/check-app-env.ts
       - scripts/container-smoke.sh
       - src/lib/env.ts
+      - src/instrumentation.ts
+      - src/core/server/runtime-config.ts
+      - src/configs/cookies.ts
       - .github/workflows/container.yml
   pull_request:
     branches: [main]
@@ -30,6 +33,9 @@ on:
       - scripts/check-app-env.ts
       - scripts/container-smoke.sh
       - src/lib/env.ts
+      - src/instrumentation.ts
+      - src/core/server/runtime-config.ts
+      - src/configs/cookies.ts
       - .github/workflows/container.yml
   workflow_dispatch:
 

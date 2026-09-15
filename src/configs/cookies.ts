@@ -23,16 +23,18 @@ export const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365 // 1 year
  * loop. DASHBOARD_COOKIE_SECURE overrides the flag; unset keeps the build-mode
  * default, which is what every existing deployment already gets.
  *
- * The value is read case-insensitively rather than trusting the schema's
- * narrowed type: a prebuilt image starts without the env check, so whatever
- * the container was handed arrives here unvalidated.
+ * Validate runtime values too: the build-time schema cannot check variables
+ * supplied when starting a prebuilt image.
  */
-function isSecureCookie(): boolean {
+export function isSecureCookie(): boolean {
   const configured: string | undefined =
     process.env.DASHBOARD_COOKIE_SECURE?.trim().toLowerCase()
 
   if (configured !== undefined && configured !== '') {
-    return configured !== 'false'
+    if (configured === 'true') return true
+    if (configured === 'false') return false
+
+    throw new Error('DASHBOARD_COOKIE_SECURE must be true or false')
   }
 
   return process.env.NODE_ENV === 'production'

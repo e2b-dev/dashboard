@@ -38,7 +38,6 @@ const createCaller = createCallerFactory(sandboxRouter)
 
 const REQUEST_HOST = 'dash.example:3001'
 const REQUEST_URL = `http://${REQUEST_HOST}/api/trpc/sandbox.killTerminalPty`
-const REQUEST_HOST_SANDBOX_URL = 'http://dash.example:3002'
 
 async function caller(opts: { headers?: Headers; requestUrl?: string } = {}) {
   const ctx = await createTRPCContext({
@@ -69,9 +68,6 @@ const MANAGED_KEYS = [
 const saved = new Map<string, string | undefined>()
 
 const withRuntimeApiUrl = expect.objectContaining({ apiUrl: RUNTIME_API_URL })
-const withRequestHostSandboxUrl = expect.objectContaining({
-  sandboxUrl: REQUEST_HOST_SANDBOX_URL,
-})
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -170,11 +166,6 @@ describe('sandbox router control-plane API URL', () => {
   })
 })
 
-/**
- * The sandbox URL travels in the same connection options, so a prebuilt image
- * has to read it the same way — otherwise the server talks to one sandbox host
- * and the browser, which gets its config from the layout, talks to another.
- */
 describe('sandbox router sandbox URL', () => {
   it('passes the runtime sandbox URL to the control plane', async () => {
     process.env.E2B_SANDBOX_URL = 'https://sandbox.internal.example'
@@ -217,53 +208,47 @@ describe('sandbox router sandbox URL', () => {
     )
   })
 
-  // With no sandbox URL configured, a runtime-configured install falls back to
-  // the host the request arrived on, which is what the browser is told too.
-  // Reading only the environment here left the SDK on the build-time domain,
-  // and every server-side envd call — killing a terminal's pty on leaving the
-  // page, above all — went to a host that does not exist.
-  it('defaults killTerminalPty to the request host on the sandbox port', async () => {
-    const c = await requestCaller()
-    await c.killTerminalPty({ sandboxId: 'sbxexisting', pid: 42 })
+  describe.each([
+    undefined,
+    'https://sandbox.configured.example',
+  ])('request headers with sandbox URL %s', (sandboxUrl) => {
+    it.each([
+      { host: 'untrusted.example:3001' },
+      {
+        host: REQUEST_HOST,
+        'x-forwarded-host': 'untrusted.example',
+        'x-forwarded-proto': 'http',
+      },
+      {
+        host: REQUEST_HOST,
+        'x-forwarded-host': 'untrusted.example, proxy.example',
+        'x-forwarded-proto': 'https,http',
+      },
+    ])('never uses request metadata for SDK destinations: %j', async (headers) => {
+      if (sandboxUrl) process.env.PUBLIC_SANDBOX_URL = sandboxUrl
+      const c = await caller({
+        headers: new Headers(headers),
+        requestUrl: 'http://untrusted-url.example/api/trpc',
+      })
+      await c.openTerminal({ template: 'base' })
+      await c.resume({ sandboxId: 'sbxexisting' })
+      await c.pause({ sandboxId: 'sbxexisting' })
+      await c.killTerminalPty({ sandboxId: 'sbxexisting', pid: 42 })
 
-    expect(sdkMock.connect).toHaveBeenCalledWith(
-      'sbxexisting',
-      withRequestHostSandboxUrl
-    )
-  })
-
-  it('defaults resume to the request host on the sandbox port', async () => {
-    const c = await requestCaller()
-    await c.resume({ sandboxId: 'sbxexisting' })
-
-    expect(sdkMock.connect).toHaveBeenCalledWith(
-      'sbxexisting',
-      withRequestHostSandboxUrl
-    )
-    expect(sdkMock.getFullInfo).toHaveBeenCalledWith(
-      'sbxexisting',
-      withRequestHostSandboxUrl
-    )
-  })
-
-  it('defaults openTerminal to the request host on the sandbox port', async () => {
-    const c = await requestCaller()
-    await c.openTerminal({ template: 'base' })
-
-    expect(sdkMock.create).toHaveBeenCalledWith(
-      'base',
-      withRequestHostSandboxUrl
-    )
-  })
-
-  it('defaults pause to the request host on the sandbox port', async () => {
-    const c = await requestCaller()
-    await c.pause({ sandboxId: 'sbxexisting' })
-
-    expect(sdkMock.pause).toHaveBeenCalledWith(
-      'sbxexisting',
-      withRequestHostSandboxUrl
-    )
+      const options = expect.objectContaining({
+        apiUrl: RUNTIME_API_URL,
+        sandboxUrl,
+      })
+      expect(sdkMock.create).toHaveBeenCalledWith('base', options)
+      expect(sdkMock.connect).toHaveBeenCalledTimes(2)
+      for (const call of sdkMock.connect.mock.calls) {
+        expect(call).toEqual(['sbxexisting', options])
+      }
+      expect(sdkMock.getFullInfo).toHaveBeenCalledWith('sbxexisting', options)
+      expect(sdkMock.pause).toHaveBeenCalledWith('sbxexisting', options)
+      const sandbox = await sdkMock.connect.mock.results.at(-1)?.value
+      expect(sandbox.pty.kill).toHaveBeenCalledWith(42)
+    })
   })
 
   it('prefers the explicit sandbox URL over the request host', async () => {

@@ -1,4 +1,4 @@
-import { cookies, headers } from 'next/headers'
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import type { Metadata } from 'next/types'
 import { COOKIE_KEYS } from '@/configs/cookies'
@@ -35,7 +35,7 @@ export default async function DashboardLayout({
     redirect('/')
   }
 
-  const runtimeConfig = resolveBrowserRuntimeConfig(await headers())
+  const runtimeConfig = resolveBrowserRuntimeConfig()
   const sidebarState = cookieStore.get(COOKIE_KEYS.SIDEBAR_STATE)?.value
   const defaultOpen = sidebarState === 'true'
   const timezone = parseTimezone(

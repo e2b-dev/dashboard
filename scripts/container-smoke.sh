@@ -7,10 +7,11 @@ set -euo pipefail
 IMAGE="${IMAGE:-e2b-dashboard:smoke}"
 PORT="${PORT:-3001}"
 CONTAINER="e2b-dashboard-smoke-$$"
+INVALID_CONTAINER="${CONTAINER}-invalid"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 cleanup() {
-  docker rm -f "${CONTAINER}" >/dev/null 2>&1 || true
+  docker rm -f "${CONTAINER}" "${INVALID_CONTAINER}" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
 
@@ -63,5 +64,32 @@ if [ "${fail}" != 0 ]; then
   docker logs "${CONTAINER}" >&2 || true
   exit 1
 fi
+
+check_invalid_config() {
+  local variable="$1" value="$2" status="" exit_code logs
+  docker run -d --name "${INVALID_CONTAINER}" --network none \
+    -e "${variable}=${value}" "${IMAGE}" >/dev/null
+
+  for _ in $(seq 1 50); do
+    status="$(docker inspect -f '{{.State.Status}}' "${INVALID_CONTAINER}")"
+    if [ "${status}" = "exited" ]; then break; fi
+    sleep 0.2
+  done
+
+  exit_code="$(docker inspect -f '{{.State.ExitCode}}' "${INVALID_CONTAINER}")"
+  logs="$(docker logs "${INVALID_CONTAINER}" 2>&1)"
+  if [ "${status}" != "exited" ] || [ "${exit_code}" = "0" ] || \
+    [[ "${logs}" != *"${variable}"* ]]; then
+    echo "FAIL: invalid ${variable} must stop startup and name the variable" >&2
+    echo "${logs}" >&2
+    exit 1
+  fi
+  echo "ok   invalid ${variable} rejected at startup"
+  docker rm "${INVALID_CONTAINER}" >/dev/null
+}
+
+check_invalid_config PUBLIC_SANDBOX_URL missing-scheme.example:3002
+check_invalid_config E2B_SANDBOX_URL ftp://sandbox.example
+check_invalid_config DASHBOARD_COOKIE_SECURE off
 
 echo "==> container smoke test passed"
