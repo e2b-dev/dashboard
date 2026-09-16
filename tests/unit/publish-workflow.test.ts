@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest'
 
 /**
  * The publish path cannot be exercised outside a release, so these assertions
- * guard the flags it cannot go without: the registry it pushes to, the single
- * architecture, and the attestation switches Artifact Registry rejects.
+ * guard the flags it cannot go without: the registry it pushes to, the two
+ * architectures, and the attestation switches Artifact Registry rejects.
  */
 const read = (relativePath: string) =>
   readFileSync(join(process.cwd(), relativePath), 'utf8')
@@ -33,7 +33,8 @@ describe('publish workflow', () => {
     expect(workflow).toContain(
       'us-docker.pkg.dev/e2b-artifacts/dashboard/dashboard'
     )
-    expect(workflow).toContain('--platform linux/amd64')
+    expect(workflow).toContain('platforms=linux/amd64,linux/arm64')
+    expect(workflow).toContain('docker/setup-qemu-action@')
   })
 
   it('disables the attestations Artifact Registry rejects', () => {

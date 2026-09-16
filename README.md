@@ -175,8 +175,8 @@ merging the open release PR updates `CHANGELOG.md` and `package.json` and tags
 the release as `vX.Y.Z`.
 
 That tag publishes a container image to
-`us-docker.pkg.dev/e2b-artifacts/dashboard/dashboard:vX.Y.Z` (`linux/amd64`,
-anonymous pulls):
+`us-docker.pkg.dev/e2b-artifacts/dashboard/dashboard:vX.Y.Z` (`linux/amd64` and
+`linux/arm64`, anonymous pulls):
 
 ```bash
 docker run --rm -p 3001:3001 us-docker.pkg.dev/e2b-artifacts/dashboard/dashboard:vX.Y.Z
