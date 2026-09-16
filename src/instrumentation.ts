@@ -1,6 +1,11 @@
 import { registerOTel } from '@vercel/otel'
 
 export async function register() {
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    const { appEnvSchema, validateEnv } = await import('./lib/env')
+    validateEnv(appEnvSchema)
+  }
+
   if (!process.env.OTEL_EXPORTER_OTLP_ENDPOINT) return
 
   if (process.env.NEXT_RUNTIME === 'nodejs') {

@@ -20,6 +20,11 @@ vi.mock('@/core/shared/create-envd-sandbox', () => ({
   createEnvdSandbox: mockCreateEnvdSandbox,
 }))
 
+const runtimeConfig = {
+  domain: 'runtime.example',
+  sandboxUrl: 'http://host.example:3002',
+}
+
 // The `sandbox.openTerminal` tRPC mutation is injected into
 // openTerminalSandbox, so the test passes this mock directly instead of
 // mocking a module.
@@ -261,10 +266,27 @@ describe('dashboard terminal helpers', () => {
   })
 
   describe('openTerminalSandbox', () => {
+    it('leaves SDK sandbox routing unset when the provider has no override', async () => {
+      await openTerminalSandbox({
+        runtimeConfig: { domain: 'runtime.example', sandboxUrl: null },
+        onStatus: () => {},
+        openTerminal: mockOpenTerminal,
+        template: 'base',
+      })
+
+      expect(mockCreateEnvdSandbox).toHaveBeenCalledWith(
+        expect.objectContaining({
+          domain: 'runtime.example',
+          sandboxUrl: undefined,
+        })
+      )
+    })
+
     it('connects to an explicit sandbox without writing a stored session', async () => {
       const statuses: string[] = []
 
       await openTerminalSandbox({
+        runtimeConfig,
         onStatus: (message) => statuses.push(message),
         openTerminal: mockOpenTerminal,
         sandboxId: 'sandbox-from-url',
@@ -281,13 +303,37 @@ describe('dashboard terminal helpers', () => {
         sandboxDomain: 'sandbox.example.com',
         envdVersion: '0.2.0',
         envdAccessToken: 'envd-token',
-        domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
-        sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
+        domain: runtimeConfig.domain,
+        sandboxUrl: 'http://host.example:3002',
       })
       expect(readStoredTerminalSession()).toBeNull()
       expect(statuses).toEqual([
         'Connecting to terminal sandbox sandbox-from-url...\r\n',
       ])
+    })
+
+    it('prefers the runtime config sandbox url over the build-time one', async () => {
+      const savedSandboxUrl = process.env.NEXT_PUBLIC_E2B_SANDBOX_URL
+      process.env.NEXT_PUBLIC_E2B_SANDBOX_URL = 'http://build-time.example:3002'
+
+      try {
+        await openTerminalSandbox({
+          runtimeConfig,
+          onStatus: () => {},
+          openTerminal: mockOpenTerminal,
+          template: 'base',
+        })
+
+        expect(mockCreateEnvdSandbox).toHaveBeenCalledWith(
+          expect.objectContaining({ sandboxUrl: 'http://host.example:3002' })
+        )
+      } finally {
+        if (savedSandboxUrl === undefined) {
+          delete process.env.NEXT_PUBLIC_E2B_SANDBOX_URL
+        } else {
+          process.env.NEXT_PUBLIC_E2B_SANDBOX_URL = savedSandboxUrl
+        }
+      }
     })
 
     it('connects to a tokenless (secure: false) sandbox without an envd access token', async () => {
@@ -299,6 +345,7 @@ describe('dashboard terminal helpers', () => {
       })
 
       await openTerminalSandbox({
+        runtimeConfig,
         onStatus: vi.fn(),
         openTerminal: mockOpenTerminal,
         sandboxId: 'insecure-sandbox',
@@ -310,13 +357,14 @@ describe('dashboard terminal helpers', () => {
         sandboxDomain: 'sandbox.example.com',
         envdVersion: '0.2.0',
         envdAccessToken: undefined,
-        domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
-        sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
+        domain: runtimeConfig.domain,
+        sandboxUrl: 'http://host.example:3002',
       })
     })
 
     it('creates and stores a terminal sandbox when no reusable session exists', async () => {
       await openTerminalSandbox({
+        runtimeConfig,
         onStatus: vi.fn(),
         openTerminal: mockOpenTerminal,
         template: 'base',
@@ -338,6 +386,7 @@ describe('dashboard terminal helpers', () => {
       })
 
       await openTerminalSandbox({
+        runtimeConfig,
         onStatus: vi.fn(),
         openTerminal: mockOpenTerminal,
         template: 'base',
@@ -357,6 +406,7 @@ describe('dashboard terminal helpers', () => {
       })
 
       await openTerminalSandbox({
+        runtimeConfig,
         forceNewSandbox: true,
         onStatus: vi.fn(),
         openTerminal: mockOpenTerminal,
@@ -383,6 +433,7 @@ describe('dashboard terminal helpers', () => {
       })
 
       await openTerminalSandbox({
+        runtimeConfig,
         onStatus: vi.fn(),
         openTerminal: mockOpenTerminal,
         template: 'base',

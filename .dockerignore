@@ -1,0 +1,16 @@
+.git
+.github
+.vscode
+.conductor
+node_modules
+.next
+out
+build
+coverage
+test-results
+readme-assets
+.env
+.env.*
+*.md
+Dockerfile
+.dockerignore

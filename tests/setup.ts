@@ -5,7 +5,7 @@ const projectDir = process.cwd()
 loadEnvConfig(projectDir)
 
 // fall back to placeholder values for env-coupled clients that initialize at module load
-process.env.NEXT_PUBLIC_E2B_DOMAIN ??= 'e2b-test.dev'
+process.env.PUBLIC_E2B_DOMAIN ??= 'e2b-test.dev'
 
 // mock server-only to prevent vitest errors
 vi.mock('server-only', () => ({}))

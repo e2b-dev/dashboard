@@ -4,6 +4,8 @@ import type { Metadata } from 'next/types'
 import { COOKIE_KEYS } from '@/configs/cookies'
 import { METADATA } from '@/configs/metadata'
 import { getApiKey } from '@/core/server/auth'
+import { resolveBrowserRuntimeConfig } from '@/core/server/runtime-config'
+import { ClientConfigProvider } from '@/features/client-config-provider'
 import DashboardLayoutView from '@/features/dashboard/layouts/layout'
 import Sidebar from '@/features/dashboard/sidebar/sidebar'
 import { TimezoneProvider } from '@/features/dashboard/timezone/context'
@@ -33,6 +35,7 @@ export default async function DashboardLayout({
     redirect('/')
   }
 
+  const runtimeConfig = resolveBrowserRuntimeConfig()
   const sidebarState = cookieStore.get(COOKIE_KEYS.SIDEBAR_STATE)?.value
   const defaultOpen = sidebarState === 'true'
   const timezone = parseTimezone(
@@ -40,21 +43,23 @@ export default async function DashboardLayout({
   )
 
   return (
-    <TimezoneProvider initialTimezone={timezone}>
-      <SidebarProvider
-        defaultOpen={typeof sidebarState === 'undefined' ? true : defaultOpen}
-      >
-        <div className="fixed inset-0 flex max-h-full min-h-0 w-full flex-col overflow-hidden">
-          <div className="relative flex h-full max-h-full min-h-0 w-full flex-1 overflow-hidden">
-            <Sidebar anchor="container" />
-            <SidebarInset>
-              <CatchErrorBoundary>
-                <DashboardLayoutView>{children}</DashboardLayoutView>
-              </CatchErrorBoundary>
-            </SidebarInset>
+    <ClientConfigProvider value={runtimeConfig}>
+      <TimezoneProvider initialTimezone={timezone}>
+        <SidebarProvider
+          defaultOpen={typeof sidebarState === 'undefined' ? true : defaultOpen}
+        >
+          <div className="fixed inset-0 flex max-h-full min-h-0 w-full flex-col overflow-hidden">
+            <div className="relative flex h-full max-h-full min-h-0 w-full flex-1 overflow-hidden">
+              <Sidebar anchor="container" />
+              <SidebarInset>
+                <CatchErrorBoundary>
+                  <DashboardLayoutView>{children}</DashboardLayoutView>
+                </CatchErrorBoundary>
+              </SidebarInset>
+            </div>
           </div>
-        </div>
-      </SidebarProvider>
-    </TimezoneProvider>
+        </SidebarProvider>
+      </TimezoneProvider>
+    </ClientConfigProvider>
   )
 }

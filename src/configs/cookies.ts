@@ -1,4 +1,5 @@
 import type { ResponseCookie } from 'next/dist/compiled/@edge-runtime/cookies'
+import { serverSchema } from '@/lib/env'
 
 /**
  * Cookie keys used throughout the application.
@@ -17,11 +18,21 @@ export const COOKIE_KEYS = {
 
 export const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365 // 1 year
 
+function isSecureCookie(): boolean {
+  const { DASHBOARD_COOKIE_SECURE } = serverSchema
+    .pick({ DASHBOARD_COOKIE_SECURE: true })
+    .parse(process.env)
+
+  return DASHBOARD_COOKIE_SECURE === undefined
+    ? process.env.NODE_ENV === 'production'
+    : DASHBOARD_COOKIE_SECURE === 'true'
+}
+
 const BASE_COOKIE_OPTIONS: Partial<ResponseCookie> = {
   path: '/',
   maxAge: COOKIE_MAX_AGE_SECONDS,
   sameSite: 'lax',
-  secure: process.env.NODE_ENV === 'production',
+  secure: isSecureCookie(),
 }
 
 /**

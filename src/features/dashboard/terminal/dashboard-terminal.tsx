@@ -2,6 +2,7 @@
 
 import type { CommandHandle, Sandbox } from 'e2b'
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react'
+import { useClientConfig } from '@/features/client-config-provider'
 import { useTRPCClient } from '@/trpc/client'
 import {
   DEFAULT_CWD,
@@ -48,6 +49,7 @@ export default function DashboardTerminal({
   sandboxScoped = false,
 }: DashboardTerminalProps) {
   const trpcClient = useTRPCClient()
+  const runtimeConfig = useClientConfig()
 
   const [status, setStatus] = useState<TerminalStatus>('idle')
   const [activeSandboxId, setActiveSandboxId] = useState<string>()
@@ -304,6 +306,7 @@ export default function DashboardTerminal({
           sandbox = await getSandbox()
         } else {
           const terminalSandbox = await openTerminalSandbox({
+            runtimeConfig,
             forceNewSandbox: shouldForceNewSandbox,
             onStatus: appendOutput,
             openTerminal: (mutationInput) =>
@@ -414,6 +417,7 @@ export default function DashboardTerminal({
       getSandbox,
       runCommand,
       trpcClient,
+      runtimeConfig,
       sandboxScoped,
       sandboxConnectRequestTimeoutMs,
       template,

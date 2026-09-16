@@ -1,5 +1,6 @@
 import type { Sandbox } from 'e2b'
 import { createEnvdSandbox } from '@/core/shared/create-envd-sandbox'
+import type { BrowserRuntimeConfig } from '@/core/shared/runtime-config'
 import type { TRPCRouterOutputs } from '@/trpc/client'
 import {
   clearStoredTerminalSession,
@@ -28,6 +29,7 @@ interface OpenTerminalSandboxOptions {
   forceNewSandbox?: boolean
   onStatus: (message: string) => void
   openTerminal: OpenTerminalMutation
+  runtimeConfig: BrowserRuntimeConfig
   requestTimeoutMs?: number
   shouldStoreSession?: boolean
   sandboxId?: string
@@ -38,6 +40,7 @@ export async function openTerminalSandbox({
   forceNewSandbox = false,
   onStatus,
   openTerminal,
+  runtimeConfig,
   requestTimeoutMs,
   shouldStoreSession,
   sandboxId,
@@ -47,6 +50,7 @@ export async function openTerminalSandbox({
     onStatus(`Connecting to terminal sandbox ${sandboxId}...\r\n`)
     const sandbox = await acquireTerminalSandbox(
       openTerminal,
+      runtimeConfig,
       { template, sandboxId, requestTimeoutMs },
       'Failed to connect to terminal sandbox'
     )
@@ -70,6 +74,7 @@ export async function openTerminalSandbox({
     try {
       sandbox = await acquireTerminalSandbox(
         openTerminal,
+        runtimeConfig,
         {
           template,
           sandboxId: storedTerminalSession.sandboxId,
@@ -83,6 +88,7 @@ export async function openTerminalSandbox({
       onStatus(`Starting ${template} terminal sandbox...\r\n`)
       sandbox = await acquireTerminalSandbox(
         openTerminal,
+        runtimeConfig,
         { template },
         'Failed to create terminal sandbox'
       )
@@ -91,6 +97,7 @@ export async function openTerminalSandbox({
     onStatus(`Starting ${template} terminal sandbox...\r\n`)
     sandbox = await acquireTerminalSandbox(
       openTerminal,
+      runtimeConfig,
       { template },
       'Failed to create terminal sandbox'
     )
@@ -110,6 +117,7 @@ export async function openTerminalSandbox({
 
 async function acquireTerminalSandbox(
   openTerminal: OpenTerminalMutation,
+  runtimeConfig: BrowserRuntimeConfig,
   input: OpenTerminalMutationInput,
   fallbackMessage: string
 ): Promise<Sandbox> {
@@ -123,7 +131,7 @@ async function acquireTerminalSandbox(
 
   return createEnvdSandbox({
     ...connection,
-    domain: process.env.NEXT_PUBLIC_E2B_DOMAIN,
-    sandboxUrl: process.env.NEXT_PUBLIC_E2B_SANDBOX_URL,
+    domain: runtimeConfig.domain ?? undefined,
+    sandboxUrl: runtimeConfig.sandboxUrl ?? undefined,
   })
 }
