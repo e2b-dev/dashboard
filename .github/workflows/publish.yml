@@ -46,7 +46,8 @@ jobs:
   publish:
     name: Build and push the image
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # The arm64 build runs emulated; allow for it.
+    timeout-minutes: 90
 
     steps:
       - name: Check the publishing credentials are configured
@@ -151,6 +152,12 @@ jobs:
             exit 1
           fi
 
+      # The arm64 half of the manifest list runs its Bun install and Next build
+      # under emulation; the alternative, cross-building on amd64, would ship
+      # amd64-only native modules (sharp) inside the standalone output.
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@1f40c72289eff860ee54a304f1438e3cff362e0a # v4.3.0
+
       - name: Set up Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
@@ -162,13 +169,17 @@ jobs:
         run: |
           set -euo pipefail
           output=--push
+          platforms=linux/amd64,linux/arm64
           if [ "${DRY_RUN}" = "true" ]; then
+            # A dry run loads the image into the local daemon, which can hold
+            # one platform, so it rehearses the native build only.
             output=--load
+            platforms=linux/amd64
           fi
           # Artifact Registry rejects buildx's default provenance/SBOM
           # attestation manifest lists with HTTP 400.
           docker buildx build \
-            --platform linux/amd64 \
+            --platform "${platforms}" \
             --provenance=false \
             --sbom=false \
             --build-arg "BUILD=${TAG}" \

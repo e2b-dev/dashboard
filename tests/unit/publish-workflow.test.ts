@@ -33,7 +33,8 @@ describe('publish workflow', () => {
     expect(workflow).toContain(
       'us-docker.pkg.dev/e2b-artifacts/dashboard/dashboard'
     )
-    expect(workflow).toContain('--platform linux/amd64')
+    expect(workflow).toContain('platforms=linux/amd64,linux/arm64')
+    expect(workflow).toContain('docker/setup-qemu-action@')
   })
 
   it('disables the attestations Artifact Registry rejects', () => {
