@@ -21,11 +21,13 @@ describe('release-please configuration', () => {
     expect(config['bump-minor-pre-major']).toBe(true)
   })
 
-  it('starts from 0.1.0 and agrees with package.json', () => {
+  it('tracks one SemVer version that package.json agrees with', () => {
     const manifest = read('.release-please-manifest.json')
     const pkg = read('package.json')
 
-    expect(manifest['.']).toBe('0.1.0')
+    // release-please moves this on every release, so the test checks the
+    // shape and that the two files agree, never a specific number.
+    expect(manifest['.']).toMatch(/^\d+\.\d+\.\d+$/)
     expect(pkg.version).toBe(manifest['.'])
   })
 })
