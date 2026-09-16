@@ -32,31 +32,35 @@ Authentication is a single **team API key**:
 
 | Variable | Read | Purpose |
 |---|---|---|
-| `PUBLIC_E2B_DOMAIN` | runtime | E2B cluster domain; used by the SDK and to derive `https://api.<domain>` and `https://dashboard-api.<domain>` |
+| `PUBLIC_E2B_DOMAIN` | runtime | Required E2B cluster domain; used by the SDK and to derive `https://api.<domain>` and `https://dashboard-api.<domain>` |
 | `PUBLIC_SANDBOX_URL` | per request | Optional sandbox traffic base URL, reachable from both the browser and server |
-| `E2B_INFRA_API_URL` / `E2B_DASHBOARD_API_URL` | server start | Explicit server-side API URLs; override domain-derived URLs |
-| `E2B_SANDBOX_URL` | per request | Legacy alias for `PUBLIC_SANDBOX_URL` |
-| `NEXT_PUBLIC_E2B_DOMAIN` | build | Legacy fallback for `PUBLIC_E2B_DOMAIN` |
-| `NEXT_PUBLIC_INFRA_API_URL` / `NEXT_PUBLIC_DASHBOARD_API_URL` | build | Legacy API overrides, below the corresponding `E2B_*` variables |
-| `NEXT_PUBLIC_E2B_SANDBOX_URL` | build | Legacy sandbox URL, below both runtime names |
+| `E2B_INFRA_API_URL` / `E2B_DASHBOARD_API_URL` | server start | Optional server-side API URLs; override domain-derived URLs |
 | `DASHBOARD_COOKIE_SECURE` | server start | `false` only for a plain-http install; the API key cookie then travels unencrypted. Defaults to secure in production builds |
 
-Configure a prebuilt image with `PUBLIC_*` and `E2B_*` variables when starting
-the container. Next does not give `PUBLIC_` any special behavior: the server
-explicitly reads these values at runtime. `NEXT_PUBLIC_*` aliases remain
-supported for existing builds, but their values are frozen by `next build`.
-Restart the container and reload open pages after changing its configuration.
+Set `PUBLIC_E2B_DOMAIN` when starting the container. Next does not give
+`PUBLIC_` any special behavior: the server explicitly reads these values at
+runtime. Restart the container and reload open pages after changing its
+configuration. Missing or blank domains stop startup.
 
-Resolution order (blank values are skipped):
+Legacy variables no longer act as fallbacks. Rename them before upgrading;
+validation reports the replacement for each deprecated variable that is still
+set, even if the new name is also present.
 
-- Domain: `PUBLIC_E2B_DOMAIN` → `NEXT_PUBLIC_E2B_DOMAIN`.
-- Sandbox URL: `PUBLIC_SANDBOX_URL` → `E2B_SANDBOX_URL` → `NEXT_PUBLIC_E2B_SANDBOX_URL` → SDK domain routing.
-- API URLs: corresponding `E2B_*` override → `NEXT_PUBLIC_*` override → URL derived from the resolved domain.
+| Deprecated variable | Replacement |
+|---|---|
+| `NEXT_PUBLIC_E2B_DOMAIN` | `PUBLIC_E2B_DOMAIN` |
+| `NEXT_PUBLIC_INFRA_API_URL` | `E2B_INFRA_API_URL` |
+| `NEXT_PUBLIC_DASHBOARD_API_URL` | `E2B_DASHBOARD_API_URL` |
+| `NEXT_PUBLIC_E2B_SANDBOX_URL` / `E2B_SANDBOX_URL` | `PUBLIC_SANDBOX_URL` |
 
-Every explicit URL must include `http://` or `https://`. Server initialization
-validates the resolved API and sandbox URLs and `DASHBOARD_COOKIE_SECURE`,
-even when telemetry is disabled. Invalid values stop startup and name the
-variable. The cookie flag accepts `true` or `false` (case-insensitive, with
+API URL overrides remain optional; without them the domain determines both
+API URLs. An absent or blank `PUBLIC_SANDBOX_URL` lets the SDK use domain
+routing.
+
+Every API or sandbox URL must include `http://` or `https://`. The schema in
+`src/lib/env.ts` validates configuration for development, builds, and
+server startup, even when telemetry is disabled. Invalid values stop startup
+and name the variable. The cookie flag accepts `true` or `false` (case-insensitive, with
 surrounding whitespace ignored); an empty value keeps the default.
 
 The dashboard's Server Component layout resolves **only the domain and
@@ -142,10 +146,9 @@ docker run --rm -p 3001:3001 \
 - `PUBLIC_E2B_DOMAIN` configures the cluster at container start, so the same
   image can serve different installations. Use `PUBLIC_SANDBOX_URL` when the
   default SDK routing does not fit your deployment.
-- The legacy `NEXT_PUBLIC_E2B_DOMAIN` build argument is still supported. Its
-  default, `unset.invalid`, resolves nowhere so an unconfigured container
-  cannot accidentally talk to another deployment. Runtime configuration takes
-  precedence over that build-time fallback.
+- The image builds without installation settings. Its temporary build domain
+  is not carried into the runtime image, so a container started without
+  `PUBLIC_E2B_DOMAIN` fails validation.
 - The build needs outbound HTTPS for the three Google Fonts families in
   `src/app/fonts.ts`; an air-gapped build fails there.
 - `GET /api/health` reports dashboard-api's health and answers 503 while

@@ -1,4 +1,5 @@
 import type { ResponseCookie } from 'next/dist/compiled/@edge-runtime/cookies'
+import { serverSchema } from '@/lib/env'
 
 /**
  * Cookie keys used throughout the application.
@@ -17,27 +18,14 @@ export const COOKIE_KEYS = {
 
 export const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365 // 1 year
 
-/**
- * Browsers drop a `Secure` cookie on a plain-http origin, so a self-hosted
- * install served over http on a LAN address turns the key form into a login
- * loop. DASHBOARD_COOKIE_SECURE overrides the flag; unset keeps the build-mode
- * default, which is what every existing deployment already gets.
- *
- * Validate runtime values too: the build-time schema cannot check variables
- * supplied when starting a prebuilt image.
- */
-export function isSecureCookie(): boolean {
-  const configured: string | undefined =
-    process.env.DASHBOARD_COOKIE_SECURE?.trim().toLowerCase()
+function isSecureCookie(): boolean {
+  const { DASHBOARD_COOKIE_SECURE } = serverSchema
+    .pick({ DASHBOARD_COOKIE_SECURE: true })
+    .parse(process.env)
 
-  if (configured !== undefined && configured !== '') {
-    if (configured === 'true') return true
-    if (configured === 'false') return false
-
-    throw new Error('DASHBOARD_COOKIE_SECURE must be true or false')
-  }
-
-  return process.env.NODE_ENV === 'production'
+  return DASHBOARD_COOKIE_SECURE === undefined
+    ? process.env.NODE_ENV === 'production'
+    : DASHBOARD_COOKIE_SECURE === 'true'
 }
 
 const BASE_COOKIE_OPTIONS: Partial<ResponseCookie> = {

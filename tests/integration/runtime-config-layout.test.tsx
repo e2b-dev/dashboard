@@ -44,7 +44,6 @@ describe('dashboard layout runtime config', () => {
   it('delivers request-time values to a client consumer on its first render without fetching config', async () => {
     const fetchSpy = vi.fn()
     vi.stubGlobal('fetch', fetchSpy)
-    vi.stubEnv('NEXT_PUBLIC_E2B_DOMAIN', 'build.example')
     vi.stubEnv('E2B_API_KEY', 'e2b_test_private_key')
     vi.stubEnv('E2B_INFRA_API_URL', 'http://infra-api.internal:3000')
     vi.stubEnv('E2B_DASHBOARD_API_URL', 'http://dashboard-api.internal:3010')
@@ -63,7 +62,7 @@ describe('dashboard layout runtime config', () => {
         `<output>${domain}|https://sandbox.${domain}</output>`
       )
       expect(html).not.toMatch(
-        /build\.example|e2b_test_private_key|infra-api\.internal|dashboard-api\.internal/
+        /e2b_test_private_key|infra-api\.internal|dashboard-api\.internal/
       )
     }
     expect(fetchSpy).not.toHaveBeenCalled()
@@ -72,8 +71,6 @@ describe('dashboard layout runtime config', () => {
   it('does not select a sandbox destination from request headers', async () => {
     vi.stubEnv('PUBLIC_E2B_DOMAIN', 'cluster.example')
     vi.stubEnv('PUBLIC_SANDBOX_URL', '')
-    vi.stubEnv('E2B_SANDBOX_URL', '')
-    vi.stubEnv('NEXT_PUBLIC_E2B_SANDBOX_URL', '')
     vi.stubEnv('E2B_INFRA_API_URL', 'http://infra-api.internal:3000')
 
     for (const host of ['192.0.2.1', '192.0.2.2']) {

@@ -2,16 +2,8 @@ import { registerOTel } from '@vercel/otel'
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
-    try {
-      const { validateRuntimeConfig } = await import(
-        './core/server/runtime-config'
-      )
-      validateRuntimeConfig()
-    } catch (error) {
-      console.error('Invalid runtime configuration:', error)
-      // Next can catch hook errors and leave a standalone server running.
-      process.exit(1)
-    }
+    const { appEnvSchema, validateEnv } = await import('./lib/env')
+    validateEnv(appEnvSchema)
   }
 
   if (!process.env.OTEL_EXPORTER_OTLP_ENDPOINT) return

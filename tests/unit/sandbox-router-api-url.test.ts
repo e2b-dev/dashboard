@@ -77,6 +77,7 @@ beforeEach(() => {
     delete process.env[key]
   }
   process.env.E2B_INFRA_API_URL = RUNTIME_API_URL
+  process.env.PUBLIC_E2B_DOMAIN = 'example.dev'
 
   authMock.getApiKey.mockResolvedValue('e2b_test_api_key')
   sdkMock.connect.mockResolvedValue({
@@ -152,23 +153,20 @@ describe('sandbox router control-plane API URL', () => {
     )
   })
 
-  it('falls back to the NEXT_PUBLIC value when no runtime URL is set', async () => {
+  it('uses the domain-derived API URL when no override is set', async () => {
     delete process.env.E2B_INFRA_API_URL
-    process.env.NEXT_PUBLIC_INFRA_API_URL = 'https://api.public.example'
-
     const c = await caller()
     await c.resume({ sandboxId: 'sbxexisting' })
-
     expect(sdkMock.connect).toHaveBeenCalledWith(
       'sbxexisting',
-      expect.objectContaining({ apiUrl: 'https://api.public.example' })
+      expect.objectContaining({ apiUrl: 'https://api.example.dev' })
     )
   })
 })
 
 describe('sandbox router sandbox URL', () => {
   it('passes the runtime sandbox URL to the control plane', async () => {
-    process.env.E2B_SANDBOX_URL = 'https://sandbox.internal.example'
+    process.env.PUBLIC_SANDBOX_URL = 'https://sandbox.internal.example'
 
     const c = await caller()
     await c.openTerminal({ template: 'base', sandboxId: 'sbxexisting' })
@@ -178,33 +176,6 @@ describe('sandbox router sandbox URL', () => {
       expect.objectContaining({
         sandboxUrl: 'https://sandbox.internal.example',
       })
-    )
-  })
-
-  it('prefers the runtime sandbox URL over the NEXT_PUBLIC one', async () => {
-    process.env.NEXT_PUBLIC_E2B_SANDBOX_URL = 'http://sandbox.lvh.me:3002'
-    process.env.E2B_SANDBOX_URL = 'https://sandbox.internal.example'
-
-    const c = await caller()
-    await c.pause({ sandboxId: 'sbxexisting' })
-
-    expect(sdkMock.pause).toHaveBeenCalledWith(
-      'sbxexisting',
-      expect.objectContaining({
-        sandboxUrl: 'https://sandbox.internal.example',
-      })
-    )
-  })
-
-  it('falls back to the NEXT_PUBLIC sandbox URL', async () => {
-    process.env.NEXT_PUBLIC_E2B_SANDBOX_URL = 'http://sandbox.lvh.me:3002'
-
-    const c = await caller()
-    await c.killTerminalPty({ sandboxId: 'sbxexisting', pid: 42 })
-
-    expect(sdkMock.connect).toHaveBeenCalledWith(
-      'sbxexisting',
-      expect.objectContaining({ sandboxUrl: 'http://sandbox.lvh.me:3002' })
     )
   })
 
@@ -252,7 +223,7 @@ describe('sandbox router sandbox URL', () => {
   })
 
   it('prefers the explicit sandbox URL over the request host', async () => {
-    process.env.E2B_SANDBOX_URL = 'https://sandbox.internal.example'
+    process.env.PUBLIC_SANDBOX_URL = 'https://sandbox.internal.example'
 
     const c = await requestCaller()
     await c.killTerminalPty({ sandboxId: 'sbxexisting', pid: 42 })
@@ -265,9 +236,7 @@ describe('sandbox router sandbox URL', () => {
     )
   })
 
-  // Hosted deployments set none of the E2B_* variables and must keep passing
-  // no sandbox URL at all, so the SDK derives the host from the domain.
-  it('passes no sandbox URL when no runtime variable is set', async () => {
+  it('passes no sandbox URL when only the domain is configured', async () => {
     delete process.env.E2B_INFRA_API_URL
 
     const c = await requestCaller()
@@ -294,7 +263,6 @@ describe('sandbox router public runtime settings', () => {
   it('uses the same public domain and sandbox URL for all SDK operations', async () => {
     process.env.PUBLIC_E2B_DOMAIN = 'runtime.example'
     process.env.PUBLIC_SANDBOX_URL = 'https://sandbox.runtime.example'
-    process.env.E2B_SANDBOX_URL = 'https://sandbox.old.example'
     delete process.env.E2B_INFRA_API_URL
 
     const c = await requestCaller()

@@ -1,27 +1,55 @@
 import { z } from 'zod'
 
-export const serverSchema = z.object({
-  // Pre-authenticates the dashboard with a fixed team API key. When set, the
-  // key form on `/` is skipped entirely (single-user self-hosted deployments).
+function optionalValue<T extends z.ZodType>(schema: T) {
+  return z.preprocess(
+    (value) => (typeof value === 'string' ? value.trim() || undefined : value),
+    schema.optional()
+  )
+}
+
+const httpUrl = optionalValue(
+  z.url({
+    protocol: /^https?$/,
+    error: 'Must be an http(s) URL, including the scheme',
+  })
+)
+
+function deprecatedVariable(replacement: string) {
+  return z.undefined({
+    error: `Deprecated variable; remove it and use ${replacement} instead`,
+  })
+}
+
+export const runtimeEnvSchema = z.object({
+  PUBLIC_E2B_DOMAIN: z.string().trim().min(1, 'Set PUBLIC_E2B_DOMAIN'),
+  PUBLIC_SANDBOX_URL: httpUrl,
+  E2B_INFRA_API_URL: httpUrl,
+  E2B_DASHBOARD_API_URL: httpUrl,
+
+  // Reject the SDK alias too, or its own environment fallback can override routing.
+  E2B_SANDBOX_URL: deprecatedVariable('PUBLIC_SANDBOX_URL'),
+  NEXT_PUBLIC_E2B_DOMAIN: deprecatedVariable('PUBLIC_E2B_DOMAIN'),
+  NEXT_PUBLIC_INFRA_API_URL: deprecatedVariable('E2B_INFRA_API_URL'),
+  NEXT_PUBLIC_DASHBOARD_API_URL: deprecatedVariable('E2B_DASHBOARD_API_URL'),
+  NEXT_PUBLIC_E2B_SANDBOX_URL: deprecatedVariable('PUBLIC_SANDBOX_URL'),
+})
+
+export const serverSchema = runtimeEnvSchema.extend({
+  // Pre-authenticates the deployment and skips the API key form.
   E2B_API_KEY: z.string().min(1).optional(),
-
-  // Where this deployment reaches its APIs, read at runtime. Self-hosted
-  // installs set these; hosted deployments keep using the NEXT_PUBLIC_*
-  // variables below, which stay the fallback.
-  E2B_INFRA_API_URL: z.url().optional(),
-  E2B_DASHBOARD_API_URL: z.url().optional(),
-  E2B_SANDBOX_URL: z.url().optional(),
-
-  // Read on the server and explicitly passed to the browser by the layout.
-  PUBLIC_E2B_DOMAIN: z.string().optional(),
-  PUBLIC_SANDBOX_URL: z.url().optional(),
-
-  // Overrides the api key cookie's Secure flag. Self-hosted installs served
-  // over plain http need "false", or the browser drops the cookie.
-  DASHBOARD_COOKIE_SECURE: z.enum(['true', 'false']).optional(),
+  DASHBOARD_COOKIE_SECURE: optionalValue(
+    z
+      .string()
+      .toLowerCase()
+      .pipe(
+        z.enum(['true', 'false'], {
+          error: 'DASHBOARD_COOKIE_SECURE must be true or false',
+        })
+      )
+  ),
 
   OTEL_SERVICE_NAME: z.string().optional(),
-  OTEL_EXPORTER_OTLP_ENDPOINT: z.url().optional(),
+  OTEL_EXPORTER_OTLP_ENDPOINT: optionalValue(z.url()),
   OTEL_EXPORTER_OTLP_PROTOCOL: z
     .enum(['grpc', 'http/protobuf', 'http/json'])
     .optional(),
@@ -47,29 +75,12 @@ export const serverSchema = z.object({
 })
 
 export const clientSchema = z.object({
-  NEXT_PUBLIC_E2B_DOMAIN: z.string().optional(),
-
   NEXT_PUBLIC_VERCEL_ENV: z
     .enum(['production', 'preview', 'development'])
     .optional(),
-
-  NEXT_PUBLIC_INFRA_API_URL: z.url().optional(),
-  NEXT_PUBLIC_E2B_SANDBOX_URL: z.url().optional(),
-  NEXT_PUBLIC_DASHBOARD_API_URL: z.url().optional(),
 })
 
-const merged = serverSchema.merge(clientSchema)
-
-export const appEnvSchema = merged.refine(
-  (env) =>
-    Boolean(
-      env.PUBLIC_E2B_DOMAIN?.trim() || env.NEXT_PUBLIC_E2B_DOMAIN?.trim()
-    ),
-  {
-    message:
-      'Set PUBLIC_E2B_DOMAIN (or NEXT_PUBLIC_E2B_DOMAIN for legacy builds)',
-  }
-)
+export const appEnvSchema = serverSchema.merge(clientSchema)
 
 export type Env = z.infer<typeof appEnvSchema>
 

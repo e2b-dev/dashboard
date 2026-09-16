@@ -25,15 +25,12 @@ COPY --from=deps /usr/local/bin/bun /usr/local/bin/bun
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Retain the legacy build argument as a fallback. PUBLIC_E2B_DOMAIN overrides
-# it at runtime. The default resolves nowhere so an unconfigured container
-# cannot accidentally reach someone else's deployment.
-ARG NEXT_PUBLIC_E2B_DOMAIN=unset.invalid
-ENV NEXT_PUBLIC_E2B_DOMAIN=${NEXT_PUBLIC_E2B_DOMAIN}
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN bun scripts/check-app-env.ts
-RUN node node_modules/next/dist/bin/next build --webpack
+# Page-data collection imports API clients. This build-only domain is not
+# carried into the runtime image; each installation must provide its own.
+RUN PUBLIC_E2B_DOMAIN=build.invalid bun scripts/check-app-env.ts
+RUN PUBLIC_E2B_DOMAIN=build.invalid node node_modules/next/dist/bin/next build --webpack
 
 FROM node:22-bookworm-slim AS runtime
 

@@ -19,7 +19,7 @@ echo "==> building ${IMAGE}"
 docker build -t "${IMAGE}" "${ROOT}"
 
 echo "==> starting ${CONTAINER} on port ${PORT}"
-docker run -d --name "${CONTAINER}" -e PORT="${PORT}" -p "${PORT}:${PORT}" "${IMAGE}" >/dev/null
+docker run -d --name "${CONTAINER}" -e PORT="${PORT}" -e PUBLIC_E2B_DOMAIN=smoke.invalid -p "${PORT}:${PORT}" "${IMAGE}" >/dev/null
 
 ready=0
 for _ in $(seq 1 60); do
@@ -68,7 +68,7 @@ fi
 check_invalid_config() {
   local variable="$1" value="$2" status="" exit_code logs
   docker run -d --name "${INVALID_CONTAINER}" --network none \
-    -e "${variable}=${value}" "${IMAGE}" >/dev/null
+    -e PUBLIC_E2B_DOMAIN=smoke.invalid -e "${variable}=${value}" "${IMAGE}" >/dev/null
 
   for _ in $(seq 1 50); do
     status="$(docker inspect -f '{{.State.Status}}' "${INVALID_CONTAINER}")"
@@ -89,7 +89,14 @@ check_invalid_config() {
 }
 
 check_invalid_config PUBLIC_SANDBOX_URL missing-scheme.example:3002
-check_invalid_config E2B_SANDBOX_URL ftp://sandbox.example
+check_invalid_config PUBLIC_E2B_DOMAIN ''
+check_invalid_config E2B_INFRA_API_URL ftp://api.example
+check_invalid_config E2B_DASHBOARD_API_URL missing-scheme.example:3010
+check_invalid_config E2B_SANDBOX_URL https://sandbox.example
+check_invalid_config NEXT_PUBLIC_E2B_DOMAIN old.example
+check_invalid_config NEXT_PUBLIC_INFRA_API_URL https://api.old.example
+check_invalid_config NEXT_PUBLIC_DASHBOARD_API_URL https://dashboard-api.old.example
+check_invalid_config NEXT_PUBLIC_E2B_SANDBOX_URL https://sandbox.old.example
 check_invalid_config DASHBOARD_COOKIE_SECURE off
 
 echo "==> container smoke test passed"
