@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/e2b-dev/dashboard/compare/v0.2.0...v0.2.1) (2026-09-16)
+
+
+### Bug Fixes
+
+* **publish:** build the image for arm64 too ([#533](https://github.com/e2b-dev/dashboard/issues/533)) ([8ca65cd](https://github.com/e2b-dev/dashboard/commit/8ca65cdc64f9be3be19e5777d5b4c79f3d030666))
+
 ## [0.2.0](https://github.com/e2b-dev/dashboard/compare/v0.1.0...v0.2.0) (2026-09-16)
 
 
