@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest'
 
 /**
  * The publish path cannot be exercised outside a release, so these assertions
- * guard the flags it cannot go without: the registry it pushes to, the single
- * architecture, and the attestation switches Artifact Registry rejects.
+ * guard the flags it cannot go without: the registry it pushes to, the two
+ * architectures, and the attestation switches Artifact Registry rejects.
  */
 const read = (relativePath: string) =>
   readFileSync(join(process.cwd(), relativePath), 'utf8')
