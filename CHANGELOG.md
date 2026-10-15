@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/e2b-dev/dashboard/compare/v0.2.1...v0.2.2) (2026-10-15)
+
+
+### Bug Fixes
+
+* **deps:** bump next to 16.3.6 ([#535](https://github.com/e2b-dev/dashboard/issues/535)) ([b2bae4f](https://github.com/e2b-dev/dashboard/commit/b2bae4f4afa799cb922eafdd61070a6a8a48dd12))
+
 ## [0.2.1](https://github.com/e2b-dev/dashboard/compare/v0.2.0...v0.2.1) (2026-09-16)
 
 
