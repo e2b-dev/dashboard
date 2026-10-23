@@ -9,7 +9,7 @@
 # The build fetches three Google Fonts families through next/font/google
 # (src/app/fonts.ts): it needs outbound HTTPS to fonts.googleapis.com and
 # fonts.gstatic.com, and fails there in an air-gapped environment.
-FROM oven/bun:1.2.20 AS deps
+FROM oven/bun:1.4.4 AS deps
 
 WORKDIR /app
 

@@ -143,5 +143,5 @@
     "@nodelib/fs.stat": "2.0.5",
     "@opentelemetry/exporter-prometheus": "^0.218.0"
   },
-  "packageManager": "bun@1.2.0"
+  "packageManager": "bun@1.4.4"
 }
