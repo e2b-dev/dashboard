@@ -12,13 +12,12 @@ import type {
   TemplateTagExistsResult,
   TemplateTagGroup,
 } from '@/core/modules/templates/models'
-import { api, infra } from '@/core/shared/clients/api'
+import { infra } from '@/core/shared/clients/api'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import type { RequestScope } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
 
 type TemplatesRepositoryDeps = {
-  apiClient: typeof api
   infraClient: typeof infra
   apiKeyHeaders: typeof apiKeyHeaders
 }
@@ -83,18 +82,19 @@ export interface DefaultTemplatesRepository {
 export function createTemplatesRepository(
   scope: RequestScope,
   deps: TemplatesRepositoryDeps = {
-    apiClient: api,
     infraClient: infra,
     apiKeyHeaders: apiKeyHeaders,
   }
 ): TeamTemplatesRepository {
   return {
     async getTemplate(templateId) {
-      const res = await deps.apiClient.GET('/templates/{templateID}', {
+      const res = await deps.infraClient.GET('/templates/{templateID}', {
         params: {
           path: {
             templateID: templateId,
           },
+          // The detail page reads the template, not its builds.
+          query: { limit: 1 },
         },
         headers: {
           ...deps.apiKeyHeaders(scope.apiKey),
@@ -121,10 +121,18 @@ export function createTemplatesRepository(
         )
       }
 
-      return ok({ template: res.data })
+      // api returns names unordered; the list orders them by alias, and the
+      // display name takes the first plain name, so sort to match the list.
+      return ok({
+        template: {
+          ...res.data,
+          aliases: [...res.data.aliases].sort(),
+          names: [...res.data.names].sort(),
+        },
+      })
     },
     async getTagGroups(templateId, options) {
-      const res = await deps.apiClient.GET(
+      const res = await deps.infraClient.GET(
         '/templates/{templateID}/tags/groups',
         {
           params: {
@@ -161,7 +169,7 @@ export function createTemplatesRepository(
       })
     },
     async getTagCount(templateId) {
-      const res = await deps.apiClient.GET(
+      const res = await deps.infraClient.GET(
         '/templates/{templateID}/tags/count',
         {
           params: {
@@ -188,7 +196,7 @@ export function createTemplatesRepository(
       return ok({ total: res.data?.total ?? 0 })
     },
     async getTagAssignments(templateId, tag, options) {
-      const res = await deps.apiClient.GET(
+      const res = await deps.infraClient.GET(
         '/templates/{templateID}/tags/{tag}/assignments',
         {
           params: {
@@ -223,7 +231,7 @@ export function createTemplatesRepository(
       })
     },
     async checkTagExists(templateId, tag) {
-      const res = await deps.apiClient.GET(
+      const res = await deps.infraClient.GET(
         '/templates/{templateID}/tags/exists',
         {
           params: {
@@ -277,7 +285,7 @@ export function createTemplatesRepository(
       })
     },
     async listTeamTemplates(options) {
-      const res = await deps.apiClient.GET('/templates', {
+      const res = await deps.infraClient.GET('/unstable/templates/search', {
         params: {
           query: options,
         },
@@ -317,7 +325,7 @@ export function createTemplatesRepository(
         envdVersion: t.envdVersion ?? '',
         ...(t.isDefault && {
           isDefault: true as const,
-          defaultDescription: t.defaultDescription ?? undefined,
+          defaultDescription: t.description ?? undefined,
         }),
       }))
 
@@ -428,15 +436,15 @@ export function createTemplatesRepository(
 
 export function createDefaultTemplatesRepository(
   scope: RequestScope,
-  deps: Pick<TemplatesRepositoryDeps, 'apiClient' | 'apiKeyHeaders'> = {
-    apiClient: api,
+  deps: Pick<TemplatesRepositoryDeps, 'infraClient' | 'apiKeyHeaders'> = {
+    infraClient: infra,
     apiKeyHeaders: apiKeyHeaders,
   }
 ): DefaultTemplatesRepository {
   return {
     async getDefaultTemplatesCached() {
-      const { data, error, response } = await deps.apiClient.GET(
-        '/templates/defaults',
+      const { data, error, response } = await deps.infraClient.GET(
+        '/default-templates',
         {
           headers: deps.apiKeyHeaders(scope.apiKey),
           next: { tags: [CACHE_TAGS.DEFAULT_TEMPLATES] },
@@ -453,32 +461,28 @@ export function createDefaultTemplatesRepository(
         )
       }
 
-      if (!data?.templates || data.templates.length === 0) {
+      if (!data || data.length === 0) {
         return ok({ templates: [] })
       }
 
-      const templates: DefaultTemplate[] = data.templates.map((t) => ({
-        templateID: t.id,
-        buildID: t.buildId,
-        cpuCount: t.vcpu,
-        memoryMB: t.ramMb,
-        diskSizeMB: t.totalDiskSizeMb ?? 0,
-        envdVersion: t.envdVersion ?? '',
+      const templates: DefaultTemplate[] = data.map((t) => ({
+        templateID: t.templateID,
+        buildID: t.buildID,
+        cpuCount: t.cpuCount,
+        memoryMB: t.memoryMB,
+        diskSizeMB: t.diskSizeMB,
+        envdVersion: t.envdVersion,
         public: t.public,
-        aliases: t.aliases.map((a) => a.alias),
-        names: t.aliases.map((a) => {
-          if (a.namespace && a.namespace.length > 0) {
-            return `${a.namespace}/${a.alias}`
-          }
-          return a.alias
-        }),
+        aliases: t.aliases,
+        names: t.names,
         createdAt: t.createdAt,
-        updatedAt: t.createdAt,
+        updatedAt: t.updatedAt,
         createdBy: null,
-        lastSpawnedAt: t.createdAt,
+        lastSpawnedAt: t.lastSpawnedAt,
         spawnCount: t.spawnCount,
         buildCount: t.buildCount,
         isDefault: true as const,
+        defaultDescription: t.description ?? undefined,
       }))
 
       return ok({ templates })
