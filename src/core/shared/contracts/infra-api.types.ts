@@ -32,6 +32,7 @@ export interface paths {
           content?: never
         }
         401: components['responses']['401']
+        429: components['responses']['429']
       }
     }
     put?: never
@@ -72,6 +73,7 @@ export interface paths {
           }
         }
         401: components['responses']['401']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -103,6 +105,7 @@ export interface paths {
         }
         header?: never
         path: {
+          /** @description Identifier of the team, as its UUID or its public project ID (prj_) */
           teamID: components['parameters']['teamID']
         }
         cookie?: never
@@ -121,6 +124,7 @@ export interface paths {
         400: components['responses']['400']
         401: components['responses']['401']
         403: components['responses']['403']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -154,6 +158,7 @@ export interface paths {
         }
         header?: never
         path: {
+          /** @description Identifier of the team, as its UUID or its public project ID (prj_) */
           teamID: components['parameters']['teamID']
         }
         cookie?: never
@@ -172,6 +177,103 @@ export interface paths {
         400: components['responses']['400']
         401: components['responses']['401']
         403: components['responses']['403']
+        429: components['responses']['429']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/teams/{teamID}/status': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Team access status
+     * @description Returns whether the team is banned or blocked, and why it is blocked. A team-authenticated request may read only its own team.
+     */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          /** @description Identifier of the team, as its UUID or its public project ID (prj_) */
+          teamID: components['parameters']['teamID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned the team access status */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['TeamStatusResponse']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        403: components['responses']['403']
+        404: components['responses']['404']
+        429: components['responses']['429']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/teams/{teamID}/limits': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Team limits
+     * @description Returns the team's effective resource limits. A team-authenticated request may read only its own team.
+     */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          /** @description Identifier of the team, as its UUID or its public project ID (prj_) */
+          teamID: components['parameters']['teamID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned the team limits */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['TeamLimitsResponse']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        403: components['responses']['403']
+        404: components['responses']['404']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -218,13 +320,15 @@ export interface paths {
         }
         400: components['responses']['400']
         401: components['responses']['401']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
     put?: never
     /**
      * Create sandbox
-     * @description Create a sandbox from the template
+     * @deprecated
+     * @description Create a sandbox from the template. All system communication with the sandbox is secured. Use POST /v2/sandboxes instead.
      */
     post: {
       parameters: {
@@ -250,7 +354,10 @@ export interface paths {
         }
         400: components['responses']['400']
         401: components['responses']['401']
+        429: components['responses']['429']
         500: components['responses']['500']
+        503: components['responses']['503']
+        504: components['responses']['504']
       }
     }
     delete?: never
@@ -277,6 +384,12 @@ export interface paths {
           metadata?: string
           /** @description Filter sandboxes by one or more states */
           state?: components['schemas']['SandboxState'][]
+          /** @description Sort direction by sandbox start time. Defaults to desc (newest first). */
+          order?: components['schemas']['OrderDirection']
+          /** @description Return sandboxes started at or after this timestamp. */
+          startedAfter?: string
+          /** @description Filter sandboxes by a template ID or alias. */
+          template?: string
           /** @description Cursor to start the list from */
           nextToken?: components['parameters']['paginationNextToken']
           /** @description Maximum number of items to return per page */
@@ -291,6 +404,8 @@ export interface paths {
         /** @description Successfully returned all running sandboxes */
         200: {
           headers: {
+            'X-Next-Token': components['headers']['XNextToken']
+            'X-Total-Running': components['headers']['XTotalRunning']
             [name: string]: unknown
           }
           content: {
@@ -299,11 +414,146 @@ export interface paths {
         }
         400: components['responses']['400']
         401: components['responses']['401']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
     put?: never
-    post?: never
+    /**
+     * Create sandbox (v2)
+     * @description Create a sandbox from the template. All system communication with the sandbox is secured.
+     */
+    post: {
+      parameters: {
+        query?: never
+        header?: {
+          /**
+           * @description Optional team-scoped key for retrying sandbox creation. Use 1 to 255 lowercase ASCII
+           *     letters, digits, or hyphens (a-z, 0-9, -), such as a lowercase UUID. When idempotency is enabled,
+           *     matching retries replay the original status and body, including errors, for the retention period.
+           *     Different request parameters return 409 with error_code idempotency_request_mismatch.
+           *     An in-progress request returns 409 with error_code idempotency_in_progress; an unknown
+           *     outcome returns 422 with error_code idempotency_outcome_unknown. These retries do not execute the request again.
+           *     Retries do not extend retention. After the key expires, it can start a new creation.
+           */
+          'Idempotency-Key'?: string
+        }
+        path?: never
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['NewSandboxV2']
+        }
+      }
+      responses: {
+        /** @description The sandbox was created successfully */
+        201: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Sandbox']
+          }
+        }
+        /** @description Bad request */
+        400: {
+          headers: {
+            'Should-Retry': components['headers']['ShouldRetry']
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Error']
+          }
+        }
+        401: components['responses']['401']
+        /** @description Forbidden */
+        403: {
+          headers: {
+            'Should-Retry': components['headers']['ShouldRetry']
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Error']
+          }
+        }
+        /** @description Not found */
+        404: {
+          headers: {
+            'Should-Retry': components['headers']['ShouldRetry']
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Error']
+          }
+        }
+        /** @description The Idempotency-Key conflicts with a different request (error_code idempotency_request_mismatch), or the matching original request has no recorded response yet and is within its expected response window (error_code idempotency_in_progress); this request was not executed again */
+        409: {
+          headers: {
+            'Should-Retry': components['headers']['ShouldRetry']
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Error']
+          }
+        }
+        /** @description The matching original request has no recorded response and its expected response deadline has passed or is unknown (error_code idempotency_outcome_unknown); this request was not executed again */
+        422: {
+          headers: {
+            'Should-Retry': components['headers']['ShouldRetry']
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Error']
+          }
+        }
+        /** @description Too many requests */
+        429: {
+          headers: {
+            'Should-Retry': components['headers']['ShouldRetry']
+            /**
+             * @description When present, the number of seconds to wait before retrying the request.
+             * @example 30
+             */
+            'Retry-After'?: number
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Error']
+          }
+        }
+        /** @description Server error */
+        500: {
+          headers: {
+            'Should-Retry': components['headers']['ShouldRetry']
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Error']
+          }
+        }
+        /** @description Service unavailable */
+        503: {
+          headers: {
+            'Should-Retry': components['headers']['ShouldRetry']
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Error']
+          }
+        }
+        /** @description Backend timeout */
+        504: {
+          headers: {
+            'Should-Retry': components['headers']['ShouldRetry']
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Error']
+          }
+        }
+      }
+    }
     delete?: never
     options?: never
     head?: never
@@ -344,6 +594,7 @@ export interface paths {
         }
         400: components['responses']['400']
         401: components['responses']['401']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -394,6 +645,7 @@ export interface paths {
         }
         401: components['responses']['401']
         404: components['responses']['404']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -449,6 +701,7 @@ export interface paths {
         }
         401: components['responses']['401']
         404: components['responses']['404']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -493,6 +746,7 @@ export interface paths {
         }
         401: components['responses']['401']
         404: components['responses']['404']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -522,6 +776,7 @@ export interface paths {
         }
         401: components['responses']['401']
         404: components['responses']['404']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -568,6 +823,7 @@ export interface paths {
         400: components['responses']['400']
         401: components['responses']['401']
         404: components['responses']['404']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -617,7 +873,9 @@ export interface paths {
         401: components['responses']['401']
         404: components['responses']['404']
         409: components['responses']['409']
+        429: components['responses']['429']
         500: components['responses']['500']
+        503: components['responses']['503']
       }
     }
     delete?: never
@@ -649,7 +907,7 @@ export interface paths {
         }
         cookie?: never
       }
-      requestBody: {
+      requestBody?: {
         content: {
           'application/json': components['schemas']['ResumedSandbox']
         }
@@ -664,10 +922,14 @@ export interface paths {
             'application/json': components['schemas']['Sandbox']
           }
         }
+        400: components['responses']['400']
         401: components['responses']['401']
         404: components['responses']['404']
         409: components['responses']['409']
+        429: components['responses']['429']
         500: components['responses']['500']
+        503: components['responses']['503']
+        504: components['responses']['504']
       }
     }
     delete?: never
@@ -716,7 +978,9 @@ export interface paths {
         401: components['responses']['401']
         404: components['responses']['404']
         409: components['responses']['409']
+        429: components['responses']['429']
         500: components['responses']['500']
+        503: components['responses']['503']
       }
     }
     delete?: never
@@ -736,7 +1000,8 @@ export interface paths {
     put?: never
     /**
      * Connect sandbox
-     * @description Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended.
+     * @deprecated
+     * @description Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. Use POST /v2/sandboxes/{sandboxID}/connect instead.
      */
     post: {
       parameters: {
@@ -774,7 +1039,73 @@ export interface paths {
         400: components['responses']['400']
         401: components['responses']['401']
         404: components['responses']['404']
+        409: components['responses']['409']
+        429: components['responses']['429']
         500: components['responses']['500']
+        503: components['responses']['503']
+        504: components['responses']['504']
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v2/sandboxes/{sandboxID}/connect': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Connect sandbox (v2)
+     * @description Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. The request body is optional; an omitted timeout defaults to 300 seconds.
+     */
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          sandboxID: components['parameters']['sandboxID']
+        }
+        cookie?: never
+      }
+      requestBody?: {
+        content: {
+          'application/json': components['schemas']['ConnectSandboxV2']
+        }
+      }
+      responses: {
+        /** @description The sandbox was already running */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Sandbox']
+          }
+        }
+        /** @description The sandbox was resumed successfully */
+        201: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Sandbox']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        404: components['responses']['404']
+        409: components['responses']['409']
+        429: components['responses']['429']
+        500: components['responses']['500']
+        503: components['responses']['503']
+        504: components['responses']['504']
       }
     }
     delete?: never
@@ -820,6 +1151,7 @@ export interface paths {
         }
         401: components['responses']['401']
         404: components['responses']['404']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -866,6 +1198,7 @@ export interface paths {
         401: components['responses']['401']
         404: components['responses']['404']
         409: components['responses']['409']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -913,6 +1246,7 @@ export interface paths {
         }
         401: components['responses']['401']
         404: components['responses']['404']
+        429: components['responses']['429']
       }
     }
     delete?: never
@@ -961,6 +1295,7 @@ export interface paths {
         400: components['responses']['400']
         401: components['responses']['401']
         404: components['responses']['404']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -1001,6 +1336,7 @@ export interface paths {
         /** @description Successfully returned snapshots */
         200: {
           headers: {
+            'X-Next-Token': components['headers']['XNextToken']
             [name: string]: unknown
           }
           content: {
@@ -1008,6 +1344,7 @@ export interface paths {
           }
         }
         401: components['responses']['401']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -1057,6 +1394,8 @@ export interface paths {
         400: components['responses']['400']
         401: components['responses']['401']
         403: components['responses']['403']
+        409: components['responses']['409']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -1095,8 +1434,7 @@ export interface paths {
         /** @description Successfully returned all templates */
         200: {
           headers: {
-            /** @description Cursor to fetch the next page of results, if more exist */
-            'X-Next-Token'?: string
+            'X-Next-Token': components['headers']['XNextToken']
             [name: string]: unknown
           }
           content: {
@@ -1106,42 +1444,12 @@ export interface paths {
         400: components['responses']['400']
         401: components['responses']['401']
         403: components['responses']['403']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
     put?: never
-    /**
-     * Create template (v2)
-     * @deprecated
-     * @description Create a new template
-     */
-    post: {
-      parameters: {
-        query?: never
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody: {
-        content: {
-          'application/json': components['schemas']['TemplateBuildRequestV2']
-        }
-      }
-      responses: {
-        /** @description The build was requested successfully */
-        202: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['TemplateLegacy']
-          }
-        }
-        400: components['responses']['400']
-        401: components['responses']['401']
-        500: components['responses']['500']
-      }
-    }
+    post?: never
     delete?: never
     options?: never
     head?: never
@@ -1183,6 +1491,7 @@ export interface paths {
         400: components['responses']['400']
         401: components['responses']['401']
         404: components['responses']['404']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -1227,42 +1536,108 @@ export interface paths {
           }
         }
         401: components['responses']['401']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
     put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/default-templates': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
     /**
-     * Create template
-     * @deprecated
-     * @description Create a new template
+     * List default templates
+     * @description Lists the platform's default templates, ordered by template ID. Deleted templates are left out. Templates that are not public are listed only to their own team and to admin callers. The build, resources and envd version are those of the newest ready build tagged `default`, the one a sandbox started from the template runs, and are zero or empty when there is none; `buildStatus` describes the newest build tagged `default` in any state. Usage fields (`spawnCount`, `buildCount`, `lastSpawnedAt`, `createdBy`) are reported only for the caller's own templates and to admin callers.
      */
-    post: {
+    get: {
       parameters: {
         query?: never
         header?: never
         path?: never
         cookie?: never
       }
-      requestBody: {
-        content: {
-          'application/json': components['schemas']['TemplateBuildRequest']
-        }
-      }
+      requestBody?: never
       responses: {
-        /** @description The build was accepted */
-        202: {
+        /** @description Successfully returned the default templates */
+        200: {
           headers: {
             [name: string]: unknown
           }
           content: {
-            'application/json': components['schemas']['TemplateLegacy']
+            'application/json': components['schemas']['Template'][]
+          }
+        }
+        401: components['responses']['401']
+        429: components['responses']['429']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/templates/search': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Search templates
+     * @description Lists the team's templates together with the platform's public default templates, which carry `isDefault: true`, with search, a visibility filter and sorts. Default templates are not listed to teams on a dedicated cluster, and those owned by another team carry zero or null usage fields. Results are newest first unless `sort` says otherwise; `nextCursor` continues the listing and is only valid with the same `sort`. For E2B's own clients: it may change or disappear without notice.
+     */
+    get: {
+      parameters: {
+        query?: {
+          /** @description Case-insensitive substring match on the template ID, its aliases and its names. */
+          search?: components['parameters']['templatesSearch']
+          /** @description Sort column and direction. */
+          sort?: components['parameters']['templatesSort']
+          /** @description Only list public (true) or only non-public (false) templates. */
+          public?: components['parameters']['templatesPublic']
+          /** @description Maximum number of templates to return per page. */
+          limit?: components['parameters']['templatesLimit']
+          /** @description Cursor returned by the previous page in `{sort}|{value}|{templateID}` format. Rejected if its sort does not match the request. */
+          cursor?: components['parameters']['templatesCursor']
+        }
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned the templates */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['TemplateSearchResponse']
           }
         }
         400: components['responses']['400']
         401: components['responses']['401']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
+    put?: never
+    post?: never
     delete?: never
     options?: never
     head?: never
@@ -1299,6 +1674,7 @@ export interface paths {
         /** @description Successfully returned the template with its builds */
         200: {
           headers: {
+            'X-Next-Token': components['headers']['XNextToken']
             [name: string]: unknown
           }
           content: {
@@ -1306,43 +1682,12 @@ export interface paths {
           }
         }
         401: components['responses']['401']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
     put?: never
-    /**
-     * Rebuild template
-     * @deprecated
-     * @description Rebuild an template
-     */
-    post: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          templateID: components['parameters']['templateID']
-        }
-        cookie?: never
-      }
-      requestBody: {
-        content: {
-          'application/json': components['schemas']['TemplateBuildRequest']
-        }
-      }
-      responses: {
-        /** @description The build was accepted */
-        202: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['TemplateLegacy']
-          }
-        }
-        401: components['responses']['401']
-        500: components['responses']['500']
-      }
-    }
+    post?: never
     /**
      * Delete template
      * @description Delete a template
@@ -1366,6 +1711,7 @@ export interface paths {
           content?: never
         }
         401: components['responses']['401']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -1400,52 +1746,10 @@ export interface paths {
         }
         400: components['responses']['400']
         401: components['responses']['401']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
-    trace?: never
-  }
-  '/templates/{templateID}/builds/{buildID}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Start template build
-     * @deprecated
-     * @description Start the build
-     */
-    post: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          templateID: components['parameters']['templateID']
-          buildID: components['parameters']['buildID']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description The build has started */
-        202: {
-          headers: {
-            [name: string]: unknown
-          }
-          content?: never
-        }
-        401: components['responses']['401']
-        500: components['responses']['500']
-      }
-    }
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
     trace?: never
   }
   '/v2/templates/{templateID}/builds/{buildID}': {
@@ -1484,7 +1788,9 @@ export interface paths {
           }
           content?: never
         }
+        400: components['responses']['400']
         401: components['responses']['401']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -1537,6 +1843,7 @@ export interface paths {
         }
         400: components['responses']['400']
         401: components['responses']['401']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -1582,6 +1889,7 @@ export interface paths {
         }
         401: components['responses']['401']
         404: components['responses']['404']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -1636,6 +1944,7 @@ export interface paths {
         }
         401: components['responses']['401']
         404: components['responses']['404']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -1685,6 +1994,7 @@ export interface paths {
         400: components['responses']['400']
         401: components['responses']['401']
         404: components['responses']['404']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -1715,6 +2025,7 @@ export interface paths {
         400: components['responses']['400']
         401: components['responses']['401']
         404: components['responses']['404']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -1757,6 +2068,214 @@ export interface paths {
         401: components['responses']['401']
         403: components['responses']['403']
         404: components['responses']['404']
+        429: components['responses']['429']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/templates/{templateID}/tags/groups': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List template tag groups
+     * @description Lists the template's tags that have at least one ready build, each with its most recent ready assignments, paginated over tags with a keyset cursor. Returns 404 when the template does not exist or belongs to another team.
+     */
+    get: {
+      parameters: {
+        query?: {
+          /** @description Maximum number of ready assignment rows to return per tag. */
+          assignmentLimit?: components['parameters']['tagAssignmentLimit']
+          /** @description Maximum number of distinct tags to return per page. */
+          tagsLimit?: components['parameters']['tagGroupsLimit']
+          /** @description Cursor returned by the previous list response in `{sort}|{latest_assigned_at}|{tag}` format (sort-tagged, RFC3339Nano). */
+          tagsCursor?: components['parameters']['tagGroupsCursor']
+          /** @description Substring filter on tag name. Allowed characters are `a-z`, `0-9`, `.`, `_`, `-`. */
+          search?: components['parameters']['tagGroupsSearch']
+          /** @description Sort order for the returned tag groups. */
+          sort?: components['parameters']['tagGroupsSort']
+        }
+        header?: never
+        path: {
+          templateID: components['parameters']['templateID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned template tag groups */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['TemplateTagGroupsResponse']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        403: components['responses']['403']
+        404: components['responses']['404']
+        429: components['responses']['429']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/templates/{templateID}/tags/count': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Count template tags
+     * @description Returns the number of distinct tags of the template that have at least one ready build. Returns 404 when the template does not exist or belongs to another team.
+     */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          templateID: components['parameters']['templateID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned the tag count */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['TemplateTagsCountResponse']
+          }
+        }
+        401: components['responses']['401']
+        403: components['responses']['403']
+        404: components['responses']['404']
+        429: components['responses']['429']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/templates/{templateID}/tags/exists': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Check template tag
+     * @description Checks whether a tag of the template has at least one ready build. Returns 404 when the template does not exist or belongs to another team.
+     */
+    get: {
+      parameters: {
+        query: {
+          /** @description Template tag name to check. */
+          tag: components['parameters']['tagQuery']
+        }
+        header?: never
+        path: {
+          templateID: components['parameters']['templateID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully checked the tag */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['TemplateTagExistsResponse']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        403: components['responses']['403']
+        404: components['responses']['404']
+        429: components['responses']['429']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/templates/{templateID}/tags/{tag}/assignments': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List template tag assignments
+     * @description Lists the ready assignments of one tag of the template, newest first, with keyset cursor pagination. Returns 404 when the template does not exist or belongs to another team.
+     */
+    get: {
+      parameters: {
+        query?: {
+          /** @description Cursor returned by the previous list response in `assigned_at|assignment_id` format. */
+          cursor?: components['parameters']['tagAssignmentsCursor']
+          /** @description Maximum number of assignment rows to return per page. */
+          limit?: components['parameters']['tagAssignmentsLimit']
+        }
+        header?: never
+        path: {
+          templateID: components['parameters']['templateID']
+          tag: components['parameters']['tag']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned the tag assignments */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['TemplateTagAssignmentsResponse']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        403: components['responses']['403']
+        404: components['responses']['404']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -1802,6 +2321,7 @@ export interface paths {
         400: components['responses']['400']
         403: components['responses']['403']
         404: components['responses']['404']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -1846,6 +2366,7 @@ export interface paths {
           }
         }
         401: components['responses']['401']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -1893,6 +2414,7 @@ export interface paths {
         }
         401: components['responses']['401']
         404: components['responses']['404']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -1926,6 +2448,7 @@ export interface paths {
         401: components['responses']['401']
         404: components['responses']['404']
         409: components['responses']['409']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -1971,9 +2494,101 @@ export interface paths {
         }
         401: components['responses']['401']
         404: components['responses']['404']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/admin/sandboxes/running-counts': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Count running sandboxes by team
+     * @description Returns a shared snapshot normally refreshed after five seconds. A
+     *     sandbox transitioning out of running can remain counted until removal.
+     */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Running sandbox counts keyed by team ID */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['AdminTeamRunningSandboxCounts']
+          }
+        }
+        401: components['responses']['401']
+        429: components['responses']['429']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/admin/sandboxes/{sandboxID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get a sandbox's team and state
+     * @description Reads the team and state of a sandbox from its latest lifecycle event.
+     *     The state lags the sandbox while that event is in flight. A sandbox
+     *     whose events have expired is not found.
+     */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          sandboxID: components['parameters']['sandboxID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description The sandbox, its team and its state */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['AdminSandbox']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        404: components['responses']['404']
+        429: components['responses']['429']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
     delete?: never
     options?: never
     head?: never
@@ -2016,6 +2631,7 @@ export interface paths {
         }
         401: components['responses']['401']
         404: components['responses']['404']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -2032,7 +2648,36 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    get?: never
+    /**
+     * List team API keys as admin
+     * @description Lists a team's API keys for internal service workflows. Unlike `GET /api-keys`, it does not resolve the team, so it also answers for a banned team.
+     */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          /** @description Team ID */
+          teamID: string
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned the team's API keys */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['TeamAPIKey'][]
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        500: components['responses']['500']
+      }
+    }
     put?: never
     /**
      * Create team API key as admin
@@ -2067,6 +2712,7 @@ export interface paths {
         401: components['responses']['401']
         403: components['responses']['403']
         404: components['responses']['404']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -2113,6 +2759,7 @@ export interface paths {
         400: components['responses']['400']
         401: components['responses']['401']
         404: components['responses']['404']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -2121,7 +2768,29 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/access-tokens': {
+  '/unstable/management/projects/{projectID}/settings': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        projectID: string
+      }
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Apply a project's settings revision.
+     * @description Replaces the complete project settings document when the revision is newer than the stored revision. Omitted settings are removed. Older and duplicate revisions leave the stored document unchanged. Every successful delivery invalidates the cached team. Answers 404 when the project is missing or deleted.
+     */
+    put: operations['managementSetProjectSettings']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/admin/teams/query': {
     parameters: {
       query?: never
       header?: never
@@ -2131,9 +2800,11 @@ export interface paths {
     get?: never
     put?: never
     /**
-     * Create access token
-     * @deprecated
-     * @description Create a new access token. Deprecated; use an API key (E2B_API_KEY) instead.
+     * List teams as admin
+     * @description Lists teams matching the filters in the request body, with each team's
+     *     member count, and its running sandbox count when sorted by running
+     *     sandboxes. A read despite the POST: the body carries a project ID list
+     *     too long for a query string.
      */
     post: {
       parameters: {
@@ -2144,21 +2815,22 @@ export interface paths {
       }
       requestBody: {
         content: {
-          'application/json': components['schemas']['NewAccessToken']
+          'application/json': components['schemas']['AdminTeamListRequest']
         }
       }
       responses: {
-        /** @description Access token created successfully */
-        201: {
+        /** @description The page of matching teams and the number of all matching teams */
+        200: {
           headers: {
             [name: string]: unknown
           }
           content: {
-            'application/json': components['schemas']['CreatedAccessToken']
+            'application/json': components['schemas']['AdminTeamList']
           }
         }
+        400: components['responses']['400']
         401: components['responses']['401']
-        410: components['responses']['410']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -2168,7 +2840,54 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/access-tokens/{accessTokenID}': {
+  '/unstable/admin/teams/{teamID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Team as admin
+     * @description Returns a team with its sandbox scheduling labels and cluster. It also answers for a banned or blocked team.
+     */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          /** @description Team ID */
+          teamID: string
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description The team */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['AdminTeam']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        404: components['responses']['404']
+        429: components['responses']['429']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/admin/teams/{teamID}/scheduling-labels': {
     parameters: {
       query?: never
       header?: never
@@ -2176,35 +2895,45 @@ export interface paths {
       cookie?: never
     }
     get?: never
-    put?: never
-    post?: never
     /**
-     * Delete access token
-     * @description Delete an access token
+     * Replace a team's sandbox scheduling labels
+     * @description Replaces the labels that place the team's new sandboxes on matching
+     *     nodes. Labels are deduplicated, keeping the first occurrence of each.
      */
-    delete: {
+    put: {
       parameters: {
         query?: never
         header?: never
         path: {
-          accessTokenID: components['parameters']['accessTokenID']
+          /** @description Team ID */
+          teamID: string
         }
         cookie?: never
       }
-      requestBody?: never
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['AdminTeamSchedulingLabels']
+        }
+      }
       responses: {
-        /** @description Access token deleted successfully */
-        204: {
+        /** @description The labels as written */
+        200: {
           headers: {
             [name: string]: unknown
           }
-          content?: never
+          content: {
+            'application/json': components['schemas']['AdminTeamSchedulingLabels']
+          }
         }
+        400: components['responses']['400']
         401: components['responses']['401']
         404: components['responses']['404']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
+    post?: never
+    delete?: never
     options?: never
     head?: never
     patch?: never
@@ -2240,6 +2969,7 @@ export interface paths {
           }
         }
         401: components['responses']['401']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -2271,6 +3001,7 @@ export interface paths {
           }
         }
         401: components['responses']['401']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -2314,6 +3045,7 @@ export interface paths {
         }
         401: components['responses']['401']
         404: components['responses']['404']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -2347,6 +3079,7 @@ export interface paths {
         }
         401: components['responses']['401']
         404: components['responses']['404']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -2382,6 +3115,7 @@ export interface paths {
           }
         }
         401: components['responses']['401']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -2414,6 +3148,7 @@ export interface paths {
         }
         400: components['responses']['400']
         401: components['responses']['401']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -2456,6 +3191,7 @@ export interface paths {
         }
         401: components['responses']['401']
         404: components['responses']['404']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
@@ -2485,9 +3221,839 @@ export interface paths {
         }
         401: components['responses']['401']
         404: components['responses']['404']
+        429: components['responses']['429']
         500: components['responses']['500']
       }
     }
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/secrets': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List project secrets
+     * @description List the project's secrets. No response carries a secret value.
+     */
+    get: {
+      parameters: {
+        query?: {
+          /** @description Cursor to start the list from */
+          nextToken?: components['parameters']['paginationNextToken']
+          /** @description Maximum number of items to return per page */
+          limit?: components['parameters']['paginationLimit']
+        }
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully listed the project's secrets */
+        200: {
+          headers: {
+            'X-Next-Token': components['headers']['XNextToken']
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Secret'][]
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        403: components['responses']['403']
+        404: components['responses']['404']
+        409: components['responses']['409']
+        429: components['responses']['429']
+        500: components['responses']['500']
+        502: components['responses']['502']
+        504: components['responses']['504']
+      }
+    }
+    put?: never
+    /**
+     * Create a secret
+     * @description Create a secret by storing a runtime marker as its first version. The response carries metadata only.
+     */
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['NewSecret']
+        }
+      }
+      responses: {
+        /** @description Successfully created the secret */
+        201: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Secret']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        403: components['responses']['403']
+        404: components['responses']['404']
+        /** @description Secret name conflict or project live-secret limit reached. A quota response has error_code secret_limit_reached and, when reported by the backend, the effective cap in message. */
+        409: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Error']
+          }
+        }
+        429: components['responses']['429']
+        500: components['responses']['500']
+        502: components['responses']['502']
+        504: components['responses']['504']
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/secrets/{secretID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get a secret
+     * @description Get one secret's metadata, selected by identifier or name.
+     */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          secretID: components['parameters']['secretID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully retrieved the secret */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Secret']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        403: components['responses']['403']
+        404: components['responses']['404']
+        409: components['responses']['409']
+        429: components['responses']['429']
+        500: components['responses']['500']
+        502: components['responses']['502']
+        504: components['responses']['504']
+      }
+    }
+    put?: never
+    /**
+     * Update a secret
+     * @description Replace the secret's stored marker by appending a new version. The response carries metadata only.
+     */
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          secretID: components['parameters']['secretID']
+        }
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['SecretUpdate']
+        }
+      }
+      responses: {
+        /** @description Successfully updated the secret */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Secret']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        403: components['responses']['403']
+        404: components['responses']['404']
+        409: components['responses']['409']
+        429: components['responses']['429']
+        500: components['responses']['500']
+        502: components['responses']['502']
+        504: components['responses']['504']
+      }
+    }
+    /**
+     * Delete a secret
+     * @description Revoke the secret and schedule its versions for cleanup.
+     */
+    delete: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          secretID: components['parameters']['secretID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully deleted the secret */
+        204: {
+          headers: {
+            [name: string]: unknown
+          }
+          content?: never
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        403: components['responses']['403']
+        404: components['responses']['404']
+        409: components['responses']['409']
+        429: components['responses']['429']
+        500: components['responses']['500']
+        502: components['responses']['502']
+        504: components['responses']['504']
+      }
+    }
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/clusters/{clusterID}/rigs': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List rigs of a cluster
+     * @description List the orchestrator node pools ("rigs") of a cluster with a snapshot of their scaling groups. Forwarded to the cluster's edge service; a cluster with no rig management configured returns an empty list, and the local cluster answers 501.
+     */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          /** @description Identifier of the cluster */
+          clusterID: components['parameters']['clusterID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned the rigs of the cluster */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Rig'][]
+          }
+        }
+        401: components['responses']['401']
+        404: components['responses']['404']
+        429: components['responses']['429']
+        500: components['responses']['500']
+        501: components['responses']['501']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/clusters/{clusterID}/rigs/{rigID}/capacity': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Set the capacity of a rig
+     * @description Set the desired instance count on the rig's scaling group. The value is passed to the cloud provider unchanged; violations of the group's bounds or conflicting concurrent operations surface as errors.
+     */
+    put: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          /** @description Identifier of the cluster */
+          clusterID: components['parameters']['clusterID']
+          /** @description Rig identifier (e.g. "default") */
+          rigID: components['parameters']['rigID']
+        }
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['RigCapacityChange']
+        }
+      }
+      responses: {
+        /** @description Capacity change accepted */
+        202: {
+          headers: {
+            [name: string]: unknown
+          }
+          content?: never
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        404: components['responses']['404']
+        409: components['responses']['409']
+        429: components['responses']['429']
+        500: components['responses']['500']
+        501: components['responses']['501']
+      }
+    }
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/clusters/{clusterID}/rigs/instances/{instanceID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Terminate an instance of a rig
+     * @description Terminate an instance in whichever rig's scaling group it belongs to. The caller chooses whether the rig shrinks or the instance is replaced.
+     */
+    delete: {
+      parameters: {
+        query: {
+          /** @description When true, desired capacity is decremented (rig shrinks); when false, the scaling group launches a replacement instance */
+          decrementDesired: boolean
+        }
+        header?: never
+        path: {
+          /** @description Identifier of the cluster */
+          clusterID: components['parameters']['clusterID']
+          /** @description Provider instance ID */
+          instanceID: string
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Instance termination accepted */
+        202: {
+          headers: {
+            [name: string]: unknown
+          }
+          content?: never
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        404: components['responses']['404']
+        409: components['responses']['409']
+        429: components['responses']['429']
+        500: components['responses']['500']
+        501: components['responses']['501']
+      }
+    }
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/clusters/{clusterID}/rigs/{rigID}/instances': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List the instances attached to a rig
+     * @description List the instances attached to the rig's scaling group with their creation time and transition state, sorted by instance ID.
+     */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          /** @description Identifier of the cluster */
+          clusterID: components['parameters']['clusterID']
+          /** @description Rig identifier (e.g. "default") */
+          rigID: components['parameters']['rigID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned the instances of the rig */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['RigInstance'][]
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        404: components['responses']['404']
+        429: components['responses']['429']
+        500: components['responses']['500']
+        501: components['responses']['501']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/clusters/{clusterID}/rigs/{rigID}/errors': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List recent scaling errors of a rig
+     * @description List recent scaling errors on the rig's scaling group (e.g. failed instance creations due to resource exhaustion), newest first.
+     */
+    get: {
+      parameters: {
+        query?: {
+          /** @description Maximum number of errors to return */
+          limit?: number
+        }
+        header?: never
+        path: {
+          /** @description Identifier of the cluster */
+          clusterID: components['parameters']['clusterID']
+          /** @description Rig identifier (e.g. "default") */
+          rigID: components['parameters']['rigID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned the scaling errors of the rig */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['RigError'][]
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        404: components['responses']['404']
+        429: components['responses']['429']
+        500: components['responses']['500']
+        501: components['responses']['501']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/events/sandboxes/{sandboxID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description Get sandbox events */
+    get: {
+      parameters: {
+        query?: {
+          offset?: number
+          limit?: number
+          orderAsc?: boolean
+          /** @description Filter events to the provided event types */
+          types?: string[]
+        }
+        header?: never
+        path: {
+          sandboxID: components['parameters']['sandboxID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned the sandbox events */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['SandboxEvent'][]
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/events/sandboxes': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description Get all sandbox events for the team associated with the API key */
+    get: {
+      parameters: {
+        query?: {
+          offset?: number
+          limit?: number
+          orderAsc?: boolean
+          /** @description Filter events to the provided event types */
+          types?: string[]
+        }
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned the sandbox events */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['SandboxEvent'][]
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/events/webhooks': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description List registered webhooks. */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description List of registered webhooks. */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['WebhookDetail'][]
+          }
+        }
+        401: components['responses']['401']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    /** @description Register events webhook. */
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['WebhookCreate']
+        }
+      }
+      responses: {
+        /** @description Successfully created webhook. */
+        201: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['WebhookCreation']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/events/webhooks/{webhookID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description Get a registered webhook. */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          webhookID: components['parameters']['webhookID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned the webhook configuration. */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['WebhookDetail']
+          }
+        }
+        401: components['responses']['401']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    /** @description Delete a registered webhook. */
+    delete: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          webhookID: components['parameters']['webhookID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully deleted webhook. */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content?: never
+        }
+        401: components['responses']['401']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    options?: never
+    head?: never
+    /** @description Update a registered webhook configuration. */
+    patch: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          webhookID: components['parameters']['webhookID']
+        }
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['WebhookConfiguration']
+        }
+      }
+      responses: {
+        /** @description Successfully updated webhook. */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['WebhookDetail']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    trace?: never
+  }
+  '/events/webhooks/{webhookID}/deliveries': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description List webhook delivery attempts. */
+    get: {
+      parameters: {
+        query?: {
+          /** @description Opaque cursor from the previous response's nextCursor field. */
+          cursor?: string
+          limit?: number
+          orderAsc?: boolean
+          /** @description Include deliveries at or after this timestamp. */
+          start?: string
+          /** @description Include deliveries before this timestamp. */
+          end?: string
+          /** @description Filter deliveries by delivery status */
+          deliveryStatus?: ('success' | 'failed')[]
+          /** @description Filter deliveries by event type */
+          eventType?: string[]
+        }
+        header?: never
+        path: {
+          webhookID: components['parameters']['webhookID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description List of webhook delivery attempts grouped by event. */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['WebhookDeliveriesListPayload']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/events/webhooks/{webhookID}/stats': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description Get webhook delivery aggregate stats. */
+    get: {
+      parameters: {
+        query?: {
+          /** @description Inclusive stats range start. Defaults to 24 hours ago. */
+          start?: string
+          /** @description Exclusive stats range end. Defaults to now. */
+          end?: string
+        }
+        header?: never
+        path: {
+          webhookID: components['parameters']['webhookID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Webhook delivery stats. */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['WebhookDeliveryStats']
+          }
+        }
+        401: components['responses']['401']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
     options?: never
     head?: never
     patch?: never
@@ -2497,6 +4063,73 @@ export interface paths {
 export type webhooks = Record<string, never>
 export interface components {
   schemas: {
+    /** @description An orchestrator node pool backed by one cloud scaling group */
+    Rig: {
+      /** @description Rig identifier (e.g. "default") */
+      id: string
+      /** @description Cloud provider backing the rig ("aws" or "gcp") */
+      provider: string
+      /** @description Canonical cloud resource ID of the scaling group backing the rig (ARN on AWS, self-link on GCP) */
+      resourceID: string
+      /**
+       * Format: int32
+       * @description Desired number of instances in the rig
+       */
+      capacityDesired: number
+      /**
+       * Format: int32
+       * @description Minimum capacity enforced on the rig's scaling group. Omitted when nothing enforces bounds (GCP MIG without an active autoscaler).
+       */
+      capacityMin?: number
+      /**
+       * Format: int32
+       * @description Maximum capacity enforced on the rig's scaling group. Omitted when nothing enforces bounds (GCP MIG without an active autoscaler).
+       */
+      capacityMax?: number
+      /**
+       * Format: int32
+       * @description Number of instances currently attached to the rig
+       */
+      capacityCurrent: number
+    }
+    /** @description Desired capacity to set on the rig's scaling group */
+    RigCapacityChange: {
+      /**
+       * Format: int32
+       * @description Absolute desired number of instances in the rig
+       */
+      desired: number
+    }
+    /** @description An instance attached to a rig's scaling group */
+    RigInstance: {
+      /** @description Provider instance ID (EC2 instance ID on AWS, instance name on GCP), also the node ID the orchestrator reports */
+      id: string
+      /**
+       * Format: date-time
+       * @description When the provider created the instance. Omitted while the instance is transitioning.
+       */
+      createdAt?: string
+      /** @description The provider is creating, deleting, recreating or otherwise mutating the instance */
+      transitioning: boolean
+      /** @description The instance is on its way out of the group and can never become healthy again */
+      terminating: boolean
+    }
+    /** @description Scaling error on the rig's scaling group, e.g. a failed instance creation due to resource exhaustion */
+    RigError: {
+      /**
+       * Format: date-time
+       * @description When the error occurred
+       */
+      timestamp: string
+      /** @description Provider-specific error code (e.g. ZONE_RESOURCE_POOL_EXHAUSTED, Failed) */
+      code: string
+      /** @description Human-readable error message */
+      message: string
+      /** @description Instance the error relates to, if any */
+      instance?: string
+      /** @description Action being performed when the error occurred (e.g. CREATING) */
+      action?: string
+    }
     Team: {
       /** @description Identifier of the team */
       teamID: string
@@ -2543,6 +4176,11 @@ export interface components {
      * @description Disk size for the sandbox in MiB
      */
     DiskSizeMB: number
+    /**
+     * Format: int32
+     * @description Requested minimum free space after the template's build steps, in MiB. Omit to use the team's default. Set to 0 to request no minimum free-disk growth. The filesystem is never shrunk, including inherited or already-larger filesystems. Growth is best effort, so filesystem metadata can leave the available space slightly below the requested minimum.
+     */
+    MinFreeDiskMb: number
     /** @description Version of the envd running in the sandbox */
     EnvdVersion: string
     SandboxMetadata: {
@@ -2553,6 +4191,12 @@ export interface components {
      * @enum {string}
      */
     SandboxState: 'running' | 'paused'
+    /**
+     * @description Sort direction
+     * @default desc
+     * @enum {string}
+     */
+    OrderDirection: 'asc' | 'desc'
     SnapshotInfo: {
       /** @description Identifier of the snapshot template including the tag. Uses namespace/alias when a name was provided (e.g. team-slug/my-snapshot:default), otherwise falls back to the raw template ID (e.g. abc123:default). */
       snapshotID: string
@@ -2567,31 +4211,34 @@ export interface components {
       [key: string]: unknown
     } | null
     SandboxNetworkConfig: {
-      /**
-       * @description Specify if the sandbox URLs should be accessible only with authentication.
-       * @default true
-       */
-      allowPublicTraffic: boolean
-      /** @description List of allowed destinations for egress traffic. Each entry can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com", "*.example.com"). Allowed entries always take precedence over denied entries. */
+      /** @description Whether sandbox URLs accept traffic without the sandbox's traffic access token. When omitted or null on create, the project's default applies, which is true unless the project changed it. */
+      allowPublicTraffic?: boolean | null
+      /** @description List of allowed destinations for egress traffic. Each entry can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com", "*.example.com"). Allowed entries always take precedence over denied entries. When allowOut contains a domain, the servers in dnsServers (8.8.8.8 by default) are also allowed. */
       allowOut?: string[]
       /** @description List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules. */
       denyOut?: string[]
+      /** @description DNS servers the sandbox can reach when allowOut contains a domain. Each entry must be an IPv4 address, and all traffic to it is allowed. Omit it to allow the default nameserver 8.8.8.8, or pass an empty list to allow none. This does not change the sandbox's /etc/resolv.conf. */
+      dnsServers?: string[]
       egressProxy?: components['schemas']['SandboxEgressProxyConfig']
       /** @description Specify host mask which will be used for all sandbox requests */
       maskRequestHost?: string
-      /** @description Per-domain transform rules applied to matching egress HTTP/HTTPS requests. Keys are domains (e.g. "api.example.com", "example.com"). A domain listed here is not automatically allowed - use allowOut to permit the traffic. */
+      /** @description Sandbox ports that serve HTTPS rather than plaintext HTTP. Affects how the proxy reaches the service inside the sandbox; the public URL is HTTPS either way. Certificates are not verified, so self-signed ones work. The envd port (49983) cannot be listed. */
+      httpsPorts?: number[]
+      /** @description Per-domain transform rules applied to matching outbound HTTPS requests. Keys may be exact DNS names (for example, "api.example.com") or a leading wildcard (for example, "*.example.com"), and are normalized to lowercase on write. Wildcards match subdomains at any depth but not the apex domain; a bare "*" is invalid. Exact rules take precedence, followed by the longest matching wildcard suffix, and matching rule sets are not merged. Broad wildcards such as "*.com" are allowed and may expose transformed credentials to every matching destination the sandbox contacts. Rules do not grant network access; configure allowOut separately to permit the destination. */
       rules?: {
         [key: string]: components['schemas']['SandboxNetworkRule'][]
       }
     }
     /** @description Network configuration update for a running sandbox. Replaces the current egress rules with the provided configuration. Omitting a field clears it. */
     SandboxNetworkUpdateConfig: {
-      /** @description List of allowed destinations for egress traffic. Each entry can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com", "*.example.com"). Allowed entries always take precedence over denied entries. */
+      /** @description List of allowed destinations for egress traffic. Each entry can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"), or a domain name (e.g. "example.com", "*.example.com"). Allowed entries always take precedence over denied entries. When allowOut contains a domain, the servers in dnsServers (8.8.8.8 by default) are also allowed. */
       allowOut?: string[]
       /** @description List of denied CIDR blocks or IP addresses for egress traffic. Domain names are not supported for deny rules. */
       denyOut?: string[]
+      /** @description DNS servers the sandbox can reach when allowOut contains a domain. Each entry must be an IPv4 address, and all traffic to it is allowed. Omit it to reset to the default nameserver 8.8.8.8, or pass an empty list to allow none. This does not change the sandbox's /etc/resolv.conf. */
+      dnsServers?: string[]
       egressProxy?: components['schemas']['SandboxEgressProxyConfig']
-      /** @description Per-domain transform rules. Replaces all existing rules when provided. */
+      /** @description Per-domain transform rules applied to matching outbound HTTPS requests. Replaces all existing rules when provided. Keys may be exact DNS names or a single leading wildcard (for example, "*.example.com"), and are normalized to lowercase on write. Wildcards match subdomains at any depth but not the apex domain; a bare "*" is invalid. Exact rules take precedence, followed by the longest matching wildcard suffix, and matching rule sets are not merged. Broad wildcards such as "*.com" are allowed and may expose transformed credentials to every matching destination the sandbox contacts. Rules do not grant network access; configure allowOut separately to permit the destination. */
       rules?: {
         [key: string]: components['schemas']['SandboxNetworkRule'][]
       }
@@ -2617,6 +4264,16 @@ export interface components {
       username?: string
       /** @description Optional SOCKS5 password (RFC 1929), max 255 bytes. */
       password?: string
+      tls?: components['schemas']['SandboxEgressProxyTLSConfig']
+    } | null
+    /** @description TLS for the connection to the SOCKS5 proxy. The SOCKS5 negotiation and the tunneled traffic both run inside the TLS session, so the proxy credentials are not sent in the clear. This secures only the hop to the proxy; what the proxy does onward is its own concern. A half-close from the sandbox reaches the proxy as a TLS close_notify, not a TCP FIN, and a proxy that treats close_notify as a full close cuts the reply short. */
+    SandboxEgressProxyTLSConfig: {
+      /** @description Connect to the proxy over TLS. When false, no other field in this object may be set. */
+      enabled: boolean
+      /** @description Name to verify the proxy certificate against, and to send as SNI. Defaults to the host part of address. Set this only when the certificate does not match the address the proxy is reached at. */
+      serverName?: string
+      /** @description One or more PEM-encoded certificates to verify the proxy against, for a proxy fronted by a private CA. These replace the system trust store, which is what is used when this is omitted. The system trust store depends on the host the orchestrator runs on, so set this to get the same verification everywhere. */
+      caCert?: string
     } | null
     /**
      * @description Auto-resume enabled flag for paused sandboxes. Default false.
@@ -2638,6 +4295,11 @@ export interface components {
       autoResume: boolean
       onTimeout: components['schemas']['SandboxOnTimeout']
     }
+    /**
+     * @description What the sandbox's latest pause saved. `full` saved the filesystem and the memory, and resuming restores the sandbox where it left off. `filesystem` saved only the filesystem, and resuming reboots the sandbox from disk. Returned for a paused sandbox once its pause has finished, and omitted while it is still pausing.
+     * @enum {string}
+     */
+    SandboxPauseMode: 'full' | 'filesystem'
     /** @description Log entry with timestamp and line */
     SandboxLog: {
       /**
@@ -2785,6 +4447,7 @@ export interface components {
       state: components['schemas']['SandboxState']
       network?: components['schemas']['SandboxNetworkConfig']
       lifecycle?: components['schemas']['SandboxLifecycle']
+      pauseMode?: components['schemas']['SandboxPauseMode']
       volumeMounts?: components['schemas']['SandboxVolumeMount'][]
     }
     ListedSandbox: {
@@ -2842,8 +4505,41 @@ export interface components {
        */
       autoPauseMemory: boolean
       autoResume?: components['schemas']['SandboxAutoResumeConfig']
-      /** @description Secure all system communication with sandbox */
+      /**
+       * @deprecated
+       * @description Ignored. All system communication with the sandbox is always secured; the template's envd version must support secured access.
+       */
       secure?: boolean
+      /** @description Allow sandbox to access the internet. When set to false, it behaves the same as specifying denyOut to 0.0.0.0/0 in the network config. */
+      allow_internet_access?: boolean
+      network?: components['schemas']['SandboxNetworkConfig']
+      metadata?: components['schemas']['SandboxMetadata']
+      envVars?: components['schemas']['EnvVars']
+      mcp?: components['schemas']['Mcp']
+      iam?: components['schemas']['SandboxIam']
+      volumeMounts?: components['schemas']['SandboxVolumeMount'][]
+    }
+    /** @description Sandbox creation request. All system communication with the sandbox is always secured; the template's envd version must support secured access. */
+    NewSandboxV2: {
+      /** @description Identifier of the required template */
+      templateID: string
+      /**
+       * Format: int32
+       * @description Time to live for the sandbox in seconds.
+       * @default 300
+       */
+      timeout: number
+      /**
+       * @description Automatically pauses the sandbox after the timeout
+       * @default false
+       */
+      autoPause: boolean
+      /**
+       * @description Controls the snapshot kind taken when the sandbox auto-pauses on timeout (only relevant when autoPause is true). When false, the auto-pause drops the in-memory state and persists only the filesystem (a filesystem-only snapshot); resuming it cold-boots (reboots) the sandbox from disk. Such a snapshot cannot be auto-resumed by traffic and must be resumed explicitly, so it cannot be combined with autoResume. Defaults to true (full memory snapshot).
+       * @default true
+       */
+      autoPauseMemory: boolean
+      autoResume?: components['schemas']['SandboxAutoResumeConfig']
       /** @description Allow sandbox to access the internet. When set to false, it behaves the same as specifying denyOut to 0.0.0.0/0 in the network config. */
       allow_internet_access?: boolean
       network?: components['schemas']['SandboxNetworkConfig']
@@ -2879,6 +4575,8 @@ export interface components {
        * @description Automatically pauses the sandbox after the timeout
        */
       autoPause?: boolean
+      /** @description Defaults to true. When false, resume from disk state only: the sandbox cold-boots fresh and any memory in the snapshot is ignored, never modified or deleted. Disk state has crash-recovery semantics — writes not flushed before the pause may be lost. A no-op for snapshots that contain no memory. Rejected with an error in environments where this capability is not enabled, never silently downgraded to a memory restore. */
+      memory?: boolean
     }
     ConnectSandbox: {
       /**
@@ -2886,6 +4584,18 @@ export interface components {
        * @description Timeout in seconds from the current time after which the sandbox should expire
        */
       timeout: number
+      /** @description Defaults to true. When false and the sandbox is paused, resume from disk state only: the sandbox cold-boots fresh and any memory in the snapshot is ignored, never modified or deleted. Disk state has crash-recovery semantics — writes not flushed before the pause may be lost. A no-op for snapshots that contain no memory. Rejected with an error in environments where this capability is not enabled, never silently downgraded to a memory restore. */
+      memory?: boolean
+    }
+    ConnectSandboxV2: {
+      /**
+       * Format: int32
+       * @description Timeout in seconds from the current time after which the sandbox should expire
+       * @default 300
+       */
+      timeout: number
+      /** @description Defaults to true. When false and the sandbox is paused, resume from disk state only: the sandbox cold-boots fresh and any memory in the snapshot is ignored, never modified or deleted. Disk state has crash-recovery semantics — writes not flushed before the pause may be lost. A no-op for snapshots that contain no memory. Rejected with an error in environments where this capability is not enabled, never silently downgraded to a memory restore. */
+      memory?: boolean
     }
     SandboxTimeoutRequest: {
       /**
@@ -2901,6 +4611,8 @@ export interface components {
     SandboxSnapshotRequest: {
       /** @description Optional name for the snapshot template. If a snapshot template with this name already exists, a new build will be assigned to the existing template instead of creating a new one. */
       name?: string
+      /** @description Whether to capture a full memory snapshot. When false, only the filesystem is persisted: the snapshot is smaller and faster to take, and sandboxes created from it cold-boot (start fresh from disk) instead of restoring memory, so they begin without the source sandbox's running processes, in-memory state, and open connections. The source sandbox keeps running in both cases. Defaults to true. */
+      memory?: boolean
     }
     SandboxPauseRequest: {
       /**
@@ -2968,17 +4680,204 @@ export interface components {
       /** @description The maximum value of the requested metric in the given interval */
       value: number
     }
+    TeamStatusResponse: {
+      /** @description Whether the team is banned */
+      isBanned: boolean
+      /** @description Whether the team is blocked */
+      isBlocked: boolean
+      /** @description Why the team is blocked, if a reason was recorded */
+      blockedReason: string | null
+    }
+    /** @description The team's effective resource limits */
+    TeamLimits: {
+      /**
+       * Format: int64
+       * @description Maximum sandbox lifetime, in hours
+       */
+      maxLengthHours: number
+      /**
+       * Format: int64
+       * @description Maximum number of sandboxes running at once
+       */
+      concurrentSandboxes: number
+      /**
+       * Format: int64
+       * @description Maximum number of template builds running at once
+       */
+      concurrentTemplateBuilds: number
+      /**
+       * Format: int64
+       * @description Maximum vCPUs per sandbox
+       */
+      maxVcpu: number
+      /**
+       * Format: int64
+       * @description Maximum memory per sandbox, in MiB
+       */
+      maxRamMb: number
+      /**
+       * Format: int64
+       * @description Disk size per sandbox, in MiB
+       */
+      diskMb: number
+      /**
+       * Format: int64
+       * @description Number of days sandbox events are kept
+       */
+      eventsTtlDays: number
+      /**
+       * Format: int64
+       * @description Free disk space a template build gets when it requests none, in MiB
+       */
+      defaultFreeDiskSizeMb: number
+      /**
+       * Format: int64
+       * @description Maximum free disk space a template build may request, in MiB
+       */
+      maxFreeDiskSizeMb: number
+      /**
+       * Format: int64
+       * @description Requests per second the team may make to list endpoints
+       */
+      apiTeamRpsList: number
+      /**
+       * Format: int64
+       * @description Requests per second the team may make to delete endpoints
+       */
+      apiTeamRpsDelete: number
+    }
+    TeamLimitsResponse: {
+      limits: components['schemas']['TeamLimits']
+    }
     AdminSandboxKillResult: {
       /** @description Number of sandboxes successfully killed */
       killedCount: number
       /** @description Number of sandboxes that failed to kill */
       failedCount: number
     }
+    AdminSandbox: {
+      /** @description Identifier of the sandbox */
+      sandboxID: string
+      /**
+       * Format: uuid
+       * @description Identifier of the team that owns the sandbox
+       */
+      teamID: string
+      state: components['schemas']['AdminSandboxState']
+    }
+    /**
+     * @description State after the sandbox's latest create, resume, pause or kill event
+     * @enum {string}
+     */
+    AdminSandboxState: 'running' | 'paused' | 'killed'
+    /**
+     * @description Cached live sandbox index count keyed by team ID. Counts may briefly
+     *     include sandboxes transitioning out of running; teams without indexed
+     *     sandboxes are omitted.
+     */
+    AdminTeamRunningSandboxCounts: {
+      [key: string]: number
+    }
     AdminBuildCancelResult: {
       /** @description Number of builds successfully cancelled */
       cancelledCount: number
       /** @description Number of builds that failed to cancel */
       failedCount: number
+    }
+    AdminTeamListRequest: {
+      /** @description Only list these teams. An empty list matches no team; omit it to list every team. */
+      projectIds?: string[]
+      /** @description A team ID, as a UUID or public project ID, matches that team exactly. Any other text matches a substring of the email, name or slug, ignoring case. */
+      search?: string
+      /**
+       * @description Leave out banned teams
+       * @default false
+       */
+      hideBanned: boolean
+      /**
+       * @description Leave out blocked teams
+       * @default false
+       */
+      hideBlocked: boolean
+      /**
+       * Format: date-time
+       * @description Only list teams created at or after this time
+       */
+      createdAfter?: string
+      /**
+       * Format: date-time
+       * @description Only list teams created at or before this time
+       */
+      createdBefore?: string
+      sortBy?: components['schemas']['AdminTeamListSortField']
+      /** @description Ignored when `sortBy` is omitted. */
+      sortOrder?: components['schemas']['OrderDirection']
+      /**
+       * Format: int32
+       * @description Maximum number of teams to return
+       * @default 50
+       */
+      limit: number
+      /**
+       * Format: int32
+       * @description Number of matching teams to skip
+       * @default 0
+       */
+      offset: number
+    }
+    /**
+     * @description Column to order by, with newer teams first among equal values. Omit it
+     *     to list the newest teams first.
+     * @enum {string}
+     */
+    AdminTeamListSortField: 'name' | 'email' | 'createdAt' | 'runningSandboxes'
+    AdminTeamList: {
+      items: components['schemas']['AdminTeamListItem'][]
+      /**
+       * Format: int64
+       * @description Number of teams matching the filters, ignoring limit and offset
+       */
+      total: number
+    }
+    AdminTeamListItem: {
+      /** Format: uuid */
+      id: string
+      email: string
+      name: string
+      isBanned: boolean
+      isBlocked: boolean
+      /** Format: date-time */
+      createdAt: string
+      /**
+       * Format: int64
+       * @description Number of users in the team
+       */
+      memberCount: number
+      /**
+       * Format: int64
+       * @description Running sandboxes from the same cached snapshot as `GET /admin/sandboxes/running-counts`. Present only when the list is sorted by `runningSandboxes`.
+       */
+      runningSandboxCount?: number
+    }
+    AdminTeam: {
+      /** Format: uuid */
+      id: string
+      email: string
+      name: string
+      slug: string
+      /** Format: date-time */
+      createdAt: string
+      isBlocked: boolean
+      isBanned: boolean
+      blockedReason?: string | null
+      sandboxSchedulingLabels: string[]
+      /** Format: uuid */
+      clusterId?: string | null
+      clusterName?: string | null
+    }
+    AdminTeamSchedulingLabels: {
+      /** @description The team's full set of labels. A request's labels replace the current ones. */
+      labels: string[]
     }
     VolumeToken: {
       token: string
@@ -3028,6 +4927,15 @@ export interface components {
       buildCount: number
       envdVersion: components['schemas']['EnvdVersion']
       buildStatus: components['schemas']['TemplateBuildStatus']
+      /** @description Whether the template is one of the platform's default templates. A default template owned by another team carries zero or null usage fields (`spawnCount`, `buildCount`, `lastSpawnedAt`, `createdBy`). */
+      isDefault?: boolean
+      /** @description Description of the template */
+      description?: string
+    }
+    TemplateSearchResponse: {
+      data: components['schemas']['Template'][]
+      /** @description Cursor of the next page, or null on the last page */
+      nextCursor: string | null
     }
     TemplateRequestResponseV3: {
       /** @description Identifier of the template */
@@ -3045,46 +4953,6 @@ export interface components {
        * @description Aliases of the template
        */
       aliases: string[]
-    }
-    TemplateLegacy: {
-      /** @description Identifier of the template */
-      templateID: string
-      /** @description Identifier of the last successful build for given template */
-      buildID: string
-      cpuCount: components['schemas']['CPUCount']
-      memoryMB: components['schemas']['MemoryMB']
-      diskSizeMB: components['schemas']['DiskSizeMB']
-      /** @description Whether the template is public or only accessible by the team */
-      public: boolean
-      /** @description Aliases of the template */
-      aliases: string[]
-      /**
-       * Format: date-time
-       * @description Time when the template was created
-       */
-      createdAt: string
-      /**
-       * Format: date-time
-       * @description Time when the template was last updated
-       */
-      updatedAt: string
-      createdBy: components['schemas']['TeamUser'] | null
-      /**
-       * Format: date-time
-       * @description Time when the template was last used
-       */
-      lastSpawnedAt: string | null
-      /**
-       * Format: int64
-       * @description Number of times the template was used
-       */
-      spawnCount: number
-      /**
-       * Format: int32
-       * @description Number of times the template was built
-       */
-      buildCount: number
-      envdVersion: components['schemas']['EnvdVersion']
     }
     TemplateBuild: {
       /**
@@ -3113,38 +4981,7 @@ export interface components {
       diskSizeMB?: components['schemas']['DiskSizeMB']
       envdVersion?: components['schemas']['EnvdVersion']
     }
-    TemplateWithBuilds: {
-      /** @description Identifier of the template */
-      templateID: string
-      /** @description Whether the template is public or only accessible by the team */
-      public: boolean
-      /**
-       * @deprecated
-       * @description Aliases of the template
-       */
-      aliases: string[]
-      /** @description Names of the template (namespace/alias format when namespaced) */
-      names: string[]
-      /**
-       * Format: date-time
-       * @description Time when the template was created
-       */
-      createdAt: string
-      /**
-       * Format: date-time
-       * @description Time when the template was last updated
-       */
-      updatedAt: string
-      /**
-       * Format: date-time
-       * @description Time when the template was last used
-       */
-      lastSpawnedAt: string | null
-      /**
-       * Format: int64
-       * @description Number of times the template was used
-       */
-      spawnCount: number
+    TemplateWithBuilds: components['schemas']['Template'] & {
       /** @description List of builds for the template */
       builds: components['schemas']['TemplateBuild'][]
     }
@@ -3153,20 +4990,6 @@ export interface components {
       templateID: string
       /** @description Whether the template is public or only accessible by the team */
       public: boolean
-    }
-    TemplateBuildRequest: {
-      /** @description Alias of the template */
-      alias?: string
-      /** @description Dockerfile for the template */
-      dockerfile: string
-      /** @description Identifier of the team */
-      teamID?: string
-      /** @description Start command to execute in the template after the build */
-      startCmd?: string
-      /** @description Ready check command to execute in the template after the build */
-      readyCmd?: string
-      cpuCount?: components['schemas']['CPUCount']
-      memoryMB?: components['schemas']['MemoryMB']
     }
     /** @description Step in the template build process */
     TemplateStep: {
@@ -3177,7 +5000,7 @@ export interface components {
        * @default []
        */
       args: string[]
-      /** @description Hash of the files used in the step */
+      /** @description Hash of the files used in the step (lowercase hex SHA-256) */
       filesHash?: string
       /**
        * @description Whether the step should be forced to run regardless of the cache
@@ -3197,22 +5020,12 @@ export interface components {
       alias?: string
       /**
        * @deprecated
-       * @description Identifier of the team
+       * @description Identifier of the team, as its UUID or its public project ID (prj_)
        */
       teamID?: string
       cpuCount?: components['schemas']['CPUCount']
       memoryMB?: components['schemas']['MemoryMB']
-    }
-    TemplateBuildRequestV2: {
-      /** @description Alias of the template */
-      alias: string
-      /**
-       * @deprecated
-       * @description Identifier of the team
-       */
-      teamID?: string
-      cpuCount?: components['schemas']['CPUCount']
-      memoryMB?: components['schemas']['MemoryMB']
+      minFreeDiskMb?: components['schemas']['MinFreeDiskMb']
     }
     FromImageRegistry:
       | components['schemas']['AWSRegistry']
@@ -3251,6 +5064,7 @@ export interface components {
       /** @description Password to use for the registry */
       password: string
     }
+    /** @description Exactly one of fromImage or fromTemplate must be given and non-empty. */
     TemplateBuildStartV2: {
       /** @description Image to use as a base for the template build */
       fromImage?: string
@@ -3277,6 +5091,10 @@ export interface components {
       present: boolean
       /** @description Url where the file should be uploaded to */
       url?: string
+      /** @description Request headers that must be sent with the upload request */
+      headers?: {
+        [key: string]: string
+      }
     }
     /**
      * @description State of the sandbox
@@ -3313,7 +5131,8 @@ export interface components {
     TemplateBuildStatus: 'building' | 'waiting' | 'ready' | 'error'
     TemplateBuildInfo: {
       /**
-       * @description Build logs
+       * @deprecated
+       * @description Build logs (always empty since the V1 build path was removed, use logEntries)
        * @default []
        */
       logs: string[]
@@ -3348,11 +5167,16 @@ export interface components {
     LogsSource: 'temporary' | 'persistent'
     /**
      * @description Status of the node.
-     *     - draining: the node is bound to be shut down. It will not accept new sandboxes and will stop once all existing sandboxes are done.
      *     - standby: the node is not actively used, but it can return to ready and continue serving traffic.
      * @enum {string}
      */
-    NodeStatus: 'ready' | 'draining' | 'connecting' | 'unhealthy' | 'standby'
+    NodeStatus:
+      | 'ready'
+      | 'draining'
+      | 'connecting'
+      | 'unhealthy'
+      | 'standby'
+      | 'shutting_down'
     NodeStatusChange: {
       /**
        * Format: uuid
@@ -3467,6 +5291,16 @@ export interface components {
        * @description Number of sandboxes running on the node
        */
       sandboxCount: number
+      /**
+       * Format: int64
+       * @description Cached node-scoped sandbox admission limit. Nonpositive values reject creation.
+       */
+      maxSandboxes: number
+      /**
+       * Format: uint64
+       * @description Cached count of work holds on the node. Zero means idle or not yet reported; it does not by itself authorize deletion.
+       */
+      outstandingWork: number
       metrics: components['schemas']['NodeMetrics']
       /**
        * Format: uint64
@@ -3507,9 +5341,17 @@ export interface components {
        * @description Number of sandboxes running on the node
        */
       sandboxCount: number
+      /**
+       * Format: int64
+       * @description Cached node-scoped sandbox admission limit. Nonpositive values reject creation.
+       */
+      maxSandboxes: number
+      /**
+       * Format: uint64
+       * @description Cached count of work holds on the node. Zero means idle or not yet reported; it does not by itself authorize deletion.
+       */
+      outstandingWork: number
       metrics: components['schemas']['NodeMetrics']
-      /** @description List of cached builds id on the node */
-      cachedBuilds: string[]
       /**
        * Format: uint64
        * @description Number of sandbox create successes
@@ -3520,27 +5362,6 @@ export interface components {
        * @description Number of sandbox create fails
        */
       createFails: number
-    }
-    CreatedAccessToken: {
-      /**
-       * Format: uuid
-       * @description Identifier of the access token
-       */
-      id: string
-      /** @description Name of the access token */
-      name: string
-      /** @description The fully created access token */
-      token: string
-      mask: components['schemas']['IdentifierMaskingDetails']
-      /**
-       * Format: date-time
-       * @description Timestamp of access token creation
-       */
-      createdAt: string
-    }
-    NewAccessToken: {
-      /** @description Name of the access token */
-      name: string
     }
     TeamAPIKey: {
       /**
@@ -3617,6 +5438,65 @@ export interface components {
        */
       createdAt: string
     }
+    TemplateTagAssignment: {
+      /**
+       * Format: uuid
+       * @description Identifier of the tag assignment event.
+       */
+      assignmentId: string
+      /**
+       * Format: uuid
+       * @description Identifier of the assigned build.
+       */
+      buildId: string
+      /**
+       * Format: date-time
+       * @description Time when the tag was assigned to the build.
+       */
+      assignedAt: string
+      /**
+       * Format: date-time
+       * @description Time when the assigned build was created.
+       */
+      buildCreatedAt: string
+      /**
+       * Format: date-time
+       * @description Time when the assigned build finished.
+       */
+      buildFinishedAt: string | null
+    }
+    TemplateTagGroup: {
+      /** @description Template tag name. */
+      tag: string
+      /** @description Ready assignment events for this tag, sorted latest first. */
+      assignments: components['schemas']['TemplateTagAssignment'][]
+      /** @description Whether more ready assignment events exist beyond the requested assignment limit. */
+      hasMore: boolean
+    }
+    TemplateTagGroupsResponse: {
+      tags: components['schemas']['TemplateTagGroup'][]
+      /** @description Cursor to pass as `tagsCursor` for the next page, or `null` if there is no next page. */
+      nextCursor: string | null
+    }
+    TemplateTagsCountResponse: {
+      /**
+       * Format: int64
+       * @description Total distinct ready tags for the template.
+       */
+      total: number
+    }
+    TemplateTagExistsResponse: {
+      /** @description Whether the template tag has at least one ready assignment. */
+      exists: boolean
+      /** @description Normalized template tag name. */
+      normalizedTag: string
+    }
+    TemplateTagAssignmentsResponse: {
+      /** @description Ready assignment events for the tag, sorted latest first. */
+      data: components['schemas']['TemplateTagAssignment'][]
+      /** @description Cursor to pass to the next list request, or `null` if there is no next page. */
+      nextCursor: string | null
+    }
     AssignTemplateTagsRequest: {
       /** @description Target template in "name:tag" format */
       target: string
@@ -3635,6 +5515,8 @@ export interface components {
        * @description Error code
        */
       code: number
+      /** @description Machine-readable semantic error code. Not a closed set; initial values: sandbox_capacity_unavailable, sandbox_placement_timeout, sandbox_no_compatible_node, sandbox_create_failed (a node could not create the sandbox this time; retry), sandbox_create_refused (a node refused the sandbox for a reason no retry changes, such as a vcpu count out of bounds in the stored build; a server error, since no request field reaches that check), internal_server_error, secret_limit_reached, idempotency_request_mismatch, idempotency_in_progress, idempotency_outcome_unknown. */
+      error_code?: string
       /** @description Error */
       message: string
     }
@@ -3661,10 +5543,301 @@ export interface components {
       name: string
       /** @description Auth token to use for interacting with volume content */
       token: string
+      /**
+       * @description Domain to use as the destination for volume content requests,
+       *     replacing the default `api.<E2B_DOMAIN>`. Only returned when the
+       *     team is connected to a custom (BYOC) cluster; absent otherwise, in
+       *     which case the default domain is used.
+       */
+      domain?: string
     }
     NewVolume: {
       /** @description Name of the volume */
       name: string
+    }
+    /** @description Customer metadata of the secret. Always present, empty when unset. At most 32 entries; keys are limited to 128 bytes, values to 1024 bytes, and a secret's metadata to 8192 bytes in total. */
+    SecretMetadata: {
+      [key: string]: string
+    }
+    /** @description Metadata of a secret. It never carries the secret value. */
+    Secret: {
+      /** @description Identifier of the secret */
+      secretID: string
+      /** @description Name of the secret, unique within the project */
+      name: string
+      /**
+       * Format: int64
+       * @description Version served to readers that do not name one
+       */
+      currentVersion: number
+      metadata: components['schemas']['SecretMetadata']
+      /**
+       * Format: date-time
+       * @description Time when the secret was created
+       */
+      createdAt: string
+      /**
+       * Format: date-time
+       * @description Time when the secret was last updated
+       */
+      updatedAt: string
+    }
+    NewSecret: {
+      /** @description Name of the secret, unique within the project. Names are lower-cased before storage and returned in that canonical form; the sec_ prefix is reserved for secret identifiers. */
+      name: string
+      /** @description Runtime marker stored as the secret's first version. The runtime resolves it to a value at sandbox egress. */
+      value: string
+      metadata?: components['schemas']['SecretMetadata']
+    }
+    SecretUpdate: {
+      /** @description Runtime marker stored as the secret's new version. The runtime resolves it to a value at sandbox egress. */
+      value: string
+      metadata?: components['schemas']['SecretMetadata']
+    }
+    /** @description Sandbox event */
+    SandboxEvent: {
+      /**
+       * Format: uuid
+       * @description Event unique identifier
+       */
+      id: string
+      /** @description Event structure version */
+      version: string
+      /** @description Event name */
+      type: string
+      /**
+       * @deprecated
+       * @description Category of the event (e.g., 'lifecycle', 'process', etc.)
+       */
+      eventCategory?: string
+      /**
+       * @deprecated
+       * @description Label for the specific event type (e.g., 'sandbox_started', 'process_oom', etc.)
+       */
+      eventLabel?: string
+      /** @description Optional JSON data associated with the event */
+      eventData?: Record<string, never> | null
+      /**
+       * Format: date-time
+       * @description Timestamp of the event
+       */
+      timestamp: string
+      /**
+       * Format: string
+       * @description Unique identifier for the sandbox
+       */
+      sandboxId: string
+      /**
+       * Format: string
+       * @description Unique identifier for the sandbox execution
+       */
+      sandboxExecutionId: string
+      /**
+       * Format: string
+       * @description Unique identifier for the sandbox template
+       */
+      sandboxTemplateId: string
+      /**
+       * Format: string
+       * @description Unique identifier for the sandbox build
+       */
+      sandboxBuildId: string
+      /**
+       * Format: uuid
+       * @description Team identifier associated with the sandbox
+       */
+      sandboxTeamId: string
+    }
+    /** @description Configuration for registering new webhooks */
+    WebhookCreate: {
+      name: string
+      /** Format: uri */
+      url: string
+      events: string[]
+      /** @default true */
+      enabled: boolean
+      /** @description Secret used to sign the webhook payloads */
+      signatureSecret: string
+    }
+    /** @description Webhook creation response */
+    WebhookCreation: {
+      /** @description Webhook unique identifier */
+      id: string
+      /** @description Webhook user friendly name */
+      name: string
+      /**
+       * Format: date-time
+       * @description Time when the template was created
+       */
+      createdAt: string
+      /** @description Unique identifier for the team */
+      teamId: string
+      /** Format: uri */
+      url: string
+      enabled: boolean
+      events: string[]
+    }
+    /** @description Webhook detail response */
+    WebhookDetail: {
+      /** @description Webhook unique identifier */
+      id: string
+      /** @description Unique identifier for the team */
+      teamId: string
+      /** @description Webhook user friendly name */
+      name: string
+      /**
+       * Format: date-time
+       * @description Time when the template was created
+       */
+      createdAt: string
+      /** Format: uri */
+      url: string
+      enabled: boolean
+      events: string[]
+    }
+    /** @description Configuration for updating existing webhooks */
+    WebhookConfiguration: {
+      enabled?: boolean
+      /** @description Webhook user friendly name */
+      name?: string
+      /** Format: uri */
+      url?: string
+      events?: string[]
+      /** @description Secret used to sign the webhook payloads */
+      signatureSecret?: string
+    }
+    /** @description Webhook delivery attempt */
+    WebhookDelivery: {
+      /**
+       * Format: uuid
+       * @description Delivery attempt identifier
+       */
+      id: string
+      /**
+       * Format: uuid
+       * @description Team identifier
+       */
+      teamId: string
+      /**
+       * Format: uuid
+       * @description Webhook configuration identifier
+       */
+      webhookId: string
+      /**
+       * Format: uuid
+       * @description Sandbox event identifier
+       */
+      eventId: string
+      /** @description Sandbox identifier */
+      sandboxId: string
+      /** @description Sandbox event type */
+      eventType: string
+      /**
+       * @description Delivery attempt status
+       * @enum {string}
+       */
+      status: 'success' | 'failed'
+      /**
+       * Format: int32
+       * @description Delivery request duration in milliseconds
+       */
+      durationMs: number
+      /** @description Serialized webhook request body */
+      requestBody: string
+      /** @description JSON-encoded request headers with sensitive values redacted */
+      requestHeaders: string
+      /**
+       * Format: uri
+       * @description URL attempted for this delivery
+       */
+      requestUrl: string
+      /** @description Truncated response body, if a response was received */
+      responseBody?: string | null
+      /** @description JSON-encoded response headers, if a response was received */
+      responseHeaders?: string | null
+      /**
+       * Format: int32
+       * @description HTTP response status code, if a response was received
+       */
+      responseHttpStatusCode?: number | null
+      /**
+       * @description Machine-readable non-HTTP or HTTP failure class
+       * @enum {string|null}
+       */
+      errorClass:
+        | 'http_error'
+        | 'dns_error'
+        | 'timeout'
+        | 'transport_error'
+        | 'request_error'
+        | 'signature_error'
+        | 'canceled'
+        | null
+      /** @description Error message for failures without a useful response body */
+      errorMessage?: string | null
+      /**
+       * Format: date-time
+       * @description Time when the delivery attempt started
+       */
+      timestamp: string
+    }
+    /** @description Webhook delivery aggregate stats */
+    WebhookDeliveryStats: {
+      buckets: components['schemas']['WebhookDeliveryStatsBucket'][]
+      /** Format: int64 */
+      total: number
+      /** Format: int64 */
+      failed: number
+      durationMs: components['schemas']['WebhookDeliveryDurationStats']
+    }
+    /** @description Webhook delivery duration statistics in milliseconds */
+    WebhookDeliveryDurationStats: {
+      /** Format: double */
+      minimum: number
+      /** Format: double */
+      average: number
+      /** Format: double */
+      maximum: number
+    }
+    /** @description Webhook delivery stats for a time bucket */
+    WebhookDeliveryStatsBucket: {
+      /** Format: date-time */
+      timestamp: string
+      /** Format: int64 */
+      total: number
+      /** Format: int64 */
+      failed: number
+      durationMs: components['schemas']['WebhookDeliveryDurationStats']
+    }
+    /** @description Webhook delivery attempts grouped by sandbox event */
+    WebhookDeliveryGroup: {
+      /** Format: uuid */
+      eventId: string
+      eventType: string
+      sandboxId: string
+      attempts: components['schemas']['WebhookDelivery'][]
+    }
+    /** @description Paginated webhook delivery attempts grouped by event */
+    WebhookDeliveriesListPayload: {
+      data: components['schemas']['WebhookDeliveryGroup'][]
+      /** @description Cursor to pass to the next list request, or null when there is no next page. */
+      nextCursor: string | null
+    }
+    ManagementProjectSettingsRequest: {
+      /**
+       * Format: int64
+       * @description Monotonic per-project revision. Older or duplicate revisions succeed without changing stored state.
+       */
+      revision: number
+      settings: components['schemas']['ProjectSettings']
+    }
+    /** @description The project's stored settings. PUT replaces the complete document. */
+    ProjectSettings: {
+      sandboxSettings: components['schemas']['SandboxSettings']
+    }
+    SandboxSettings: {
+      /** @description Whether new sandboxes without an explicit network.allowPublicTraffic accept traffic without a traffic access token. Omission uses the public default. Existing sandboxes, resumes and forks keep their settings. */
+      defaultAllowPublicTraffic?: boolean
     }
   }
   responses: {
@@ -3713,9 +5886,14 @@ export interface components {
         'application/json': components['schemas']['Error']
       }
     }
-    /** @description Gone */
-    410: {
+    /** @description Too many requests */
+    429: {
       headers: {
+        /**
+         * @description When present, the number of seconds to wait before retrying the request.
+         * @example 30
+         */
+        'Retry-After'?: number
         [name: string]: unknown
       }
       content: {
@@ -3731,26 +5909,142 @@ export interface components {
         'application/json': components['schemas']['Error']
       }
     }
+    /** @description Not implemented by this deployment */
+    501: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['Error']
+      }
+    }
+    /** @description Backend error */
+    502: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['Error']
+      }
+    }
+    /** @description Service unavailable */
+    503: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['Error']
+      }
+    }
+    /** @description Backend timeout */
+    504: {
+      headers: {
+        [name: string]: unknown
+      }
+      content: {
+        'application/json': components['schemas']['Error']
+      }
+    }
   }
   parameters: {
+    /** @description Identifier of the cluster */
+    clusterID: string
+    /** @description Rig identifier (e.g. "default") */
+    rigID: string
     templateID: string
     buildID: string
     sandboxID: string
+    /** @description Identifier of the team, as its UUID or its public project ID (prj_) */
     teamID: string
     nodeID: string
     apiKeyID: string
-    accessTokenID: string
     snapshotID: string
     tag: string
+    /** @description Template tag name to check. */
+    tagQuery: string
+    /** @description Maximum number of ready assignment rows to return per tag. */
+    tagAssignmentLimit: number
+    /** @description Maximum number of distinct tags to return per page. */
+    tagGroupsLimit: number
+    /** @description Cursor returned by the previous list response in `{sort}|{latest_assigned_at}|{tag}` format (sort-tagged, RFC3339Nano). */
+    tagGroupsCursor: string
+    /** @description Substring filter on tag name. Allowed characters are `a-z`, `0-9`, `.`, `_`, `-`. */
+    tagGroupsSearch: string
+    /** @description Sort order for the returned tag groups. */
+    tagGroupsSort: 'latest_desc' | 'latest_asc' | 'name_asc' | 'name_desc'
+    /** @description Maximum number of assignment rows to return per page. */
+    tagAssignmentsLimit: number
+    /** @description Cursor returned by the previous list response in `assigned_at|assignment_id` format. */
+    tagAssignmentsCursor: string
     /** @description Maximum number of items to return per page */
     paginationLimit: number
     /** @description Cursor to start the list from */
     paginationNextToken: string
+    /** @description Case-insensitive substring match on the template ID, its aliases and its names. */
+    templatesSearch: string
+    /** @description Sort column and direction. */
+    templatesSort:
+      | 'created_at_desc'
+      | 'created_at_asc'
+      | 'updated_at_desc'
+      | 'updated_at_asc'
+    /** @description Only list public (true) or only non-public (false) templates. */
+    templatesPublic: boolean
+    /** @description Cursor returned by the previous page in `{sort}|{value}|{templateID}` format. Rejected if its sort does not match the request. */
+    templatesCursor: string
+    /** @description Maximum number of templates to return per page. */
+    templatesLimit: number
     volumeID: string
+    secretID: string
+    webhookID: string
   }
   requestBodies: never
-  headers: never
+  headers: {
+    /**
+     * @description Whether the condition behind this error may clear, so that retrying the request could
+     *     succeed. true marks a transient failure such as missing capacity, a rate limit, or a
+     *     creation still in progress: retry after Retry-After when present, otherwise with
+     *     exponential backoff. false marks a failure a retry cannot fix, such as a malformed request
+     *     or a configuration fault, or an outcome that is unknown, where a retry could create a
+     *     second sandbox. Successful responses and errors without an explicit classification omit
+     *     the header.
+     */
+    ShouldRetry: boolean
+    /** @description Cursor to fetch the next page of results, if more exist */
+    XNextToken: string
+    /** @description Number of running sandboxes matching the filters, before pagination is applied. Only present when running sandboxes were requested. */
+    XTotalRunning: number
+  }
   pathItems: never
 }
 export type $defs = Record<string, never>
-export type operations = Record<string, never>
+export interface operations {
+  managementSetProjectSettings: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        projectID: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ManagementProjectSettingsRequest']
+      }
+    }
+    responses: {
+      /** @description Project settings are applied or already superseded. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      404: components['responses']['404']
+      500: components['responses']['500']
+    }
+  }
+}
