@@ -218,7 +218,98 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/teams': {
+  '/admin/clusters': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Create a cluster
+     * @description Creates a cluster whose configuration cannot be modified. The cluster starts with deletion protection turned on.
+     */
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['AdminClusterCreateRequest']
+        }
+      }
+      responses: {
+        /** @description Cluster created. */
+        201: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['AdminClusterCreateResponse']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        409: components['responses']['409']
+        500: components['responses']['500']
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/admin/clusters/{clusterID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Delete a cluster and its environments
+     * @description Deletes a cluster after all team assignments are detached. In the same transaction, soft-deletes every live template, snapshot template and paused sandbox snapshot on the cluster, releases their aliases, and releases all environment references while preserving environment and build history. A team assignment rejects the deletion and leaves the environments untouched, and so does deletion protection on the cluster. The local cluster's nil ID is rejected. Repeating a completed deletion succeeds.
+     */
+    delete: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          /** @description Identifier of the cluster. */
+          clusterID: components['parameters']['clusterID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Cluster deleted or already absent. */
+        204: {
+          headers: {
+            [name: string]: unknown
+          }
+          content?: never
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        409: components['responses']['409']
+        500: components['responses']['500']
+      }
+    }
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/management/clusters/{clusterID}/projects': {
     parameters: {
       query?: never
       header?: never
@@ -226,67 +317,105 @@ export interface paths {
       cookie?: never
     }
     /**
-     * List user teams
-     * @description Returns all teams the authenticated user belongs to, with limits and default flag.
+     * List the projects assigned to a cluster (v1).
+     * @description Returns the ID of every project whose team is assigned to the cluster, whichever way it was assigned. A deleted project is never assigned. An absent cluster has no projects.
+     */
+    get: operations['managementListClusterProjects']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/management/clusters/{clusterID}/deletion': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Record that a cluster is being deleted (v1).
+     * @description Records that the caller is deleting the cluster, for a caller that deletes the cluster's teams before the cluster itself. Refused while the cluster has deletion protection turned on; a protection change in flight commits before or after the check, never between. Once recorded, deletion protection cannot be turned on, so the cluster delete that follows is not refused for protection, and no team can be newly assigned to the cluster. An assignment either commits before the deletion is recorded, where the caller's next project listing finds it, or is refused with cluster_assignment_cluster_deleting. Succeeds when the cluster is absent. Repeating the request succeeds. The local cluster's nil ID is rejected.
+     */
+    put: operations['managementRequestClusterDeletion']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/management/clusters/{clusterID}/destroy-readiness': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Check cluster destroy readiness
+     * @description Checks whether the cluster has deletion protection turned on, or more than one team uses this exact cluster, either as an assigned team or as the owner of active templates or snapshots on it. One team's own templates and snapshots do not block this check, because deleting the cluster soft-deletes them. Soft-deleted history does not count. Returns success if the cluster is absent. This read does not change resources or prevent later assignments or template creation.
+     */
+    get: operations['managementClusterDestroyReadiness']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/admin/teams/{teamID}/cluster': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get a team's assigned cluster
+     * @description Returns the current cluster assignment without exposing cluster credentials.
      */
     get: {
       parameters: {
         query?: never
         header?: never
-        path?: never
+        path: {
+          /** @description Identifier of the team. */
+          teamID: components['parameters']['teamID']
+        }
         cookie?: never
       }
       requestBody?: never
       responses: {
-        /** @description Successfully returned user teams. */
+        /** @description Cluster assignment returned. */
         200: {
           headers: {
             [name: string]: unknown
           }
           content: {
-            'application/json': components['schemas']['UserTeamsResponse']
-          }
-        }
-        401: components['responses']['401']
-        500: components['responses']['500']
-      }
-    }
-    put?: never
-    /** Create team */
-    post: {
-      parameters: {
-        query?: never
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody: {
-        content: {
-          'application/json': components['schemas']['CreateTeamRequest']
-        }
-      }
-      responses: {
-        /** @description Successfully created team. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['TeamResolveResponse']
+            'application/json': components['schemas']['AdminTeamClusterAssignmentResponse']
           }
         }
         400: components['responses']['400']
         401: components['responses']['401']
+        404: components['responses']['404']
         500: components['responses']['500']
       }
     }
+    put?: never
+    post?: never
     delete?: never
     options?: never
     head?: never
     patch?: never
     trace?: never
   }
-  '/admin/users/bootstrap': {
+  '/admin/teams/{teamID}/ban': {
     parameters: {
       query?: never
       header?: never
@@ -294,83 +423,63 @@ export interface paths {
       cookie?: never
     }
     get?: never
-    put?: never
-    /** Bootstrap auth provider user */
-    post: {
-      parameters: {
-        query?: never
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody: {
-        content: {
-          'application/json': components['schemas']['AdminAuthProviderUserBootstrapRequest']
-        }
-      }
-      responses: {
-        /** @description Successfully bootstrapped user. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['TeamResolveResponse']
-          }
-        }
-        400: components['responses']['400']
-        401: components['responses']['401']
-        500: components['responses']['500']
-      }
-    }
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/admin/teams/bootstrap': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
     /**
-     * Bootstrap team
-     * @description Creates and provisions a team for an admin-authenticated bootstrap workflow.
+     * Ban a team
+     * @description Marks the team as banned so its API keys stop authenticating. Idempotent; running workloads are not touched.
      */
-    post: {
+    put: {
       parameters: {
         query?: never
         header?: never
-        path?: never
+        path: {
+          /** @description Identifier of the team. */
+          teamID: components['parameters']['teamID']
+        }
         cookie?: never
       }
-      requestBody: {
-        content: {
-          'application/json': components['schemas']['AdminTeamBootstrapRequest']
-        }
-      }
+      requestBody?: never
       responses: {
-        /** @description Successfully bootstrapped team. */
-        200: {
+        /** @description Team banned. */
+        204: {
           headers: {
             [name: string]: unknown
           }
-          content: {
-            'application/json': components['schemas']['TeamResolveResponse']
-          }
+          content?: never
         }
-        400: components['responses']['400']
         401: components['responses']['401']
+        404: components['responses']['404']
         500: components['responses']['500']
-        502: components['responses']['502']
       }
     }
-    delete?: never
+    post?: never
+    /**
+     * Unban a team
+     * @description Clears the team's ban. Idempotent.
+     */
+    delete: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          /** @description Identifier of the team. */
+          teamID: components['parameters']['teamID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Team unbanned. */
+        204: {
+          headers: {
+            [name: string]: unknown
+          }
+          content?: never
+        }
+        401: components['responses']['401']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
     options?: never
     head?: never
     patch?: never
@@ -414,344 +523,6 @@ export interface paths {
       }
     }
     delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/admin/user-profiles/by-email': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Lookup user profiles by email */
-    post: {
-      parameters: {
-        query?: never
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody: {
-        content: {
-          'application/json': components['schemas']['AdminAuthProviderProfilesLookupEmailRequest']
-        }
-      }
-      responses: {
-        /** @description Successfully found matching profiles. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['AdminAuthProviderProfilesResponse']
-          }
-        }
-        400: components['responses']['400']
-        401: components['responses']['401']
-        500: components['responses']['500']
-      }
-    }
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/admin/user-profiles/{userId}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** User profile */
-    get: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Identifier of the user. */
-          userId: components['parameters']['userId']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Successfully found profile. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['AdminAuthProviderProfilesResponse']
-          }
-        }
-        400: components['responses']['400']
-        401: components['responses']['401']
-        500: components['responses']['500']
-      }
-    }
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/admin/users/{userId}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    /**
-     * Delete user
-     * @description Deletes a user by removing the identity provider record, user_identities mapping, and public.users row.
-     */
-    delete: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Identifier of the user. */
-          userId: components['parameters']['userId']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Successfully deleted user. */
-        204: {
-          headers: {
-            [name: string]: unknown
-          }
-          content?: never
-        }
-        400: components['responses']['400']
-        401: components['responses']['401']
-        404: components['responses']['404']
-        409: components['responses']['409']
-        500: components['responses']['500']
-      }
-    }
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/teams/resolve': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Resolve team identity
-     * @description Resolves a team slug to the team's identity, validating the user is a member.
-     */
-    get: {
-      parameters: {
-        query: {
-          /** @description Team slug to resolve. */
-          slug: components['parameters']['teamSlug']
-        }
-        header?: never
-        path?: never
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Successfully resolved team. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['TeamResolveResponse']
-          }
-        }
-        401: components['responses']['401']
-        403: components['responses']['403']
-        404: components['responses']['404']
-        500: components['responses']['500']
-      }
-    }
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/teams/{teamID}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    /** Update team */
-    patch: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Identifier of the team. */
-          teamID: components['parameters']['teamID']
-        }
-        cookie?: never
-      }
-      requestBody: {
-        content: {
-          'application/json': components['schemas']['UpdateTeamRequest']
-        }
-      }
-      responses: {
-        /** @description Successfully updated team. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['UpdateTeamResponse']
-          }
-        }
-        400: components['responses']['400']
-        401: components['responses']['401']
-        403: components['responses']['403']
-        500: components['responses']['500']
-      }
-    }
-    trace?: never
-  }
-  '/teams/{teamID}/members': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** List team members */
-    get: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Identifier of the team. */
-          teamID: components['parameters']['teamID']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Successfully returned team members. */
-        200: {
-          headers: {
-            [name: string]: unknown
-          }
-          content: {
-            'application/json': components['schemas']['TeamMembersResponse']
-          }
-        }
-        401: components['responses']['401']
-        403: components['responses']['403']
-        500: components['responses']['500']
-      }
-    }
-    put?: never
-    /** Add team member */
-    post: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Identifier of the team. */
-          teamID: components['parameters']['teamID']
-        }
-        cookie?: never
-      }
-      requestBody: {
-        content: {
-          'application/json': components['schemas']['AddTeamMemberRequest']
-        }
-      }
-      responses: {
-        /** @description Successfully added team member. */
-        201: {
-          headers: {
-            [name: string]: unknown
-          }
-          content?: never
-        }
-        400: components['responses']['400']
-        401: components['responses']['401']
-        403: components['responses']['403']
-        404: components['responses']['404']
-        500: components['responses']['500']
-      }
-    }
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/teams/{teamID}/members/{userId}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    /** Remove team member */
-    delete: {
-      parameters: {
-        query?: never
-        header?: never
-        path: {
-          /** @description Identifier of the team. */
-          teamID: components['parameters']['teamID']
-          /** @description Identifier of the user. */
-          userId: components['parameters']['userId']
-        }
-        cookie?: never
-      }
-      requestBody?: never
-      responses: {
-        /** @description Successfully removed team member. */
-        204: {
-          headers: {
-            [name: string]: unknown
-          }
-          content?: never
-        }
-        400: components['responses']['400']
-        401: components['responses']['401']
-        403: components['responses']['403']
-        500: components['responses']['500']
-      }
-    }
     options?: never
     head?: never
     patch?: never
@@ -1106,63 +877,48 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/admin/v1/projects/{teamID}': {
+  '/v1/management/projects/{projectID}': {
     parameters: {
       query?: never
       header?: never
       path: {
-        /** @description Identifier of the team. */
-        teamID: components['parameters']['teamID']
+        /** @description Identifier of the project. */
+        projectID: components['parameters']['projectID']
       }
       cookie?: never
     }
     get?: never
-    /** Create or reconcile a project. */
-    put: operations['upsertProject']
+    /** Create or reconcile a project (v1). */
+    put: operations['managementUpsertProject']
     post?: never
-    /** Delete a project and its control-plane state. */
-    delete: operations['deleteProject']
+    /**
+     * Soft-delete a project (v1).
+     * @description Marks the project deleted and blocked, releases its cluster assignment, scrubs its name and email to DELETED and its slug to deleted-<project ID>, which releases the old slug for reuse, deletes its memberships and API keys, soft-deletes its templates and snapshots, and enqueues the teardown of its running sandboxes, all in one transaction. The project row remains. Afterwards the project answers 404 to other management writes. Repeating the call answers 204 and repeats every step except the deletion time: it re-blocks and re-scrubs the project, clears a cluster assignment written since, deletes any memberships, keys, templates or snapshots created since, and enqueues the teardown again.
+     */
+    delete: operations['managementDeleteProject']
     options?: never
     head?: never
     patch?: never
     trace?: never
   }
-  '/admin/v1/projects/{teamID}/members/{userId}': {
+  '/v1/management/projects/{projectID}/members/{userID}': {
     parameters: {
       query?: never
       header?: never
       path: {
-        /** @description Identifier of the team. */
-        teamID: components['parameters']['teamID']
+        /** @description Identifier of the project. */
+        projectID: components['parameters']['projectID']
         /** @description Identifier of the user. */
-        userId: components['parameters']['userId']
+        userID: components['parameters']['userID']
       }
       cookie?: never
     }
     get?: never
-    /** Reconcile an opaque user UUID as a project member. */
-    put: operations['upsertProjectMember']
-    post?: never
-    /** Remove a project member. */
-    delete: operations['deleteProjectMember']
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/admin/v1/projects/{teamID}/limits': {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Identifier of the team. */
-        teamID: components['parameters']['teamID']
-      }
-      cookie?: never
-    }
-    get?: never
-    /** Reconcile effective limits for a project. */
-    put: operations['upsertProjectLimits']
+    /**
+     * Apply one versioned project member projection (v1).
+     * @description Applies the newest desired presence for one project member. An older or duplicate revision is accepted without changing target state.
+     */
+    put: operations['managementApplyProjectMember']
     post?: never
     delete?: never
     options?: never
@@ -1170,21 +926,97 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/admin/v1/users/{userId}': {
+  '/v1/management/projects/{projectID}/limits': {
     parameters: {
       query?: never
       header?: never
       path: {
-        /** @description Identifier of the user. */
-        userId: components['parameters']['userId']
+        /** @description Identifier of the project. */
+        projectID: components['parameters']['projectID']
       }
       cookie?: never
     }
     get?: never
-    put?: never
+    /** Reconcile effective limits for a project (v1). */
+    put: operations['managementUpsertProjectLimits']
     post?: never
-    /** Purge shard-local membership and access-token state for an opaque user UUID. */
-    delete: operations['purgeUser']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/management/projects/{projectID}/block': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the project. */
+        projectID: components['parameters']['projectID']
+      }
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Apply a project's block state (v1).
+     * @description Records whether the project is refused billable work, which the auth path reads before it lets a sandbox start. An older or duplicate revision is accepted without changing target state.
+     */
+    put: operations['managementApplyProjectBlock']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/management/clusters/{clusterID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the cluster. */
+        clusterID: components['parameters']['clusterID']
+      }
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Register a cluster (v1).
+     * @description A cluster registered here for the first time starts with deletion protection turned off. Registering an existing cluster again with the same name and auth organization updates its endpoint, TLS setting, sandbox proxy domain and token and keeps its stored deletion protection; a different name or auth organization returns a conflict.
+     */
+    put: operations['managementRegisterCluster']
+    post?: never
+    /**
+     * Delete a cluster and its environments (v1).
+     * @description Deletes a cluster after all team assignments are detached. In the same transaction, soft-deletes every live template, snapshot template and paused sandbox snapshot on the cluster, releases their aliases, and releases all environment references while preserving environment and build history. A team assignment rejects the deletion and leaves the environments untouched, and so does deletion protection on the cluster. The local cluster's nil ID is rejected. Repeating a completed deletion succeeds.
+     */
+    delete: operations['managementDeleteCluster']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/v1/management/projects/{projectID}/cluster/{clusterID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the project. */
+        projectID: components['parameters']['projectID']
+        /** @description Identifier of the cluster. */
+        clusterID: components['parameters']['clusterID']
+      }
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Assign a cluster to a project (v1).
+     * @description Assigns the cluster when the project has no cluster assigned. Replaying the identical assignment succeeds; replacing a different assigned cluster returns a conflict.
+     */
+    put: operations['managementAssignProjectCluster']
+    post?: never
+    /** Detach a cluster assignment from a project (v1). */
+    delete: operations['managementDetachProjectCluster']
     options?: never
     head?: never
     patch?: never
@@ -1200,9 +1032,22 @@ export interface components {
        * @description Error code.
        */
       code: number
+      error_code?: components['schemas']['ErrorCode']
       /** @description Error message. */
       message: string
     }
+    /**
+     * @description Stable machine-readable reason for an API error. New codes may be added as other errors adopt this contract. Clients must handle absent or unknown codes without interpreting the human-readable message.
+     * @enum {string}
+     */
+    ErrorCode:
+      | 'cluster_registration_invalid'
+      | 'cluster_registration_conflict'
+      | 'cluster_assignment_invalid'
+      | 'cluster_assignment_project_not_found'
+      | 'cluster_assignment_cluster_not_found'
+      | 'cluster_assignment_already_assigned'
+      | 'cluster_assignment_cluster_deleting'
     AdminAuthProviderProfile: {
       /**
        * Format: uuid
@@ -1218,27 +1063,26 @@ export interface components {
     AdminAuthProviderProfilesResolveRequest: {
       userIds: string[]
     }
-    AdminAuthProviderProfilesLookupEmailRequest: {
-      /** Format: email */
-      email: string
-    }
-    AdminAuthProviderUserBootstrapRequest: {
-      oidc_issuer: string
-      oidc_user_id: string
-      /** Format: email */
-      oidc_user_email: string
-      oidc_user_name?: string | null
-      signup_ip?: string
-      signup_user_agent?: string
-    }
-    AdminTeamBootstrapRequest: {
-      /** @description Team name. */
-      name: string
+    AdminClusterCreateRequest: {
       /**
-       * Format: email
-       * @description Billing/contact email for the team.
+       * Format: uuid
+       * @description Optional stable identifier for idempotent creation. Reuse succeeds only when the immutable configuration is identical.
        */
-      email: string
+      cluster_id?: string
+      name: string
+      endpoint: string
+      endpoint_tls: boolean
+      token: string
+      sandbox_proxy_domain?: string | null
+      auth_org_id?: string | null
+    }
+    AdminClusterCreateResponse: {
+      /** Format: uuid */
+      cluster_id: string
+    }
+    AdminTeamClusterAssignmentResponse: {
+      /** Format: uuid */
+      cluster_id: string
     }
     /**
      * @description Build status mapped for dashboard clients.
@@ -1372,75 +1216,6 @@ export interface components {
     HealthResponse: {
       /** @description Human-readable health check result. */
       message: string
-    }
-    UserTeamLimits: {
-      /** Format: int64 */
-      maxLengthHours: number
-      /** Format: int32 */
-      concurrentSandboxes: number
-      /** Format: int32 */
-      concurrentTemplateBuilds: number
-      /** Format: int32 */
-      maxVcpu: number
-      /** Format: int32 */
-      maxRamMb: number
-      /** Format: int32 */
-      diskMb: number
-      /** Format: int32 */
-      eventsTtlDays: number
-    }
-    UserTeam: {
-      /** Format: uuid */
-      id: string
-      name: string
-      slug: string
-      tier: string
-      email: string
-      profilePictureUrl: string | null
-      isBlocked: boolean
-      isBanned: boolean
-      blockedReason: string | null
-      isDefault: boolean
-      limits: components['schemas']['UserTeamLimits']
-      /** Format: date-time */
-      createdAt: string
-    }
-    UserTeamsResponse: {
-      teams: components['schemas']['UserTeam'][]
-    }
-    TeamMember: {
-      /** Format: uuid */
-      id: string
-      email: string
-      name?: string | null
-      /** Format: uri */
-      profilePictureUrl?: string | null
-      providers: string[]
-      isDefault: boolean
-      /** Format: uuid */
-      addedBy?: string | null
-      /** Format: date-time */
-      createdAt: string | null
-    }
-    TeamMembersResponse: {
-      members: components['schemas']['TeamMember'][]
-    }
-    UpdateTeamRequest: {
-      name?: string
-      profilePictureUrl?: string | null
-    }
-    UpdateTeamResponse: {
-      /** Format: uuid */
-      id: string
-      name: string
-      profilePictureUrl?: string | null
-    }
-    AddTeamMemberRequest: {
-      /** Format: email */
-      email: string
-    }
-    CreateTeamRequest: {
-      name: string
     }
     DefaultTemplateAlias: {
       alias: string
@@ -1614,42 +1389,135 @@ export interface components {
       /** @description Cursor to pass to the next list request, or `null` if there is no next page. */
       nextCursor: string | null
     }
-    TeamResolveResponse: {
-      /** Format: uuid */
-      id: string
-      slug: string
-    }
-    /** @enum {string} */
-    AdminControlPlaneProjectType: 'development' | 'staging' | 'production'
-    AdminControlPlaneProjectUpsertRequest: {
+    /**
+     * @description The properties of a project this side stores. Name, slug and email are synchronized on every push. The optional cluster assignment is preserved when omitted.
+     *
+     *     A project's tier is not among them. It is assigned once, at creation, from this side's own default, and no push moves it — limits arrive separately and in full through upsertProjectLimits, and none is resolved from the tier.
+     */
+    ManagementProjectUpsertRequest: {
+      /**
+       * Format: uuid
+       * @description Cluster assignment to synchronize. Omission preserves the existing assignment.
+       */
+      cluster_id?: string
       name: string
+      /** @description Changing it renames the project, and its template names follow: each name held under an earlier slug is also given under the new one, and the old names keep working. A name the new slug already holds is left as it is. A slug already held on this control plane is a 409, on a rename as much as on a create. */
       slug: string
-      project_type: components['schemas']['AdminControlPlaneProjectType']
+      /** @description Contact address recorded on the project. */
+      email: string
     }
-    AdminControlPlaneProject: components['schemas']['AdminControlPlaneProjectUpsertRequest'] & {
+    ManagementProject: components['schemas']['ManagementProjectUpsertRequest'] & {
       /** Format: uuid */
       id: string
     }
-    AdminControlPlaneMemberUpsertRequest: {
-      /** Format: uuid */
-      added_by?: string
+    ManagementClusterProjects: {
+      project_ids: string[]
     }
-    AdminControlPlaneProjectLimits: {
-      /** Format: int32 */
-      concurrent_sandboxes: number
-      /** Format: int32 */
-      max_sandbox_length_hours: number
-      /** Format: int32 */
-      max_vcpu: number
-      /** Format: int64 */
-      max_ram_mb: number
-      /** Format: int64 */
-      disk_mb: number
-      /** Format: int32 */
-      concurrent_template_builds: number
-      /** Format: int32 */
-      events_ttl_days: number
+    ManagementClusterRegistrationRequest: {
+      name: string
+      endpoint: string
+      endpoint_tls: boolean
+      token: string
+      sandbox_proxy_domain?: string | null
+      auth_org_id?: string | null
     }
+    ManagementProjectMemberIdentity: {
+      issuer: string
+      subject: string
+    }
+    ManagementProjectMemberApplyRequest: {
+      /** Format: int64 */
+      revision: number
+      present: boolean
+      /**
+       * @description Whether this membership is the user's default team. Omitted requests from older sources remain non-default.
+       * @default false
+       */
+      is_default: boolean
+      identities?: components['schemas']['ManagementProjectMemberIdentity'][]
+    }
+    /** @description Desired project block state. A newer revision replaces the state, including any intervening manual block or unblock. */
+    ManagementProjectBlockRequest: {
+      /**
+       * Format: int64
+       * @description Monotonic per-project revision. Older or duplicate revisions succeed without changing stored state.
+       */
+      revision: number
+      /** @description Whether the project is refused billable work. */
+      blocked: boolean
+      /** @description Reason included in blocked-request errors. Cleared when blocked is false. */
+      reason?: string
+      decided_at?: components['schemas']['ManagementDecidedAt']
+    }
+    /**
+     * Format: date-time
+     * @description When the caller decided this revision, in RFC 3339. Stored with the revision and used to measure how long the decision took to apply here. Omit it when the caller does not know; the delivery is then counted as origin unknown rather than as zero lag.
+     */
+    ManagementDecidedAt: string
+    /**
+     * @description A project's effective limits, already resolved by the caller. Every field is absolute: this side stores what it is given and performs no arithmetic of its own.
+     *
+     *     The minimums below are the contract for what a limit may be, at least as strict as the CHECK constraints on default_limits. project_limits stores the same values under looser constraints on purpose — it is a push target, and a floor that only rejects the impossible keeps a future decision about what is allowed a change to this schema rather than a migration.
+     *
+     *     `max_disk_size_mb` and `max_free_disk_size_mb` are one ceiling under two names, and either name alone carries it. A caller that sends both must send them equal; a caller that sends neither is refused. Sending both is what a caller does while receivers older than the second name are still running.
+     */
+    ManagementProjectLimits:
+      | {
+          /**
+           * Format: int64
+           * @description The caller's version of this answer, raised whenever the limits it resolved for the project change. Delivery is over a network, so two pushes can be in flight at once and arrive in either order: this side stores the revision it accepted and drops a delivery at or below it, which is what keeps a delayed retry from putting the project back on limits it has already left.
+           *
+           *     Comparable only against earlier revisions for the same project.
+           */
+          revision: number
+          /** Format: int32 */
+          concurrent_sandboxes: number
+          /** Format: int32 */
+          max_sandbox_length_hours: number
+          /** Format: int32 */
+          max_vcpu: number
+          /** Format: int64 */
+          max_ram_mb: number
+          /** Format: int64 */
+          disk_mb: number
+          /** Format: int32 */
+          concurrent_template_builds: number
+          /** Format: int32 */
+          events_ttl_days: number
+          /**
+           * Format: int64
+           * @description The default free-space growth target when a template build request omits one. May sit anywhere at or below the maximum free-space growth target, and usually sits well below it; a delivery whose default exceeds the maximum is rejected.
+           */
+          default_free_disk_size_mb: number
+          /**
+           * Format: int64
+           * @description The most a template build may request as its free-space growth target.
+           */
+          max_free_disk_size_mb?: number
+          /**
+           * Format: int64
+           * @description The same ceiling as max_free_disk_size_mb, under the name it was first published with. Kept until every deployed sender and receiver speaks the other name.
+           */
+          max_disk_size_mb?: number
+          /**
+           * Format: int64
+           * @description Requests per second a project may make to each list endpoint. Zero disables the limit.
+           */
+          api_team_rps_list: number
+          /**
+           * Format: int64
+           * @description Requests per second a project may make to each delete endpoint. Zero disables the limit.
+           */
+          api_team_rps_delete: number
+          /**
+           * Format: int32
+           * @description Live secrets the project may hold.
+           */
+          max_secrets: number
+          decided_at?: components['schemas']['ManagementDecidedAt']
+        }
+      | unknown
+      | unknown
   }
   responses: {
     /** @description Bad request */
@@ -1715,15 +1583,6 @@ export interface components {
         'application/json': components['schemas']['Error']
       }
     }
-    /** @description Upstream error */
-    502: {
-      headers: {
-        [name: string]: unknown
-      }
-      content: {
-        'application/json': components['schemas']['Error']
-      }
-    }
   }
   parameters: {
     /** @description Identifier of the build. */
@@ -1742,10 +1601,12 @@ export interface components {
     build_ids: string[]
     /** @description Identifier of the team. */
     teamID: string
+    /** @description Identifier of the cluster. */
+    clusterID: string
+    /** @description Identifier of the project. */
+    projectID: string
     /** @description Identifier of the user. */
-    userId: string
-    /** @description Team slug to resolve. */
-    teamSlug: string
+    userID: string
     /** @description Maximum number of items to return per page. */
     templates_limit: number
     /** @description Identifier of the template. */
@@ -1787,19 +1648,111 @@ export interface components {
 }
 export type $defs = Record<string, never>
 export interface operations {
-  upsertProject: {
+  managementListClusterProjects: {
     parameters: {
       query?: never
       header?: never
       path: {
-        /** @description Identifier of the team. */
-        teamID: components['parameters']['teamID']
+        /** @description Identifier of the cluster. */
+        clusterID: components['parameters']['clusterID']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The projects assigned to the cluster. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ManagementClusterProjects']
+        }
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      500: components['responses']['500']
+    }
+  }
+  managementRequestClusterDeletion: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the cluster. */
+        clusterID: components['parameters']['clusterID']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The deletion is recorded, or the cluster is absent. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      /** @description The cluster has deletion protection turned on. */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Error']
+        }
+      }
+      500: components['responses']['500']
+    }
+  }
+  managementClusterDestroyReadiness: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the cluster. */
+        clusterID: components['parameters']['clusterID']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description At most one team uses the cluster. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      /** @description The cluster has deletion protection turned on, or more than one team uses it and the other teams and their templates must move off it before destroying the cluster. */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Error']
+        }
+      }
+      500: components['responses']['500']
+    }
+  }
+  managementUpsertProject: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the project. */
+        projectID: components['parameters']['projectID']
       }
       cookie?: never
     }
     requestBody: {
       content: {
-        'application/json': components['schemas']['AdminControlPlaneProjectUpsertRequest']
+        'application/json': components['schemas']['ManagementProjectUpsertRequest']
       }
     }
     responses: {
@@ -1809,7 +1762,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['AdminControlPlaneProject']
+          'application/json': components['schemas']['ManagementProject']
         }
       }
       /** @description Project created. */
@@ -1818,60 +1771,30 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['AdminControlPlaneProject']
+          'application/json': components['schemas']['ManagementProject']
         }
       }
       400: components['responses']['400']
       401: components['responses']['401']
+      404: components['responses']['404']
       409: components['responses']['409']
       500: components['responses']['500']
       501: components['responses']['501']
     }
   }
-  deleteProject: {
+  managementDeleteProject: {
     parameters: {
       query?: never
       header?: never
       path: {
-        /** @description Identifier of the team. */
-        teamID: components['parameters']['teamID']
+        /** @description Identifier of the project. */
+        projectID: components['parameters']['projectID']
       }
       cookie?: never
     }
     requestBody?: never
     responses: {
-      /** @description Project state is absent. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      400: components['responses']['400']
-      401: components['responses']['401']
-      500: components['responses']['500']
-      501: components['responses']['501']
-    }
-  }
-  upsertProjectMember: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Identifier of the team. */
-        teamID: components['parameters']['teamID']
-        /** @description Identifier of the user. */
-        userId: components['parameters']['userId']
-      }
-      cookie?: never
-    }
-    requestBody?: {
-      content: {
-        'application/json': components['schemas']['AdminControlPlaneMemberUpsertRequest']
-      }
-    }
-    responses: {
-      /** @description Membership is present. */
+      /** @description Project is deleted and its teardown is enqueued. */
       204: {
         headers: {
           [name: string]: unknown
@@ -1882,50 +1805,53 @@ export interface operations {
       401: components['responses']['401']
       404: components['responses']['404']
       500: components['responses']['500']
-      501: components['responses']['501']
     }
   }
-  deleteProjectMember: {
+  managementApplyProjectMember: {
     parameters: {
       query?: never
       header?: never
       path: {
-        /** @description Identifier of the team. */
-        teamID: components['parameters']['teamID']
+        /** @description Identifier of the project. */
+        projectID: components['parameters']['projectID']
         /** @description Identifier of the user. */
-        userId: components['parameters']['userId']
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Membership is absent. */
-      204: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-      400: components['responses']['400']
-      401: components['responses']['401']
-      404: components['responses']['404']
-      500: components['responses']['500']
-      501: components['responses']['501']
-    }
-  }
-  upsertProjectLimits: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Identifier of the team. */
-        teamID: components['parameters']['teamID']
+        userID: components['parameters']['userID']
       }
       cookie?: never
     }
     requestBody: {
       content: {
-        'application/json': components['schemas']['AdminControlPlaneProjectLimits']
+        'application/json': components['schemas']['ManagementProjectMemberApplyRequest']
+      }
+    }
+    responses: {
+      /** @description Membership projection is applied or already superseded. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      404: components['responses']['404']
+      409: components['responses']['409']
+      500: components['responses']['500']
+    }
+  }
+  managementUpsertProjectLimits: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the project. */
+        projectID: components['parameters']['projectID']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ManagementProjectLimits']
       }
     }
     responses: {
@@ -1943,19 +1869,23 @@ export interface operations {
       501: components['responses']['501']
     }
   }
-  purgeUser: {
+  managementApplyProjectBlock: {
     parameters: {
       query?: never
       header?: never
       path: {
-        /** @description Identifier of the user. */
-        userId: components['parameters']['userId']
+        /** @description Identifier of the project. */
+        projectID: components['parameters']['projectID']
       }
       cookie?: never
     }
-    requestBody?: never
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ManagementProjectBlockRequest']
+      }
+    }
     responses: {
-      /** @description User-owned shard state is absent. */
+      /** @description Block state is applied or already superseded. */
       204: {
         headers: {
           [name: string]: unknown
@@ -1964,8 +1894,118 @@ export interface operations {
       }
       400: components['responses']['400']
       401: components['responses']['401']
+      404: components['responses']['404']
       500: components['responses']['500']
       501: components['responses']['501']
+    }
+  }
+  managementRegisterCluster: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the cluster. */
+        clusterID: components['parameters']['clusterID']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ManagementClusterRegistrationRequest']
+      }
+    }
+    responses: {
+      /** @description Cluster registration is present. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      409: components['responses']['409']
+      500: components['responses']['500']
+    }
+  }
+  managementDeleteCluster: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the cluster. */
+        clusterID: components['parameters']['clusterID']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Cluster is absent. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      409: components['responses']['409']
+      500: components['responses']['500']
+    }
+  }
+  managementAssignProjectCluster: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the project. */
+        projectID: components['parameters']['projectID']
+        /** @description Identifier of the cluster. */
+        clusterID: components['parameters']['clusterID']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Cluster is assigned to the project. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      404: components['responses']['404']
+      409: components['responses']['409']
+      500: components['responses']['500']
+    }
+  }
+  managementDetachProjectCluster: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the project. */
+        projectID: components['parameters']['projectID']
+        /** @description Identifier of the cluster. */
+        clusterID: components['parameters']['clusterID']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The matching assignment is absent. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      401: components['responses']['401']
+      404: components['responses']['404']
+      409: components['responses']['409']
+      500: components['responses']['500']
     }
   }
 }
