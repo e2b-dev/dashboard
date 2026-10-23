@@ -33,7 +33,8 @@ export function TemplateSpecs({ build, className }: TemplateSpecsProps) {
       <SpecItem icon={<MemoryIcon className="size-3" />}>
         {build.memoryMB === null ? '—' : formatNumber(build.memoryMB)} MB
       </SpecItem>
-      {build.diskSizeMB !== null && (
+      {/* A build that recorded no disk size reports 0. */}
+      {build.diskSizeMB !== null && build.diskSizeMB > 0 && (
         <>
           <Separator />
           <SpecItem icon={<StorageIcon className="size-3" />}>
