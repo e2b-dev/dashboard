@@ -430,11 +430,15 @@ export interface paths {
           /**
            * @description Optional team-scoped key for retrying sandbox creation. Use 1 to 255 lowercase ASCII
            *     letters, digits, or hyphens (a-z, 0-9, -), such as a lowercase UUID. When idempotency is enabled,
-           *     matching retries replay the original status and body, including errors, for the retention period.
+           *     matching retries replay a completed status and body for the retention period. A creation
+           *     failure explicitly classified as safe to retry (Should-Retry: true) permits a fresh
+           *     attempt with the same key and parameters. Only one attempt can run at a time.
            *     Different request parameters return 409 with error_code idempotency_request_mismatch.
            *     An in-progress request returns 409 with error_code idempotency_in_progress; an unknown
            *     outcome returns 422 with error_code idempotency_outcome_unknown. These retries do not execute the request again.
-           *     Retries do not extend retention. After the key expires, it can start a new creation.
+           *     Retries do not extend retention. If a fresh attempt's request deadline plus response
+           *     persistence budget would exceed the remaining retention, the previous error is replayed.
+           *     After the key expires, it can start a new creation.
            */
           'Idempotency-Key'?: string
         }
@@ -2939,6 +2943,303 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/unstable/admin/templates/aliases': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Search template aliases as admin
+     * @description Finds the templates whose ID equals `search`, or that own an alias equal to `search` in any namespace, with their owning team and all their aliases. Deleted templates are left out. Results are ordered by template ID; the next page's token is returned in `X-Next-Token`.
+     */
+    get: {
+      parameters: {
+        query: {
+          /** @description Exact template ID or alias */
+          search: string
+          /** @description Cursor to start the list from */
+          nextToken?: components['parameters']['paginationNextToken']
+          /** @description Maximum number of items to return per page */
+          limit?: components['parameters']['paginationLimit']
+        }
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned the matching templates */
+        200: {
+          headers: {
+            'X-Next-Token': components['headers']['XNextToken']
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['AdminTemplateAliases'][]
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    /**
+     * Add a template alias without a namespace as admin
+     * @description Adds an alias without a namespace to a template, so the template resolves by that name for every team. The alias follows the rules of template names (lowercase letters, digits, `-` and `_`) and cannot equal a template ID. Returns 404 when the template does not exist and 409 when the alias is taken.
+     */
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['AdminTemplateAliasCreateRequest']
+        }
+      }
+      responses: {
+        /** @description The alias was added */
+        201: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['AdminTemplateAlias']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        404: components['responses']['404']
+        409: components['responses']['409']
+        500: components['responses']['500']
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/admin/templates/aliases/{aliasID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Remove a template alias without a namespace as admin
+     * @description Removes an alias without a namespace. A namespaced alias is not removed and answers 404.
+     */
+    delete: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          /** @description Identifier of the alias */
+          aliasID: components['parameters']['aliasID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description The alias was removed */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['AdminTemplateAliasDeleted']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/admin/templates/defaults': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Add a default template as admin
+     * @description Makes a template one of the platform's default templates. Returns 404 when the template does not exist and 409 when it is already a default template.
+     */
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['AdminDefaultTemplateCreateRequest']
+        }
+      }
+      responses: {
+        /** @description The template is now a default template */
+        201: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['AdminDefaultTemplate']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        404: components['responses']['404']
+        409: components['responses']['409']
+        500: components['responses']['500']
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/admin/templates/defaults/{templateID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Remove a default template as admin
+     * @description Stops a template being one of the platform's default templates. The template itself is not changed. Returns 404 when the template is not a default template.
+     */
+    delete: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          templateID: components['parameters']['templateID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description The template is no longer a default template */
+        204: {
+          headers: {
+            [name: string]: unknown
+          }
+          content?: never
+        }
+        401: components['responses']['401']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    options?: never
+    head?: never
+    /**
+     * Update a default template as admin
+     * @description Updates the description of a default template. Returns 404 when the template is not a default template.
+     */
+    patch: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          templateID: components['parameters']['templateID']
+        }
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['AdminDefaultTemplateUpdateRequest']
+        }
+      }
+      responses: {
+        /** @description The default template was updated */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['AdminDefaultTemplate']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    trace?: never
+  }
+  '/unstable/admin/templates/lookup': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Look up a template as admin
+     * @description Resolves `query` as, in order: a build ID (a UUID, matched to the template of the build's newest assignment, with no fallback), a template ID, or a template name (`namespace/alias`, or an alias without a namespace). Returns the template with its owning team and its newest builds. Deleted templates are not found.
+     */
+    get: {
+      parameters: {
+        query: {
+          /** @description Build ID, template ID, or template name */
+          query: string
+        }
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully resolved the template */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['AdminTemplateLookup']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        404: components['responses']['404']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api-keys': {
     parameters: {
       query?: never
@@ -4879,6 +5180,109 @@ export interface components {
       /** @description The team's full set of labels. A request's labels replace the current ones. */
       labels: string[]
     }
+    AdminTemplateTeam: {
+      /**
+       * Format: uuid
+       * @description Identifier of the team that owns the template
+       */
+      id: string
+      /** @description Name of the team */
+      name: string
+      /** @description Contact email of the team */
+      email: string
+    }
+    AdminTemplateAlias: {
+      /**
+       * Format: uuid
+       * @description Identifier of the alias
+       */
+      id: string
+      /** @description Identifier of the template the alias resolves to */
+      templateID: string
+      /** @description The alias */
+      alias: string
+      /** @description Namespace of the alias, or null for an alias that resolves for every team */
+      namespace: string | null
+      /** @description Whether building the template under another name replaces the alias */
+      isRenamable: boolean
+    }
+    AdminTemplateAliases: {
+      /** @description Identifier of the template */
+      templateID: string
+      /** @description Whether the template is public */
+      public: boolean
+      team: components['schemas']['AdminTemplateTeam']
+      /** @description All aliases of the template, those without a namespace first */
+      aliases: components['schemas']['AdminTemplateAlias'][]
+    }
+    AdminTemplateAliasCreateRequest: {
+      /** @description Identifier of the template the alias resolves to */
+      templateID: string
+      /** @description The alias, without a namespace or tag */
+      alias: string
+    }
+    AdminTemplateAliasDeleted: {
+      /**
+       * Format: uuid
+       * @description Identifier of the removed alias
+       */
+      aliasID: string
+      /** @description Identifier of the template the alias resolved to */
+      templateID: string
+      /** @description The removed alias */
+      alias: string
+    }
+    AdminDefaultTemplate: {
+      /** @description Identifier of the default template */
+      templateID: string
+      /** @description Description of the default template */
+      description: string | null
+    }
+    AdminDefaultTemplateCreateRequest: {
+      /** @description Identifier of the template to make a default template */
+      templateID: string
+      /** @description Description of the default template; blank is stored as none */
+      description?: string | null
+    }
+    AdminDefaultTemplateUpdateRequest: {
+      /** @description New description of the default template; null or blank clears it */
+      description: string | null
+    }
+    AdminTemplateLookup: {
+      /** @description Identifier of the template */
+      templateID: string
+      team: components['schemas']['AdminTemplateTeam']
+      /** @description Names of the template (namespace/alias format when namespaced) */
+      names: string[]
+      /** @description Whether the template is public */
+      public: boolean
+      /**
+       * Format: date-time
+       * @description Time when the template was created
+       */
+      createdAt: string
+      /**
+       * Format: date-time
+       * @description Time when the template was last used
+       */
+      lastSpawnedAt: string | null
+      /**
+       * Format: int64
+       * @description Number of times the template was used
+       */
+      spawnCount: number
+      /** @description Whether the template is a snapshot of a sandbox */
+      isSnapshot: boolean
+      /** @description The sandbox a snapshot template was taken from */
+      snapshotSandboxID: string | null
+      /**
+       * Format: uuid
+       * @description The build the query matched, when it was a build ID
+       */
+      matchedBuildID: string | null
+      /** @description The template's newest builds of any tag and status, newest first, at most 100 */
+      builds: components['schemas']['TemplateBuild'][]
+    }
     VolumeToken: {
       token: string
     }
@@ -5958,6 +6362,8 @@ export interface components {
     teamID: string
     nodeID: string
     apiKeyID: string
+    /** @description Identifier of the alias */
+    aliasID: string
     snapshotID: string
     tag: string
     /** @description Template tag name to check. */
@@ -6007,7 +6413,9 @@ export interface components {
      *     exponential backoff. false marks a failure a retry cannot fix, such as a malformed request
      *     or a configuration fault, or an outcome that is unknown, where a retry could create a
      *     second sandbox. Successful responses and errors without an explicit classification omit
-     *     the header.
+     *     the header. With idempotency enabled, retry sandbox creation with the same Idempotency-Key
+     *     and request parameters. A retryable creation failure permits a fresh attempt; an
+     *     idempotency_in_progress response only reports an existing attempt and never releases it.
      */
     ShouldRetry: boolean
     /** @description Cursor to fetch the next page of results, if more exist */
