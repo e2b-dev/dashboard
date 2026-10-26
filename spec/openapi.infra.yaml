@@ -247,6 +247,55 @@ components:
         minimum: 1
         maximum: 100
         default: 50
+    buildIDOrTemplate:
+      name: build_id_or_template
+      in: query
+      required: false
+      description: Optional filter by build identifier, template identifier, or template alias.
+      schema:
+        type: string
+    buildStatuses:
+      name: statuses
+      in: query
+      required: false
+      description: Comma-separated list of build statuses to include.
+      style: form
+      explode: false
+      schema:
+        type: array
+        items:
+          $ref: "#/components/schemas/BuildStatus"
+    buildsCursor:
+      name: cursor
+      in: query
+      required: false
+      description: Cursor returned by the previous list response in `created_at|build_id` format.
+      schema:
+        type: string
+    buildsLimit:
+      name: limit
+      in: query
+      required: false
+      description: Maximum number of builds to return per page.
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 100
+        default: 50
+    buildIDs:
+      name: build_ids
+      in: query
+      required: true
+      description: Comma-separated list of build IDs to get statuses for.
+      style: form
+      explode: false
+      schema:
+        type: array
+        maxItems: 100
+        items:
+          type: string
+          format: uuid
     volumeID:
       name: volumeID
       in: path
@@ -2059,6 +2108,152 @@ components:
           type: string
           nullable: true
           description: Cursor of the next page, or null on the last page
+
+    BuildStatus:
+      type: string
+      description: Build status as the builds list reports it.
+      enum:
+        - building
+        - failed
+        - success
+
+    ListedBuild:
+      type: object
+      required:
+        - id
+        - template
+        - templateId
+        - status
+        - statusMessage
+        - createdAt
+        - finishedAt
+        - cpuCount
+        - memoryMB
+        - diskSizeMB
+        - envdVersion
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identifier of the build.
+        template:
+          type: string
+          description: Template alias when present, otherwise template ID.
+        templateId:
+          type: string
+          description: Identifier of the template.
+        status:
+          $ref: "#/components/schemas/BuildStatus"
+        statusMessage:
+          type: string
+          nullable: true
+          description: Failure message when status is `failed`, otherwise `null`.
+        createdAt:
+          type: string
+          format: date-time
+          description: Build creation timestamp in RFC3339 format.
+        finishedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Build completion timestamp in RFC3339 format, if finished.
+        cpuCount:
+          type: integer
+          format: int64
+          description: CPU cores configured for the build.
+        memoryMB:
+          type: integer
+          format: int64
+          description: Memory in MiB configured for the build.
+        diskSizeMB:
+          type: integer
+          format: int64
+          nullable: true
+          description: Disk size in MiB configured for the build, if recorded.
+        envdVersion:
+          type: string
+          nullable: true
+          description: envd version the build was created with, if recorded.
+
+    BuildsListResponse:
+      type: object
+      required:
+        - data
+        - nextCursor
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ListedBuild"
+        nextCursor:
+          type: string
+          nullable: true
+          description: Cursor to pass to the next list request, or `null` if there is no next page.
+
+    BuildStatusItem:
+      type: object
+      required:
+        - id
+        - status
+        - finishedAt
+        - statusMessage
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identifier of the build.
+        status:
+          $ref: "#/components/schemas/BuildStatus"
+        finishedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Build completion timestamp in RFC3339 format, if finished.
+        statusMessage:
+          type: string
+          nullable: true
+          description: Failure message when status is `failed`, otherwise `null`.
+
+    BuildsStatusesResponse:
+      type: object
+      required:
+        - buildStatuses
+      properties:
+        buildStatuses:
+          type: array
+          description: List of build statuses
+          items:
+            $ref: "#/components/schemas/BuildStatusItem"
+
+    BuildInfo:
+      type: object
+      required:
+        - createdAt
+        - finishedAt
+        - status
+        - statusMessage
+      properties:
+        names:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: Template names related to this build, if available.
+        createdAt:
+          type: string
+          format: date-time
+          description: Build creation timestamp in RFC3339 format.
+        finishedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Build completion timestamp in RFC3339 format, if finished.
+        status:
+          $ref: "#/components/schemas/BuildStatus"
+        statusMessage:
+          type: string
+          nullable: true
+          description: Failure message when status is `failed`, otherwise `null`.
 
     TemplateRequestResponseV3:
       required:
@@ -4917,6 +5112,117 @@ paths:
           $ref: "#/components/responses/400"
         "401":
           $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/builds:
+    get:
+      summary: List team builds
+      description: >
+        Lists the team's builds, newest first, with an optional filter by build ID, template ID or
+        template alias and by status. `nextCursor` continues the listing. For E2B's own clients: it
+        may change or disappear without notice.
+      tags: [unstable]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/buildIDOrTemplate"
+        - $ref: "#/components/parameters/buildStatuses"
+        - $ref: "#/components/parameters/buildsLimit"
+        - $ref: "#/components/parameters/buildsCursor"
+      responses:
+        "200":
+          description: Successfully returned paginated builds.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuildsListResponse"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/builds/statuses:
+    get:
+      summary: Build statuses
+      description: >
+        Returns the statuses of the team's builds with the given IDs; IDs of other teams' builds are
+        left out. For E2B's own clients: it may change or disappear without notice.
+      tags: [unstable]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/buildIDs"
+      responses:
+        "200":
+          description: Successfully returned build statuses
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuildsStatusesResponse"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/builds/{buildID}:
+    get:
+      summary: Build details
+      description: >
+        Returns a build of the team with the names of its template. For E2B's own clients: it may
+        change or disappear without notice.
+      tags: [unstable]
+      security:
+        - ApiKeyAuth: []
+        - AuthProviderBearerAuth: []
+          AuthProviderTeamAuth: []
+        - AdminApiKeyAuth: []
+          AdminTeamAuth: []
+        - AdminJWTAuth: []
+          AdminTeamAuth: []
+      parameters:
+        - $ref: "#/components/parameters/buildID"
+      responses:
+        "200":
+          description: Successfully returned build details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuildInfo"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "404":
+          $ref: "#/components/responses/404"
         "429":
           $ref: "#/components/responses/429"
         "500":

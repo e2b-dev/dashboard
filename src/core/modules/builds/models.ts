@@ -1,8 +1,7 @@
 import { z } from 'zod'
-import type { components as dashboardComponents } from '@/contracts/dashboard-api'
 import type { components as infraComponents } from '@/contracts/infra-api'
 
-export type BuildStatus = dashboardComponents['schemas']['BuildStatus']
+export type BuildStatus = infraComponents['schemas']['BuildStatus']
 
 // TypeCheck: BuildStatus enum is exhaustive
 
