@@ -46,6 +46,9 @@ export type DefaultTemplate = Template & {
 
 export type TemplatesSort = InfraComponents['parameters']['templatesSort']
 
+// Mirrors `templatesSearch.maxLength` in spec/openapi.infra.yaml
+export const TEMPLATES_SEARCH_MAX_LENGTH = 256
+
 export type ListTeamTemplatesOptions = NonNullable<
   InfraPaths['/unstable/templates/search']['get']['parameters']['query']
 >

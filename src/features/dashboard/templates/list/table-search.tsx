@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useRef } from 'react'
+import { TEMPLATES_SEARCH_MAX_LENGTH } from '@/core/modules/templates/models'
 import useKeydown from '@/lib/hooks/use-keydown'
 import { DebouncedInput } from '@/ui/primitives/input'
 import { Kbd } from '@/ui/primitives/kbd'
@@ -32,6 +33,7 @@ export const SearchInput = () => {
         placeholder="Search by name or ID..."
         className="h-9 w-full pr-14"
         debounce={500}
+        maxLength={TEMPLATES_SEARCH_MAX_LENGTH}
         ref={inputRef}
       />
       <Kbd keys={['/']} className="absolute top-1/2 right-2 -translate-y-1/2" />
