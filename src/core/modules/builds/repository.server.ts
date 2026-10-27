@@ -8,14 +8,13 @@ import type {
   ListedBuildModel,
   RunningBuildStatusModel,
 } from '@/core/modules/builds/models'
-import { api, infra } from '@/core/shared/clients/api'
+import { infra } from '@/core/shared/clients/api'
 import { l } from '@/core/shared/clients/logger/logger'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import type { RequestScope } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
 
 type BuildsRepositoryDeps = {
-  apiClient: typeof api
   infraClient: typeof infra
   apiKeyHeaders: typeof apiKeyHeaders
 }
@@ -84,7 +83,6 @@ export interface GetInfraBuildLogsOptions {
 export function createBuildsRepository(
   scope: BuildsScope,
   deps: BuildsRepositoryDeps = {
-    apiClient: api,
     infraClient: infra,
     apiKeyHeaders: apiKeyHeaders,
   }
@@ -96,7 +94,7 @@ export function createBuildsRepository(
       options = {}
     ): Promise<RepoResult<ListBuildsResult>> {
       const limit = normalizeListBuildsLimit(options.limit)
-      const result = await deps.apiClient.GET('/builds', {
+      const result = await deps.infraClient.GET('/unstable/builds', {
         params: {
           query: {
             build_id_or_template: buildIdOrTemplate?.trim() || undefined,
@@ -112,11 +110,11 @@ export function createBuildsRepository(
 
       if (!result.response.ok || result.error) {
         l.error({
-          key: 'repositories:builds:list_builds:dashboard_api_error',
+          key: 'repositories:builds:list_builds:infra_error',
           error: result.error,
           context: {
             status: result.response.status,
-            path: '/builds',
+            path: '/unstable/builds',
           },
         })
         return err(
@@ -162,7 +160,7 @@ export function createBuildsRepository(
         return ok([])
       }
 
-      const result = await deps.apiClient.GET('/builds/statuses', {
+      const result = await deps.infraClient.GET('/unstable/builds/statuses', {
         params: {
           query: {
             build_ids: buildIds,
@@ -175,11 +173,11 @@ export function createBuildsRepository(
 
       if (!result.response.ok || result.error) {
         l.error({
-          key: 'repositories:builds:get_running_statuses:dashboard_api_error',
+          key: 'repositories:builds:get_running_statuses:infra_error',
           error: result.error,
           context: {
             status: result.response.status,
-            path: '/builds/statuses',
+            path: '/unstable/builds/statuses',
           },
         })
         return err(
@@ -203,10 +201,10 @@ export function createBuildsRepository(
       )
     },
     async getBuildInfo(buildId) {
-      const result = await deps.apiClient.GET('/builds/{build_id}', {
+      const result = await deps.infraClient.GET('/unstable/builds/{buildID}', {
         params: {
           path: {
-            build_id: buildId,
+            buildID: buildId,
           },
         },
         headers: {
@@ -216,11 +214,11 @@ export function createBuildsRepository(
 
       if (!result.response.ok || result.error) {
         l.error({
-          key: 'repositories:builds:get_build_info:dashboard_api_error',
+          key: 'repositories:builds:get_build_info:infra_error',
           error: result.error,
           context: {
             status: result.response.status,
-            path: '/builds/{build_id}',
+            path: '/unstable/builds/{buildID}',
             build_id: buildId,
           },
         })

@@ -1648,6 +1648,153 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/unstable/builds': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List team builds
+     * @description Lists the team's builds, newest first, with an optional filter by build ID, template ID or template alias and by status. `nextCursor` continues the listing. For E2B's own clients: it may change or disappear without notice.
+     */
+    get: {
+      parameters: {
+        query?: {
+          /** @description Optional filter by build identifier, template identifier, or template alias. */
+          build_id_or_template?: components['parameters']['buildIDOrTemplate']
+          /** @description Comma-separated list of build statuses to include. */
+          statuses?: components['parameters']['buildStatuses']
+          /** @description Maximum number of builds to return per page. */
+          limit?: components['parameters']['buildsLimit']
+          /** @description Cursor returned by the previous list response in `created_at|build_id` format. */
+          cursor?: components['parameters']['buildsCursor']
+        }
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned paginated builds. */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['BuildsListResponse']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        403: components['responses']['403']
+        429: components['responses']['429']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/builds/statuses': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Build statuses
+     * @description Returns the statuses of the team's builds with the given IDs; IDs of other teams' builds are left out. For E2B's own clients: it may change or disappear without notice.
+     */
+    get: {
+      parameters: {
+        query: {
+          /** @description Comma-separated list of build IDs to get statuses for. */
+          build_ids: components['parameters']['buildIDs']
+        }
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned build statuses */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['BuildsStatusesResponse']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        403: components['responses']['403']
+        429: components['responses']['429']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/builds/{buildID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Build details
+     * @description Returns a build of the team with the names of its template. For E2B's own clients: it may change or disappear without notice.
+     */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          buildID: components['parameters']['buildID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned build details. */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['BuildInfo']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        403: components['responses']['403']
+        404: components['responses']['404']
+        429: components['responses']['429']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/templates/{templateID}': {
     parameters: {
       query?: never
@@ -5341,6 +5488,93 @@ export interface components {
       /** @description Cursor of the next page, or null on the last page */
       nextCursor: string | null
     }
+    /**
+     * @description Build status as the builds list reports it.
+     * @enum {string}
+     */
+    BuildStatus: 'building' | 'failed' | 'success'
+    ListedBuild: {
+      /**
+       * Format: uuid
+       * @description Identifier of the build.
+       */
+      id: string
+      /** @description Template alias when present, otherwise template ID. */
+      template: string
+      /** @description Identifier of the template. */
+      templateId: string
+      status: components['schemas']['BuildStatus']
+      /** @description Failure message when status is `failed`, otherwise `null`. */
+      statusMessage: string | null
+      /**
+       * Format: date-time
+       * @description Build creation timestamp in RFC3339 format.
+       */
+      createdAt: string
+      /**
+       * Format: date-time
+       * @description Build completion timestamp in RFC3339 format, if finished.
+       */
+      finishedAt: string | null
+      /**
+       * Format: int64
+       * @description CPU cores configured for the build.
+       */
+      cpuCount: number
+      /**
+       * Format: int64
+       * @description Memory in MiB configured for the build.
+       */
+      memoryMB: number
+      /**
+       * Format: int64
+       * @description Disk size in MiB configured for the build, if recorded.
+       */
+      diskSizeMB: number | null
+      /** @description envd version the build was created with, if recorded. */
+      envdVersion: string | null
+    }
+    BuildsListResponse: {
+      data: components['schemas']['ListedBuild'][]
+      /** @description Cursor to pass to the next list request, or `null` if there is no next page. */
+      nextCursor: string | null
+    }
+    BuildStatusItem: {
+      /**
+       * Format: uuid
+       * @description Identifier of the build.
+       */
+      id: string
+      status: components['schemas']['BuildStatus']
+      /**
+       * Format: date-time
+       * @description Build completion timestamp in RFC3339 format, if finished.
+       */
+      finishedAt: string | null
+      /** @description Failure message when status is `failed`, otherwise `null`. */
+      statusMessage: string | null
+    }
+    BuildsStatusesResponse: {
+      /** @description List of build statuses */
+      buildStatuses: components['schemas']['BuildStatusItem'][]
+    }
+    BuildInfo: {
+      /** @description Template names related to this build, if available. */
+      names?: string[] | null
+      /**
+       * Format: date-time
+       * @description Build creation timestamp in RFC3339 format.
+       */
+      createdAt: string
+      /**
+       * Format: date-time
+       * @description Build completion timestamp in RFC3339 format, if finished.
+       */
+      finishedAt: string | null
+      status: components['schemas']['BuildStatus']
+      /** @description Failure message when status is `failed`, otherwise `null`. */
+      statusMessage: string | null
+    }
     TemplateRequestResponseV3: {
       /** @description Identifier of the template */
       templateID: string
@@ -6400,6 +6634,16 @@ export interface components {
     templatesCursor: string
     /** @description Maximum number of templates to return per page. */
     templatesLimit: number
+    /** @description Optional filter by build identifier, template identifier, or template alias. */
+    buildIDOrTemplate: string
+    /** @description Comma-separated list of build statuses to include. */
+    buildStatuses: components['schemas']['BuildStatus'][]
+    /** @description Cursor returned by the previous list response in `created_at|build_id` format. */
+    buildsCursor: string
+    /** @description Maximum number of builds to return per page. */
+    buildsLimit: number
+    /** @description Comma-separated list of build IDs to get statuses for. */
+    buildIDs: string[]
     volumeID: string
     secretID: string
     webhookID: string
