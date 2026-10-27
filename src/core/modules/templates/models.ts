@@ -1,8 +1,7 @@
 import type {
-  components as DashboardComponents,
-  paths as DashboardPaths,
-} from '@/contracts/dashboard-api'
-import type { components as InfraComponents } from '@/contracts/infra-api'
+  components as InfraComponents,
+  paths as InfraPaths,
+} from '@/contracts/infra-api'
 
 export type Template = Pick<
   InfraComponents['schemas']['Template'],
@@ -23,7 +22,7 @@ export type Template = Pick<
 >
 
 export type TemplateDetail = Pick<
-  DashboardComponents['schemas']['TemplateDetail'],
+  InfraComponents['schemas']['TemplateWithBuilds'],
   | 'templateID'
   | 'buildID'
   | 'cpuCount'
@@ -45,10 +44,13 @@ export type DefaultTemplate = Template & {
   defaultDescription?: string
 }
 
-export type TemplatesSort = DashboardComponents['parameters']['templates_sort']
+export type TemplatesSort = InfraComponents['parameters']['templatesSort']
+
+// Mirrors `templatesSearch.maxLength` in spec/openapi.infra.yaml
+export const TEMPLATES_SEARCH_MAX_LENGTH = 256
 
 export type ListTeamTemplatesOptions = NonNullable<
-  DashboardPaths['/templates']['get']['parameters']['query']
+  InfraPaths['/unstable/templates/search']['get']['parameters']['query']
 >
 
 export interface ListTeamTemplatesResult {
@@ -59,8 +61,7 @@ export interface ListTeamTemplatesResult {
 export type TemplateTag = InfraComponents['schemas']['TemplateTag']
 
 export type TemplateTagAssignment =
-  DashboardComponents['schemas']['TemplateTagAssignment']
-export type TemplateTagGroup =
-  DashboardComponents['schemas']['TemplateTagGroup']
+  InfraComponents['schemas']['TemplateTagAssignment']
+export type TemplateTagGroup = InfraComponents['schemas']['TemplateTagGroup']
 export type TemplateTagExistsResult =
-  DashboardComponents['schemas']['TemplateTagExistsResponse']
+  InfraComponents['schemas']['TemplateTagExistsResponse']

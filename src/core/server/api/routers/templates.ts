@@ -1,5 +1,6 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
+import { TEMPLATES_SEARCH_MAX_LENGTH } from '@/core/modules/templates/models'
 import {
   createDefaultTemplatesRepository,
   createTemplatesRepository,
@@ -36,7 +37,7 @@ export const templatesRouter = createTRPCRouter({
         cursor: z.string().optional(),
         limit: z.number().int().min(1).max(100).default(50),
         public: z.boolean().optional(),
-        search: z.string().optional(),
+        search: z.string().max(TEMPLATES_SEARCH_MAX_LENGTH).optional(),
         sort: z
           .enum([
             'created_at_asc',

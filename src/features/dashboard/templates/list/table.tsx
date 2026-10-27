@@ -12,10 +12,11 @@ import {
 } from '@tanstack/react-table'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocalStorage } from 'usehooks-ts'
-import type {
-  DefaultTemplate,
-  Template,
-  TemplatesSort,
+import {
+  type DefaultTemplate,
+  TEMPLATES_SEARCH_MAX_LENGTH,
+  type Template,
+  type TemplatesSort,
 } from '@/core/modules/templates/models'
 import { useColumnSizeVars } from '@/lib/hooks/use-column-size-vars'
 import { useRouteParams } from '@/lib/hooks/use-route-params'
@@ -83,7 +84,7 @@ export default function TemplatesTable() {
       {
         limit: TEMPLATES_PAGE_SIZE,
         public: isPublic,
-        search: globalFilter || undefined,
+        search: globalFilter.slice(0, TEMPLATES_SEARCH_MAX_LENGTH) || undefined,
         sort,
       },
       {

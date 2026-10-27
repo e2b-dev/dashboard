@@ -16,14 +16,6 @@ function createApiResponse<T>(input: {
 
 function createDeps(infraPost: ReturnType<typeof vi.fn>) {
   return {
-    apiClient: {
-      GET: vi.fn(),
-      POST: vi.fn(),
-      PATCH: vi.fn(),
-      DELETE: vi.fn(),
-    } as unknown as Parameters<
-      typeof createTemplatesRepository
-    >[1]['apiClient'],
     infraClient: {
       GET: vi.fn(),
       POST: infraPost,
