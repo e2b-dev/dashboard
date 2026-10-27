@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/e2b-dev/dashboard/compare/v0.3.0...v0.4.0) (2026-10-27)
+
+
+### Features
+
+* **templates:** read templates from api instead of dashboard-api ([#539](https://github.com/e2b-dev/dashboard/issues/539)) ([7dae3af](https://github.com/e2b-dev/dashboard/commit/7dae3afb68771c7e7fb954079015163a67beed5a))
+
 ## [0.3.0](https://github.com/e2b-dev/dashboard/compare/v0.2.2...v0.3.0) (2026-10-27)
 
 
