@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/e2b-dev/dashboard/compare/v0.2.2...v0.3.0) (2026-10-27)
+
+
+### Features
+
+* **builds:** read builds from infra api routes ([#541](https://github.com/e2b-dev/dashboard/issues/541)) ([e8697e2](https://github.com/e2b-dev/dashboard/commit/e8697e2fda2365e21458b7b8f1e664ff5d3a46d6))
+
 ## [0.2.2](https://github.com/e2b-dev/dashboard/compare/v0.2.1...v0.2.2) (2026-10-23)
 
 
