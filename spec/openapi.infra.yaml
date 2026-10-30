@@ -1523,6 +1523,7 @@ components:
         - maxFreeDiskSizeMb
         - apiTeamRpsList
         - apiTeamRpsDelete
+        - maxSecrets
       properties:
         maxLengthHours:
           type: integer
@@ -1568,6 +1569,10 @@ components:
           type: integer
           format: int64
           description: Requests per second the team may make to delete endpoints
+        maxSecrets:
+          type: integer
+          format: int64
+          description: Maximum number of secrets the team may store
 
     TeamLimitsResponse:
       required:
@@ -1811,6 +1816,91 @@ components:
             minLength: 1
             maxLength: 63
             pattern: ^[a-z0-9]([a-z0-9-]*[a-z0-9])?$
+
+    AdminTeamBanResult:
+      type: object
+      description: |
+        The outcome of banning one team. The ban is stored before the team's
+        sandboxes are killed and its builds cancelled, so it holds even when
+        either step fails.
+      required:
+        - teamID
+        - sandboxesKilled
+        - sandboxesFailedToKill
+        - buildsCancelled
+        - buildsFailedToCancel
+      properties:
+        teamID:
+          type: string
+          format: uuid
+        sandboxesKilled:
+          type: integer
+          description: Number of the team's sandboxes killed
+        sandboxesFailedToKill:
+          type: integer
+          description: Number of the team's sandboxes that failed to kill
+        sandboxKillError:
+          type: string
+          description: Set when the kill step failed or ran out of time; the counts cover what it did until then.
+        buildsCancelled:
+          type: integer
+          description: Number of the team's builds cancelled
+        buildsFailedToCancel:
+          type: integer
+          description: Number of the team's builds that failed to cancel
+        buildCancelError:
+          type: string
+          description: Set when the cancel step failed or ran out of time; the counts cover what it did until then.
+
+    AdminTeamsBanRequest:
+      type: object
+      required:
+        - teamIDs
+      properties:
+        teamIDs:
+          type: array
+          minItems: 1
+          maxItems: 100
+          uniqueItems: true
+          items:
+            type: string
+            format: uuid
+
+    AdminTeamsBanResult:
+      type: object
+      required:
+        - banned
+        - notFound
+        - failed
+      properties:
+        banned:
+          type: array
+          description: Teams whose ban is stored, with the outcome of killing their sandboxes and cancelling their builds
+          items:
+            $ref: "#/components/schemas/AdminTeamBanResult"
+        notFound:
+          type: array
+          description: Requested teams that do not exist
+          items:
+            type: string
+            format: uuid
+        failed:
+          type: array
+          description: Teams whose ban could not be stored or put into force; retrying repeats every step
+          items:
+            $ref: "#/components/schemas/AdminTeamBanFailure"
+
+    AdminTeamBanFailure:
+      type: object
+      required:
+        - teamID
+        - error
+      properties:
+        teamID:
+          type: string
+          format: uuid
+        error:
+          type: string
 
     AdminTemplateTeam:
       required:
@@ -3690,6 +3780,244 @@ components:
             accept traffic without a traffic access token. Omission uses the
             public default. Existing sandboxes, resumes and forks keep their settings.
 
+    ManagementProjectUpsertRequest:
+      type: object
+      description: >-
+        The properties of a project this side stores. Name, slug and email are
+        synchronized on every push. The optional cluster assignment is preserved
+        when omitted.
+
+
+        A project's tier is not among them, and this side assigns none. Limits
+        arrive separately and in full through managementUpsertProjectLimits.
+      required: [name, slug, email]
+      properties:
+        cluster_id:
+          type: string
+          format: uuid
+          description: Cluster assignment to synchronize. Omission preserves the existing assignment.
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 63
+          description: >-
+            Changing it renames the project, and its template names follow:
+            each name held under an earlier slug is also given under the new
+            one, and the old names keep working. A name the new slug already
+            holds is left as it is. A slug already held on this control plane
+            is a 409, on a rename as much as on a create.
+        email:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Contact address recorded on the project.
+
+    ManagementProject:
+      allOf:
+        - $ref: "#/components/schemas/ManagementProjectUpsertRequest"
+        - type: object
+          required: [id]
+          properties:
+            id:
+              type: string
+              format: uuid
+
+    ManagementProjectMemberIdentity:
+      type: object
+      required: [issuer, subject]
+      properties:
+        issuer:
+          type: string
+          minLength: 1
+          maxLength: 2048
+        subject:
+          type: string
+          minLength: 1
+          maxLength: 2048
+
+    ManagementProjectMemberApplyRequest:
+      type: object
+      required: [revision, present]
+      properties:
+        revision:
+          type: integer
+          format: int64
+          minimum: 1
+        present:
+          type: boolean
+        is_default:
+          type: boolean
+          default: false
+          description: Whether this membership is the user's default team. Omitted requests from older sources remain non-default.
+        identities:
+          type: array
+          maxItems: 16
+          items:
+            $ref: "#/components/schemas/ManagementProjectMemberIdentity"
+
+    ManagementProjectBlockRequest:
+      type: object
+      description: >-
+        Desired project block state. A newer revision replaces the state,
+        including any intervening manual block or unblock.
+      required: [revision, blocked]
+      properties:
+        revision:
+          type: integer
+          format: int64
+          minimum: 1
+          description: >-
+            Monotonic per-project revision. Older or duplicate revisions
+            succeed without changing stored state.
+        blocked:
+          type: boolean
+          description: Whether the project is refused billable work.
+        reason:
+          type: string
+          description: >-
+            Reason included in blocked-request errors. Cleared when blocked is false.
+        decided_at:
+          $ref: "#/components/schemas/ManagementDecidedAt"
+
+    ManagementDecidedAt:
+      type: string
+      format: date-time
+      description: >-
+        When the caller decided this revision, in RFC 3339. Stored with the
+        revision and used to measure how long the decision took to apply here.
+        Omit it when the caller does not know; the delivery is then counted as
+        origin unknown rather than as zero lag.
+
+    ManagementProjectLimits:
+      type: object
+      description: >-
+        A project's effective limits, already resolved by the caller. Every
+        field is absolute: this side stores what it is given and performs no
+        arithmetic of its own.
+
+
+        The minimums below are the contract for what a limit may be, at least
+        as strict as the CHECK constraints on default_limits. project_limits
+        stores the same values under looser constraints on purpose — it is a
+        push target, and a floor that only rejects the impossible keeps a
+        future decision about what is allowed a change to this schema rather
+        than a migration.
+
+
+        `max_disk_size_mb` and `max_free_disk_size_mb` are one ceiling under two
+        names, and either name alone carries it. A caller that sends both must
+        send them equal; a caller that sends neither is refused. Sending both is
+        what a caller does while receivers older than the second name are still
+        running.
+      required:
+        - revision
+        - concurrent_sandboxes
+        - max_sandbox_length_hours
+        - max_vcpu
+        - max_ram_mb
+        - disk_mb
+        - concurrent_template_builds
+        - events_ttl_days
+        - default_free_disk_size_mb
+        - api_team_rps_list
+        - api_team_rps_delete
+        - max_secrets
+      anyOf:
+        - required: [max_free_disk_size_mb]
+        - required: [max_disk_size_mb]
+      properties:
+        revision:
+          type: integer
+          format: int64
+          minimum: 1
+          description: >-
+            The caller's version of this answer, raised whenever the limits it
+            resolved for the project change. Delivery is over a network, so two
+            pushes can be in flight at once and arrive in either order: this
+            side stores the revision it accepted and drops a delivery at or
+            below it, which is what keeps a delayed retry from putting the
+            project back on limits it has already left.
+
+
+            Comparable only against earlier revisions for the same project.
+        concurrent_sandboxes:
+          type: integer
+          format: int32
+          minimum: 1
+        max_sandbox_length_hours:
+          type: integer
+          format: int32
+          minimum: 1
+        max_vcpu:
+          type: integer
+          format: int32
+          minimum: 1
+        max_ram_mb:
+          type: integer
+          format: int64
+          minimum: 1
+        disk_mb:
+          type: integer
+          format: int64
+          minimum: 1
+        concurrent_template_builds:
+          type: integer
+          format: int32
+          minimum: 1
+        events_ttl_days:
+          type: integer
+          format: int32
+          minimum: 1
+        default_free_disk_size_mb:
+          type: integer
+          format: int64
+          minimum: 0
+          description: >-
+            The default free-space growth target when a template build request
+            omits one. May sit anywhere at or below the maximum free-space
+            growth target, and usually sits well below it; a delivery whose
+            default exceeds the maximum is rejected.
+        max_free_disk_size_mb:
+          type: integer
+          format: int64
+          minimum: 1
+          description: >-
+            The most a template build may request as its free-space growth
+            target.
+        max_disk_size_mb:
+          type: integer
+          format: int64
+          minimum: 1
+          description: >-
+            The same ceiling as max_free_disk_size_mb, under the name it was
+            first published with. Kept until every deployed sender and receiver
+            speaks the other name.
+        api_team_rps_list:
+          type: integer
+          format: int64
+          minimum: 0
+          description: >-
+            Requests per second a project may make to each list endpoint. Zero
+            disables the limit.
+        api_team_rps_delete:
+          type: integer
+          format: int64
+          minimum: 0
+          description: >-
+            Requests per second a project may make to each delete endpoint. Zero
+            disables the limit.
+        max_secrets:
+          type: integer
+          format: int32
+          minimum: 1
+          description: Live secrets the project may hold.
+        decided_at:
+          $ref: "#/components/schemas/ManagementDecidedAt"
+
 tags:
   - name: templates
   - name: sandboxes
@@ -3906,7 +4234,7 @@ paths:
     get:
       summary: List running sandboxes
       x-api-group: list
-      description: List all running sandboxes. Use GET /v2/sandboxes instead.
+      description: List all running sandboxes. Returns 400 when more than 5000 running sandboxes match; use GET /v2/sandboxes to page through them.
       deprecated: true
       tags: [sandboxes]
       security:
@@ -4396,6 +4724,8 @@ paths:
           $ref: "#/components/responses/404"
         "401":
           $ref: "#/components/responses/401"
+        "409":
+          $ref: "#/components/responses/409"
         "429":
           $ref: "#/components/responses/429"
         "500":
@@ -4828,6 +5158,8 @@ paths:
           $ref: "#/components/responses/429"
         "500":
           $ref: "#/components/responses/500"
+        "503":
+          $ref: "#/components/responses/503"
 
   /snapshots:
     get:
@@ -5008,7 +5340,7 @@ paths:
     get:
       summary: List templates
       x-api-group: list
-      description: List all templates
+      description: List all templates. Returns 400 when the team has more than 5000 templates; use /v2/templates to page through them.
       deprecated: true
       tags: [templates]
       security:
@@ -5035,6 +5367,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Template"
+        "400":
+          $ref: "#/components/responses/400"
         "401":
           $ref: "#/components/responses/401"
         "429":
@@ -6116,6 +6450,154 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
+  /unstable/management/projects/{projectID}:
+    parameters:
+      - name: projectID
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    put:
+      operationId: managementUpsertProject
+      summary: Create or reconcile a project.
+      tags: [admin]
+      security:
+        - AdminJWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManagementProjectUpsertRequest"
+      responses:
+        "200":
+          description: Existing project reconciled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManagementProject"
+        "201":
+          description: Project created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManagementProject"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "409":
+          $ref: "#/components/responses/409"
+        "500":
+          $ref: "#/components/responses/500"
+    delete:
+      operationId: managementDeleteProject
+      summary: Soft-delete a project.
+      description: >-
+        Marks the project deleted and blocked, releases its cluster assignment,
+        scrubs its name and email to DELETED and its slug to
+        deleted-<project ID>, which releases the old slug for reuse, deletes
+        its memberships and API keys, soft-deletes its templates and
+        snapshots, and enqueues the teardown of its running sandboxes, all in
+        one transaction. The project row remains. Afterwards the project
+        answers 404 to other management writes. Repeating the call answers
+        204 and repeats every step except the deletion time: it re-blocks and
+        re-scrubs the project, clears a cluster assignment written since,
+        deletes any memberships, keys, templates or snapshots created since,
+        and enqueues the teardown again.
+      tags: [admin]
+      security:
+        - AdminJWTAuth: []
+      responses:
+        "204":
+          description: Project is deleted and its teardown is enqueued.
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/management/projects/{projectID}/members/{userID}:
+    parameters:
+      - name: projectID
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: userID
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    put:
+      operationId: managementApplyProjectMember
+      summary: Apply one versioned project member projection.
+      description: >-
+        Applies the newest desired presence for one project member. An older
+        or duplicate revision is accepted without changing target state.
+      tags: [admin]
+      security:
+        - AdminJWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManagementProjectMemberApplyRequest"
+      responses:
+        "204":
+          description: Membership projection is applied or already superseded.
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "409":
+          $ref: "#/components/responses/409"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/management/projects/{projectID}/limits:
+    parameters:
+      - name: projectID
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    put:
+      operationId: managementUpsertProjectLimits
+      summary: Reconcile effective limits for a project.
+      tags: [admin]
+      security:
+        - AdminJWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManagementProjectLimits"
+      responses:
+        "204":
+          description: Effective limits are synchronized.
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
+
   /unstable/management/projects/{projectID}/settings:
     parameters:
       - name: projectID
@@ -6154,6 +6636,43 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
+  /unstable/management/projects/{projectID}/block:
+    parameters:
+      - name: projectID
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    put:
+      operationId: managementApplyProjectBlock
+      summary: Apply a project's block state.
+      description: >-
+        Records whether the project is refused billable work, which the auth
+        path reads before it lets a sandbox start. An older or duplicate
+        revision is accepted without changing target state. Answers 404 when
+        the project is missing or deleted.
+      tags: [admin]
+      security:
+        - AdminJWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManagementProjectBlockRequest"
+      responses:
+        "204":
+          description: Block state is applied or already superseded.
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "500":
+          $ref: "#/components/responses/500"
+
   /unstable/admin/teams/query:
     post:
       summary: List teams as admin
@@ -6179,6 +6698,44 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AdminTeamList"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/admin/teams/bans:
+    post:
+      operationId: adminBanTeams
+      summary: Ban teams
+      description: |
+        Bans up to 100 teams at once, as
+        `PUT /unstable/admin/teams/{teamID}/ban` does, except that every
+        team's ban is stored before any team's sandboxes are killed or builds
+        cancelled, and the kills and cancellations of all teams share one time
+        budget. One team's failure does not stop the others; the response sorts
+        every requested team into banned, not found or failed. The work
+        continues if the caller disconnects.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminTeamsBanRequest"
+      responses:
+        "200":
+          description: The outcome for every requested team
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminTeamsBanResult"
         "400":
           $ref: "#/components/responses/400"
         "401":
@@ -6253,6 +6810,69 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AdminTeamSchedulingLabels"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/admin/teams/{teamID}/ban:
+    parameters:
+      - name: teamID
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+        description: Team ID
+    put:
+      operationId: adminBanTeam
+      summary: Ban a team
+      description: |
+        Marks the team as banned so its API keys stop authenticating, then
+        kills its sandboxes and cancels its builds. The ban is stored first:
+        a failure to kill or cancel is reported in the result and does not
+        undo it. Killing and cancelling stop after a fixed time budget, and a
+        step cut short is reported as failed. Banning an already banned team
+        repeats the kill and cancel. The work continues if the caller
+        disconnects.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      responses:
+        "200":
+          description: The team is banned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminTeamBanResult"
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+    delete:
+      operationId: adminUnbanTeam
+      summary: Unban a team
+      description: Clears the team's ban. Idempotent.
+      tags: [admin]
+      security:
+        - AdminApiKeyAuth: []
+        - AdminJWTAuth: []
+      responses:
+        "204":
+          description: The team is not banned
         "400":
           $ref: "#/components/responses/400"
         "401":

@@ -295,7 +295,7 @@ export interface paths {
     /**
      * List running sandboxes
      * @deprecated
-     * @description List all running sandboxes. Use GET /v2/sandboxes instead.
+     * @description List all running sandboxes. Returns 400 when more than 5000 running sandboxes match; use GET /v2/sandboxes to page through them.
      */
     get: {
       parameters: {
@@ -780,6 +780,7 @@ export interface paths {
         }
         401: components['responses']['401']
         404: components['responses']['404']
+        409: components['responses']['409']
         429: components['responses']['429']
         500: components['responses']['500']
       }
@@ -1301,6 +1302,7 @@ export interface paths {
         404: components['responses']['404']
         429: components['responses']['429']
         500: components['responses']['500']
+        503: components['responses']['503']
       }
     }
     delete?: never
@@ -1517,7 +1519,7 @@ export interface paths {
     /**
      * List templates
      * @deprecated
-     * @description List all templates
+     * @description List all templates. Returns 400 when the team has more than 5000 templates; use /v2/templates to page through them.
      */
     get: {
       parameters: {
@@ -1539,6 +1541,7 @@ export interface paths {
             'application/json': components['schemas']['Template'][]
           }
         }
+        400: components['responses']['400']
         401: components['responses']['401']
         429: components['responses']['429']
         500: components['responses']['500']
@@ -2919,6 +2922,71 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/unstable/management/projects/{projectID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        projectID: string
+      }
+      cookie?: never
+    }
+    get?: never
+    /** Create or reconcile a project. */
+    put: operations['managementUpsertProject']
+    post?: never
+    /**
+     * Soft-delete a project.
+     * @description Marks the project deleted and blocked, releases its cluster assignment, scrubs its name and email to DELETED and its slug to deleted-<project ID>, which releases the old slug for reuse, deletes its memberships and API keys, soft-deletes its templates and snapshots, and enqueues the teardown of its running sandboxes, all in one transaction. The project row remains. Afterwards the project answers 404 to other management writes. Repeating the call answers 204 and repeats every step except the deletion time: it re-blocks and re-scrubs the project, clears a cluster assignment written since, deletes any memberships, keys, templates or snapshots created since, and enqueues the teardown again.
+     */
+    delete: operations['managementDeleteProject']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/management/projects/{projectID}/members/{userID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        projectID: string
+        userID: string
+      }
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Apply one versioned project member projection.
+     * @description Applies the newest desired presence for one project member. An older or duplicate revision is accepted without changing target state.
+     */
+    put: operations['managementApplyProjectMember']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/management/projects/{projectID}/limits': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        projectID: string
+      }
+      cookie?: never
+    }
+    get?: never
+    /** Reconcile effective limits for a project. */
+    put: operations['managementUpsertProjectLimits']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/unstable/management/projects/{projectID}/settings': {
     parameters: {
       query?: never
@@ -2934,6 +3002,28 @@ export interface paths {
      * @description Replaces the complete project settings document when the revision is newer than the stored revision. Omitted settings are removed. Older and duplicate revisions leave the stored document unchanged. Every successful delivery invalidates the cached team. Answers 404 when the project is missing or deleted.
      */
     put: operations['managementSetProjectSettings']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/management/projects/{projectID}/block': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        projectID: string
+      }
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Apply a project's block state.
+     * @description Records whether the project is refused billable work, which the auth path reads before it lets a sandbox start. An older or duplicate revision is accepted without changing target state. Answers 404 when the project is missing or deleted.
+     */
+    put: operations['managementApplyProjectBlock']
     post?: never
     delete?: never
     options?: never
@@ -2985,6 +3075,32 @@ export interface paths {
         500: components['responses']['500']
       }
     }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/admin/teams/bans': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Ban teams
+     * @description Bans up to 100 teams at once, as
+     *     `PUT /unstable/admin/teams/{teamID}/ban` does, except that every
+     *     team's ban is stored before any team's sandboxes are killed or builds
+     *     cancelled, and the kills and cancellations of all teams share one time
+     *     budget. One team's failure does not stop the others; the response sorts
+     *     every requested team into banned, not found or failed. The work
+     *     continues if the caller disconnects.
+     */
+    post: operations['adminBanTeams']
     delete?: never
     options?: never
     head?: never
@@ -3085,6 +3201,39 @@ export interface paths {
     }
     post?: never
     delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/admin/teams/{teamID}/ban': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Team ID */
+        teamID: string
+      }
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Ban a team
+     * @description Marks the team as banned so its API keys stop authenticating, then
+     *     kills its sandboxes and cancels its builds. The ban is stored first:
+     *     a failure to kill or cancel is reported in the result and does not
+     *     undo it. Killing and cancelling stop after a fixed time budget, and a
+     *     step cut short is reported as failed. Banning an already banned team
+     *     repeats the kill and cancel. The work continues if the caller
+     *     disconnects.
+     */
+    put: operations['adminBanTeam']
+    post?: never
+    /**
+     * Unban a team
+     * @description Clears the team's ban. Idempotent.
+     */
+    delete: operations['adminUnbanTeam']
     options?: never
     head?: never
     patch?: never
@@ -5193,6 +5342,11 @@ export interface components {
        * @description Requests per second the team may make to delete endpoints
        */
       apiTeamRpsDelete: number
+      /**
+       * Format: int64
+       * @description Maximum number of secrets the team may store
+       */
+      maxSecrets: number
     }
     TeamLimitsResponse: {
       limits: components['schemas']['TeamLimits']
@@ -5326,6 +5480,43 @@ export interface components {
     AdminTeamSchedulingLabels: {
       /** @description The team's full set of labels. A request's labels replace the current ones. */
       labels: string[]
+    }
+    /**
+     * @description The outcome of banning one team. The ban is stored before the team's
+     *     sandboxes are killed and its builds cancelled, so it holds even when
+     *     either step fails.
+     */
+    AdminTeamBanResult: {
+      /** Format: uuid */
+      teamID: string
+      /** @description Number of the team's sandboxes killed */
+      sandboxesKilled: number
+      /** @description Number of the team's sandboxes that failed to kill */
+      sandboxesFailedToKill: number
+      /** @description Set when the kill step failed or ran out of time; the counts cover what it did until then. */
+      sandboxKillError?: string
+      /** @description Number of the team's builds cancelled */
+      buildsCancelled: number
+      /** @description Number of the team's builds that failed to cancel */
+      buildsFailedToCancel: number
+      /** @description Set when the cancel step failed or ran out of time; the counts cover what it did until then. */
+      buildCancelError?: string
+    }
+    AdminTeamsBanRequest: {
+      teamIDs: string[]
+    }
+    AdminTeamsBanResult: {
+      /** @description Teams whose ban is stored, with the outcome of killing their sandboxes and cancelling their builds */
+      banned: components['schemas']['AdminTeamBanResult'][]
+      /** @description Requested teams that do not exist */
+      notFound: string[]
+      /** @description Teams whose ban could not be stored or put into force; retrying repeats every step */
+      failed: components['schemas']['AdminTeamBanFailure'][]
+    }
+    AdminTeamBanFailure: {
+      /** Format: uuid */
+      teamID: string
+      error: string
     }
     AdminTemplateTeam: {
       /**
@@ -6477,6 +6668,124 @@ export interface components {
       /** @description Whether new sandboxes without an explicit network.allowPublicTraffic accept traffic without a traffic access token. Omission uses the public default. Existing sandboxes, resumes and forks keep their settings. */
       defaultAllowPublicTraffic?: boolean
     }
+    /**
+     * @description The properties of a project this side stores. Name, slug and email are synchronized on every push. The optional cluster assignment is preserved when omitted.
+     *
+     *     A project's tier is not among them, and this side assigns none. Limits arrive separately and in full through managementUpsertProjectLimits.
+     */
+    ManagementProjectUpsertRequest: {
+      /**
+       * Format: uuid
+       * @description Cluster assignment to synchronize. Omission preserves the existing assignment.
+       */
+      cluster_id?: string
+      name: string
+      /** @description Changing it renames the project, and its template names follow: each name held under an earlier slug is also given under the new one, and the old names keep working. A name the new slug already holds is left as it is. A slug already held on this control plane is a 409, on a rename as much as on a create. */
+      slug: string
+      /** @description Contact address recorded on the project. */
+      email: string
+    }
+    ManagementProject: components['schemas']['ManagementProjectUpsertRequest'] & {
+      /** Format: uuid */
+      id: string
+    }
+    ManagementProjectMemberIdentity: {
+      issuer: string
+      subject: string
+    }
+    ManagementProjectMemberApplyRequest: {
+      /** Format: int64 */
+      revision: number
+      present: boolean
+      /**
+       * @description Whether this membership is the user's default team. Omitted requests from older sources remain non-default.
+       * @default false
+       */
+      is_default: boolean
+      identities?: components['schemas']['ManagementProjectMemberIdentity'][]
+    }
+    /** @description Desired project block state. A newer revision replaces the state, including any intervening manual block or unblock. */
+    ManagementProjectBlockRequest: {
+      /**
+       * Format: int64
+       * @description Monotonic per-project revision. Older or duplicate revisions succeed without changing stored state.
+       */
+      revision: number
+      /** @description Whether the project is refused billable work. */
+      blocked: boolean
+      /** @description Reason included in blocked-request errors. Cleared when blocked is false. */
+      reason?: string
+      decided_at?: components['schemas']['ManagementDecidedAt']
+    }
+    /**
+     * Format: date-time
+     * @description When the caller decided this revision, in RFC 3339. Stored with the revision and used to measure how long the decision took to apply here. Omit it when the caller does not know; the delivery is then counted as origin unknown rather than as zero lag.
+     */
+    ManagementDecidedAt: string
+    /**
+     * @description A project's effective limits, already resolved by the caller. Every field is absolute: this side stores what it is given and performs no arithmetic of its own.
+     *
+     *     The minimums below are the contract for what a limit may be, at least as strict as the CHECK constraints on default_limits. project_limits stores the same values under looser constraints on purpose — it is a push target, and a floor that only rejects the impossible keeps a future decision about what is allowed a change to this schema rather than a migration.
+     *
+     *     `max_disk_size_mb` and `max_free_disk_size_mb` are one ceiling under two names, and either name alone carries it. A caller that sends both must send them equal; a caller that sends neither is refused. Sending both is what a caller does while receivers older than the second name are still running.
+     */
+    ManagementProjectLimits:
+      | {
+          /**
+           * Format: int64
+           * @description The caller's version of this answer, raised whenever the limits it resolved for the project change. Delivery is over a network, so two pushes can be in flight at once and arrive in either order: this side stores the revision it accepted and drops a delivery at or below it, which is what keeps a delayed retry from putting the project back on limits it has already left.
+           *
+           *     Comparable only against earlier revisions for the same project.
+           */
+          revision: number
+          /** Format: int32 */
+          concurrent_sandboxes: number
+          /** Format: int32 */
+          max_sandbox_length_hours: number
+          /** Format: int32 */
+          max_vcpu: number
+          /** Format: int64 */
+          max_ram_mb: number
+          /** Format: int64 */
+          disk_mb: number
+          /** Format: int32 */
+          concurrent_template_builds: number
+          /** Format: int32 */
+          events_ttl_days: number
+          /**
+           * Format: int64
+           * @description The default free-space growth target when a template build request omits one. May sit anywhere at or below the maximum free-space growth target, and usually sits well below it; a delivery whose default exceeds the maximum is rejected.
+           */
+          default_free_disk_size_mb: number
+          /**
+           * Format: int64
+           * @description The most a template build may request as its free-space growth target.
+           */
+          max_free_disk_size_mb?: number
+          /**
+           * Format: int64
+           * @description The same ceiling as max_free_disk_size_mb, under the name it was first published with. Kept until every deployed sender and receiver speaks the other name.
+           */
+          max_disk_size_mb?: number
+          /**
+           * Format: int64
+           * @description Requests per second a project may make to each list endpoint. Zero disables the limit.
+           */
+          api_team_rps_list: number
+          /**
+           * Format: int64
+           * @description Requests per second a project may make to each delete endpoint. Zero disables the limit.
+           */
+          api_team_rps_delete: number
+          /**
+           * Format: int32
+           * @description Live secrets the project may hold.
+           */
+          max_secrets: number
+          decided_at?: components['schemas']['ManagementDecidedAt']
+        }
+      | unknown
+      | unknown
   }
   responses: {
     /** @description Bad request */
@@ -6671,6 +6980,128 @@ export interface components {
 }
 export type $defs = Record<string, never>
 export interface operations {
+  managementUpsertProject: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        projectID: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ManagementProjectUpsertRequest']
+      }
+    }
+    responses: {
+      /** @description Existing project reconciled. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ManagementProject']
+        }
+      }
+      /** @description Project created. */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ManagementProject']
+        }
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      404: components['responses']['404']
+      409: components['responses']['409']
+      500: components['responses']['500']
+    }
+  }
+  managementDeleteProject: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        projectID: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Project is deleted and its teardown is enqueued. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      404: components['responses']['404']
+      500: components['responses']['500']
+    }
+  }
+  managementApplyProjectMember: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        projectID: string
+        userID: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ManagementProjectMemberApplyRequest']
+      }
+    }
+    responses: {
+      /** @description Membership projection is applied or already superseded. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      404: components['responses']['404']
+      409: components['responses']['409']
+      500: components['responses']['500']
+    }
+  }
+  managementUpsertProjectLimits: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        projectID: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ManagementProjectLimits']
+      }
+    }
+    responses: {
+      /** @description Effective limits are synchronized. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      404: components['responses']['404']
+      500: components['responses']['500']
+    }
+  }
   managementSetProjectSettings: {
     parameters: {
       query?: never
@@ -6696,6 +7127,116 @@ export interface operations {
       400: components['responses']['400']
       401: components['responses']['401']
       404: components['responses']['404']
+      500: components['responses']['500']
+    }
+  }
+  managementApplyProjectBlock: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        projectID: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ManagementProjectBlockRequest']
+      }
+    }
+    responses: {
+      /** @description Block state is applied or already superseded. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      404: components['responses']['404']
+      500: components['responses']['500']
+    }
+  }
+  adminBanTeams: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AdminTeamsBanRequest']
+      }
+    }
+    responses: {
+      /** @description The outcome for every requested team */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AdminTeamsBanResult']
+        }
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      429: components['responses']['429']
+      500: components['responses']['500']
+    }
+  }
+  adminBanTeam: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Team ID */
+        teamID: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The team is banned */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AdminTeamBanResult']
+        }
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      404: components['responses']['404']
+      429: components['responses']['429']
+      500: components['responses']['500']
+    }
+  }
+  adminUnbanTeam: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Team ID */
+        teamID: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The team is not banned */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      404: components['responses']['404']
+      429: components['responses']['429']
       500: components['responses']['500']
     }
   }
