@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/e2b-dev/dashboard/compare/v0.5.0...v0.5.1) (2026-11-05)
+
+
+### Bug Fixes
+
+* answer ok when infra-api's /health is text/plain ([#547](https://github.com/e2b-dev/dashboard/issues/547)) ([3758435](https://github.com/e2b-dev/dashboard/commit/3758435cca05b185c75c8f10ab58cb533266a3e1))
+
 ## [0.5.0](https://github.com/e2b-dev/dashboard/compare/v0.4.0...v0.5.0) (2026-11-05)
 
 
