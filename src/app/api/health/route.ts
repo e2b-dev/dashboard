@@ -1,30 +1,30 @@
 import { NextResponse } from 'next/server'
-import { api } from '@/core/shared/clients/api'
+import { infra } from '@/core/shared/clients/api'
 import { l, serializeErrorForLog } from '@/core/shared/clients/logger/logger'
 
 export const maxDuration = 10
 
-async function checkDashboardApi(): Promise<boolean> {
+async function checkInfraApi(): Promise<boolean> {
   try {
-    const { error } = await api.GET('/health', {})
+    const { error } = await infra.GET('/health', {})
     if (!error) {
       return true
     }
 
     l.error(
       {
-        key: 'health_check:dashboard_api_error',
+        key: 'health_check:infra_api_error',
         error,
       },
-      'Dashboard API health check failed'
+      'Infra API health check failed'
     )
   } catch (error) {
     l.error(
       {
-        key: 'health_check:dashboard_api_error',
+        key: 'health_check:infra_api_error',
         error: serializeErrorForLog(error),
       },
-      'Dashboard API health check failed'
+      'Infra API health check failed'
     )
   }
 
@@ -32,17 +32,17 @@ async function checkDashboardApi(): Promise<boolean> {
 }
 
 export async function GET() {
-  const dashboardApi = await checkDashboardApi()
+  const infraApi = await checkInfraApi()
 
-  const checks = { dashboardApi }
+  const checks = { infraApi }
 
   return NextResponse.json(
     {
-      status: dashboardApi ? 'ok' : 'degraded',
+      status: infraApi ? 'ok' : 'degraded',
       checks,
     },
     {
-      status: dashboardApi ? 200 : 503,
+      status: infraApi ? 200 : 503,
       headers: {
         // vercel infra respects this to cache on cdn
         'Cache-Control': 'public, max-age=30, must-revalidate',

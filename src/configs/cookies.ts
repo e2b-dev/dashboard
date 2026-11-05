@@ -6,7 +6,7 @@ import { serverSchema } from '@/lib/env'
  * Organized by functionality for better maintainability.
  */
 export const COOKIE_KEYS = {
-  // httpOnly; holds the team API key used against infra-api / dashboard-api.
+  // httpOnly; holds the team API key used against infra-api.
   API_KEY: 'e2b_api_key',
 
   SIDEBAR_STATE: 'e2b-sidebar-state',

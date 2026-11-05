@@ -3,7 +3,6 @@ import { millisecondsInDay } from 'date-fns/constants'
 import { Sandbox, TimeoutError } from 'e2b'
 import { z } from 'zod'
 import {
-  mapApiSandboxRecordToModel,
   mapInfraSandboxDetailsToModel,
   mapInfraSandboxLogToModel,
   type SandboxDetailsModel,
@@ -53,10 +52,9 @@ export const sandboxRouter = createTRPCRouter({
         throwTRPCErrorFromRepoError(detailsResult.error)
       }
 
-      const mappedDetails: SandboxDetailsModel =
-        detailsResult.data.source === 'infra'
-          ? mapInfraSandboxDetailsToModel(detailsResult.data.details)
-          : mapApiSandboxRecordToModel(detailsResult.data.details)
+      const mappedDetails: SandboxDetailsModel = mapInfraSandboxDetailsToModel(
+        detailsResult.data.details
+      )
 
       // OSS: lifecycle events (argus) are unavailable; derive the lifecycle
       // timeline from the sandbox details alone. Kept shape-identical to

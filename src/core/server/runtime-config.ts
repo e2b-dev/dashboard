@@ -11,14 +11,6 @@ export function resolveInfraApiUrl(): string {
   return env.E2B_INFRA_API_URL ?? `https://api.${env.PUBLIC_E2B_DOMAIN}`
 }
 
-export function resolveDashboardApiUrl(): string {
-  const env = runtimeEnvSchema.parse(process.env)
-  return (
-    env.E2B_DASHBOARD_API_URL ??
-    `https://dashboard-api.${env.PUBLIC_E2B_DOMAIN}`
-  )
-}
-
 export function resolveSandboxUrl(): string | undefined {
   return runtimeEnvSchema.parse(process.env).PUBLIC_SANDBOX_URL
 }

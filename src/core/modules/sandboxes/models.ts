@@ -1,4 +1,3 @@
-import type { components as DashboardComponents } from '@/contracts/dashboard-api'
 import type { components as InfraComponents } from '@/contracts/infra-api'
 
 export type SandboxLogLevel = InfraComponents['schemas']['LogLevel']
@@ -96,25 +95,5 @@ export function mapInfraSandboxDetailsToModel(
     diskSizeMB: sandbox.diskSizeMB,
     metadata: sandbox.metadata,
     state: sandbox.state,
-  }
-}
-
-export function mapApiSandboxRecordToModel(
-  sandbox: DashboardComponents['schemas']['SandboxRecord']
-): KilledSandboxDetailsModel {
-  const stoppedAt = sandbox.stoppedAt ?? null
-
-  return {
-    templateID: sandbox.templateID,
-    alias: sandbox.alias,
-    sandboxID: sandbox.sandboxID,
-    startedAt: sandbox.startedAt,
-    endAt: stoppedAt,
-    stoppedAt,
-    domain: sandbox.domain,
-    cpuCount: sandbox.cpuCount,
-    memoryMB: sandbox.memoryMB,
-    diskSizeMB: sandbox.diskSizeMB,
-    state: 'killed',
   }
 }

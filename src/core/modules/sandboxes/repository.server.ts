@@ -1,21 +1,19 @@
 import 'server-only'
 
 import { apiKeyHeaders } from '@/configs/api'
-import type { components as DashboardComponents } from '@/contracts/dashboard-api'
 import type { components as InfraComponents } from '@/contracts/infra-api'
 import type {
   Sandboxes,
   SandboxesMetricsRecord,
   SandboxState,
 } from '@/core/modules/sandboxes/models'
-import { api, infra } from '@/core/shared/clients/api'
+import { infra } from '@/core/shared/clients/api'
 import { l } from '@/core/shared/clients/logger/logger'
 import { repoErrorFromHttp } from '@/core/shared/errors'
 import type { RequestScope } from '@/core/shared/repository-scope'
 import { err, ok, type RepoResult } from '@/core/shared/result'
 
 type SandboxesRepositoryDeps = {
-  apiClient: typeof api
   infraClient: typeof infra
   apiKeyHeaders: typeof apiKeyHeaders
 }
@@ -54,16 +52,10 @@ export interface SandboxesRepository {
     options?: GetSandboxLogsOptions
   ): Promise<RepoResult<InfraComponents['schemas']['SandboxLogsV2Response']>>
   getSandboxDetails(sandboxId: string): Promise<
-    RepoResult<
-      | {
-          source: 'infra'
-          details: InfraComponents['schemas']['SandboxDetail']
-        }
-      | {
-          source: 'database-record'
-          details: DashboardComponents['schemas']['SandboxRecord']
-        }
-    >
+    RepoResult<{
+      source: 'infra'
+      details: InfraComponents['schemas']['SandboxDetail']
+    }>
   >
   getSandboxMetrics(
     sandboxId: string,
@@ -83,7 +75,6 @@ const SANDBOX_NOT_FOUND_MESSAGE =
 export function createSandboxesRepository(
   scope: SandboxesRequestScope,
   deps: SandboxesRepositoryDeps = {
-    apiClient: api,
     infraClient: infra,
     apiKeyHeaders: apiKeyHeaders,
   }
@@ -181,10 +172,6 @@ export function createSandboxesRepository(
         )
       }
 
-      // OSS: the dashboard-api killed-sandbox archival record endpoint
-      // (`GET /sandboxes/{sandboxID}/record`) is not available; we assume a
-      // 404 without calling it. The `database-record` source and its models
-      // are kept for parity with console.
       return err(repoErrorFromHttp(404, SANDBOX_NOT_FOUND_MESSAGE))
     },
     async getSandboxMetrics(sandboxId, options) {

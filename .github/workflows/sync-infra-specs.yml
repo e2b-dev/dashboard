@@ -29,19 +29,18 @@ jobs:
         with:
           token: ${{ steps.app-token.outputs.token }}
 
-      - name: Download latest infra OpenAPI specs
+      - name: Download latest infra OpenAPI spec
         run: |
           curl -f -L https://raw.githubusercontent.com/e2b-dev/infra/refs/heads/main/spec/openapi.yml -o spec/openapi.infra.yaml
-          curl -f -L https://raw.githubusercontent.com/e2b-dev/infra/refs/heads/main/spec/openapi-dashboard.yml -o spec/openapi.dashboard-api.yaml
 
       - name: Check for spec changes
         id: check-spec-changes
         run: |
-          if [[ -z $(git status --porcelain spec/openapi.infra.yaml spec/openapi.dashboard-api.yaml) ]]; then
-            echo "No changes detected in infra specs."
+          if [[ -z $(git status --porcelain spec/openapi.infra.yaml) ]]; then
+            echo "No changes detected in infra spec."
             echo "has_changes=false" >> $GITHUB_OUTPUT
           else
-            echo "Changes detected in infra specs."
+            echo "Changes detected in infra spec."
             echo "has_changes=true" >> $GITHUB_OUTPUT
           fi
 
@@ -66,14 +65,12 @@ jobs:
 
       - name: Regenerate API types
         if: steps.check-spec-changes.outputs.has_changes == 'true'
-        run: |
-          bun run generate:infra
-          bun run generate:dashboard-api
+        run: bun run generate:infra
 
       - name: Autofix generated type files
         if: steps.check-spec-changes.outputs.has_changes == 'true'
         run: |
-          GENERATED_TYPE_FILES=$(git diff --name-only -- src/core/shared/contracts/infra-api.types.ts src/core/shared/contracts/dashboard-api.types.ts | tr '\n' ' ')
+          GENERATED_TYPE_FILES=$(git diff --name-only -- src/core/shared/contracts/infra-api.types.ts | tr '\n' ' ')
 
           if [[ -z "${GENERATED_TYPE_FILES}" ]]; then
             echo "No generated type changes detected; skipping autofix."
@@ -92,11 +89,9 @@ jobs:
           commit-message: "chore: sync infra OpenAPI specs"
           title: "chore: sync infra OpenAPI specs"
           body: |
-            This PR syncs OpenAPI specs from [e2b-dev/infra](https://github.com/e2b-dev/infra):
-            - `spec/openapi.infra.yaml`
-            - `spec/openapi.dashboard-api.yaml`
+            This PR syncs `spec/openapi.infra.yaml` from [e2b-dev/infra](https://github.com/e2b-dev/infra).
 
-            It also regenerates dependent TypeScript API types and applies formatting/lint autofixes.
+            It also regenerates the dependent TypeScript API types and applies formatting/lint autofixes.
 
             ---
             *This PR was automatically created by the sync-infra-specs workflow.*

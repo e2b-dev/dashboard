@@ -5,7 +5,6 @@ const domain = { PUBLIC_E2B_DOMAIN: 'cluster.example' }
 const deprecatedVariables = [
   ['NEXT_PUBLIC_E2B_DOMAIN', 'PUBLIC_E2B_DOMAIN'],
   ['NEXT_PUBLIC_INFRA_API_URL', 'E2B_INFRA_API_URL'],
-  ['NEXT_PUBLIC_DASHBOARD_API_URL', 'E2B_DASHBOARD_API_URL'],
   ['NEXT_PUBLIC_E2B_SANDBOX_URL', 'PUBLIC_SANDBOX_URL'],
   ['E2B_SANDBOX_URL', 'PUBLIC_SANDBOX_URL'],
 ] as const
@@ -38,7 +37,6 @@ describe('dashboard environment validation', () => {
         PUBLIC_E2B_DOMAIN: ' cluster.example ',
         PUBLIC_SANDBOX_URL: ' https://sandbox.cluster.example ',
         E2B_INFRA_API_URL: ' http://127.0.0.1:3000 ',
-        E2B_DASHBOARD_API_URL: '   ',
         DASHBOARD_COOKIE_SECURE: ' FALSE ',
         OTEL_EXPORTER_OTLP_ENDPOINT: '',
       })
@@ -46,10 +44,16 @@ describe('dashboard environment validation', () => {
       ...domain,
       PUBLIC_SANDBOX_URL: 'https://sandbox.cluster.example',
       E2B_INFRA_API_URL: 'http://127.0.0.1:3000',
-      E2B_DASHBOARD_API_URL: undefined,
       DASHBOARD_COOKIE_SECURE: 'false',
       OTEL_EXPORTER_OTLP_ENDPOINT: undefined,
     })
+  })
+
+  // Upgrades must not fail on settings for services the dashboard no longer uses.
+  it('ignores variables it does not read', () => {
+    expect(
+      appEnvSchema.parse({ ...domain, E2B_RETIRED_API_URL: 'not a url' })
+    ).toEqual(domain)
   })
 
   it.each(
@@ -75,7 +79,6 @@ describe('dashboard environment validation', () => {
   it.each([
     'PUBLIC_SANDBOX_URL',
     'E2B_INFRA_API_URL',
-    'E2B_DASHBOARD_API_URL',
   ])('requires an HTTP(S) URL for %s', (key) => {
     for (const value of ['localhost:3002', 'ftp://sandbox.example']) {
       const parsed = appEnvSchema.safeParse({ ...domain, [key]: value })

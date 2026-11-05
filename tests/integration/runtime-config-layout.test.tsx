@@ -46,7 +46,6 @@ describe('dashboard layout runtime config', () => {
     vi.stubGlobal('fetch', fetchSpy)
     vi.stubEnv('E2B_API_KEY', 'e2b_test_private_key')
     vi.stubEnv('E2B_INFRA_API_URL', 'http://infra-api.internal:3000')
-    vi.stubEnv('E2B_DASHBOARD_API_URL', 'http://dashboard-api.internal:3010')
 
     for (const domain of ['first.example', 'second.example']) {
       vi.stubEnv('PUBLIC_E2B_DOMAIN', domain)
@@ -61,9 +60,7 @@ describe('dashboard layout runtime config', () => {
       expect(html).toContain(
         `<output>${domain}|https://sandbox.${domain}</output>`
       )
-      expect(html).not.toMatch(
-        /e2b_test_private_key|infra-api\.internal|dashboard-api\.internal/
-      )
+      expect(html).not.toMatch(/e2b_test_private_key|infra-api\.internal/)
     }
     expect(fetchSpy).not.toHaveBeenCalled()
   })
