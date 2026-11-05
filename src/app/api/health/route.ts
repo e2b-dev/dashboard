@@ -6,14 +6,18 @@ export const maxDuration = 10
 
 async function checkInfraApi(): Promise<boolean> {
   try {
-    const { error } = await infra.GET('/health', {})
-    if (!error) {
+    // infra-api answers /health with text/plain, which the default JSON parsing rejects
+    const { response, error } = await infra.GET('/health', {
+      parseAs: 'text',
+    })
+    if (response.ok) {
       return true
     }
 
     l.error(
       {
         key: 'health_check:infra_api_error',
+        status: response.status,
         error,
       },
       'Infra API health check failed'
