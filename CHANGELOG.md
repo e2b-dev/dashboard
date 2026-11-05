@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/e2b-dev/dashboard/compare/v0.4.0...v0.5.0) (2026-11-05)
+
+
+### Features
+
+* remove the dashboard-api dependency ([#545](https://github.com/e2b-dev/dashboard/issues/545)) ([a327227](https://github.com/e2b-dev/dashboard/commit/a3272272a007cfc35d92b915be2912eb520932c0))
+
 ## [0.4.0](https://github.com/e2b-dev/dashboard/compare/v0.3.0...v0.4.0) (2026-10-27)
 
 
