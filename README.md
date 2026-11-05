@@ -16,10 +16,9 @@ Open-source dashboard for self-hosted [E2B infrastructure](https://github.com/e2
 
 ## Overview
 
-Built with Next.js 16, React 19, and TypeScript. The dashboard talks to two APIs from your [E2B infrastructure deployment](https://github.com/e2b-dev/infra):
+Built with Next.js 16, React 19, and TypeScript. The dashboard talks to a single API from your [E2B infrastructure deployment](https://github.com/e2b-dev/infra):
 
 - **infra-api** (`https://api.<your-domain>`) — sandboxes, templates, builds
-- **dashboard-api** (`https://dashboard-api.<your-domain>`) — template & build metadata
 
 ### Authentication
 
@@ -32,9 +31,9 @@ Authentication is a single **team API key**:
 
 | Variable | Read | Purpose |
 |---|---|---|
-| `PUBLIC_E2B_DOMAIN` | runtime | Required E2B cluster domain; used by the SDK and to derive `https://api.<domain>` and `https://dashboard-api.<domain>` |
+| `PUBLIC_E2B_DOMAIN` | runtime | Required E2B cluster domain; used by the SDK and to derive `https://api.<domain>` |
 | `PUBLIC_SANDBOX_URL` | per request | Optional sandbox traffic base URL, reachable from both the browser and server |
-| `E2B_INFRA_API_URL` / `E2B_DASHBOARD_API_URL` | server start | Optional server-side API URLs; override domain-derived URLs |
+| `E2B_INFRA_API_URL` | server start | Optional server-side API URL; overrides the domain-derived URL |
 | `DASHBOARD_COOKIE_SECURE` | server start | `false` only for a plain-http install; the API key cookie then travels unencrypted. Defaults to secure in production builds |
 
 Set `PUBLIC_E2B_DOMAIN` when starting the container. Next does not give
@@ -50,11 +49,10 @@ set, even if the new name is also present.
 |---|---|
 | `NEXT_PUBLIC_E2B_DOMAIN` | `PUBLIC_E2B_DOMAIN` |
 | `NEXT_PUBLIC_INFRA_API_URL` | `E2B_INFRA_API_URL` |
-| `NEXT_PUBLIC_DASHBOARD_API_URL` | `E2B_DASHBOARD_API_URL` |
 | `NEXT_PUBLIC_E2B_SANDBOX_URL` / `E2B_SANDBOX_URL` | `PUBLIC_SANDBOX_URL` |
 
-API URL overrides remain optional; without them the domain determines both
-API URLs. An absent or blank `PUBLIC_SANDBOX_URL` lets the SDK use domain
+The API URL override remains optional; without it the domain determines the
+API URL. An absent or blank `PUBLIC_SANDBOX_URL` lets the SDK use domain
 routing.
 
 Every API or sandbox URL must include `http://` or `https://`. The schema in
@@ -109,8 +107,8 @@ bun install
 3. Set up environment variables
 ```bash
 cp .env.example .env
-# set PUBLIC_E2B_DOMAIN (and optionally E2B_INFRA_API_URL /
-# E2B_DASHBOARD_API_URL) to point at your infrastructure
+# set PUBLIC_E2B_DOMAIN (and optionally E2B_INFRA_API_URL) to point at
+# your infrastructure
 ```
 
 4. Start the development server
@@ -151,9 +149,8 @@ docker run --rm -p 3001:3001 \
   `PUBLIC_E2B_DOMAIN` fails validation.
 - The build needs outbound HTTPS for the three Google Fonts families in
   `src/app/fonts.ts`; an air-gapped build fails there.
-- `GET /api/health` reports dashboard-api's health and answers 503 while
-  dashboard-api is unreachable, so use `GET /` as the container liveness
-  check.
+- `GET /api/health` reports infra-api's health and answers 503 while
+  infra-api is unreachable, so use `GET /` as the container liveness check.
 - `scripts/container-smoke.sh` builds the image and asserts those responses.
 
 ## Scripts
@@ -166,7 +163,6 @@ docker run --rm -p 3001:3001 \
 | `bun run test:integration` | Integration tests |
 | `bun run lint` / `bun run format` | Biome lint / format |
 | `bun run generate:infra` | Regenerate infra-api contract types from `spec/` |
-| `bun run generate:dashboard-api` | Regenerate dashboard-api contract types from `spec/` |
 
 ## Releases
 

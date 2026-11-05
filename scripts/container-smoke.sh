@@ -55,9 +55,9 @@ check "GET /sandboxes redirects to the key form" 307 \
 check "GET /sandboxes redirect target" "http://127.0.0.1:${PORT}/?returnTo=%2Fsandboxes" \
   "$(curl -sS -o /dev/null -w '%{redirect_url}' "http://127.0.0.1:${PORT}/sandboxes")"
 
-# /api/health probes dashboard-api, which this run does not provide, so 503 is
-# the correct answer here and proves route handlers are being served.
-check "GET /api/health without a dashboard-api" 503 \
+# /api/health probes infra-api, which never resolves under smoke.invalid, so 503
+# is the correct answer here and proves route handlers are being served.
+check "GET /api/health without an infra-api" 503 \
   "$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PORT}/api/health")"
 
 if [ "${fail}" != 0 ]; then
@@ -91,11 +91,9 @@ check_invalid_config() {
 check_invalid_config PUBLIC_SANDBOX_URL missing-scheme.example:3002
 check_invalid_config PUBLIC_E2B_DOMAIN ''
 check_invalid_config E2B_INFRA_API_URL ftp://api.example
-check_invalid_config E2B_DASHBOARD_API_URL missing-scheme.example:3010
 check_invalid_config E2B_SANDBOX_URL https://sandbox.example
 check_invalid_config NEXT_PUBLIC_E2B_DOMAIN old.example
 check_invalid_config NEXT_PUBLIC_INFRA_API_URL https://api.old.example
-check_invalid_config NEXT_PUBLIC_DASHBOARD_API_URL https://dashboard-api.old.example
 check_invalid_config NEXT_PUBLIC_E2B_SANDBOX_URL https://sandbox.old.example
 check_invalid_config DASHBOARD_COOKIE_SECURE off
 

@@ -3,16 +3,11 @@ import { register } from '@/instrumentation'
 
 vi.mock('@vercel/otel', () => ({ registerOTel: vi.fn() }))
 
-const URL_KEYS = [
-  'PUBLIC_SANDBOX_URL',
-  'E2B_INFRA_API_URL',
-  'E2B_DASHBOARD_API_URL',
-] as const
+const URL_KEYS = ['PUBLIC_SANDBOX_URL', 'E2B_INFRA_API_URL'] as const
 
 const DEPRECATED_KEYS = [
   'NEXT_PUBLIC_E2B_DOMAIN',
   'NEXT_PUBLIC_INFRA_API_URL',
-  'NEXT_PUBLIC_DASHBOARD_API_URL',
   'NEXT_PUBLIC_E2B_SANDBOX_URL',
   'E2B_SANDBOX_URL',
 ] as const
@@ -76,7 +71,6 @@ describe('runtime configuration at server startup', () => {
   it('accepts a valid runtime configuration with telemetry disabled', async () => {
     vi.stubEnv('PUBLIC_SANDBOX_URL', 'https://sandbox.example')
     vi.stubEnv('E2B_INFRA_API_URL', 'http://127.0.0.1:3000')
-    vi.stubEnv('E2B_DASHBOARD_API_URL', 'http://127.0.0.1:3010')
     vi.stubEnv('DASHBOARD_COOKIE_SECURE', ' false ')
 
     await expect(register()).resolves.toBeUndefined()

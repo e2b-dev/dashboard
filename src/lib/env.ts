@@ -24,13 +24,11 @@ export const runtimeEnvSchema = z.object({
   PUBLIC_E2B_DOMAIN: z.string().trim().min(1, 'Set PUBLIC_E2B_DOMAIN'),
   PUBLIC_SANDBOX_URL: httpUrl,
   E2B_INFRA_API_URL: httpUrl,
-  E2B_DASHBOARD_API_URL: httpUrl,
 
   // Reject the SDK alias too, or its own environment fallback can override routing.
   E2B_SANDBOX_URL: deprecatedVariable('PUBLIC_SANDBOX_URL'),
   NEXT_PUBLIC_E2B_DOMAIN: deprecatedVariable('PUBLIC_E2B_DOMAIN'),
   NEXT_PUBLIC_INFRA_API_URL: deprecatedVariable('E2B_INFRA_API_URL'),
-  NEXT_PUBLIC_DASHBOARD_API_URL: deprecatedVariable('E2B_DASHBOARD_API_URL'),
   NEXT_PUBLIC_E2B_SANDBOX_URL: deprecatedVariable('PUBLIC_SANDBOX_URL'),
 })
 

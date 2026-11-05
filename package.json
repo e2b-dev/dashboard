@@ -16,7 +16,6 @@
     "prebuild": "bun scripts:check-app-env",
     "<<<<<<< Gen": "",
     "generate:infra": "bunx openapi-typescript ./spec/openapi.infra.yaml -o ./src/core/shared/contracts/infra-api.types.ts",
-    "generate:dashboard-api": "bunx openapi-typescript ./spec/openapi.dashboard-api.yaml -o ./src/core/shared/contracts/dashboard-api.types.ts",
     "<<<<<<< Scripts": "",
     "scripts:check-app-env": "bun scripts/check-app-env.ts",
     "<<<<<<< Development": "",
