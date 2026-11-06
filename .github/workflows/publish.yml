@@ -43,11 +43,13 @@ env:
   IMAGE: us-docker.pkg.dev/e2b-artifacts/dashboard/dashboard
 
 jobs:
-  publish:
-    name: Build and push the image
+  preflight:
+    name: Check the release
     runs-on: ubuntu-latest
-    # The arm64 build runs emulated; allow for it.
-    timeout-minutes: 90
+    timeout-minutes: 10
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+      sha: ${{ steps.meta.outputs.sha }}
 
     steps:
       - name: Check the publishing credentials are configured
@@ -152,48 +154,149 @@ jobs:
             exit 1
           fi
 
-      # The arm64 half of the manifest list runs its Bun install and Next build
-      # under emulation; the alternative, cross-building on amd64, would ship
-      # amd64-only native modules (sharp) inside the standalone output.
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@1f40c72289eff860ee54a304f1438e3cff362e0a # v4.3.0
+  # Each platform builds on a native runner. Emulating arm64 under QEMU made its
+  # Next build roughly ten times slower, and cross-building from amd64 would
+  # ship amd64-only native modules (sharp) inside the standalone output.
+  build:
+    name: Build ${{ matrix.platform }}
+    needs: preflight
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        include:
+          - platform: linux/amd64
+            arch: amd64
+            runner: ubuntu-24.04
+          - platform: linux/arm64
+            arch: arm64
+            runner: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ needs.preflight.outputs.sha }}
+
+      - name: Authenticate to Google Cloud
+        if: ${{ inputs.dry_run != true }}
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud
+        if: ${{ inputs.dry_run != true }}
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+
+      - name: Configure Docker for Artifact Registry
+        if: ${{ inputs.dry_run != true }}
+        run: gcloud auth configure-docker us-docker.pkg.dev --quiet
 
       - name: Set up Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
-      - name: Build and push
+      - name: Build
         env:
-          TAG: ${{ steps.meta.outputs.tag }}
-          SHA: ${{ steps.meta.outputs.sha }}
+          PLATFORM: ${{ matrix.platform }}
+          TAG: ${{ needs.preflight.outputs.tag }}
+          SHA: ${{ needs.preflight.outputs.sha }}
           DRY_RUN: ${{ inputs.dry_run }}
         run: |
           set -euo pipefail
-          output=--push
-          platforms=linux/amd64,linux/arm64
+          # The image is pushed untagged; the merge job names it once both
+          # platforms exist, so a failed leg never leaves a half-published tag.
+          output="type=image,name=${IMAGE},push-by-digest=true,name-canonical=true,push=true"
           if [ "${DRY_RUN}" = "true" ]; then
-            # A dry run loads the image into the local daemon, which can hold
-            # one platform, so it rehearses the native build only.
-            output=--load
-            platforms=linux/amd64
+            output=type=docker
           fi
           # Artifact Registry rejects buildx's default provenance/SBOM
           # attestation manifest lists with HTTP 400.
           docker buildx build \
-            --platform "${platforms}" \
+            --platform "${PLATFORM}" \
             --provenance=false \
             --sbom=false \
             --build-arg "BUILD=${TAG}" \
             --label "org.opencontainers.image.revision=${SHA}" \
             --label "org.opencontainers.image.version=${TAG}" \
             --label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
-            --tag "${IMAGE}:${TAG}" \
-            "${output}" .
+            --metadata-file "${RUNNER_TEMP}/metadata.json" \
+            --output "${output}" \
+            .
 
-      - name: Record what was published
+      - name: Record the digest
         if: ${{ inputs.dry_run != true }}
         env:
-          TAG: ${{ steps.meta.outputs.tag }}
-          SHA: ${{ steps.meta.outputs.sha }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+          digest="$(jq -er '."containerimage.digest"' "${RUNNER_TEMP}/metadata.json")"
+          mkdir -p "${RUNNER_TEMP}/digests"
+          printf '%s' "${digest}" > "${RUNNER_TEMP}/digests/${ARCH}"
+
+      - name: Upload the digest
+        if: ${{ inputs.dry_run != true }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: digest-${{ matrix.arch }}
+          path: ${{ runner.temp }}/digests/${{ matrix.arch }}
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    name: Publish the manifest list
+    needs: [preflight, build]
+    if: ${{ inputs.dry_run != true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Download the digests
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: digest-*
+          path: ${{ runner.temp }}/digests
+          merge-multiple: true
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker us-docker.pkg.dev --quiet
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      - name: Create the manifest list
+        env:
+          TAG: ${{ needs.preflight.outputs.tag }}
+        run: |
+          set -euo pipefail
+          amd64="$(cat "${RUNNER_TEMP}/digests/amd64")"
+          arm64="$(cat "${RUNNER_TEMP}/digests/arm64")"
+          sources=("${IMAGE}@${amd64}" "${IMAGE}@${arm64}")
+          # Tags are immutable, so the list is checked before it is pushed: a
+          # wrong one could never be replaced under the same tag.
+          planned="$(docker buildx imagetools create --dry-run "${sources[@]}" \
+            | jq -r '.manifests[] | "\(.platform.os)/\(.platform.architecture) \(.digest)"' | sort)"
+          expected="$(printf 'linux/amd64 %s\nlinux/arm64 %s' "${amd64}" "${arm64}")"
+          if [ "${planned}" != "${expected}" ]; then
+            printf 'planned:\n%s\nexpected:\n%s\n' "${planned}" "${expected}" >&2
+            echo "FIX: the manifest list must hold exactly linux/amd64 and linux/arm64 from this run's builds; check the build job's digests" >&2
+            exit 1
+          fi
+          docker buildx imagetools create --tag "${IMAGE}:${TAG}" "${sources[@]}"
+
+      - name: Record what was published
+        env:
+          TAG: ${{ needs.preflight.outputs.tag }}
+          SHA: ${{ needs.preflight.outputs.sha }}
         run: |
           set -euo pipefail
           digest="$(docker buildx imagetools inspect "${IMAGE}:${TAG}" --format '{{json .Manifest.Digest}}' | tr -d '"')"
