@@ -33,8 +33,35 @@ describe('publish workflow', () => {
     expect(workflow).toContain(
       'us-docker.pkg.dev/e2b-artifacts/dashboard/dashboard'
     )
-    expect(workflow).toContain('platforms=linux/amd64,linux/arm64')
-    expect(workflow).toContain('docker/setup-qemu-action@')
+    expect(workflow).toContain('push-by-digest=true')
+    expect(workflow).toContain('docker buildx imagetools create')
+  })
+
+  it('builds each architecture natively, since cross-builds ship the wrong sharp', () => {
+    expect(workflow).toMatch(
+      /platform: linux\/amd64\s*\n\s*arch: amd64\s*\n\s*runner: ubuntu-24\.04\n/
+    )
+    expect(workflow).toMatch(
+      /platform: linux\/arm64\s*\n\s*arch: arm64\s*\n\s*runner: ubuntu-24\.04-arm\n/
+    )
+    expect(workflow).not.toContain('docker/setup-qemu-action@')
+    expect(workflow).toContain('ref: ${{ needs.preflight.outputs.sha }}')
+  })
+
+  it('tags only a manifest list holding both architectures', () => {
+    expect(workflow).toContain(
+      "expected=\"$(printf 'linux/amd64 %s\\nlinux/arm64 %s'"
+    )
+    expect(workflow.indexOf('imagetools create --dry-run')).toBeLessThan(
+      workflow.indexOf('imagetools create --tag')
+    )
+  })
+
+  it('never publishes from a dry run', () => {
+    expect(workflow).toMatch(
+      /merge:\n(?: {4}\S.*\n)*? {4}if: \$\{\{ inputs\.dry_run != true \}\}\n/
+    )
+    expect(workflow).toContain('output=type=docker')
   })
 
   it('disables the attestations Artifact Registry rejects', () => {
