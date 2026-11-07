@@ -295,7 +295,7 @@ export interface paths {
     /**
      * List running sandboxes
      * @deprecated
-     * @description List all running sandboxes. Use GET /v2/sandboxes instead.
+     * @description List all running sandboxes. Returns 400 when more than 5000 running sandboxes match; use GET /v2/sandboxes to page through them.
      */
     get: {
       parameters: {
@@ -780,6 +780,7 @@ export interface paths {
         }
         401: components['responses']['401']
         404: components['responses']['404']
+        409: components['responses']['409']
         429: components['responses']['429']
         500: components['responses']['500']
       }
@@ -839,6 +840,53 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/unstable/sandboxes/{sandboxID}/record': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Sandbox record
+     * @description Returns the team's latest recorded run of the sandbox, including runs that have already ended, and whether its monitoring, logs and events data are still retained. Returns 404 when the team has no recorded run of the sandbox.
+     */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          sandboxID: components['parameters']['sandboxID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Successfully returned the sandbox record */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['SandboxRecord']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        403: components['responses']['403']
+        404: components['responses']['404']
+        429: components['responses']['429']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/sandboxes/{sandboxID}/pause': {
     parameters: {
       query?: never
@@ -850,7 +898,7 @@ export interface paths {
     put?: never
     /**
      * Pause sandbox
-     * @description Pause the sandbox
+     * @description Pause the sandbox. Answers 503 and leaves the sandbox running when it cannot be paused right now: its node is busy, it is being snapshotted, or `requireHealthyGuest` was set and the sandbox guest agent is not responding; retry later.
      */
     post: {
       parameters: {
@@ -874,6 +922,7 @@ export interface paths {
           }
           content?: never
         }
+        400: components['responses']['400']
         401: components['responses']['401']
         404: components['responses']['404']
         409: components['responses']['409']
@@ -900,7 +949,7 @@ export interface paths {
     /**
      * Resume sandbox
      * @deprecated
-     * @description Resume the sandbox
+     * @description Resume the sandbox. Answers 409 when the sandbox is already running, or when its snapshot was taken while the sandbox guest agent was not responding and a plain resume would restore that memory (error_code sandbox_snapshot_guest_agent_unresponsive); resume such a sandbox without memory (`memory: false`).
      */
     post: {
       parameters: {
@@ -1005,7 +1054,7 @@ export interface paths {
     /**
      * Connect sandbox
      * @deprecated
-     * @description Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. Use POST /v2/sandboxes/{sandboxID}/connect instead.
+     * @description Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. Use POST /v2/sandboxes/{sandboxID}/connect instead. Answers 409 with error_code sandbox_snapshot_guest_agent_unresponsive when the paused sandbox's snapshot was taken while its guest agent was not responding and the request did not ask for `memory: false`.
      */
     post: {
       parameters: {
@@ -1067,7 +1116,7 @@ export interface paths {
     put?: never
     /**
      * Connect sandbox (v2)
-     * @description Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. The request body is optional; an omitted timeout defaults to 300 seconds.
+     * @description Returns sandbox details. If the sandbox is paused, it will be resumed. TTL is only extended. The request body is optional; an omitted timeout defaults to 300 seconds. Answers 409 with error_code sandbox_snapshot_guest_agent_unresponsive when the paused sandbox's snapshot was taken while its guest agent was not responding and the request did not ask for `memory: false`.
      */
     post: {
       parameters: {
@@ -1301,6 +1350,7 @@ export interface paths {
         404: components['responses']['404']
         429: components['responses']['429']
         500: components['responses']['500']
+        503: components['responses']['503']
       }
     }
     delete?: never
@@ -1371,12 +1421,31 @@ export interface paths {
     put?: never
     /**
      * Create template (v3)
-     * @description Create a new template
+     * @description Create a new template.
      */
     post: {
       parameters: {
         query?: never
-        header?: never
+        header?: {
+          /**
+           * @description Optional team-scoped key for retrying the request. Use 1 to 255 lowercase ASCII letters,
+           *     digits, or hyphens (a-z, 0-9, -), such as a lowercase UUID. The HTTP method, path, query,
+           *     and request content identify the request. When idempotency is enabled, a matching retry of
+           *     a completed request replays its status and body, including the IDs of any resources it
+           *     created, without repeating the operation. A failure explicitly classified as safe to retry
+           *     (Should-Retry: true) permits a fresh attempt with the same key and request. Only one
+           *     attempt can run at a time. A different request returns 409 with error_code
+           *     idempotency_request_mismatch. A matching request whose original has no recorded response
+           *     yet and is within its expected response window returns 409 with error_code
+           *     idempotency_in_progress. A matching request whose original has no recorded response and
+           *     whose expected response deadline has passed or is unknown returns 422 with error_code
+           *     idempotency_outcome_unknown. These conflicts and unknown outcomes do not execute the
+           *     request again. If the key's record is unavailable or idempotency is misconfigured, the
+           *     request returns 503; Should-Retry tells whether to retry with the same key. After the
+           *     retention period expires, the key can start a new operation.
+           */
+          'Idempotency-Key'?: components['parameters']['idempotencyKey']
+        }
         path?: never
         cookie?: never
       }
@@ -1395,12 +1464,91 @@ export interface paths {
             'application/json': components['schemas']['TemplateRequestResponseV3']
           }
         }
-        400: components['responses']['400']
-        401: components['responses']['401']
-        403: components['responses']['403']
-        409: components['responses']['409']
-        429: components['responses']['429']
-        500: components['responses']['500']
+        /** @description Bad request */
+        400: {
+          headers: {
+            'Should-Retry'?: boolean
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Error']
+          }
+        }
+        /** @description Authentication error */
+        401: {
+          headers: {
+            'Should-Retry'?: boolean
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Error']
+          }
+        }
+        /** @description Forbidden */
+        403: {
+          headers: {
+            'Should-Retry'?: boolean
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Error']
+          }
+        }
+        /** @description Conflict */
+        409: {
+          headers: {
+            'Should-Retry'?: boolean
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Error']
+          }
+        }
+        /** @description Unprocessable request */
+        422: {
+          headers: {
+            'Should-Retry'?: boolean
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Error']
+          }
+        }
+        /** @description Too many requests */
+        429: {
+          headers: {
+            'Should-Retry'?: boolean
+            /**
+             * @description When present, the number of seconds to wait before retrying the request.
+             * @example 30
+             */
+            'Retry-After'?: number
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Error']
+          }
+        }
+        /** @description Server error */
+        500: {
+          headers: {
+            'Should-Retry'?: boolean
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Error']
+          }
+        }
+        /** @description Service unavailable */
+        503: {
+          headers: {
+            'Should-Retry'?: boolean
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['Error']
+          }
+        }
       }
     }
     delete?: never
@@ -1517,7 +1665,7 @@ export interface paths {
     /**
      * List templates
      * @deprecated
-     * @description List all templates
+     * @description List all templates. Returns 400 when the team has more than 5000 templates; use /v2/templates to page through them.
      */
     get: {
       parameters: {
@@ -1539,6 +1687,7 @@ export interface paths {
             'application/json': components['schemas']['Template'][]
           }
         }
+        400: components['responses']['400']
         401: components['responses']['401']
         429: components['responses']['429']
         500: components['responses']['500']
@@ -2746,6 +2895,175 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/unstable/admin/sandboxes/{sandboxID}/overview': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Sandbox overview
+     * @description Reads a sandbox's team, snapshot template, most recent pause and newest
+     *     default-tag build from the database. The team comes from the
+     *     stopped-sandbox log, or from the snapshot when the sandbox has not
+     *     stopped. Returns 404 when neither knows the sandbox. A sandbox without
+     *     a snapshot returns null `snapshotTemplateId`, `lastPause` and
+     *     `latestBuild`.
+     */
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          sandboxID: components['parameters']['sandboxID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description The sandbox overview */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['AdminSandboxOverview']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        404: components['responses']['404']
+        429: components['responses']['429']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/admin/sandboxes/{sandboxID}/builds': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List the builds of a sandbox's snapshot template
+     * @description Lists the build assignments of the template that holds the sandbox's
+     *     snapshot under one tag. Assignments without a creation time are left
+     *     out. A sandbox without a snapshot returns no items and a null
+     *     `snapshotTemplateID`; this route does not report whether the sandbox
+     *     exists.
+     */
+    get: {
+      parameters: {
+        query?: {
+          /** @description Only list builds in these status groups, comma-separated. Omit to list every group. */
+          statusGroup?: components['schemas']['AdminSandboxBuildStatusGroup'][]
+          /** @description Tag whose assignments are listed */
+          tag?: string
+          /** @description Direction of the assignment time order */
+          order?: components['schemas']['OrderDirection']
+          /** @description Maximum number of builds to return */
+          limit?: number
+          /** @description Number of matching builds to skip */
+          offset?: number
+        }
+        header?: never
+        path: {
+          sandboxID: components['parameters']['sandboxID']
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description A page of the snapshot template's build assignments */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['AdminSandboxBuildList']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        429: components['responses']['429']
+        500: components['responses']['500']
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/admin/sandboxes/{sandboxID}/builds/restore': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Make a build the current build of a sandbox's snapshot
+     * @description Assigns a ready build of the sandbox's snapshot template to the template
+     *     again under the default tag, so the sandbox resumes from that build.
+     *     The snapshot takes the restored build's kind, filesystem-only or
+     *     memory.
+     *     Answers 404 when the sandbox has no snapshot, its snapshot template is
+     *     deleted, or the build is not assigned to that template under the
+     *     default tag, and 409 when the build is not ready or is already the
+     *     current build.
+     */
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          sandboxID: components['parameters']['sandboxID']
+        }
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          'application/json': components['schemas']['AdminSandboxBuildRestoreRequest']
+        }
+      }
+      responses: {
+        /** @description The build is now the snapshot template's current default build */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            'application/json': components['schemas']['AdminSandboxBuildRestoreResult']
+          }
+        }
+        400: components['responses']['400']
+        401: components['responses']['401']
+        404: components['responses']['404']
+        409: components['responses']['409']
+        429: components['responses']['429']
+        500: components['responses']['500']
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/admin/teams/{teamID}/builds/cancel': {
     parameters: {
       query?: never
@@ -2919,6 +3237,195 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/unstable/management/clusters/{clusterID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the cluster */
+        clusterID: components['parameters']['clusterID']
+      }
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Register a cluster.
+     * @description A cluster registered here for the first time starts with deletion protection turned off. Registering an existing cluster again with the same name and auth organization updates its endpoint, TLS setting, sandbox proxy domain and token and keeps its stored deletion protection; a different name or auth organization returns a conflict with error_code cluster_registration_conflict. An invalid registration returns 400 with error_code cluster_registration_invalid.
+     */
+    put: operations['managementRegisterCluster']
+    post?: never
+    /**
+     * Delete a cluster and its environments.
+     * @description Deletes a cluster after all team assignments are detached. In the same transaction, soft-deletes every live template, snapshot template and paused sandbox snapshot on the cluster, releases their aliases, and releases all environment references while preserving environment and build history. A team assignment rejects the deletion and leaves the environments untouched, and so does deletion protection on the cluster. The local cluster's nil ID is rejected. Repeating a completed deletion succeeds.
+     */
+    delete: operations['managementDeleteCluster']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/management/clusters/{clusterID}/projects': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the cluster */
+        clusterID: components['parameters']['clusterID']
+      }
+      cookie?: never
+    }
+    /**
+     * List the projects assigned to a cluster.
+     * @description Returns the ID of every project whose team is assigned to the cluster, whichever way it was assigned. A deleted project is never assigned. An absent cluster has no projects.
+     */
+    get: operations['managementListClusterProjects']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/management/clusters/{clusterID}/deletion': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the cluster */
+        clusterID: components['parameters']['clusterID']
+      }
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Record that a cluster is being deleted.
+     * @description Records that the caller is deleting the cluster, for a caller that deletes the cluster's teams before the cluster itself. Refused while the cluster has deletion protection turned on; a protection change in flight commits before or after the check, never between. Once recorded, deletion protection cannot be turned on, so the cluster delete that follows is not refused for protection, and no team can be newly assigned to the cluster. An assignment either commits before the deletion is recorded, where the caller's next project listing finds it, or is refused with cluster_assignment_cluster_deleting. Succeeds when the cluster is absent. Repeating the request succeeds. The local cluster's nil ID is rejected.
+     */
+    put: operations['managementRequestClusterDeletion']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/management/clusters/{clusterID}/destroy-readiness': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the cluster */
+        clusterID: components['parameters']['clusterID']
+      }
+      cookie?: never
+    }
+    /**
+     * Check cluster destroy readiness.
+     * @description Checks whether the cluster has deletion protection turned on, or more than one team uses this exact cluster, either as an assigned team or as the owner of active templates or snapshots on it. One team's own templates and snapshots do not block this check, because deleting the cluster soft-deletes them. Soft-deleted history does not count. Returns success if the cluster is absent. This read does not change resources or prevent later assignments or template creation.
+     */
+    get: operations['managementClusterDestroyReadiness']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/management/projects/{projectID}/cluster/{clusterID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        projectID: string
+        /** @description Identifier of the cluster */
+        clusterID: components['parameters']['clusterID']
+      }
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Assign a cluster to a project.
+     * @description Assigns the cluster when the project has no cluster assigned. Replaying the identical assignment succeeds; replacing a different assigned cluster returns a conflict. Answers 404 when the project is missing or deleted.
+     */
+    put: operations['managementAssignProjectCluster']
+    post?: never
+    /**
+     * Detach a cluster assignment from a project.
+     * @description Answers 404 when the project is missing or deleted.
+     */
+    delete: operations['managementDetachProjectCluster']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/management/projects/{projectID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        projectID: string
+      }
+      cookie?: never
+    }
+    get?: never
+    /** Create or reconcile a project. */
+    put: operations['managementUpsertProject']
+    post?: never
+    /**
+     * Soft-delete a project.
+     * @description Marks the project deleted and blocked, releases its cluster assignment, scrubs its name and email to DELETED and its slug to deleted-<project ID>, which releases the old slug for reuse, deletes its memberships and API keys, soft-deletes its templates and snapshots, and enqueues the teardown of its running sandboxes, all in one transaction. The project row remains. Afterwards the project answers 404 to other management writes. Repeating the call answers 204 and repeats every step except the deletion time: it re-blocks and re-scrubs the project, clears a cluster assignment written since, deletes any memberships, keys, templates or snapshots created since, and enqueues the teardown again.
+     */
+    delete: operations['managementDeleteProject']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/management/projects/{projectID}/members/{userID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        projectID: string
+        userID: string
+      }
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Apply one versioned project member projection.
+     * @description Applies the newest desired presence for one project member. An older or duplicate revision is accepted without changing target state.
+     */
+    put: operations['managementApplyProjectMember']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/management/projects/{projectID}/limits': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        projectID: string
+      }
+      cookie?: never
+    }
+    get?: never
+    /** Reconcile effective limits for a project. */
+    put: operations['managementUpsertProjectLimits']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/unstable/management/projects/{projectID}/settings': {
     parameters: {
       query?: never
@@ -2934,6 +3441,50 @@ export interface paths {
      * @description Replaces the complete project settings document when the revision is newer than the stored revision. Omitted settings are removed. Older and duplicate revisions leave the stored document unchanged. Every successful delivery invalidates the cached team. Answers 404 when the project is missing or deleted.
      */
     put: operations['managementSetProjectSettings']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/management/projects/{projectID}/block': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        projectID: string
+      }
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Apply a project's block state.
+     * @description Records whether the project is refused billable work, which the auth path reads before it lets a sandbox start. An older or duplicate revision is accepted without changing target state. Answers 404 when the project is missing or deleted.
+     */
+    put: operations['managementApplyProjectBlock']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/management/projects/{projectID}/ban': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        projectID: string
+      }
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Apply a project's ban state.
+     * @description Records whether the project is banned. Authentication refuses a banned project's API keys and members. A revision that turns the ban on also kills the project's running sandboxes and cancels its builds in the background, and retries while the project stays banned and any of them remain. The newest revision wins: an older or duplicate revision is accepted without changing target state. Answers 404 when the project is missing or deleted.
+     */
+    put: operations['managementApplyProjectBan']
     post?: never
     delete?: never
     options?: never
@@ -2985,6 +3536,32 @@ export interface paths {
         500: components['responses']['500']
       }
     }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/admin/teams/bans': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Ban teams
+     * @description Bans up to 100 teams at once, as
+     *     `PUT /unstable/admin/teams/{teamID}/ban` does, except that every
+     *     team's ban is stored before any team's sandboxes are killed or builds
+     *     cancelled, and the kills and cancellations of all teams share one time
+     *     budget. One team's failure does not stop the others; the response sorts
+     *     every requested team into banned, not found or failed. The work
+     *     continues if the caller disconnects.
+     */
+    post: operations['adminBanTeams']
     delete?: never
     options?: never
     head?: never
@@ -3083,6 +3660,140 @@ export interface paths {
         500: components['responses']['500']
       }
     }
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/admin/teams/{teamID}/ban': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Team ID */
+        teamID: string
+      }
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Ban a team
+     * @description Marks the team as banned so its API keys stop authenticating, then
+     *     kills its sandboxes and cancels its builds. The ban is stored first:
+     *     a failure to kill or cancel is reported in the result and does not
+     *     undo it. Killing and cancelling stop after a fixed time budget, and a
+     *     step cut short is reported as failed. Banning an already banned team
+     *     repeats the kill and cancel. The work continues if the caller
+     *     disconnects.
+     */
+    put: operations['adminBanTeam']
+    post?: never
+    /**
+     * Unban a team
+     * @description Clears the team's ban. Idempotent.
+     */
+    delete: operations['adminUnbanTeam']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/admin/clusters': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List clusters as admin
+     * @description Lists the registered clusters with the number of teams assigned to each. Never returns a cluster's token. The local cluster is not a registered cluster and is not listed.
+     */
+    get: operations['adminListClusters']
+    put?: never
+    /**
+     * Create a cluster as admin
+     * @description Creates a cluster whose configuration cannot be modified through this route. A new cluster starts with deletion protection turned on. Creating a cluster again with the same `cluster_id` and an identical configuration answers 201 with the stored cluster, whose deletionProtection is whatever is stored; a different configuration, or an auth organization another cluster uses, returns 409 with error_code cluster_registration_conflict. An invalid request returns 400 with error_code cluster_registration_invalid.
+     */
+    post: operations['adminCreateCluster']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/admin/clusters/{clusterID}': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the cluster */
+        clusterID: components['parameters']['clusterID']
+      }
+      cookie?: never
+    }
+    /**
+     * Cluster as admin
+     * @description Returns a cluster with the first page of its assigned teams, the number of teams assigned to it and the number of live templates on it. Never returns the cluster's token.
+     */
+    get: operations['adminGetCluster']
+    put?: never
+    post?: never
+    /**
+     * Delete a cluster and its environments as admin
+     * @description Deletes a cluster after all team assignments are detached. In the same transaction, soft-deletes every live template, snapshot template and paused sandbox snapshot on the cluster, releases their aliases, and releases all environment references while preserving environment and build history. A team assignment rejects the deletion and leaves the environments untouched, and so does deletion protection on the cluster. The local cluster's nil ID is rejected. Repeating a completed deletion succeeds.
+     */
+    delete: operations['adminDeleteCluster']
+    options?: never
+    head?: never
+    /**
+     * Update a cluster as admin
+     * @description Writes only the properties present in the body. `endpoint` and `endpointTls` change where orchestration traffic for every team on the cluster goes, `sandboxProxyDomain` changes the public URL of every sandbox on it, and `authOrgId` changes how the cluster authenticates. A body with no property returns 400. Another cluster using the auth organization returns 409, and so does turning deletion protection on after the cluster's deletion is recorded. The token is rotated through `PUT /unstable/admin/clusters/{clusterID}/token`.
+     */
+    patch: operations['adminUpdateCluster']
+    trace?: never
+  }
+  '/unstable/admin/clusters/{clusterID}/teams': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the cluster */
+        clusterID: components['parameters']['clusterID']
+      }
+      cookie?: never
+    }
+    /**
+     * List a cluster's teams as admin
+     * @description Lists the teams assigned to the cluster.
+     */
+    get: operations['adminListClusterTeams']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/unstable/admin/clusters/{clusterID}/token': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the cluster */
+        clusterID: components['parameters']['clusterID']
+      }
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Rotate a cluster's token as admin
+     * @description Replaces the token used to reach the cluster. The previous token stops working at once. No route returns a cluster's token.
+     */
+    put: operations['adminRotateClusterToken']
     post?: never
     delete?: never
     options?: never
@@ -4743,6 +5454,8 @@ export interface components {
       autoResume: boolean
       onTimeout: components['schemas']['SandboxOnTimeout']
     }
+    /** @description True when the snapshot a paused sandbox would resume from was taken while the sandbox guest agent was not responding. A plain resume of it is refused with 409 and error_code sandbox_snapshot_guest_agent_unresponsive, because restoring that memory would bring the unresponsive agent back; resume it without memory (`memory: false`), which cold-boots the sandbox from its disk. Omitted for a running sandbox and for a snapshot whose agent answered. */
+    EnvdUnresponsiveAtPause: boolean
     /**
      * @description What the sandbox's latest pause saved. `full` saved the filesystem and the memory, and resuming restores the sandbox where it left off. `filesystem` saved only the filesystem, and resuming reboots the sandbox from disk. Returned for a paused sandbox once its pause has finished, and omitted while it is still pausing.
      * @enum {string}
@@ -4882,6 +5595,7 @@ export interface components {
        */
       endAt: string
       envdVersion: components['schemas']['EnvdVersion']
+      envdUnresponsiveAtPause?: components['schemas']['EnvdUnresponsiveAtPause']
       /** @description Access token used for envd communication */
       envdAccessToken?: string
       /** @description Whether internet access was explicitly enabled or disabled for the sandbox. Null means it was not explicitly set. */
@@ -4897,6 +5611,33 @@ export interface components {
       lifecycle?: components['schemas']['SandboxLifecycle']
       pauseMode?: components['schemas']['SandboxPauseMode']
       volumeMounts?: components['schemas']['SandboxVolumeMount'][]
+    }
+    SandboxRecord: {
+      /** @description Identifier of the template from which is the sandbox created */
+      templateID: string
+      /** @description Alias of the template */
+      alias?: string
+      /** @description Identifier of the sandbox */
+      sandboxID: string
+      /**
+       * Format: date-time
+       * @description Time when the sandbox was started
+       */
+      startedAt: string
+      /**
+       * Format: date-time
+       * @description Time when the sandbox was stopped
+       */
+      stoppedAt?: string | null
+      /** @description Base domain where the sandbox traffic is accessible */
+      domain?: string | null
+      cpuCount: components['schemas']['CPUCount']
+      memoryMB: components['schemas']['MemoryMB']
+      diskSizeMB: components['schemas']['DiskSizeMB']
+      /** @description Whether the sandbox ended more than the fixed retention window ago, so its monitoring and logs data is no longer available */
+      retentionExpired: boolean
+      /** @description Whether the sandbox ended more than the team's events retention window ago, so its events data is no longer available */
+      eventsRetentionExpired: boolean
     }
     ListedSandbox: {
       /** @description Identifier of the template from which is the sandbox created */
@@ -4926,6 +5667,7 @@ export interface components {
       metadata?: components['schemas']['SandboxMetadata']
       state: components['schemas']['SandboxState']
       envdVersion: components['schemas']['EnvdVersion']
+      envdUnresponsiveAtPause?: components['schemas']['EnvdUnresponsiveAtPause']
       volumeMounts?: components['schemas']['SandboxVolumeMount'][]
     }
     SandboxesWithMetrics: {
@@ -4942,6 +5684,8 @@ export interface components {
        * @default 15
        */
       timeout: number
+      /** @description Online vCPU target for the sandbox. Defaults to the template's cpuCount; at most its maxCpuCount (fixed-size templates accept only their cpuCount). */
+      cpuCount?: components['schemas']['CPUCount']
       /**
        * @description Automatically pauses the sandbox after the timeout
        * @default false
@@ -4977,6 +5721,8 @@ export interface components {
        * @default 300
        */
       timeout: number
+      /** @description Online vCPU target for the sandbox. Defaults to the template's cpuCount; at most its maxCpuCount (fixed-size templates accept only their cpuCount). */
+      cpuCount?: components['schemas']['CPUCount']
       /**
        * @description Automatically pauses the sandbox after the timeout
        * @default false
@@ -5018,12 +5764,14 @@ export interface components {
        * @default 15
        */
       timeout: number
+      /** @description Online vCPU target for the resumed sandbox. Defaults to the snapshot's cpuCount; at most the template's maxCpuCount (fixed-size templates accept only their cpuCount). */
+      cpuCount?: components['schemas']['CPUCount']
       /**
        * @deprecated
        * @description Automatically pauses the sandbox after the timeout
        */
       autoPause?: boolean
-      /** @description Defaults to true. When false, resume from disk state only: the sandbox cold-boots fresh and any memory in the snapshot is ignored, never modified or deleted. Disk state has crash-recovery semantics — writes not flushed before the pause may be lost. A no-op for snapshots that contain no memory. Rejected with an error in environments where this capability is not enabled, never silently downgraded to a memory restore. */
+      /** @description Defaults to true. When false, resume from disk state only: the sandbox cold-boots fresh and any memory in the snapshot is ignored, never modified or deleted. Disk state has crash-recovery semantics — writes not flushed before the pause may be lost. A no-op for snapshots that contain no memory. Rejected with an error in environments where this capability is not enabled, never silently downgraded to a memory restore. A snapshot taken while the sandbox guest agent was not responding (envdUnresponsiveAtPause) can only be resumed this way, and needs no enablement. */
       memory?: boolean
     }
     ConnectSandbox: {
@@ -5032,7 +5780,7 @@ export interface components {
        * @description Timeout in seconds from the current time after which the sandbox should expire
        */
       timeout: number
-      /** @description Defaults to true. When false and the sandbox is paused, resume from disk state only: the sandbox cold-boots fresh and any memory in the snapshot is ignored, never modified or deleted. Disk state has crash-recovery semantics — writes not flushed before the pause may be lost. A no-op for snapshots that contain no memory. Rejected with an error in environments where this capability is not enabled, never silently downgraded to a memory restore. */
+      /** @description Defaults to true. When false and the sandbox is paused, resume from disk state only: the sandbox cold-boots fresh and any memory in the snapshot is ignored, never modified or deleted. Disk state has crash-recovery semantics — writes not flushed before the pause may be lost. A no-op for snapshots that contain no memory. Rejected with an error in environments where this capability is not enabled, never silently downgraded to a memory restore. A snapshot taken while the sandbox guest agent was not responding (envdUnresponsiveAtPause) can only be resumed this way, and needs no enablement. */
       memory?: boolean
     }
     ConnectSandboxV2: {
@@ -5042,7 +5790,7 @@ export interface components {
        * @default 300
        */
       timeout: number
-      /** @description Defaults to true. When false and the sandbox is paused, resume from disk state only: the sandbox cold-boots fresh and any memory in the snapshot is ignored, never modified or deleted. Disk state has crash-recovery semantics — writes not flushed before the pause may be lost. A no-op for snapshots that contain no memory. Rejected with an error in environments where this capability is not enabled, never silently downgraded to a memory restore. */
+      /** @description Defaults to true. When false and the sandbox is paused, resume from disk state only: the sandbox cold-boots fresh and any memory in the snapshot is ignored, never modified or deleted. Disk state has crash-recovery semantics — writes not flushed before the pause may be lost. A no-op for snapshots that contain no memory. Rejected with an error in environments where this capability is not enabled, never silently downgraded to a memory restore. A snapshot taken while the sandbox guest agent was not responding (envdUnresponsiveAtPause) can only be resumed this way, and needs no enablement. */
       memory?: boolean
     }
     SandboxTimeoutRequest: {
@@ -5068,6 +5816,11 @@ export interface components {
        * @default true
        */
       memory: boolean
+      /**
+       * @description The pause checks that the sandbox guest agent answers before it takes the snapshot. By default an unresponsive agent is recorded on the snapshot and the pause proceeds; the sandbox then shows `envdUnresponsiveAtPause` and a later resume must ask for `memory: false`, since restoring that memory would bring the unresponsive agent back. With this true, the pause is instead refused with 503 while the agent does not answer, and the sandbox keeps running. A filesystem-only pause (`memory: false`) is always refused while the agent does not answer, whatever this says.
+       * @default false
+       */
+      requireHealthyGuest: boolean
     }
     SandboxForkRequest: {
       /**
@@ -5193,9 +5946,107 @@ export interface components {
        * @description Requests per second the team may make to delete endpoints
        */
       apiTeamRpsDelete: number
+      /**
+       * Format: int64
+       * @description Maximum number of secrets the team may store
+       */
+      maxSecrets: number
     }
     TeamLimitsResponse: {
       limits: components['schemas']['TeamLimits']
+    }
+    /** @description A cluster's configuration. The cluster's token is never returned. */
+    ClusterDetail: {
+      /** Format: uuid */
+      id: string
+      name: string
+      endpoint: string
+      endpointTls: boolean
+      sandboxProxyDomain?: string | null
+      authOrgId?: string | null
+      /** @description While true, deleting the cluster is refused. */
+      deletionProtection: boolean
+    }
+    ClusterDetailWithTeams: {
+      cluster: components['schemas']['ClusterDetail']
+      teams: components['schemas']['ClusterTeamListResponse']
+      /**
+       * Format: int64
+       * @description Teams assigned to the cluster. Must be 0 before the cluster can be deleted.
+       */
+      teamCount: number
+      /**
+       * Format: int64
+       * @description Live templates on the cluster. Deleting the cluster deletes them.
+       */
+      templateCount: number
+    }
+    ClusterListItem: {
+      /** Format: uuid */
+      id: string
+      name: string
+      endpoint: string
+      sandboxProxyDomain?: string | null
+      /**
+       * Format: int64
+       * @description Number of teams assigned to the cluster.
+       */
+      teamCount: number
+    }
+    ClusterListResponse: {
+      items: components['schemas']['ClusterListItem'][]
+      /**
+       * Format: int64
+       * @description Number of clusters matching the search, ignoring limit and offset
+       */
+      total: number
+    }
+    ClusterTeamListItem: {
+      /** Format: uuid */
+      id: string
+      email: string
+      name?: string | null
+      slug?: string | null
+      isBanned: boolean
+      /** Format: date-time */
+      createdAt: string
+    }
+    ClusterTeamListResponse: {
+      items: components['schemas']['ClusterTeamListItem'][]
+      /**
+       * Format: int64
+       * @description Number of teams assigned to the cluster, ignoring limit and offset
+       */
+      total: number
+    }
+    AdminClusterCreateRequest: {
+      /**
+       * Format: uuid
+       * @description Optional stable identifier for idempotent creation. Reuse succeeds only when the immutable configuration is identical.
+       */
+      cluster_id?: string
+      name: string
+      endpoint: string
+      endpoint_tls: boolean
+      token: string
+      sandbox_proxy_domain?: string | null
+      auth_org_id?: string | null
+    }
+    /** @description Partial update; only the properties present are written. An explicit null or an empty string clears `sandboxProxyDomain` or `authOrgId`. */
+    ClusterUpdateRequest: {
+      name?: string
+      endpoint?: string
+      endpointTls?: boolean
+      sandboxProxyDomain?: string | null
+      authOrgId?: string | null
+      deletionProtection?: boolean
+    }
+    ClusterTokenRotateRequest: {
+      /**
+       * Format: password
+       * @description New cluster access token. Write-only.
+       */
+      token: string
     }
     AdminSandboxKillResult: {
       /** @description Number of sandboxes successfully killed */
@@ -5218,6 +6069,171 @@ export interface components {
      * @enum {string}
      */
     AdminSandboxState: 'running' | 'paused' | 'killed'
+    /**
+     * @description Coarse build state derived from the build status: pending (pending,
+     *     waiting), in_progress (in_progress, building, snapshotting), ready
+     *     (ready, uploaded, success) or failed (any other status)
+     * @enum {string}
+     */
+    AdminSandboxBuildStatusGroup: 'pending' | 'in_progress' | 'ready' | 'failed'
+    /** @description A build assigned to a sandbox's snapshot template under a tag */
+    AdminSandboxBuild: {
+      /**
+       * Format: uuid
+       * @description Identifier of the build
+       */
+      buildID: string
+      /** @description Identifier of the snapshot template the build is assigned to */
+      templateID: string
+      /** @description Tag the build is assigned under */
+      tag: string
+      /** @description Build status as stored, for example ready, snapshotting or waiting */
+      status: string
+      statusGroup: components['schemas']['AdminSandboxBuildStatusGroup']
+      /** @description Node that produced the build, null when it was not recorded */
+      clusterNodeID: string | null
+      /**
+       * Format: date-time
+       * @description When the build was assigned to the template under this tag
+       */
+      assignedAt: string
+      /**
+       * @description Whether this build is the template's newest ready assignment under
+       *     the tag, the build a resume uses, regardless of the status filter
+       */
+      isCurrent: boolean
+      /**
+       * @description Whether the restore route would accept this build: it is ready,
+       *     assigned under the default tag, not the current build, and its
+       *     snapshot template is not deleted
+       */
+      restorable: boolean
+    }
+    AdminSandboxBuildList: {
+      items: components['schemas']['AdminSandboxBuild'][]
+      /**
+       * Format: int64
+       * @description Number of assignments matching the tag and status filter, ignoring limit and offset
+       */
+      total: number
+      /**
+       * @description Identifier of the template that holds the sandbox's snapshot, null
+       *     when the sandbox has no snapshot
+       */
+      snapshotTemplateID: string | null
+    }
+    AdminSandboxBuildRestoreRequest: {
+      /**
+       * Format: uuid
+       * @description Build to make current. It must be ready and already assigned to the
+       *     sandbox's snapshot template under the default tag.
+       */
+      buildID: string
+    }
+    AdminSandboxBuildRestoreResult: {
+      /** @description Identifier of the sandbox */
+      sandboxID: string
+      /** @description Identifier of the snapshot template that received the assignment */
+      templateID: string
+      /**
+       * Format: uuid
+       * @description Build that is now the template's current default build
+       */
+      buildID: string
+      /**
+       * Format: date-time
+       * @description When the new assignment was written
+       */
+      assignedAt: string
+      /**
+       * Format: uuid
+       * @description Build that was current before the restore, null when there was none
+       */
+      previousBuildID: string | null
+    }
+    /**
+     * @description Who owns a sandbox and what its snapshot holds, read from the database:
+     *     the team, the snapshot template and its most recent pause, and the
+     *     newest default-tag build assignment of that template
+     */
+    AdminSandboxOverview: {
+      /** @description Identifier of the sandbox */
+      sandboxId: string
+      team: components['schemas']['AdminSandboxOverviewTeam']
+      /** @description Template that holds the sandbox's snapshot, null when the sandbox has no snapshot */
+      snapshotTemplateId: string | null
+      /** @description What the most recent pause recorded, null when the sandbox has no snapshot */
+      lastPause: components['schemas']['AdminSandboxLastPause'] | null
+      /**
+       * @description Newest default-tag build assignment of the snapshot template, null
+       *     when there is no snapshot or no assignment
+       */
+      latestBuild: components['schemas']['AdminSandboxOverviewBuild'] | null
+      /**
+       * Format: int64
+       * @description Number of default-tag build assignments of the snapshot template
+       */
+      buildCount: number
+    }
+    /** @description The team the sandbox belongs to */
+    AdminSandboxOverviewTeam: {
+      /**
+       * Format: uuid
+       * @description Identifier of the team
+       */
+      id: string
+      /** @description Name of the team */
+      name: string | null
+      /** @description Contact email of the team */
+      email: string | null
+    }
+    /**
+     * @description The snapshot as the most recent pause left it. A resume can change
+     *     whether the sandbox auto-pauses without rewriting it, and restoring an
+     *     older build does not change it.
+     */
+    AdminSandboxLastPause: {
+      /** @description Kind of snapshot the most recent pause took */
+      kind: components['schemas']['AdminSandboxPauseKind']
+      /** @description Whether the sandbox pauses instead of being killed on timeout, as of the most recent pause */
+      autoPause: boolean
+      /** @description Kind of snapshot an auto-pause takes, as of the most recent pause */
+      autoPauseKind: components['schemas']['AdminSandboxPauseKind']
+    }
+    /**
+     * @description What a pause kept: memory is a full snapshot that resumes where the
+     *     sandbox left off, filesystem keeps only the root filesystem and boots
+     *     it again on resume
+     * @enum {string}
+     */
+    AdminSandboxPauseKind: 'memory' | 'filesystem'
+    /** @description The newest default-tag build assignment of a sandbox's snapshot template */
+    AdminSandboxOverviewBuild: {
+      /**
+       * Format: uuid
+       * @description Identifier of the build
+       */
+      buildId: string
+      /** @description Identifier of the snapshot template the build is assigned to */
+      templateId: string
+      /** @description Tag the build is assigned under */
+      tag: string
+      /** @description Build status as stored, for example ready, snapshotting or waiting */
+      status: string
+      /** @description Coarse build state, null when the stored group is not one of the known values */
+      statusGroup: components['schemas']['AdminSandboxBuildStatusGroup'] | null
+      /** @description Node that produced the build, null when it was not recorded */
+      clusterNodeId: string | null
+      /**
+       * Format: date-time
+       * @description When the build was assigned to the template under the tag
+       */
+      assignedAt: string
+      /** @description Always true, the newest assignment is the one the template resolves to */
+      isCurrent: boolean
+      /** @description Always false, the newest assignment is already current */
+      restorable: boolean
+    }
     /**
      * @description Cached live sandbox index count keyed by team ID. Counts may briefly
      *     include sandboxes transitioning out of running; teams without indexed
@@ -5326,6 +6342,43 @@ export interface components {
     AdminTeamSchedulingLabels: {
       /** @description The team's full set of labels. A request's labels replace the current ones. */
       labels: string[]
+    }
+    /**
+     * @description The outcome of banning one team. The ban is stored before the team's
+     *     sandboxes are killed and its builds cancelled, so it holds even when
+     *     either step fails.
+     */
+    AdminTeamBanResult: {
+      /** Format: uuid */
+      teamID: string
+      /** @description Number of the team's sandboxes killed */
+      sandboxesKilled: number
+      /** @description Number of the team's sandboxes that failed to kill */
+      sandboxesFailedToKill: number
+      /** @description Set when the kill step failed or ran out of time; the counts cover what it did until then. */
+      sandboxKillError?: string
+      /** @description Number of the team's builds cancelled */
+      buildsCancelled: number
+      /** @description Number of the team's builds that failed to cancel */
+      buildsFailedToCancel: number
+      /** @description Set when the cancel step failed or ran out of time; the counts cover what it did until then. */
+      buildCancelError?: string
+    }
+    AdminTeamsBanRequest: {
+      teamIDs: string[]
+    }
+    AdminTeamsBanResult: {
+      /** @description Teams whose ban is stored, with the outcome of killing their sandboxes and cancelling their builds */
+      banned: components['schemas']['AdminTeamBanResult'][]
+      /** @description Requested teams that do not exist */
+      notFound: string[]
+      /** @description Teams whose ban could not be stored or put into force; retrying repeats every step */
+      failed: components['schemas']['AdminTeamBanFailure'][]
+    }
+    AdminTeamBanFailure: {
+      /** Format: uuid */
+      teamID: string
+      error: string
     }
     AdminTemplateTeam: {
       /**
@@ -5439,6 +6492,8 @@ export interface components {
       /** @description Identifier of the last successful build for given template */
       buildID: string
       cpuCount: components['schemas']['CPUCount']
+      /** @description Maximum CPU count for resizable templates; absent for fixed-size templates. */
+      maxCpuCount?: components['schemas']['CPUCount']
       memoryMB: components['schemas']['MemoryMB']
       diskSizeMB: components['schemas']['DiskSizeMB']
       /** @description Whether the template is public or only accessible by the team */
@@ -5615,6 +6670,8 @@ export interface components {
        */
       finishedAt?: string
       cpuCount: components['schemas']['CPUCount']
+      /** @description Maximum CPU count for resizable templates; absent for fixed-size templates. */
+      maxCpuCount?: components['schemas']['CPUCount']
       memoryMB: components['schemas']['MemoryMB']
       diskSizeMB?: components['schemas']['DiskSizeMB']
       envdVersion?: components['schemas']['EnvdVersion']
@@ -5662,6 +6719,8 @@ export interface components {
        */
       teamID?: string
       cpuCount?: components['schemas']['CPUCount']
+      /** @description Maximum CPU count the template's sandboxes can be resized to; makes the template resizable. Must be at least cpuCount. */
+      maxCpuCount?: components['schemas']['CPUCount']
       memoryMB?: components['schemas']['MemoryMB']
       minFreeDiskMb?: components['schemas']['MinFreeDiskMb']
     }
@@ -5806,6 +6865,7 @@ export interface components {
     /**
      * @description Status of the node.
      *     - standby: the node is not actively used, but it can return to ready and continue serving traffic.
+     *     - not_ready: the node is starting and cannot take new work yet. It becomes ready by itself and cannot be set through the API.
      * @enum {string}
      */
     NodeStatus:
@@ -5815,6 +6875,7 @@ export interface components {
       | 'unhealthy'
       | 'standby'
       | 'shutting_down'
+      | 'not_ready'
     NodeStatusChange: {
       /**
        * Format: uuid
@@ -6153,7 +7214,7 @@ export interface components {
        * @description Error code
        */
       code: number
-      /** @description Machine-readable semantic error code. Not a closed set; initial values: sandbox_capacity_unavailable, sandbox_placement_timeout, sandbox_no_compatible_node, sandbox_create_failed (a node could not create the sandbox this time; retry), sandbox_create_refused (a node refused the sandbox for a reason no retry changes, such as a vcpu count out of bounds in the stored build; a server error, since no request field reaches that check), internal_server_error, secret_limit_reached, idempotency_request_mismatch, idempotency_in_progress, idempotency_outcome_unknown. */
+      /** @description Machine-readable semantic error code. Not a closed set; initial values: sandbox_capacity_unavailable, sandbox_placement_timeout, sandbox_no_compatible_node, sandbox_create_failed (a node could not create the sandbox this time; retry), sandbox_create_refused (a node refused the sandbox for a reason no retry changes, such as a vcpu count out of bounds in the stored build; a server error, since no request field reaches that check), internal_server_error, secret_limit_reached, idempotency_request_mismatch, idempotency_in_progress, idempotency_outcome_unknown, cluster_registration_invalid, cluster_registration_conflict, cluster_assignment_invalid, cluster_assignment_project_not_found, cluster_assignment_cluster_not_found, cluster_assignment_already_assigned, cluster_assignment_cluster_deleting, sandbox_snapshot_guest_agent_unresponsive (a plain resume of a snapshot taken while the sandbox guest agent was not responding; resume it with memory: false). */
       error_code?: string
       /** @description Error */
       message: string
@@ -6461,6 +7522,17 @@ export interface components {
       /** @description Cursor to pass to the next list request, or null when there is no next page. */
       nextCursor: string | null
     }
+    ManagementClusterRegistrationRequest: {
+      name: string
+      endpoint: string
+      endpoint_tls: boolean
+      token: string
+      sandbox_proxy_domain?: string | null
+      auth_org_id?: string | null
+    }
+    ManagementClusterProjects: {
+      project_ids: string[]
+    }
     ManagementProjectSettingsRequest: {
       /**
        * Format: int64
@@ -6477,6 +7549,135 @@ export interface components {
       /** @description Whether new sandboxes without an explicit network.allowPublicTraffic accept traffic without a traffic access token. Omission uses the public default. Existing sandboxes, resumes and forks keep their settings. */
       defaultAllowPublicTraffic?: boolean
     }
+    /**
+     * @description The properties of a project this side stores. Name, slug and email are synchronized on every push. The optional cluster assignment is preserved when omitted.
+     *
+     *     A project's tier is not among them, and this side assigns none. Limits arrive separately and in full through managementUpsertProjectLimits.
+     */
+    ManagementProjectUpsertRequest: {
+      /**
+       * Format: uuid
+       * @description Cluster assignment to synchronize. Omission preserves the existing assignment.
+       */
+      cluster_id?: string
+      name: string
+      /** @description Changing it renames the project, and its template names follow: each name held under an earlier slug is also given under the new one, and the old names keep working. A name the new slug already holds is left as it is. A slug already held on this control plane is a 409, on a rename as much as on a create. */
+      slug: string
+      /** @description Contact address recorded on the project. */
+      email: string
+    }
+    ManagementProject: components['schemas']['ManagementProjectUpsertRequest'] & {
+      /** Format: uuid */
+      id: string
+    }
+    ManagementProjectMemberIdentity: {
+      issuer: string
+      subject: string
+    }
+    ManagementProjectMemberApplyRequest: {
+      /** Format: int64 */
+      revision: number
+      present: boolean
+      /**
+       * @description Whether this membership is the user's default team. Omitted requests from older sources remain non-default.
+       * @default false
+       */
+      is_default: boolean
+      identities?: components['schemas']['ManagementProjectMemberIdentity'][]
+    }
+    /** @description Desired project block state. A newer revision replaces the state, including any intervening manual block or unblock. */
+    ManagementProjectBlockRequest: {
+      /**
+       * Format: int64
+       * @description Monotonic per-project revision. Older or duplicate revisions succeed without changing stored state.
+       */
+      revision: number
+      /** @description Whether the project is refused billable work. */
+      blocked: boolean
+      /** @description Reason included in blocked-request errors. Cleared when blocked is false. */
+      reason?: string
+      decided_at?: components['schemas']['ManagementDecidedAt']
+    }
+    /** @description Desired project ban state. A newer revision replaces the state, including any intervening manual ban or unban. */
+    ManagementProjectBanRequest: {
+      /**
+       * Format: int64
+       * @description Monotonic per-project revision. Older or duplicate revisions succeed without changing stored state.
+       */
+      revision: number
+      /** @description Whether the project is refused at authentication. */
+      banned: boolean
+      decided_at?: components['schemas']['ManagementDecidedAt']
+    }
+    /**
+     * Format: date-time
+     * @description When the caller decided this revision, in RFC 3339. Stored with the revision and used to measure how long the decision took to apply here. Omit it when the caller does not know; the delivery is then counted as origin unknown rather than as zero lag.
+     */
+    ManagementDecidedAt: string
+    /**
+     * @description A project's effective limits, already resolved by the caller. Every field is absolute: this side stores what it is given and performs no arithmetic of its own.
+     *
+     *     The minimums below are the contract for what a limit may be, at least as strict as the CHECK constraints on default_limits. project_limits stores the same values under looser constraints on purpose — it is a push target, and a floor that only rejects the impossible keeps a future decision about what is allowed a change to this schema rather than a migration.
+     *
+     *     `max_disk_size_mb` and `max_free_disk_size_mb` are one ceiling under two names, and either name alone carries it. A caller that sends both must send them equal; a caller that sends neither is refused. Sending both is what a caller does while receivers older than the second name are still running.
+     */
+    ManagementProjectLimits:
+      | {
+          /**
+           * Format: int64
+           * @description The caller's version of this answer, raised whenever the limits it resolved for the project change. Delivery is over a network, so two pushes can be in flight at once and arrive in either order: this side stores the revision it accepted and drops a delivery at or below it, which is what keeps a delayed retry from putting the project back on limits it has already left.
+           *
+           *     Comparable only against earlier revisions for the same project.
+           */
+          revision: number
+          /** Format: int32 */
+          concurrent_sandboxes: number
+          /** Format: int32 */
+          max_sandbox_length_hours: number
+          /** Format: int32 */
+          max_vcpu: number
+          /** Format: int64 */
+          max_ram_mb: number
+          /** Format: int64 */
+          disk_mb: number
+          /** Format: int32 */
+          concurrent_template_builds: number
+          /** Format: int32 */
+          events_ttl_days: number
+          /**
+           * Format: int64
+           * @description The default free-space growth target when a template build request omits one. May sit anywhere at or below the maximum free-space growth target, and usually sits well below it; a delivery whose default exceeds the maximum is rejected.
+           */
+          default_free_disk_size_mb: number
+          /**
+           * Format: int64
+           * @description The most a template build may request as its free-space growth target.
+           */
+          max_free_disk_size_mb?: number
+          /**
+           * Format: int64
+           * @description The same ceiling as max_free_disk_size_mb, under the name it was first published with. Kept until every deployed sender and receiver speaks the other name.
+           */
+          max_disk_size_mb?: number
+          /**
+           * Format: int64
+           * @description Requests per second a project may make to each list endpoint. Zero disables the limit.
+           */
+          api_team_rps_list: number
+          /**
+           * Format: int64
+           * @description Requests per second a project may make to each delete endpoint. Zero disables the limit.
+           */
+          api_team_rps_delete: number
+          /**
+           * Format: int32
+           * @description Live secrets the project may hold.
+           */
+          max_secrets: number
+          decided_at?: components['schemas']['ManagementDecidedAt']
+        }
+      | unknown
+      | unknown
   }
   responses: {
     /** @description Bad request */
@@ -6647,20 +7848,27 @@ export interface components {
     volumeID: string
     secretID: string
     webhookID: string
+    /**
+     * @description Optional team-scoped key for retrying the request. Use 1 to 255 lowercase ASCII letters,
+     *     digits, or hyphens (a-z, 0-9, -), such as a lowercase UUID. The HTTP method, path, query,
+     *     and request content identify the request. When idempotency is enabled, a matching retry of
+     *     a completed request replays its status and body, including the IDs of any resources it
+     *     created, without repeating the operation. A failure explicitly classified as safe to retry
+     *     (Should-Retry: true) permits a fresh attempt with the same key and request. Only one
+     *     attempt can run at a time. A different request returns 409 with error_code
+     *     idempotency_request_mismatch. A matching request whose original has no recorded response
+     *     yet and is within its expected response window returns 409 with error_code
+     *     idempotency_in_progress. A matching request whose original has no recorded response and
+     *     whose expected response deadline has passed or is unknown returns 422 with error_code
+     *     idempotency_outcome_unknown. These conflicts and unknown outcomes do not execute the
+     *     request again. If the key's record is unavailable or idempotency is misconfigured, the
+     *     request returns 503; Should-Retry tells whether to retry with the same key. After the
+     *     retention period expires, the key can start a new operation.
+     */
+    idempotencyKey: string
   }
   requestBodies: never
   headers: {
-    /**
-     * @description Whether the condition behind this error may clear, so that retrying the request could
-     *     succeed. true marks a transient failure such as missing capacity, a rate limit, or a
-     *     creation still in progress: retry after Retry-After when present, otherwise with
-     *     exponential backoff. false marks a failure a retry cannot fix, such as a malformed request
-     *     or a configuration fault, or an outcome that is unknown, where a retry could create a
-     *     second sandbox. Successful responses and errors without an explicit classification omit
-     *     the header. With idempotency enabled, retry sandbox creation with the same Idempotency-Key
-     *     and request parameters. A retryable creation failure permits a fresh attempt; an
-     *     idempotency_in_progress response only reports an existing attempt and never releases it.
-     */
     ShouldRetry: boolean
     /** @description Cursor to fetch the next page of results, if more exist */
     XNextToken: string
@@ -6671,6 +7879,327 @@ export interface components {
 }
 export type $defs = Record<string, never>
 export interface operations {
+  managementRegisterCluster: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the cluster */
+        clusterID: components['parameters']['clusterID']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ManagementClusterRegistrationRequest']
+      }
+    }
+    responses: {
+      /** @description Cluster registration is present. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      409: components['responses']['409']
+      500: components['responses']['500']
+    }
+  }
+  managementDeleteCluster: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the cluster */
+        clusterID: components['parameters']['clusterID']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Cluster is absent. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      409: components['responses']['409']
+      500: components['responses']['500']
+    }
+  }
+  managementListClusterProjects: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the cluster */
+        clusterID: components['parameters']['clusterID']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The projects assigned to the cluster. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ManagementClusterProjects']
+        }
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      500: components['responses']['500']
+    }
+  }
+  managementRequestClusterDeletion: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the cluster */
+        clusterID: components['parameters']['clusterID']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The deletion is recorded, or the cluster is absent. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      /** @description The cluster has deletion protection turned on. */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Error']
+        }
+      }
+      500: components['responses']['500']
+    }
+  }
+  managementClusterDestroyReadiness: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the cluster */
+        clusterID: components['parameters']['clusterID']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description At most one team uses the cluster. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      /** @description The cluster has deletion protection turned on, or more than one team uses it and the other teams and their templates must move off it before destroying the cluster. */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Error']
+        }
+      }
+      500: components['responses']['500']
+    }
+  }
+  managementAssignProjectCluster: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        projectID: string
+        /** @description Identifier of the cluster */
+        clusterID: components['parameters']['clusterID']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Cluster is assigned to the project. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      404: components['responses']['404']
+      409: components['responses']['409']
+      500: components['responses']['500']
+    }
+  }
+  managementDetachProjectCluster: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        projectID: string
+        /** @description Identifier of the cluster */
+        clusterID: components['parameters']['clusterID']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The matching assignment is absent. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      401: components['responses']['401']
+      404: components['responses']['404']
+      409: components['responses']['409']
+      500: components['responses']['500']
+    }
+  }
+  managementUpsertProject: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        projectID: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ManagementProjectUpsertRequest']
+      }
+    }
+    responses: {
+      /** @description Existing project reconciled. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ManagementProject']
+        }
+      }
+      /** @description Project created. */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ManagementProject']
+        }
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      404: components['responses']['404']
+      409: components['responses']['409']
+      500: components['responses']['500']
+    }
+  }
+  managementDeleteProject: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        projectID: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Project is deleted and its teardown is enqueued. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      404: components['responses']['404']
+      500: components['responses']['500']
+    }
+  }
+  managementApplyProjectMember: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        projectID: string
+        userID: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ManagementProjectMemberApplyRequest']
+      }
+    }
+    responses: {
+      /** @description Membership projection is applied or already superseded. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      404: components['responses']['404']
+      409: components['responses']['409']
+      500: components['responses']['500']
+    }
+  }
+  managementUpsertProjectLimits: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        projectID: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ManagementProjectLimits']
+      }
+    }
+    responses: {
+      /** @description Effective limits are synchronized. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      404: components['responses']['404']
+      500: components['responses']['500']
+    }
+  }
   managementSetProjectSettings: {
     parameters: {
       query?: never
@@ -6687,6 +8216,358 @@ export interface operations {
     }
     responses: {
       /** @description Project settings are applied or already superseded. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      404: components['responses']['404']
+      500: components['responses']['500']
+    }
+  }
+  managementApplyProjectBlock: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        projectID: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ManagementProjectBlockRequest']
+      }
+    }
+    responses: {
+      /** @description Block state is applied or already superseded. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      404: components['responses']['404']
+      500: components['responses']['500']
+    }
+  }
+  managementApplyProjectBan: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        projectID: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ManagementProjectBanRequest']
+      }
+    }
+    responses: {
+      /** @description Ban state is applied or already superseded. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      404: components['responses']['404']
+      500: components['responses']['500']
+    }
+  }
+  adminBanTeams: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AdminTeamsBanRequest']
+      }
+    }
+    responses: {
+      /** @description The outcome for every requested team */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AdminTeamsBanResult']
+        }
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      429: components['responses']['429']
+      500: components['responses']['500']
+    }
+  }
+  adminBanTeam: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Team ID */
+        teamID: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The team is banned */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AdminTeamBanResult']
+        }
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      404: components['responses']['404']
+      429: components['responses']['429']
+      500: components['responses']['500']
+    }
+  }
+  adminUnbanTeam: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Team ID */
+        teamID: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The team is not banned */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      404: components['responses']['404']
+      429: components['responses']['429']
+      500: components['responses']['500']
+    }
+  }
+  adminListClusters: {
+    parameters: {
+      query?: {
+        /** @description Maximum number of clusters to return */
+        limit?: number
+        /** @description Number of matching clusters to skip */
+        offset?: number
+        /** @description Case-insensitive substring match on the cluster name or endpoint */
+        search?: string
+        /** @description Column to order by */
+        sortBy?: 'endpoint' | 'name' | 'teamCount'
+        sortOrder?: 'asc' | 'desc'
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The page of matching clusters and the number of all matching clusters */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ClusterListResponse']
+        }
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      500: components['responses']['500']
+    }
+  }
+  adminCreateCluster: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AdminClusterCreateRequest']
+      }
+    }
+    responses: {
+      /** @description Cluster created. */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ClusterDetail']
+        }
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      409: components['responses']['409']
+      500: components['responses']['500']
+    }
+  }
+  adminGetCluster: {
+    parameters: {
+      query?: {
+        /** @description Page size for the embedded teams page */
+        teamsLimit?: number
+        /** @description Offset for the embedded teams page */
+        teamsOffset?: number
+      }
+      header?: never
+      path: {
+        /** @description Identifier of the cluster */
+        clusterID: components['parameters']['clusterID']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The cluster */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ClusterDetailWithTeams']
+        }
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      404: components['responses']['404']
+      500: components['responses']['500']
+    }
+  }
+  adminDeleteCluster: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the cluster */
+        clusterID: components['parameters']['clusterID']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Cluster deleted or already absent. */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      409: components['responses']['409']
+      500: components['responses']['500']
+    }
+  }
+  adminUpdateCluster: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the cluster */
+        clusterID: components['parameters']['clusterID']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ClusterUpdateRequest']
+      }
+    }
+    responses: {
+      /** @description The cluster as updated */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ClusterDetail']
+        }
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      404: components['responses']['404']
+      409: components['responses']['409']
+      500: components['responses']['500']
+    }
+  }
+  adminListClusterTeams: {
+    parameters: {
+      query?: {
+        /** @description Maximum number of teams to return */
+        limit?: number
+        /** @description Number of teams to skip */
+        offset?: number
+        /** @description Column to order by */
+        sortBy?: 'createdAt' | 'name'
+        sortOrder?: 'asc' | 'desc'
+      }
+      header?: never
+      path: {
+        /** @description Identifier of the cluster */
+        clusterID: components['parameters']['clusterID']
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The page of teams assigned to the cluster */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ClusterTeamListResponse']
+        }
+      }
+      400: components['responses']['400']
+      401: components['responses']['401']
+      404: components['responses']['404']
+      500: components['responses']['500']
+    }
+  }
+  adminRotateClusterToken: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Identifier of the cluster */
+        clusterID: components['parameters']['clusterID']
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ClusterTokenRotateRequest']
+      }
+    }
+    responses: {
+      /** @description Token rotated. */
       204: {
         headers: {
           [name: string]: unknown
