@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/e2b-dev/dashboard/compare/v0.5.1...v0.5.2) (2026-11-09)
+
+
+### Bug Fixes
+
+* **deps:** bump next to 16.4.5 ([#550](https://github.com/e2b-dev/dashboard/issues/550)) ([2f968f0](https://github.com/e2b-dev/dashboard/commit/2f968f0c24888f7776a65811046d3cd7112068b3))
+
 ## [0.5.1](https://github.com/e2b-dev/dashboard/compare/v0.5.0...v0.5.1) (2026-11-05)
 
 
