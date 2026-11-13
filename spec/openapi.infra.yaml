@@ -438,6 +438,39 @@ components:
             $ref: "#/components/schemas/Error"
 
   schemas:
+    TelemetryNames:
+      type: object
+      required: [teams, clusters]
+      properties:
+        teams:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/TelemetryTeamName"
+        clusters:
+          type: array
+          items:
+            $ref: "#/components/schemas/TelemetryClusterName"
+    TelemetryTeamName:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        clusterId:
+          type: string
+          format: uuid
+    TelemetryClusterName:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        clientId:
+          type: string
+
     Rig:
       description: An orchestrator node pool backed by one cloud scaling group
       required:
@@ -1858,6 +1891,10 @@ components:
           type: string
           nullable: true
 
+        telemetry_client_id:
+          type: string
+          minLength: 1
+
     ClusterUpdateRequest:
       type: object
       description: >-
@@ -1976,7 +2013,9 @@ components:
           description: Tag the build is assigned under
         status:
           type: string
-          description: Build status as stored, for example ready, snapshotting or waiting
+          deprecated: true
+          x-deprecated-reason: Use statusGroup
+          description: Same value as statusGroup
         statusGroup:
           $ref: "#/components/schemas/AdminSandboxBuildStatusGroup"
         clusterNodeID:
@@ -2185,7 +2224,9 @@ components:
           description: Tag the build is assigned under
         status:
           type: string
-          description: Build status as stored, for example ready, snapshotting or waiting
+          deprecated: true
+          x-deprecated-reason: Use statusGroup
+          description: Same value as statusGroup
         statusGroup:
           allOf:
             - $ref: "#/components/schemas/AdminSandboxBuildStatusGroup"
@@ -3115,6 +3156,7 @@ components:
           type: string
           description: AWS Access Key ID for ECR authentication
         awsSecretAccessKey:
+          format: password
           type: string
           description: AWS Secret Access Key for ECR authentication
         awsRegion:
@@ -3132,6 +3174,7 @@ components:
           enum: [gcp]
           description: Type of registry authentication
         serviceAccountJson:
+          format: password
           type: string
           description: Service Account JSON for GCP authentication
 
@@ -3150,6 +3193,7 @@ components:
           type: string
           description: Username to use for the registry
         password:
+          format: password
           type: string
           description: Password to use for the registry
 
@@ -3567,6 +3611,8 @@ components:
         - teamID
         - sandboxID
         - executionID
+        - networkMode
+        - volumesAttached
       properties:
         teamID:
           type: string
@@ -3583,6 +3629,12 @@ components:
           type: string
           format: date-time
           description: Deadline of the operation holding the sandbox's lifecycle, absent when it is not held
+        networkMode:
+          type: string
+          description: Network the execution runs on, legacy, egress-router or full-router
+        volumesAttached:
+          type: boolean
+          description: Whether the sandbox runs with managed volumes attached
 
     NodeDetail:
       required:
@@ -4058,6 +4110,7 @@ components:
             lower-cased before storage and returned in that canonical form;
             the sec_ prefix is reserved for secret identifiers.
         value:
+          format: password
           type: string
           description: Runtime marker stored as the secret's first version. The runtime resolves it to a value at sandbox egress.
         metadata:
@@ -4069,6 +4122,7 @@ components:
         - value
       properties:
         value:
+          format: password
           type: string
           description: Runtime marker stored as the secret's new version. The runtime resolves it to a value at sandbox egress.
         metadata:
@@ -4155,6 +4209,7 @@ components:
           type: boolean
           default: true
         signatureSecret:
+          format: password
           type: string
           description: Secret used to sign the webhook payloads
     WebhookCreation:
@@ -4239,6 +4294,7 @@ components:
           items:
             type: string
         signatureSecret:
+          format: password
           type: string
           description: Secret used to sign the webhook payloads
     WebhookDelivery:
@@ -4444,6 +4500,10 @@ components:
         auth_org_id:
           type: string
           nullable: true
+
+        telemetry_client_id:
+          type: string
+          minLength: 1
 
     ManagementClusterProjects:
       type: object
@@ -7635,13 +7695,33 @@ paths:
         "500":
           $ref: "#/components/responses/500"
 
+  /unstable/management/telemetry/names:
+    get:
+      operationId: managementTelemetryNames
+      summary: Read team and cluster names for telemetry.
+      description: Requires a direct mutual TLS connection from the configured telemetry reader service identity. Bearer tokens and forwarded identity headers are not accepted. Returns regional team and cluster names without connection credentials. Deleted projects and clusters being deleted are omitted.
+      tags: [admin]
+      security: []
+      x-mutual-tls-required: true
+      responses:
+        "200":
+          description: Current regional names.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TelemetryNames"
+        "401":
+          $ref: "#/components/responses/401"
+        "500":
+          $ref: "#/components/responses/500"
+
   /unstable/management/clusters/{clusterID}:
     parameters:
       - $ref: "#/components/parameters/clusterID"
     put:
       operationId: managementRegisterCluster
       summary: Register a cluster.
-      description: A cluster registered here for the first time starts with deletion protection turned off. Registering an existing cluster again with the same name and auth organization updates its endpoint, TLS setting, sandbox proxy domain and token and keeps its stored deletion protection; a different name or auth organization returns a conflict with error_code cluster_registration_conflict. An invalid registration returns 400 with error_code cluster_registration_invalid.
+      description: A cluster registered here for the first time starts with deletion protection turned off. Registering an existing cluster again with the same auth organization updates its endpoint, TLS setting, sandbox proxy domain and token, while preserving its regional display name and deletion protection. An omitted telemetry client ID preserves the stored mapping. A different auth organization returns a conflict with error_code cluster_registration_conflict. An invalid registration returns 400 with error_code cluster_registration_invalid.
       tags: [admin]
       security:
         - AdminJWTAuth: []
@@ -7676,6 +7756,41 @@ paths:
           $ref: "#/components/responses/400"
         "401":
           $ref: "#/components/responses/401"
+        "409":
+          $ref: "#/components/responses/409"
+        "500":
+          $ref: "#/components/responses/500"
+
+  /unstable/management/clusters/{clusterID}/telemetry:
+    parameters:
+      - $ref: "#/components/parameters/clusterID"
+    put:
+      operationId: managementUpdateClusterTelemetry
+      summary: Update the telemetry identity of an existing cluster.
+      description: Changes only the telemetry client mapping. Missing or deleting clusters are refused; connection settings, credentials and names are preserved.
+      tags: [admin]
+      security:
+        - AdminJWTAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [telemetry_client_id]
+              properties:
+                telemetry_client_id:
+                  type: string
+                  minLength: 1
+      responses:
+        "204":
+          description: Telemetry identity updated.
+        "400":
+          $ref: "#/components/responses/400"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
         "409":
           $ref: "#/components/responses/409"
         "500":
